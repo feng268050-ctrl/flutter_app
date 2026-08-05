@@ -167,7 +167,7 @@ help:
 	@echo "  make upgrade               # SSH stream: inactive FIT+APP rootfs (+oem); env OEM_ONLY=1 for oem-only"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
-	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); SERIAL_BAUD=; LOG= (hex)"
+	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); BAUD=; LOG= (hex)"
 	@echo "                             # TTL=miniterm @1500000 quit Ctrl+]; RS485/RS232=hex+TX bar @115200 quit Esc/:q"
 	@echo "  make serial-ports          # list host /dev/cu.* serial ports"
 	@echo "  make serial-sniff          # auto-detect baud while power-cycling board"

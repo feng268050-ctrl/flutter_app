@@ -8,7 +8,7 @@ Host Make/scripts for interactive serial I/O: default TTL via pyserial miniterm;
 
 ### Requirement: Default TTL mode keeps existing miniterm backend
 
-The repository SHALL provide `make serial-console` that accepts **`MODE=TTL|RS485|RS232`**, defaulting to **`TTL`** when unset. For **`MODE=TTL`**, the host script MUST use the existing pyserial **miniterm** path (project venv / `ensure-serial-venv.sh`, `-f direct`, default baud **1500000**, quit **`Ctrl+]`**). TTL MUST NOT require host `tio` or the hex console. The operator MUST be able to override baud via **`SERIAL_BAUD`** in TTL mode. The script MUST print the resolved port, MODE, baud, and backend before connecting.
+The repository SHALL provide `make serial-console` that accepts **`MODE=TTL|RS485|RS232`**, defaulting to **`TTL`** when unset. For **`MODE=TTL`**, the host script MUST use the existing pyserial **miniterm** path (project venv / `ensure-serial-venv.sh`, `-f direct`, default baud **1500000**, quit **`Ctrl+]`**). TTL MUST NOT require host `tio` or the hex console. The operator MUST be able to override baud via **`BAUD`** in TTL mode. The script MUST print the resolved port, MODE, baud, and backend before connecting.
 
 #### Scenario: Default session is TTL miniterm
 
@@ -18,7 +18,7 @@ The repository SHALL provide `make serial-console` that accepts **`MODE=TTL|RS48
 #### Scenario: Explicit TTL mode
 
 - **WHEN** the operator runs `MODE=TTL make serial-console`
-- **THEN** the script uses the miniterm backend with TTL defaults (unless `SERIAL_BAUD` overrides baud)
+- **THEN** the script uses the miniterm backend with TTL defaults (unless `BAUD` overrides baud)
 
 #### Scenario: TTL without extra host serial tools
 
@@ -27,21 +27,21 @@ The repository SHALL provide `make serial-console` that accepts **`MODE=TTL|RS48
 
 ### Requirement: RS485 and RS232 modes use pyserial hex console with TX bar
 
-For **`MODE=RS485`** and **`MODE=RS232`**, the host script SHALL launch **`scripts/serial-hex-console.py`** via the project pyserial venv for interactive receive and transmit. Default baud SHALL be **115200** unless **`SERIAL_BAUD`** overrides it. The UI MUST provide scrolling **hex RX** and a fixed bottom **`TX>`** input bar where the operator types hex and presses Enter to send. RX MUST start a new line after an idle gap (default **5** ms, overridable via **`SERIAL_TIMESTAMP_TIMEOUT`**). The implementation MUST NOT require host `tio`. Documentation SHALL state that electrical RS-485 vs RS-232 is determined by the adapter and that the host opens plain serial.
+For **`MODE=RS485`** and **`MODE=RS232`**, the host script SHALL launch **`scripts/serial-hex-console.py`** via the project pyserial venv for interactive receive and transmit. Default baud SHALL be **115200** unless **`BAUD`** overrides it. The UI MUST provide scrolling **hex RX** and a fixed bottom **`TX>`** input bar where the operator types hex and presses Enter to send. RX MUST start a new line after an idle gap (default **5** ms, overridable via **`TIMESTAMP_TIMEOUT`**). The implementation MUST NOT require host `tio`. Documentation SHALL state that electrical RS-485 vs RS-232 is determined by the adapter and that the host opens plain serial.
 
 #### Scenario: RS485 preset uses hex console
 
-- **WHEN** the operator runs `MODE=RS485 make serial-console` without `SERIAL_BAUD`
+- **WHEN** the operator runs `MODE=RS485 make serial-console` without `BAUD`
 - **THEN** the script launches the hex console at baud **115200** with a visible TX input bar
 
 #### Scenario: RS232 preset uses hex console
 
-- **WHEN** the operator runs `MODE=RS232 make serial-console` with a usable `SERIAL_PORT`
+- **WHEN** the operator runs `MODE=RS232 make serial-console` with a usable `PORT`
 - **THEN** the script launches the hex console at the resolved baud with hex RX and TX bar
 
 #### Scenario: Baud override on hex modes
 
-- **WHEN** the operator sets `MODE=RS485 SERIAL_BAUD=9600` (or RS232)
+- **WHEN** the operator sets `MODE=RS485 BAUD=9600` (or RS232)
 - **THEN** the hex console opens the port at baud **9600**
 
 #### Scenario: Hex TX from input bar
@@ -61,7 +61,7 @@ For **`MODE=RS485`** and **`MODE=RS232`**, the host script SHALL launch **`scrip
 
 ### Requirement: Optional log file for hex-console modes
 
-When MODE is **`RS485`** or **`RS232`**, the host serial console SHALL allow writing session lines to a host file by setting **`LOG`** or **`SERIAL_LOG`** to a filesystem path. When set, the hex console MUST append or overwrite that path according to **`SERIAL_LOG_APPEND`**. The interactive session MUST remain active. When MODE is **`TTL`** and a log path env is set, the script MUST fail clearly (TTL logging is out of scope) rather than silently ignoring the request.
+When MODE is **`RS485`** or **`RS232`**, the host serial console SHALL allow writing session lines to a host file by setting **`LOG`** to a filesystem path. When set, the hex console MUST append or overwrite that path according to **`LOG_APPEND`**. The interactive session MUST remain active. When MODE is **`TTL`** and a log path env is set, the script MUST fail clearly (TTL logging is out of scope) rather than silently ignoring the request.
 
 #### Scenario: Log file on RS485/RS232
 
@@ -70,7 +70,7 @@ When MODE is **`RS485`** or **`RS232`**, the host serial console SHALL allow wri
 
 #### Scenario: No log by default
 
-- **WHEN** the operator runs `MODE=RS485 make serial-console` without `LOG` / `SERIAL_LOG`
+- **WHEN** the operator runs `MODE=RS485 make serial-console` without `LOG`
 - **THEN** the script MUST NOT require a log file and MUST still provide interactive RX/TX via the hex console
 
 #### Scenario: Log env rejected in TTL mode
@@ -80,7 +80,7 @@ When MODE is **`RS485`** or **`RS232`**, the host serial console SHALL allow wri
 
 ### Requirement: Port discovery and documentation
 
-The repository SHALL keep a way to list candidate host serial ports (`make serial-ports` or equivalent). Makefile `help` and README serial guidance MUST document `MODE=TTL|RS485|RS232`, backends (miniterm vs hex console), `SERIAL_BAUD`, log env vars (hex modes), RS485/RS232 adapter use, TX bar usage, and per-backend quit chords. AGENTS.md rebuild guidance SHALL mark this as host-only (no firmware rebuild).
+The repository SHALL keep a way to list candidate host serial ports (`make serial-ports` or equivalent). Makefile `help` and README serial guidance MUST document `MODE=TTL|RS485|RS232`, backends (miniterm vs hex console), `PORT` / `BAUD`, log env vars (hex modes), RS485/RS232 adapter use, TX bar usage, and per-backend quit chords. AGENTS.md rebuild guidance SHALL mark this as host-only (no firmware rebuild).
 
 #### Scenario: List ports
 

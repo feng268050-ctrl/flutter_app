@@ -2,8 +2,8 @@
 # Listen on USB-TTL at common Rockchip baud rates (power-cycle board while this runs).
 set -euo pipefail
 
-PORT="${SERIAL_PORT:-}"
-SEC="${SERIAL_SNIFF_SEC:-8}"
+PORT="${PORT:-}"
+SEC="${SNIFF_SEC:-8}"
 LOG="/tmp/serial-sniff-$$.log"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -26,7 +26,7 @@ cleanup() {
 trap cleanup EXIT
 
 [[ -n "$PORT" ]] || PORT="$(pick_port)" || {
-  echo "ERROR: set SERIAL_PORT=/dev/cu.... (make serial-ports)" >&2
+  echo "ERROR: set PORT=/dev/cu.... (make serial-ports)" >&2
   exit 1
 }
 
@@ -56,7 +56,7 @@ for baud in (1500000, 115200, 921600, 57600):
     s.close()
     if got:
         print(f"\n>>> got {got} bytes at {baud}", flush=True)
-        print(f">>> use: SERIAL_PORT={port} SERIAL_BAUD={baud} make serial-console", flush=True)
+        print(f">>> use: PORT={port} BAUD={baud} make serial-console", flush=True)
         sys.exit(0)
 print("\nNo data at any baud.", flush=True)
 sys.exit(1)
@@ -105,7 +105,7 @@ for baud in 1500000 115200 921600 57600; do
   if sniff_screen "$baud"; then
     echo ""
     echo ">>> got data at ${baud} — use:"
-    echo "    SERIAL_PORT=$PORT SERIAL_BAUD=$baud make serial-console"
+    echo "    PORT=$PORT BAUD=$baud make serial-console"
     exit 0
   fi
 done

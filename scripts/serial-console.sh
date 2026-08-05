@@ -6,10 +6,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PORT="${SERIAL_PORT:-}"
+PORT="${PORT:-}"
 MODE_RAW="${MODE:-TTL}"
 MODE="$(printf '%s' "$MODE_RAW" | tr '[:lower:]' '[:upper:]')"
-LOG_PATH="${LOG:-${SERIAL_LOG:-}}"
+LOG_PATH="${LOG:-}"
 
 case "$MODE" in
   TTL)
@@ -28,7 +28,7 @@ case "$MODE" in
     ;;
 esac
 
-BAUD="${SERIAL_BAUD:-$DEFAULT_BAUD}"
+BAUD="${BAUD:-$DEFAULT_BAUD}"
 
 is_usb_uart() {
   case "$1" in
@@ -81,8 +81,8 @@ USB serial adapter not detected. Check:
      UART2 / debug header on core board (ask Innohi silkscreen if unsure)
 
   Then:
-       SERIAL_PORT=/dev/cu.wchusbserial1410 make serial-console
-       MODE=RS485 SERIAL_PORT=/dev/cu.usbserial-XXXX make serial-console
+       PORT=/dev/cu.wchusbserial1410 make serial-console
+       MODE=RS485 PORT=/dev/cu.usbserial-XXXX make serial-console
 
 EOF
   if system_profiler SPUSBDataType 2>/dev/null | grep -qiE 'ch34|wch|cp210|ftdi|serial'; then
@@ -95,20 +95,21 @@ EOF
 
 usage() {
   cat <<EOF
-Usage: [MODE=TTL|RS485|RS232] [SERIAL_PORT=…] [SERIAL_BAUD=…] make serial-console
+Usage: [MODE=TTL|RS485|RS232] [PORT=…] [BAUD=…] make serial-console
 
   MODE (default TTL, case-insensitive):
     TTL    pyserial miniterm → USB-TTL → board ttyFIQ0 (default baud 1500000)
     RS485  curses hex console → USB-RS485 (default baud 115200; RX hex + TX bar)
     RS232  curses hex console → USB-RS232 (default baud 115200; RX hex + TX bar)
 
-  SERIAL_BAUD=…                 override baud (all modes)
-  SERIAL_DATABITS=…             framing (RS485/RS232): 5|6|7|8 (default 8)
-  SERIAL_PARITY=…               framing: none|even|odd|mark|space (default none)
-  SERIAL_STOPBITS=…             framing: 1|2 (default 1)
-  LOG= / SERIAL_LOG=            session log file (RS485/RS232 only)
-  SERIAL_LOG_APPEND=1           append to log file
-  SERIAL_TIMESTAMP_TIMEOUT=ms   RX idle gap → new line (default 5)
+  PORT=…                    host serial device (auto-pick /dev/cu.usb* if unset)
+  BAUD=…                    override baud (all modes)
+  DATABITS=…                framing (RS485/RS232): 5|6|7|8 (default 8)
+  PARITY=…                  framing: none|even|odd|mark|space (default none)
+  STOPBITS=…                framing: 1|2 (default 1)
+  LOG=…                     session log file (RS485/RS232 only)
+  LOG_APPEND=1              append to log file
+  TIMESTAMP_TIMEOUT=ms      RX idle gap → new line (default 5)
 
   List ports:  make serial-ports
   Quit TTL:    Ctrl+]
@@ -121,7 +122,7 @@ EOF
 [[ "${1:-}" == --list ]] && list_ports && exit 0
 
 if [[ -n "$LOG_PATH" && "$MODE" == TTL ]]; then
-  echo "ERROR: file logging (LOG=/SERIAL_LOG=) requires MODE=RS485 or MODE=RS232 (TTL uses miniterm)." >&2
+  echo "ERROR: file logging (LOG=) requires MODE=RS485 or MODE=RS232 (TTL uses miniterm)." >&2
   exit 1
 fi
 
@@ -156,10 +157,10 @@ if [[ "$MODE" == TTL ]]; then
 fi
 
 # RS485 / RS232: curses hex console with fixed TX input bar (no tio).
-idle_ms="${SERIAL_TIMESTAMP_TIMEOUT:-5}"
-data_bits="${SERIAL_DATABITS:-8}"
-parity="${SERIAL_PARITY:-none}"
-stop_bits="${SERIAL_STOPBITS:-1}"
+idle_ms="${TIMESTAMP_TIMEOUT:-5}"
+data_bits="${DATABITS:-8}"
+parity="${PARITY:-none}"
+stop_bits="${STOPBITS:-1}"
 echo "  hex console: RX idle→newline ${idle_ms}ms; bottom TX> bar (hex + Enter)"
 [[ "$MODE" == RS485 ]] && echo "  note: electrical RS-485 is the USB adapter; host opens plain serial"
 
@@ -175,8 +176,8 @@ hex_args=(
 )
 if [[ -n "$LOG_PATH" ]]; then
   hex_args+=(--log "$LOG_PATH")
-  [[ "${SERIAL_LOG_APPEND:-}" == 1 ]] && hex_args+=(--log-append)
-  echo "  log: $LOG_PATH${SERIAL_LOG_APPEND:+ (append=${SERIAL_LOG_APPEND})}"
+  [[ "${LOG_APPEND:-}" == 1 ]] && hex_args+=(--log-append)
+  echo "  log: $LOG_PATH${LOG_APPEND:+ (append=${LOG_APPEND})}"
 fi
 
 exec "$PY" "${hex_args[@]}"

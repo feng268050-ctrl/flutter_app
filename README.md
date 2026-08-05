@@ -645,12 +645,12 @@ Rockchip Innohi board binaries and Wi‑Fi/BT firmware live under **`linux-sdk/i
 make serial-console
 MODE=TTL make serial-console
 MODE=RS485 make serial-console
-MODE=RS232 SERIAL_BAUD=9600 make serial-console
+MODE=RS232 BAUD=9600 make serial-console
 MODE=RS485 LOG=/tmp/uart.log make serial-console
 make serial-ports
 ```
 
-`SERIAL_PORT=` auto-picks `/dev/cu.usb*` when unset; `SERIAL_BAUD=` overrides baud in all modes. RS485/RS232 open a **split UI**: scrolling RX hex (one line per idle gap, default `SERIAL_TIMESTAMP_TIMEOUT=5` ms) and a fixed bottom **`TX>`** bar — type hex (`01 03 …` or `0103`) and press Enter to send. Optional `LOG=` / `SERIAL_LOG=` (+ `SERIAL_LOG_APPEND=1`). No host `tio` required. Electrical RS-485 vs RS-232 is the adapter. TTL wiring: GND + TX↔RX cross (3.3V only). Self-test: short TTL TX–RX, type keys — should echo.
+`PORT=` auto-picks `/dev/cu.usb*` when unset; `BAUD=` overrides baud in all modes. RS485/RS232 open a **split UI**: scrolling RX hex (one line per idle gap, default `TIMESTAMP_TIMEOUT=5` ms) and a fixed bottom **`TX>`** bar — type hex (`01 03 …` or `0103`) and press Enter to send. Optional `LOG=` (+ `LOG_APPEND=1`). No host `tio` required. Electrical RS-485 vs RS-232 is the adapter. TTL wiring: GND + TX↔RX cross (3.3V only). Self-test: short TTL TX–RX, type keys — should echo.
 
 **Login (Buildroot):**
 

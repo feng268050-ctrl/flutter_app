@@ -473,7 +473,7 @@ def main() -> int:
     parser.add_argument("--version", help="library_version for single-workbook mode")
     parser.add_argument(
         "--models",
-        help="comma-separated product.ini MODEL values, or * (single-workbook mode)",
+        help="comma-separated product MODEL values (Vendor Storage), or * (single-workbook mode)",
     )
     parser.add_argument(
         "--output-dir",

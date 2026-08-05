@@ -157,8 +157,8 @@ echo SHOULD-NOT-USE
       expect(info.model, 'YNH960');
       expect(info.sn, 'FACTORY-001');
       expect(info.chipId, 'CHIP-ABC');
-      expect(info.cameraIp(), '192.168.1.50');
-      expect(info.cameraType(), '2');
+      expect(info.get('camera_ip'), '192.168.1.50');
+      expect(info.get('camera_type'), '2');
       await dir.delete(recursive: true);
     });
 
@@ -207,8 +207,7 @@ echo CHIP-ABC
       await dir.delete(recursive: true);
     });
 
-    test('invalid camera_type and alarm mode empty typed; raw get keeps value',
-        () async {
+    test('opaque get for unknown keys; identity not from ini', () async {
       final info = await ProductInfo.load(
         keysOverride: {
           'camera_type': '9',
@@ -217,11 +216,11 @@ echo CHIP-ABC
         },
         deviceSnReader: const DeviceSnReader(readSerialPath: '/bin/false'),
       );
-      expect(info.cameraType(), isEmpty);
       expect(info.get('camera_type'), '9');
-      expect(info.controlCardCommAlarmMode(), isEmpty);
       expect(info.get('control_card_comm_alarm_mode'), 'bogus');
       expect(info.get('custom_factory_flag'), 'yes');
+      expect(info.get('camera_ip'), isEmpty);
+      expect(info.get('missing'), isEmpty);
     });
 
     test('LinuxSysInfo snapshot includes brand/model/chipId from ProductInfo', () async {

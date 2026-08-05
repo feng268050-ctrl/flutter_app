@@ -33,7 +33,14 @@ abstract final class IpCameraEth0AddressPlanner {
   static const _candidates = <int>[234, 253, 252, 200, 11];
 
   static String pickTabletEth0Address(String cameraHost, String? wlanIp) {
-    final camera = _parseIpv4(cameraHost) ?? _parseIpv4('192.168.1.100')!;
+    final camera = _parseIpv4(cameraHost);
+    if (camera == null) {
+      throw ArgumentError.value(
+        cameraHost,
+        'cameraHost',
+        'camera_ip unconfigured or not an IPv4 address',
+      );
+    }
     final wlan = _parseIpv4(wlanIp);
     final wlanHost =
         wlan != null && _sameSubnet24(camera, wlan) ? wlan.$4 : -1;

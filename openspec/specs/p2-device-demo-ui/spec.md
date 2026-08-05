@@ -18,7 +18,7 @@ The P2 home (or primary demo) screen SHALL display device-information rows as si
 
 A missing or failed value SHALL display exactly `-`.
 
-Device SN SHALL resolve via product identity (non-empty `/var/lib/hal/product.ini` `sn`, else chip/board serial / `read-serial` helper) and MUST NOT be read from Modbus. Brand/Model rows MAY be shown when the Demo surface mirrors Settings Device Information; if shown, empty values SHALL display `-`.
+Device SN SHALL resolve via product identity (non-empty Vendor Storage SN, else chip/board serial / `read-serial` helper) and MUST NOT be read from Modbus or from `properties.ini` `sn`. Brand/Model rows MAY be shown when the Demo surface mirrors Settings Device Information; if shown, empty values SHALL display `-`.
 
 #### Scenario: All rows visible
 
@@ -27,12 +27,12 @@ Device SN SHALL resolve via product identity (non-empty `/var/lib/hal/product.in
 
 #### Scenario: Device SN from product identity
 
-- **WHEN** `product.ini` has a non-empty `sn` or board `read-serial` identity is available
+- **WHEN** Vendor Storage has a non-empty SN or board `read-serial` identity is available
 - **THEN** Device SN shows that serial string and is NOT read from Modbus
 
 #### Scenario: Device SN unavailable
 
-- **WHEN** product.ini `sn` is empty/absent and chip/`read-serial` identity cannot be obtained
+- **WHEN** Vendor Storage SN is empty/absent and chip/`read-serial` identity cannot be obtained
 - **THEN** Device SN displays `-`
 
 ### Requirement: Home screen lists Alarm Information status and temperatures
@@ -84,3 +84,4 @@ The Demo screen MUST NOT include operator sections for Ethernet, Wi‑Fi, HTTP p
 
 - **WHEN** the user opens the Demo route after this change
 - **THEN** device-information rows and Alarm Information comm-status rows remain available
+

@@ -160,7 +160,7 @@ help:
 	@echo "  make upgrade-control-board # push latest control-board bin and trigger upgrade (no version gate)"
 	@echo "  make upgrade-process-library # push process-library for device model; force import (no version gate)"
 	@echo "  make reset-process-library # clear process-library DB via HMI watcher; re-import bundled (no restart)"
-	@echo "  make set-prop KEY=val ...  # upsert product.ini tunables (not brand/model/sn); restart hmi"
+	@echo "  make set-prop KEY=val ...  # upsert properties.ini tunables (not brand/model/sn); restart hmi"
 	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
 	@echo "  make write-identity …      # Vendor Storage BRAND/MODEL/PRODUCT_SN (FORCE=1 overwrite); restart hmi"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
@@ -617,7 +617,7 @@ set-prop:
 	@chmod +x scripts/set-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/set-product-prop.sh $(MAKEOVERRIDES))
 
-# Remove one UPPERCASE key from product.ini (e.g. make del-prop CAMERA_IP).
+# Remove one UPPERCASE key from properties.ini (e.g. make del-prop CAMERA_IP).
 del-prop:
 	@chmod +x scripts/del-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/del-product-prop.sh $(filter-out del-prop,$(MAKECMDGOALS)) $(MAKEOVERRIDES))

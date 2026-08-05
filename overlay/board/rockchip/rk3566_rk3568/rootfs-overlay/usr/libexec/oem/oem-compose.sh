@@ -1,12 +1,11 @@
 #!/bin/sh
 # Compose OEM pack into /run/hmi before HMI starts.
 # Missing or invalid /oem MUST fail — no rootfs fallback.
+# Does NOT seed /var/lib/hal/properties.ini (operator: make set-prop).
 set -eu
 
 OEM_ROOT="${OEM_ROOT:-/oem}"
 RUN_HMI="${RUN_HMI:-/run/hmi}"
-VAR_HAL="${VAR_HAL:-/var/lib/hal}"
-PRODUCT_INI="$VAR_HAL/product.ini"
 
 log() { echo "oem-compose: $*"; }
 warn() { echo "oem-compose: WARNING: $*" >&2; }
@@ -46,57 +45,6 @@ ensure_oem_mount() {
 		|| die "mount $dev -> $OEM_ROOT failed"
 }
 
-# Merge OEM seed into runtime product.ini (tunables only).
-# brand/model/sn are ignored — identity lives in Vendor Storage (make write-identity).
-# Other keys: fill only when runtime key is absent or blank (preserve operator).
-merge_product_ini() {
-	local seed="$1"
-	local key val cur line
-	[ -f "$seed" ] || return 0
-	mkdir -p "$VAR_HAL"
-	if [ ! -f "$PRODUCT_INI" ]; then
-		# Seed without identity keys (even if present in OEM file).
-		tmp="$(mktemp "${PRODUCT_INI}.XXXXXX")"
-		while IFS= read -r line || [ -n "$line" ]; do
-			case "$line" in
-			'' | \#*) printf '%s\n' "$line" >>"$tmp"; continue ;;
-			esac
-			key="${line%%=*}"
-			key="$(printf '%s' "$key" | tr -d '[:space:]')"
-			case "$key" in
-			brand | model | sn) continue ;;
-			esac
-			printf '%s\n' "$line" >>"$tmp"
-		done <"$seed"
-		mv -f "$tmp" "$PRODUCT_INI"
-		log "seeded $PRODUCT_INI from OEM (identity keys omitted)"
-		return 0
-	fi
-	while IFS= read -r line || [ -n "$line" ]; do
-		case "$line" in
-		'' | \#*) continue ;;
-		esac
-		key="${line%%=*}"
-		val="${line#*=}"
-		key="$(printf '%s' "$key" | tr -d '[:space:]')"
-		[ -n "$key" ] || continue
-		case "$key" in
-		brand | model | sn) continue ;;
-		esac
-		cur="$(grep -E "^[[:space:]]*${key}[[:space:]]*=" "$PRODUCT_INI" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true)"
-		cur="$(printf '%s' "$cur" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-		if [ -n "$cur" ]; then
-			continue
-		fi
-		# Drop existing key then append seed value.
-		tmp="$(mktemp "${PRODUCT_INI}.XXXXXX")"
-		grep -vE "^[[:space:]]*${key}[[:space:]]*=" "$PRODUCT_INI" >"$tmp" 2>/dev/null || true
-		printf '%s=%s\n' "$key" "$val" >>"$tmp"
-		mv -f "$tmp" "$PRODUCT_INI"
-		log "filled empty $key from OEM seed"
-	done <"$seed"
-}
-
 write_screen_env() {
 	local screen_json="$1"
 	local orient width height
@@ -114,7 +62,7 @@ write_screen_env() {
 compose_from_root() {
 	local root="$1"
 	local manifest board_path screen_path board_id screen_id pack_id
-	local board_profile screen_json product_seed
+	local board_profile screen_json
 	local wifi_modem bt_modem usb_otg
 
 	manifest="$root/manifest.json"
@@ -132,7 +80,6 @@ compose_from_root() {
 
 	board_profile="$root/$board_path/board_profile.json"
 	screen_json="$root/$screen_path/screen.json"
-	product_seed="$root/$board_path/product.ini"
 	[ -f "$board_profile" ] || die "missing $board_profile"
 	[ -f "$screen_json" ] || die "missing $screen_json"
 
@@ -155,7 +102,6 @@ compose_from_root() {
 		echo "USB_OTG_MODE_HELPER=${usb_otg:-}"
 	} >"$RUN_HMI/oem.env"
 	write_screen_env "$screen_json"
-	merge_product_ini "$product_seed"
 
 	gpio_sim="$(sed -n 's/.*"gpio_sim_leds"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$board_profile" | head -1)"
 	if [ -n "$gpio_sim" ] && [ -x "$gpio_sim" ]; then

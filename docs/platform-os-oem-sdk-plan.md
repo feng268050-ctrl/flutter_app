@@ -34,7 +34,7 @@
 | 屏参 | **W2 ✅**：screen pack `lcd/` → private1（OEM 权威）；无 `/system/etc` 回退 |
 | 板脚本 | **W2 ✅**：modem / OTG / display-init 在 `oem/boards/ynh960/helpers/`；rootfs 为 thin stub |
 | GPT `oem` | ✅ ~128 MiB `/oem`；`build-oem` + `upgrade`（含 `OEM_ONLY=1`）已通；ynh960 pack 有内容 |
-| `product.ini` | ✅ OEM 种子；compose 强制 `brand`/`model`/`sn`；`set-prop`/`del-prop` 拒改 identity |
+| `properties.ini` | ✅ 运行时 `/var/lib/hal/properties.ini`（无 OEM 种子）；`set-prop`/`del-prop`；identity → Vendor Storage |
 | `linux-sdk/` | ✅ W3：白名单/trim/squash/薄 overlay 已归档；**暂不进仓**；DT git 真相源仍为 `overlay/kernel/`（见 `docs/linux-sdk-vendor-import.md`） |
 | 定制方式 | 平台 kernel/device squash 进本地树；**DT/fragment 同事同步走 overlay**；第三方 BR 包仍 overlay；产品/OEM 仍 `apply-overlay` |
 | P3.2 | ✅ W4：QEMU + 同 Image/rootfs + `sim_virt`；三网卡 + USB 串口；GPIO LED 浮层；**无 OTG**；USB Wi‑Fi/BT 真机同款 ⏸（archived: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`） |
@@ -42,7 +42,7 @@
 
 ### 1.2 结论（本计划采纳）
 
-1. **OEM 只承载硬件 SKU 组合（board × screen）**：profile 能力/网口/helpers、板端 bringup 脚本、屏参与旋转/splash 契约、OEM manifest；**v1 另含 `product.ini` 出厂种子**（长期归属另议）。  
+1. **OEM 只承载硬件 SKU 组合（board × screen）**：profile 能力/网口/helpers、板端 bringup 脚本、屏参与旋转/splash 契约、OEM manifest；**不**再携带 `properties.ini` / `product.ini` 种子（见 §3.5）。  
 2. **`gpio.json` / `modbus.json` 是产品 App 资产**，继续跟 `app/lws_hmi`（或未来产品 App）走，**不进 OEM**、也不以「主板目录」为权威源。同一主板可服务不同产品寄存器图。  
 3. **boot/rootfs 趋向通用**：板/屏差异尽量退出 rootfs；内核仍按 SoC/板选 FIT（DT 不能完全进 OEM）。  
 4. **自有 `linux-sdk/` 进仓**（保留此名）：只留 Buildroot + 必要 kernel/device/external/tools；debian/ubuntu/yocto 等删除；overlay 差异逐步内化；蓝本外置参考。  
@@ -195,25 +195,23 @@ AppServices(boardProfile: profile) …
 
 需在 `cyber_hal` 补齐：`loadFile`、相对 OEM 根解析 helpers、以及 **withProductConfigs / 合并** API（若尚无）。`loadAsset` 保留给单测与无 OEM 的 host。
 
-### 3.5 `product.ini`（v1 进 OEM）
+### 3.5 `properties.ini`（无 OEM 种子）
 
-**拍板：** v1 将 `product.ini`（及与之同类的出厂键，如 `camera_ip`）**放入 OEM board 包**，不再以「仅 userdata」为唯一种子源；与今日「profile helpers / 出厂写入」的现状对齐，便于随 SKU 刷 OEM 带出默认值。
-
-建议行为（实施时可微调，不阻塞）：
+**拍板（supersedes v1 OEM seed）：** 运行时调参文件为 `/var/lib/hal/properties.ini`（← userdata）。OEM board 包 **不** 再携带 `product.ini` / `properties.ini`；`oem-compose` **不** merge。单机 identity 在 Vendor Storage（`make write-identity`）。缺省键由 **产品 App**（非 HAL）提供默认：`camera_ip=192.168.1.100`、`camera_type=1`、`focus_scale_ref=0`、`control_card_comm_alarm_mode=slide_window`；产线/现场可用 `make set-prop` 覆盖。
 
 ```text
-/oem/boards/<board_id>/product.ini     # 出厂种子（随 oem.img）
+make set-prop / 现场写入（可选覆盖）
         │
-        ▼  oem-compose / 首启
-/var/lib/hal/product.ini               # HAL 既有读取路径（→ userdata 绑定若仍需要）
-        │
-        ▼  字段升级 OEM 时
-策略：不覆盖操作员已改的非空键（或整文件仅在缺失时拷贝）— 细节实现时定
+        ▼
+/var/lib/hal/properties.ini    # HAL 读取（→ /userdata/hal/）；legacy product.ini 一次 rename
+        │ 缺失键 → HAL 返回空
+        ▼
+LWS HMI App product_property_defaults
 ```
 
-- `make set-prop` / 运行时修改：仍写 HAL 运行时路径（userdata），**不**要求回写 OEM。  
-- 长期：产品方另有打算；届时再拆「SKU 默认 vs 单机身份」，本文不预先设计第二套模型。  
-- OEM profile 里的 `helpers.camera_ip` 等：迁移期可与 `product.ini` 双读；收敛后以 `product.ini` 为准。
+- `make set-prop` / `del-prop`：写运行时路径，**不**回写 OEM。  
+- 旧设备：bind-prefs 将 `product.ini` 重命名为 `properties.ini`。  
+- OpenSpec：`properties-ini-no-oem-seed`。
 
 ### 3.6 `screen.json`（屏幕包）
 

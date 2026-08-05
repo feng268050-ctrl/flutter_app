@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Remove one key from /var/lib/hal/product.ini on the SSH target.
+# Remove one key from /var/lib/hal/properties.ini on the SSH target.
 # Usage: make del-prop CAMERA_IP
 set -euo pipefail
 
@@ -9,13 +9,13 @@ source "$ROOT/scripts/usb-ssh-session.sh"
 # shellcheck source=scripts/product-ini-common.sh
 source "$ROOT/scripts/product-ini-common.sh"
 
-TARGET="${PRODUCT_INI_PATH:-/var/lib/hal/product.ini}"
+TARGET="${PROPERTIES_INI_PATH:-${PRODUCT_INI_PATH:-/var/lib/hal/properties.ini}}"
 
 _DEL_PROP_SKIP=(
 	SERIAL CHIP_ID IP IMAGE FLUTTER_SDK BUILD_JOBS BUILD_BIND_MOUNT
 	USB_SSH_PASS USB_SSH_USER USB_SSH_ADDR IFACE
 	DOCKER_IMAGE DOCKER_PLATFORM SCOPE FORCE SRC
-	PRODUCT_INI_PATH
+	PRODUCT_INI_PATH PROPERTIES_INI_PATH
 )
 
 usage() {
@@ -28,7 +28,7 @@ Examples:
   make del-prop FOCUS_SCALE_REF
 
 Command-line keys use UPPERCASE; the matching lowercase key is removed from
-/var/lib/hal/product.ini. brand / model / sn live in Vendor Storage (write-identity).
+/var/lib/hal/properties.ini. brand / model / sn live in Vendor Storage (write-identity).
 hmi.service is restarted only when the file changes.
 EOF
 }
@@ -84,6 +84,8 @@ if usb_ssh_session_is_remote; then
 else
 	echo "USB-SSH del-prop: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR -> $TARGET"
 fi
+
+remote "props='$TARGET'; dir=\$(dirname \"\$props\"); legacy=\"\$dir/product.ini\"; if [ ! -f \"\$props\" ] && [ -f \"\$legacy\" ]; then mv -f \"\$legacy\" \"\$props\"; fi" >/dev/null 2>&1 || true
 
 if ! remote "test -f '$TARGET'" >/dev/null 2>&1; then
 	echo "WARN: ${KEY} not present (${TARGET} missing) (from ${PROP_KEY})" >&2

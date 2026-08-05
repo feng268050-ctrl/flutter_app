@@ -3,10 +3,7 @@
 ## Purpose
 
 Host-side USB-SSH workflow for Flutter app iteration: `make push-app`, `make devices`, `make reboot`, and `make reboot-loader` over the ECM link without rootfs reflash.
-
 ## Requirements
-
-
 ### Requirement: make push-app deploys Flutter app over USB SSH
 
 The repository SHALL provide **`make push-app`** that deploys the current Flutter release artifacts to **`/opt/hmi/lib/libapp.so`** and **`/opt/hmi/data/flutter_assets/`** on the target via `scp` over the USB ECM link, then restarts `hmi.service` so the new app loads without rebooting the board. This behavior depends on the kernel DRM GEM teardown fix defined by `hmi-systemd-boot`.
@@ -25,7 +22,7 @@ Deployment SHALL stage files under **`/var/lib/hmi/push-app-staging/`**, replace
 
 ### Requirement: make devices lists RockUSB and USB-SSH targets
 
-The repository SHALL extend **`make devices`** to list **RockUSB** flash devices (`upgrade_tool ld`), **USB-SSH** Linux boards, **registered remote SSH** boards (`MODE=SSH`), and **adb-connected Android** devices (`MODE` column: `Loader`, `Maskrom`, `USB-SSH`, `SSH`, `android`, etc.) in a **single merged table** with columns including **`SN`**, **`ChipID`**, **`LocationID`**, host **`IFACE`** (USB-SSH only; `-` for SSH), and target **`IP`** (`192.168.55.1` for USB-SSH; registered IP for SSH; matches `IP=` selection for `MODE=SSH`). **SN** follows product identity (`product.ini` `sn`, else chip ID). **ChipID** is the chip/board serial; for android adb and RockUSB loader rows, ChipID (and SN) SHALL be the adb SerialNo / upgrade_tool SerialNo. There SHALL NOT be a separate **`make devices-usb-ssh`** target.
+The repository SHALL extend **`make devices`** to list **RockUSB** flash devices (`upgrade_tool ld`), **USB-SSH** Linux boards, **registered remote SSH** boards (`MODE=SSH`), and **adb-connected Android** devices (`MODE` column: `Loader`, `Maskrom`, `USB-SSH`, `SSH`, `android`, etc.) in a **single merged table** with columns including **`SN`**, **`ChipID`**, **`LocationID`**, host **`IFACE`** (USB-SSH only; `-` for SSH), and target **`IP`** (`192.168.55.1` for USB-SSH; registered IP for SSH; matches `IP=` selection for `MODE=SSH`). **SN** follows product identity (Vendor Storage SN, else chip ID). **ChipID** is the chip/board serial; for android adb and RockUSB loader rows, ChipID (and SN) SHALL be the adb SerialNo / upgrade_tool SerialNo. There SHALL NOT be a separate **`make devices-usb-ssh`** target.
 
 When USB-SSH device(s) are present and **`sshpass`** is not installed, the command SHALL print an install hint (push-app / reboot require sshpass).
 

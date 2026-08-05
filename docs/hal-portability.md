@@ -119,9 +119,9 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 
 | Need | Detail |
 |------|--------|
-| **OS** | Standard `/proc`, `/sys` (thermal, cpufreq, mounts); optional `/var/lib/hal/product.ini` for factory brand/model/sn + tunables. Snapshot: `serialNumber` (product SN), `chipId` (chip serial). |
+| **OS** | Standard `/proc`, `/sys` (thermal, cpufreq, mounts); optional `/var/lib/hal/properties.ini` for factory tunables. Snapshot: `serialNumber` (product SN), `chipId` (chip serial). |
 | **Profile** | `storage_mounts` — mount points to report |
-| **Helper / inject** | Product SN: `ProductInfo.sn` prefers `product.ini` `sn`, else chip ID. Chip ID: `ProductInfo.chipId` / `DeviceSnReader.readChipId()` → `/usr/bin/read-serial --chip-id` (same as `make devices` ChipID). Inject `ProductInfo` or custom `DeviceSnReader` via `BoardBindings.sysInfo` / `productInfo()` when needed. |
+| **Helper / inject** | Product SN: `ProductInfo.sn` prefers Vendor Storage SN, else chip ID. Chip ID: `ProductInfo.chipId` / `DeviceSnReader.readChipId()` → `/usr/bin/read-serial --chip-id` (same as `make devices` ChipID). Inject `ProductInfo` or custom `DeviceSnReader` via `BoardBindings.sysInfo` / `productInfo()` when needed. |
 
 ### `hal/gpio`
 
@@ -211,5 +211,6 @@ or `/oem/boards/<id>/board_profile.json`, then merges App gpio/modbus assets
 OEM/compose profile **fails hard** (no App asset fallback). Host/desktop may
 still `loadAsset` `assets/hal/board_profile.json` for UI work without `/oem`.
 
-OEM owns board×screen SKU + v1 `product.ini` seed; see
-[`docs/platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md).
+OEM owns board×screen SKU only (no properties.ini seed); tunables via
+`/var/lib/hal/properties.ini` + `make set-prop`. See
+[`docs/platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §3.5.

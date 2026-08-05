@@ -323,4 +323,4 @@ make prepare-app-assets   # 或 make build-app（会自动 prepare）
 python3 scripts/convert-process-library.py path/to.xlsx --version 1.5.0 --models "L1 Pro" --output-dir /tmp/pl-out
 ```
 
-`--models` 必须填写设备 `/var/lib/hal/product.ini` 中的 `MODEL` 值（多个值用逗号分隔），不是板卡 `board_id`。转换器会严格校验表头、枚举、范围和快速模式重复组合，并生成版本化 JSON、行数和 SHA-256（ship 路径由 prepare 写 manifest）。
+`--models` 必须填写设备 Vendor Storage / HAL `ProductInfo.model` 值（多个值用逗号分隔），不是板卡 `board_id`。转换器会严格校验表头、枚举、范围和快速模式重复组合，并生成版本化 JSON、行数和 SHA-256（ship 路径由 prepare 写 manifest）。

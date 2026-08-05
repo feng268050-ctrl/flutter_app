@@ -16,7 +16,7 @@ source "$ROOT/scripts/emulator-common.sh"
 
 EMU_MODE="EMU"
 # Placeholder when QEMU is up but identity SSH has not succeeded yet.
-# Also a stable SN= alias in device-target.sh (probed product.ini sn may be SIM-0001).
+# Also a stable SN= alias in device-target.sh (probed SN may be SIM-0001).
 EMU_SN_FALLBACK="SIM-EMU"
 EMU_CHIP_FALLBACK="-"
 

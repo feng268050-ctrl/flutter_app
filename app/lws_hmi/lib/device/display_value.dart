@@ -1,3 +1,5 @@
+import 'package:lws_hmi/device/product_property_defaults.dart';
+
 /// Shared display placeholder when a field cannot be read.
 const String kUnavailableDisplay = '-';
 
@@ -40,15 +42,6 @@ String productDeviceModelForQr(String? brand, String? model) {
     return b;
   }
   return '$b $m';
-}
-
-/// Default `product.ini` `camera_type` when unset (Blue Light).
-const kDefaultCameraType = '1';
-
-/// Empty/missing → [kDefaultCameraType]; otherwise trimmed raw (`1`/`2`/other).
-String effectiveCameraType(String? cameraType) {
-  final v = (cameraType ?? '').trim();
-  return v.isEmpty ? kDefaultCameraType : v;
 }
 
 /// Camera Type row: `1` → Blue Light, `2` → Red Light; empty → default `1`; else `-`.

@@ -11,6 +11,7 @@ import 'package:cyber_hal/usb_otg.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/app/flutter_frame_timing_sampler.dart';
+import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
@@ -119,7 +120,7 @@ final class AppServices {
   late final FrameTimingSampler _frameTimingSampler;
   late final SysInfo sysInfo;
 
-  /// Factory product identity (`/var/lib/hal/product.ini`).
+  /// Factory product identity + tunables (`/var/lib/hal/properties.ini`).
   Future<ProductInfo> ensureProductInfo() {
     if (_productInfo != null) {
       return Future<ProductInfo>.value(_productInfo!);
@@ -185,7 +186,7 @@ final class AppServices {
 
   /// Product IP-camera session (one HAL instance + LWS eth0/MediaMTX).
   ///
-  /// Prefer [ensureIpCamera] before first use so host comes from product.ini.
+  /// Prefer [ensureIpCamera] before first use so host comes from properties.ini.
   IpCameraProductSession? get ipCameraOrNull => _ipCamera;
 
   /// Resolve product camera host and construct the session once.
@@ -196,7 +197,7 @@ final class AppServices {
     return _ipCameraFuture ??= () async {
       final info = await ensureProductInfo();
       final session = IpCameraProductSession.create(
-        productCameraIp: info.cameraIp(),
+        productCameraIp: effectiveCameraIpFromProduct(info),
         ethernet: ethernet,
         wifi: wifi,
       );
@@ -235,7 +236,7 @@ final class AppServices {
   /// MUST also [BootSelfCheckGate.waitForModbusAccess] — this ensure alone does
   /// not serialize those one-shots against the self-check snapshot.
   ///
-  /// Also applies product.ini `control_card_comm_alarm_mode` once (C001 window)
+  /// Also applies properties.ini `control_card_comm_alarm_mode` once (C001 window)
   /// and disarms `control.laser_enable` once at process start so a prior crash
   /// / unclean exit cannot leave the controller armed for emission.
   Future<void> ensureModbusLive() async {
@@ -301,8 +302,8 @@ final class AppServices {
     }
     try {
       final info = await ensureProductInfo();
-      final mode = info.controlCardCommAlarmMode();
-      // Empty → keep modbus.json default (`slide_window`).
+      final mode = effectiveControlCardCommAlarmModeFromProduct(info);
+      // Empty after defaults means invalid override — keep modbus.json mode.
       if (mode.isNotEmpty) {
         await modbus.applyHealthWindowMode(mode);
       }

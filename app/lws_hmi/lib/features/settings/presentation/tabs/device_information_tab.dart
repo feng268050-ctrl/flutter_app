@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
@@ -105,7 +106,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
       final product = await widget.services.ensureProductInfo();
       if (!mounted) return;
       setState(() {
-        _focusScaleRef = _dash(product.focusScaleRef());
+        _focusScaleRef =
+            _dash(effectiveFocusScaleRefFromProduct(product));
       });
     } catch (_) {}
   }

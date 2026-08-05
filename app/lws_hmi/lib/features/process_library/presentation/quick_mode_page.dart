@@ -4,6 +4,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/device_registration/device_registration_dialogs.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -677,7 +678,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     try {
       final product = await services.ensureProductInfo();
       return LaserEnableReminderCopy.parseFocusScaleRef(
-        product.focusScaleRef(),
+        effectiveFocusScaleRefFromProduct(product),
       );
     } catch (_) {
       return 0;

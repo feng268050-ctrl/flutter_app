@@ -110,7 +110,8 @@ abstract class ModbusHal {
   Stream<ModbusHealth> watchHealth();
 
   /// Override [ModbusHealthWindowConfig.mode] at runtime (`slide_window` /
-  /// `immediate`). Used for product.ini `control_card_comm_alarm_mode`.
+  /// Runtime mode string (`slide_window` | `immediate`). Product Apps may feed
+  /// this from opaque properties.ini keys.
   ///
   /// Pass `null` or empty to clear the override and use config JSON again.
   void applyHealthWindowMode(String? mode);
@@ -320,7 +321,7 @@ final class _LinuxModbusHal implements ModbusHal {
   /// Recent group-cycle outcomes for slide_window health (true = failure).
   final List<bool> _healthFailures = [];
 
-  /// Runtime override for [ModbusHealthWindowConfig.mode] (product.ini).
+  /// Runtime override for [ModbusHealthWindowConfig.mode] (App-supplied).
   String? _healthModeOverride;
 
   /// Last watch emit time per attribute (edge or reminder) for remind intervals.

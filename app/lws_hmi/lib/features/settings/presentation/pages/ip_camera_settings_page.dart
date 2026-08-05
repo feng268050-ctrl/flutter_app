@@ -4,6 +4,7 @@ import 'package:cyber_hal/ip_camera.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_demo_recording_paths.dart';
@@ -83,13 +84,17 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
       final product = await widget.services.ensureProductInfo();
       if (mounted) {
         setState(() {
-          _cameraTypeRaw = product.cameraType();
+          _cameraTypeRaw = typedCameraTypeFromProduct(product);
           _overlayCameraHost = effectiveCameraHost(product);
         });
       }
       final host = effectiveCameraHost(product);
-      final version = await _versionCache.fetch(host);
-      if (mounted) setState(() => _cameraVersion = version);
+      if (host.isNotEmpty) {
+        final version = await _versionCache.fetch(host);
+        if (mounted) setState(() => _cameraVersion = version);
+      } else if (mounted) {
+        setState(() => _cameraVersion = kUnavailableDisplay);
+      }
     } catch (_) {}
 
     try {
@@ -140,7 +145,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     String host = _overlayCameraHost ??
         (_session?.camera.cameraHost.isNotEmpty == true
             ? _session!.camera.cameraHost
-            : kDefaultIpCameraHost);
+            : '');
     var deviceName = '';
     try {
       final product = await widget.services.ensureProductInfo();
@@ -151,6 +156,9 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
       }
     } catch (_) {}
     if (!mounted) {
+      return;
+    }
+    if (host.isEmpty) {
       return;
     }
     final applied = await showCameraOverlayDialog(

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/device/product_property_defaults.dart';
 
 void main() {
   test('productDeviceModelDisplay joins brand and model', () {

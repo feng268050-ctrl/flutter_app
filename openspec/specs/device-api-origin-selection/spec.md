@@ -3,9 +3,7 @@
 ## Purpose
 
 Probe and pin the Worker (and optional hyurl) HTTP API base for the active environment tier; derive the device WebSocket URL from the pin. Product cloud traffic MUST NOT invent a static host when no pin exists.
-
 ## Requirements
-
 ### Requirement: Probe and pin Worker API origin
 
 The system SHALL maintain an ordered candidate list of Worker (and optional legacy) HTTP API base URLs derived from the active app environment tier. When a suitable network is available, the system SHALL **concurrently** probe candidates and pin the **first successful** origin in memory for the process (lws-ui `invokeAny` / first-wins; a faster fallback MAY outrank a slower primary). Until a pin exists, the system MUST NOT open product cloud WebSocket connections using a fabricated static host. Probe and subsequent product cloud HTTP MUST honor the system HTTP proxy configuration.
@@ -29,7 +27,7 @@ The system SHALL maintain an ordered candidate list of Worker (and optional lega
 
 ### Requirement: App environment tier selects candidate set
 
-The system SHALL support distinct candidate sets for at least test and production Worker origins. Test and production candidate lists MUST include the primary `*.lasercyber.workers.dev` base and the `lasercyber.hyurl.com/{test|prod}` fallback. The active tier SHALL be readable from persisted App settings and/or `product.ini` / host `set-prop`. Operators SHALL change the tier from Device Information by tapping Device SN five times within five seconds (lws-ui parity), not via a permanent Settings row.
+The system SHALL support distinct candidate sets for at least test and production Worker origins. Test and production candidate lists MUST include the primary `*.lasercyber.workers.dev` base and the `lasercyber.hyurl.com/{test|prod}` fallback. The active tier SHALL be readable from persisted App settings and/or `properties.ini` / host `set-prop`. Operators SHALL change the tier from Device Information by tapping Device SN five times within five seconds (lws-ui parity), not via a permanent Settings row.
 
 #### Scenario: Tier change updates candidates on next probe
 
@@ -58,3 +56,4 @@ The system SHALL build the device WebSocket URL from the pinned HTTP base, mappi
 - **WHEN** the pinned base is `https://api-test.lasercyber.workers.dev`
 - **AND** the device SN is `ABC123`
 - **THEN** the WebSocket URL MUST be `wss://api-test.lasercyber.workers.dev/ws/device?sn=ABC123`
+

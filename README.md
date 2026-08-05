@@ -397,7 +397,7 @@ make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= 
 make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
 make upgrade-process-library    # push process-library for device model; force import (HMI running)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
-make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/product.ini (multi-key OK); restarts hmi
+make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/properties.ini (multi-key OK); restarts hmi
 # brand / model / sn → Vendor Storage: make write-identity (not set-prop / del-prop / OEM seed)
 make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphens stripped → LC001; CHIP_ID=… FORCE=1 to overwrite
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate

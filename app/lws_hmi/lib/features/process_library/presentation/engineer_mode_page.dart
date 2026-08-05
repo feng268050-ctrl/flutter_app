@@ -4,6 +4,7 @@ import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
@@ -484,7 +485,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     try {
       final product = await services.ensureProductInfo();
       return LaserEnableReminderCopy.parseFocusScaleRef(
-        product.focusScaleRef(),
+        effectiveFocusScaleRefFromProduct(product),
       );
     } catch (_) {
       return 0;

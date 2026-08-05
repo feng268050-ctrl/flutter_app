@@ -5,7 +5,7 @@ Portable IP-network camera HAL (`cyber_hal` `ip_camera`) for host, upstream RTSP
 ## Requirements
 ### Requirement: IpCamera is constructed with an injected host and supports multiple instances
 
-`IpCameraController` SHALL take the camera host (IP address or hostname) at construction time. Reachability of that host MAY be via any IP path (dedicated link, Wi‑Fi LAN, routed/internet, etc.); the HAL MUST NOT require a particular interface in its public contract. The package SHALL allow **multiple** `IpCameraController` instances with different hosts to coexist in one process. This product App SHALL instantiate **exactly one** controller whose host comes from `product.ini` `camera_ip` via `ProductInfo` (else a documented fixed default).
+`IpCameraController` SHALL take the camera host (IP address or hostname) at construction time. Reachability of that host MAY be via any IP path (dedicated link, Wi‑Fi LAN, routed/internet, etc.); the HAL MUST NOT require a particular interface in its public contract. The package SHALL allow **multiple** `IpCameraController` instances with different hosts to coexist in one process. This product App SHALL instantiate **at most one** live controller whose host comes from App `effectiveCameraIp` (properties.ini `camera_ip`, else product default `192.168.1.100`).
 
 #### Scenario: Host is constructor-injected
 
@@ -19,11 +19,15 @@ Portable IP-network camera HAL (`cyber_hal` `ip_camera`) for host, upstream RTSP
 - **THEN** each SHALL expose its own health Stream and streams
 - **AND** disposing one MUST NOT tear down the other
 
-#### Scenario: This product uses a single product.ini host
+#### Scenario: This product uses properties.ini host when set
 
-- **WHEN** the LWS HMI App starts its IP-camera integration
-- **THEN** it SHALL construct one `IpCameraController`
-- **AND** the host SHALL be `ProductInfo.cameraIp()` when set, otherwise the product default camera IP
+- **WHEN** the LWS HMI App starts its IP-camera integration and `properties.ini` has `camera_ip=10.0.0.5`
+- **THEN** it SHALL construct one `IpCameraController` with host `10.0.0.5`
+
+#### Scenario: Missing camera_ip uses App product default
+
+- **WHEN** `camera_ip` is absent and the LWS HMI App starts IP-camera integration
+- **THEN** it SHALL construct the controller with `192.168.1.100`
 
 ### Requirement: IpCamera is a network-dependent input domain, not folded into input
 
@@ -173,17 +177,17 @@ The Camera settings page SHALL show a first read-only **Status** row whose trail
 
 ### Requirement: Camera settings shows Camera Type and Camera Version
 
-The Camera settings page SHALL show **Camera Type** as the second row and **Camera Version** as the third row (after Status). Camera Type SHALL use `product.ini` `camera_type` via HAL (`1` → `Blue Light`, `2` → `Red Light`; empty/invalid → `-`). Camera Version SHALL display the camera software version from a bounded device-info read (HTTP `GET …/System/deviceinfo` with Basic Auth `admin:admin`, then normalize `appVersion`: strip leading `v`/`V`, cut at first ` build`/` BUILD`), or `-` when unavailable. The same authenticated, normalized value SHALL feed cloud WS `deviceInfo.cameraVersion` via a shared per-host cache. Host resolution SHALL use trimmed `product.ini` `camera_ip`, falling back to `192.168.1.100` when empty. The page MUST NOT show Camera IP or Preview URL rows.
+The Camera settings page SHALL show **Camera Type** as the second row and **Camera Version** as the third row (after Status). Camera Type SHALL use App-resolved `camera_type` from `ProductInfo.get` + product defaults (`1` → `Blue Light`, `2` → `Red Light`; invalid → `-`; absent → default `1` / Blue Light). Camera Version SHALL display the camera software version from a bounded device-info read (HTTP `GET …/System/deviceinfo` with Basic Auth `admin:admin`, then normalize `appVersion`: strip leading `v`/`V`, cut at first ` build`/` BUILD`), or `-` when unavailable. The same authenticated, normalized value SHALL feed cloud WS `deviceInfo.cameraVersion` via a shared per-host cache. Host resolution SHALL use App `effectiveCameraIp` (properties.ini or product default `192.168.1.100`). The page MUST NOT show Camera IP or Preview URL rows.
 
 #### Scenario: Camera type blue light
 
-- **WHEN** `product.ini` contains `camera_type=1`
+- **WHEN** `properties.ini` contains `camera_type=1`
 - **AND** the operator opens Camera settings
 - **THEN** Camera Type SHALL display `Blue Light`
 
 #### Scenario: Camera type red light
 
-- **WHEN** `product.ini` contains `camera_type=2`
+- **WHEN** `properties.ini` contains `camera_type=2`
 - **AND** the operator opens Camera settings
 - **THEN** Camera Type SHALL display `Red Light`
 
@@ -192,10 +196,15 @@ The Camera settings page SHALL show **Camera Type** as the second row and **Came
 - **WHEN** camera device-info cannot be read
 - **THEN** Camera Version SHALL display `-`
 
+#### Scenario: Missing camera_ip uses default host for version probe
+
+- **WHEN** `camera_ip` is blank and the operator opens Camera settings
+- **THEN** version probe SHALL use the App product default host `192.168.1.100`
+
 #### Scenario: No IP or URL
 
 - **WHEN** the operator opens Camera settings
-- **THEN** Camera IP and Preview URL are not shown as settings rows
+- **THEN** Camera IP and Preview URL MUST NOT be shown as settings rows
 
 ### Requirement: LAN RTSP URL is publishable for remote clients
 
@@ -209,7 +218,7 @@ When the product MediaMTX relay is running, the system SHALL expose a stable LAN
 
 ### Requirement: Optional camera HTTP proxy is deferred unless required
 
-A Wi‑Fi-facing HTTP reverse proxy to the camera module HTTP API (lws-ui `:9000`) remains **deferred** and is not part of `device-local-http-api` on `:5580`. Camera LAN control that IS in scope for `:5580` includes `POST /v1/camera/record`, `POST /v1/camera/show-overlay`, and `GET /v1/camera/ai` (see `device-local-http-api`). Live preview remains RTSP `:8554`. If eth0 isolation later requires tablet-mediated IPC HTTP for mobile tooling, the product MAY add the `:9000` proxy without blocking `:5580` or RTSP.
+A Wi‑Fi-facing HTTP reverse proxy to the camera module HTTP API (lws-ui `:9000`) SHALL remain **deferred** and MUST NOT be part of `device-local-http-api` on `:5580`. Camera LAN control that IS in scope for `:5580` includes `POST /v1/camera/record`, `POST /v1/camera/show-overlay`, and `GET /v1/camera/ai` (see `device-local-http-api`). Live preview remains RTSP `:8554`. If eth0 isolation later requires tablet-mediated IPC HTTP for mobile tooling, the product MAY add the `:9000` proxy without blocking `:5580` or RTSP.
 
 #### Scenario: Missing proxy does not block local HTTP health
 

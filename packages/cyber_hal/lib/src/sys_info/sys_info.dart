@@ -80,7 +80,7 @@ final class SysInfoSnapshot {
   /// Product SN (Vendor Storage or chip ID); null if empty.
   final String? serialNumber;
 
-  /// Chip / SoC serial (never Vendor Storage / product.ini `sn`); null if empty.
+  /// Chip / SoC serial (never Vendor Storage / properties.ini `sn`); null if empty.
   final String? chipId;
 
   /// Factory brand from Vendor Storage; null if empty.
@@ -219,14 +219,14 @@ class DeviceSnReader {
   }
 }
 
-/// Linux [SysInfo] from procfs/sysfs + Vendor Storage / `product.ini` tunables.
+/// Linux [SysInfo] from procfs/sysfs + Vendor Storage + opaque properties.ini bag.
 class LinuxSysInfo implements SysInfo {
   LinuxSysInfo({
     this.deviceSnReader = const DeviceSnReader(),
     this.appVersion,
     this.mountPoints = const <String>['/', '/userdata'],
     this.frameTimingSampler,
-    this.productIniPath = '/var/lib/hal/product.ini',
+    this.productIniPath = kPropertiesIniPath,
     ProductInfo? productInfo,
   }) : _productInfo = productInfo;
 
@@ -240,7 +240,7 @@ class LinuxSysInfo implements SysInfo {
   /// Optional FPS sampler (App injects Flutter timings; stub uses fixed).
   final FrameTimingSampler? frameTimingSampler;
 
-  /// Path to factory product tunables file (not identity authority).
+  /// Path to opaque properties.ini bag (not identity authority).
   final String productIniPath;
 
   ProductInfo? _productInfo;

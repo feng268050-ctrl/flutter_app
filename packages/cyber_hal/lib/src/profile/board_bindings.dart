@@ -62,7 +62,7 @@ final class BoardBindings {
     DeviceSnReader deviceSnReader = const DeviceSnReader(),
     String? appVersion,
     FrameTimingSampler? frameTimingSampler,
-    String productIniPath = kProductIniPath,
+    String productIniPath = kPropertiesIniPath,
     ProductInfo? productInfo,
   }) {
     return LinuxSysInfo(
@@ -78,7 +78,7 @@ final class BoardBindings {
   /// Load [ProductInfo] from [productIniPath] (same SN rules as [sysInfo]).
   Future<ProductInfo> productInfo({
     DeviceSnReader deviceSnReader = const DeviceSnReader(),
-    String productIniPath = kProductIniPath,
+    String productIniPath = kPropertiesIniPath,
   }) {
     return ProductInfo.load(
       path: productIniPath,

@@ -5,7 +5,7 @@ TBD - created by archiving change camera-settings-overlay. Update Purpose after 
 ## Requirements
 ### Requirement: Camera OSD apply uses showtime, NameOverlay, and saveConf
 
-The App SHALL provide a single camera OSD apply path that, given `enable` ∈ {0,1}, `positionx`, and `positiony`, talks to the camera module HTTP API (host from trimmed `product.ini` `camera_ip` else `192.168.1.100`, port 9000, Basic Auth `admin:admin`) in this order:
+The App SHALL provide a single camera OSD apply path that, given `enable` ∈ {0,1}, `positionx`, and `positiony`, talks to the camera module HTTP API (host from App `effectiveCameraIp` — properties.ini or product default `192.168.1.100`; port 9000, Basic Auth `admin:admin`) in this order:
 
 1. `PUT /System/showtime` with enable and position; when enable=1 fill **local** wall-clock fields (device timezone), when enable=0 fill zeros.
 2. `GET /Media/Video/overlays?channel=1`, mutate `VideoOverlay.NameOverlay` (enable=1 → `enable=1`, `x=positionx`, `y=positiony+50`, `name` = trimmed product `model`; enable=0 → `enable=0`), then `PUT` the updated overlay document.
@@ -47,6 +47,11 @@ Coordinate validation SHALL match lws-ui / `show-camera-overlay`: X ∈ [0, 384]
 - **WHEN** camera HTTP is unreachable during apply
 - **THEN** the apply MUST return a structured failure promptly
 - **AND** MUST NOT hang beyond a documented bounded timeout
+
+#### Scenario: Missing camera_ip uses App product default host
+
+- **WHEN** apply is invoked and `properties.ini` has no `camera_ip`
+- **THEN** the apply SHALL target `192.168.1.100` via LWS HMI product defaults
 
 ### Requirement: Settings and LAN HTTP share the OSD apply path
 

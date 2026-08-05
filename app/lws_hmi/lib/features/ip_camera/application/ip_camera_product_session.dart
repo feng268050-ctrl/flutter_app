@@ -5,30 +5,18 @@ import 'package:cyber_hal/ip_camera.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_eth0_path.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_mediamtx_relay.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 
-/// Default IPC address (lws-ui / product.ini fallback).
-const kDefaultIpCameraHost = '192.168.1.100';
+/// Trimmed `camera_ip` from properties.ini, or product default when empty.
+String effectiveCameraHost(ProductInfo product) =>
+    effectiveCameraIpFromProduct(product);
 
-/// Trimmed `camera_ip` from product.ini, or [kDefaultIpCameraHost] when empty.
-String effectiveCameraHost(ProductInfo product) {
-  final t = product.cameraIp().trim();
-  if (t.isNotEmpty) {
-    return t;
-  }
-  return kDefaultIpCameraHost;
-}
-
-/// Resolve host from a raw product.ini value (same rules as [effectiveCameraHost]).
-String effectiveCameraHostFromRaw(String? productCameraIp) {
-  final t = productCameraIp?.trim();
-  if (t != null && t.isNotEmpty) {
-    return t;
-  }
-  return kDefaultIpCameraHost;
-}
+/// Resolve host from a raw properties.ini value (same rules as [effectiveCameraHost]).
+String effectiveCameraHostFromRaw(String? productCameraIp) =>
+    effectiveCameraIp(productCameraIp);
 
 /// LWS product façade: one [IpCameraController] + eth0 path + MediaMTX + UI phases.
 final class IpCameraProductSession {
@@ -50,7 +38,7 @@ final class IpCameraProductSession {
                 ? LinuxIpCameraMediaMtxRelay()
                 : StubIpCameraMediaMtxRelay());
 
-  /// Build with host from product.ini / default; Linux HAL health (TCP :554 default).
+  /// Build with host from properties.ini; blank host = unconfigured (no invent).
   factory IpCameraProductSession.create({
     required String? productCameraIp,
     required EthernetController ethernet,
@@ -149,6 +137,15 @@ final class IpCameraProductSession {
   /// configure so callers (e.g. Settings) do not race past a half-ready relay.
   Future<void> start() async {
     if (_disposed) {
+      return;
+    }
+    if (camera.cameraHost.trim().isEmpty) {
+      _started = true;
+      _emit(const IpCameraUiStatus(
+        phase: IpCameraUiPhase.failed,
+        attempt: 0,
+        detail: 'camera_ip unconfigured',
+      ));
       return;
     }
     if (_started) {

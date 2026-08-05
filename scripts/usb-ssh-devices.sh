@@ -61,7 +61,7 @@ fetch_board_identity_via_ssh() {
 }
 
 enrich_usb_ssh_rows() {
-	# Prefer live board SN + ChipID over host USB iSerial (gadget load may lag product.ini).
+	# Prefer live board SN + ChipID over host USB iSerial (gadget load may lag identity).
 	# USB-MTP has no SSH — pass through without enrich.
 	local mode sn chip loc iface addr usb pair
 	while IFS=$'\t' read -r mode sn chip loc iface addr usb; do

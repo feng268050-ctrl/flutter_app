@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_demo_recording_paths.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
@@ -213,6 +214,12 @@ final class CloudLocalRuntime {
       try {
         final product = await services.ensureProductInfo();
         final host = effectiveCameraHost(product);
+        if (host.isEmpty) {
+          return LocalHttpCameraActionResult.fail(
+            'camera_ip_unconfigured',
+            httpStatus: HttpStatus.badRequest,
+          );
+        }
         final result = await services.cameraShowOverlay.apply(
           cameraHost: host,
           machineModel: cameraOverlayDeviceName(product.brand, product.model),
@@ -867,7 +874,7 @@ final class CloudLocalRuntime {
     final common = commonSettings;
     final misc = miscSettings;
     final sound = soundEffectStore;
-    final focusRaw = product.focusScaleRef().trim();
+    final focusRaw = effectiveFocusScaleRefFromProduct(product);
     final focus = int.tryParse(focusRaw) ?? 0;
     final cameraIp = effectiveCameraHost(product);
 

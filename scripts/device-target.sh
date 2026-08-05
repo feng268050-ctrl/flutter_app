@@ -137,7 +137,7 @@ select_device() {
 	fi
 
 	# SN= (SERIAL= deprecated) matches SN or ChipID.
-	# SIM-EMU / EMU are stable aliases for MODE=EMU (probed SN is product.ini, e.g. SIM-0001).
+	# SIM-EMU / EMU are stable aliases for MODE=EMU (probed SN e.g. SIM-0001).
 	if [[ -n "$sn_sel" && "$sn_sel" != "-" ]]; then
 		for row in "${rows[@]}"; do
 			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"

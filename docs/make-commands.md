@@ -241,7 +241,7 @@ USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockch
 ### `make build-oem`
 
 - **怎么用：** `make build-oem`；模拟器：`OEM_ID=sim_virt make build-oem`
-- **何时用：** 改了 `oem/**`、屏参包、board helpers、`product.ini` seed。
+- **何时用：** 改了 `oem/**`、屏参包、board helpers。
 - **产物：** `oem/out/<OEM_ID>/oem.img`。
 - **参数：** `FACTORY_SKU`（推荐）或直接 `OEM_ID=`；`UBOOT_ID` 无关。
 - **后续日常：** `OEM_ONLY=1 make upgrade`（只刷 oem + 普通重启）。
@@ -413,7 +413,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 ### `make set-prop` / `make del-prop`
 
 - **怎么用：** `make set-prop CAMERA_IP=192.168.1.10`；`make del-prop CAMERA_IP`
-- **何时用：** 改 `/var/lib/hal/product.ini` 可调项（**不能**改 brand/model/sn → 用 `write-identity`）。
+- **何时用：** 改 `/var/lib/hal/properties.ini` 可调项（**不能**改 brand/model/sn → 用 `write-identity`）。
 - **行为：** 成功后重启 `hmi`。
 
 ### `make write-identity`

@@ -56,7 +56,7 @@ migrate_hal_from_hmi() {
 	mkdir -p "$dst_root"
 
 	for name in display.conf sound.conf mouse.conf keyboard.conf datetime.conf \
-		usb-otg.conf product.ini time-sync-mode timezone; do
+		usb-otg.conf properties.ini product.ini time-sync-mode timezone; do
 		src="$src_root/$name"
 		dst="$dst_root/$name"
 		if [ -e "$src" ] && [ ! -e "$dst" ]; then
@@ -68,6 +68,15 @@ migrate_hal_from_hmi() {
 			rm -f "$src"
 		fi
 	done
+
+	# Legacy product.ini → properties.ini (prefer properties.ini if both exist).
+	if [ -f "$dst_root/product.ini" ] && [ ! -f "$dst_root/properties.ini" ]; then
+		log "rename $dst_root/product.ini → properties.ini"
+		mv -f "$dst_root/product.ini" "$dst_root/properties.ini"
+	elif [ -f "$dst_root/product.ini" ] && [ -f "$dst_root/properties.ini" ]; then
+		log "drop stale $dst_root/product.ini (properties.ini exists)"
+		rm -f "$dst_root/product.ini"
+	fi
 
 	# Fold legacy usb-debug into usb-otg.conf when conf missing.
 	if [ ! -f "$dst_root/usb-otg.conf" ] && [ -f "$dst_root/usb-debug" ]; then
@@ -138,6 +147,15 @@ if [ -d "$legacy_userdata" ] && [ ! -L "$legacy_userdata" ]; then
 		rm -rf "$legacy_userdata"
 	fi
 	migrate_hal_from_hmi "$USERDATA_HMI" "$USERDATA_HAL"
+fi
+
+# Rename legacy product.ini already under HAL userdata (not only via HMI fold).
+if [ -f "$USERDATA_HAL/product.ini" ] && [ ! -f "$USERDATA_HAL/properties.ini" ]; then
+	log "rename $USERDATA_HAL/product.ini → properties.ini"
+	mv -f "$USERDATA_HAL/product.ini" "$USERDATA_HAL/properties.ini"
+elif [ -f "$USERDATA_HAL/product.ini" ] && [ -f "$USERDATA_HAL/properties.ini" ]; then
+	log "drop stale $USERDATA_HAL/product.ini (properties.ini exists)"
+	rm -f "$USERDATA_HAL/product.ini"
 fi
 
 exit 0

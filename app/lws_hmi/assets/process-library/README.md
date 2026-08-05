@@ -8,7 +8,7 @@ Drop versioned workbooks here. **Do not** add `manifest.json`, converted JSON, o
 process-library/<model>/<version>.xlsx
 ```
 
-- `<model>`: product.ini `MODEL` with spaces → underscores (`L1 Pro` → `L1_Pro`)
+- `<model>`: Vendor Storage / product `MODEL` with spaces → underscores (`L1 Pro` → `L1_Pro`)
 - `<version>`: numeric semantic version basename, optional leading `v` / `V`
   (`1.0.4.xlsx`, `v1.4.0.xlsx`). **No** alpha/beta/prerelease suffixes.
 

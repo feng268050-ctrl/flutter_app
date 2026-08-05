@@ -27,7 +27,7 @@ Identity value: PRODUCT_SN= — [A-Za-z0-9]; "-" allowed in input but stripped
   (L1P-S-001 → L1PS001) so Rockchip U-Boot serial# / DT serial-number stay intact.
 FORCE=1 required to overwrite a non-empty stored SN.
 
-Emulator / boards without /dev/vendor_storage fail clearly (no product.ini fallback).
+Emulator / boards without /dev/vendor_storage fail clearly (no properties.ini identity fallback).
 
 Optional RockUSB SN-only (macOS upgrade_tool SN / RSN) is documented in README;
 brand/model still require this SSH path after Linux boots.

@@ -125,7 +125,7 @@ Notable files under `/var/lib/hmi` (persist across `make upgrade` / `push-app`):
 | `process-library.db` | Versioned built-in and user process presets; WAL-enabled SQLite |
 | `misc-settings.json`, `mouse.conf`, … | Other HMI prefs |
 
-Factory **tunables** (`camera_ip`, `control_card_comm_alarm_mode`, …) live at `/var/lib/hal/product.ini` → `/userdata/hal/product.ini`. Per-unit **brand** / **model** / **sn** live in Rockchip **Vendor Storage** (`make write-identity`); stale identity keys in `product.ini` are ignored by HAL.
+Factory **tunables** (`camera_ip`, `control_card_comm_alarm_mode`, …) live at `/var/lib/hal/properties.ini` → `/userdata/hal/properties.ini` (legacy `product.ini` renamed once by bind-prefs). Per-unit **brand** / **model** / **sn** live in Rockchip **Vendor Storage** (`make write-identity`); stale identity keys in `properties.ini` are ignored by HAL. OEM packs do **not** seed this file — use `make set-prop` to override. When the file or a key is absent, HAL returns empty and the **LWS HMI App** applies product defaults (`camera_ip=192.168.1.100`, `camera_type=1`, `focus_scale_ref=0`, `control_card_comm_alarm_mode=slide_window`).
 
 ## Prefs: flash vs upgrade (P2.3 / P2.4)
 

@@ -3,7 +3,7 @@ abstract final class OsPaths {
   static const varWpa = '/var/lib/wpa_supplicant';
   static const varNetwork = '/var/lib/network';
   static const varBluetooth = '/var/lib/bluetooth';
-  /// HAL / system platform prefs (`display.conf`, `mouse.conf`, `product.ini`, …).
+  /// HAL / system platform prefs (`display.conf`, `mouse.conf`, `properties.ini`, …).
   static const varHal = '/var/lib/hal';
   /// HMI App-owned stores (common/misc/advanced JSON, alarm DB, push/debug staging).
   static const varHmi = '/var/lib/hmi';

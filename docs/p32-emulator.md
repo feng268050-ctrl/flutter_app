@@ -47,7 +47,7 @@ Do **not** hand-assemble a half-empty VM. The launcher always sets:
 | virtio-gpu-gl 1536×960 | host VirGL (`qemu-virgl`) |
 | USB xHCI | auto-passthrough USB-serial (RS485) + known BT VID:PID; see Modbus note below |
 
-Naming is via rootfs systemd `.link` files (`20-emulator-*.link`). Those MACs never appear on the Rockchip board, so the same rootfs stays safe. Plug the **real IP camera** into the Mac (USB-LAN / Ethernet); guest eth0 is `vmnet-bridged` onto that host iface so product `camera_ip` static path works unchanged. SSH stays on `ethssh` (`make devices` **MODE=EMU**).
+Naming is via rootfs systemd `.link` files (`20-emulator-*.link`). Those MACs never appear on the Rockchip board, so the same rootfs stays safe. Plug the **real IP camera** into the Mac (USB-LAN / Ethernet); guest eth0 is `vmnet-bridged` onto that host iface so `make set-prop CAMERA_IP=…` + properties.ini static path works unchanged. SSH stays on `ethssh` (`make devices` **MODE=EMU**).
 
 ### Network modes (`EMULATOR_NET`)
 

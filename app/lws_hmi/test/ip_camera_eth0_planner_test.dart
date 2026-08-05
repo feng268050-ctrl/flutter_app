@@ -18,4 +18,11 @@ void main() {
       '192.168.1.234',
     );
   });
+
+  test('empty camera host is rejected', () {
+    expect(
+      () => IpCameraEth0AddressPlanner.pickTabletEth0Address('', null),
+      throwsArgumentError,
+    );
+  });
 }

@@ -3,14 +3,12 @@
 ## Purpose
 
 Source-of-truth layout and naming for checked-in process-library Excel (`process-library/<model>/<version>.xlsx`), conversion rules, and ship-only JSON/manifest generation during `build-app`.
-
 ## Requirements
-
 ### Requirement: Process-library sources are Excel-only under process-library
 
 The repository SHALL store default process-library editorial sources under `app/lws_hmi/assets/process-library/<model>/<version>.xlsx`.
 
-Each `<model>` directory name SHALL be the device product `MODEL` string with ASCII spaces replaced by underscores (example: `"L1 Pro"` → `L1_Pro`).
+Each `<model>` directory name SHALL be the device product `MODEL` string with ASCII spaces replaced by underscores (example: `"L1 Pro"` → `L1_Pro`). Product `MODEL` is the Vendor Storage / HAL `ProductInfo.model` string (not a `properties.ini` key).
 
 Each `<version>` basename SHALL be a numeric semantic version (`MAJOR`, `MAJOR.MINOR`, or `MAJOR.MINOR.PATCH`), with or without a leading `v` or `V` prefix (examples: `1.0.4.xlsx`, `v1.4.0.xlsx`). The leading prefix SHALL be stripped when recording `library_version` and when comparing versions. Source basenames SHALL NOT include prerelease or build suffixes (e.g. `-beta`, `-alpha`, `+build`).
 
@@ -70,7 +68,8 @@ Supported models for a converted entry SHALL include the product model obtained 
 - **THEN** prepare SHALL convert `1.4.0.xlsx` for shipping
 - **AND** SHALL NOT include a ship manifest entry for `1.0.4` for that model
 
-#### Scenario: model maps to product.ini MODEL
+#### Scenario: model maps to Vendor Storage MODEL
 
 - **WHEN** prepare converts `process-library/L1_Pro/<version>.xlsx`
 - **THEN** the generated manifest entry’s `supported_models` SHALL include `L1 Pro`
+

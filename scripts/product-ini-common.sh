@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Shared helpers for /var/lib/hal/product.ini upsert/delete (host make set-prop / del-prop).
+# Shared helpers for /var/lib/hal/properties.ini upsert/delete (host make set-prop / del-prop).
 # shellcheck shell=bash
 
-_product_ini_die() {
+_properties_ini_die() {
 	echo "ERROR: $*" >&2
 	exit 1
 }
 
-# Validate product.ini key (lowercase identifier).
+# Validate properties.ini key (lowercase identifier).
 validate_product_ini_key() {
 	local key="$1"
 	if [[ "${key}" =~ ^[a-z][a-z0-9_]*$ ]]; then
@@ -16,10 +16,10 @@ validate_product_ini_key() {
 	if declare -F die >/dev/null 2>&1; then
 		die "invalid property key '${key}' (use lowercase letters, digits, underscores)"
 	fi
-	_product_ini_die "invalid property key '${key}' (use lowercase letters, digits, underscores)"
+	_properties_ini_die "invalid property key '${key}' (use lowercase letters, digits, underscores)"
 }
 
-# OEM-owned identity keys — not mutable via make set-prop / del-prop.
+# Identity keys — not mutable via make set-prop / del-prop (Vendor Storage).
 # Argument may be UPPERCASE or lowercase.
 is_oem_identity_product_key() {
 	local key_lc
@@ -38,7 +38,22 @@ refuse_oem_identity_product_key() {
 	if declare -F die >/dev/null 2>&1; then
 		die "${msg}"
 	fi
-	_product_ini_die "${msg}"
+	_properties_ini_die "${msg}"
+}
+
+# Rename legacy product.ini → properties.ini when destination absent.
+# $1 = properties.ini path (default /var/lib/hal/properties.ini).
+migrate_legacy_product_ini_basename() {
+	local props="${1:-/var/lib/hal/properties.ini}"
+	local dir legacy
+	dir="$(dirname "${props}")"
+	legacy="${dir}/product.ini"
+	if [[ -f "${props}" ]]; then
+		return 0
+	fi
+	if [[ -f "${legacy}" ]]; then
+		mv -f "${legacy}" "${props}"
+	fi
 }
 
 # Upsert key=value in a local properties file (replace existing key or append).

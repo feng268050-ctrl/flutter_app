@@ -11,7 +11,7 @@ The image SHALL document and use:
 - **`/var/lib/wpa_supplicant/`** — Wi‑Fi wanted, `wpa_supplicant.conf`, wlan0 IPv4/DNS
 - **`/var/lib/network/`** — eth0 wanted, eth0 IPv4/DNS; system proxy
 - **`/var/lib/bluetooth/`** — BT wanted, A2DP sink/volume prefs
-- **`/var/lib/hal/`** — `display.conf` / `sound.conf`, mouse/keyboard settings, `datetime.conf` (sync mode + timezone), USB debug role, `product.ini` (`display.conf` keys include `backlight`, `auto_sleep`, `orientation`)
+- **`/var/lib/hal/`** — `display.conf` / `sound.conf`, mouse/keyboard settings, `datetime.conf` (sync mode + timezone), `properties.ini` (`display.conf` keys include `backlight`, `auto_sleep`, `orientation`). Legacy `product.ini` SHALL be migrated to `properties.ini` when the latter is absent.
 - **`/var/lib/hmi/`** — HMI App stores (`common-settings.json`, `misc-settings.json`, `advanced-settings.json`, alarm history DB) and push/debug/A-B staging
 
 LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse preferences MUST be re-applied when `hmi.service` starts; they do NOT require a separate network-style restore oneshot. `common-settings.json` is App-owned and is NOT applied by `settings-restore.service` (Language / Unit are read by the HMI process on start).

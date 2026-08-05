@@ -2,21 +2,43 @@ import 'dart:io';
 
 import 'package:cyber_hal/src/sys_info/sys_info.dart';
 
-/// Default on-device product tunables file (`VAR_HAL` → `/userdata/hal`).
-const String kProductIniPath = '/var/lib/hal/product.ini';
+/// Default on-device properties file (`VAR_HAL` → `/userdata/hal`).
+const String kPropertiesIniPath = '/var/lib/hal/properties.ini';
+
+/// @nodoc Legacy alias — prefer [kPropertiesIniPath].
+const String kProductIniPath = kPropertiesIniPath;
 
 /// Default on-device helper for Vendor Storage brand/model/sn.
 const String kReadProductIdentityPath = '/usr/bin/read-identity';
 
-/// Parses flat `key=value` product.ini (comments / blanks ignored).
+/// One-shot rename of legacy `product.ini` → `properties.ini` when needed.
+Future<void> migrateLegacyProductIniBasename(String propertiesPath) async {
+  try {
+    final props = File(propertiesPath);
+    if (await props.exists()) {
+      return;
+    }
+    final dir = props.parent.path;
+    final legacy = File('$dir/product.ini');
+    if (!await legacy.exists()) {
+      return;
+    }
+    await legacy.rename(propertiesPath);
+  } catch (_) {
+    // Best-effort; bind-prefs / host tools also migrate.
+  }
+}
+
+/// Parses flat `key=value` properties.ini (comments / blanks ignored).
 final class ProductIniReader {
-  const ProductIniReader({this.path = kProductIniPath});
+  const ProductIniReader({this.path = kPropertiesIniPath});
 
   final String path;
 
   /// Returns a map of trimmed keys → trimmed values. Missing file → empty map.
   Future<Map<String, String>> read() async {
     try {
+      await migrateLegacyProductIniBasename(path);
       final file = File(path);
       if (!await file.exists()) {
         return const {};
@@ -93,11 +115,14 @@ class VendorIdentityReader {
   }
 }
 
-/// Factory product identity (Vendor Storage) + tunables from [product.ini].
+/// Product identity (Vendor Storage) + opaque properties bag from [properties.ini].
 ///
-/// Built-in identity fields are class properties; extended keys use accessors.
-/// Missing keys are empty strings (UI maps empty → `-`).
-/// Stale `brand` / `model` / `sn` lines in product.ini are ignored for identity.
+/// **Built-in (known to HAL):** [brand], [model], [sn], [chipId] — identity only.
+/// **Everything else** is an unknown string key via [get]; HAL does not interpret
+/// product tunables such as `camera_ip` / `camera_type` / etc. Product Apps own
+/// key names, typing, and defaults.
+///
+/// Stale `brand` / `model` / `sn` lines in properties.ini are ignored for identity.
 final class ProductInfo {
   const ProductInfo({
     this.brand = '',
@@ -116,34 +141,19 @@ final class ProductInfo {
   /// Vendor Storage SN, else [chipId]; empty if both unavailable.
   final String sn;
 
-  /// Chip / SoC serial (DT or `/proc/cpuinfo`); never from product.ini `sn`.
+  /// Chip / SoC serial (DT or `/proc/cpuinfo`); never from properties.ini `sn`.
   final String chipId;
 
   final Map<String, String> _keys;
 
+  /// Opaque property from properties.ini (or empty). HAL does not know key semantics.
   String get(String key) => (_keys[key] ?? '').trim();
 
-  String cameraIp() => get('camera_ip');
-
-  /// Typed: only `1` or `2`; otherwise empty.
-  String cameraType() {
-    final v = get('camera_type');
-    return (v == '1' || v == '2') ? v : '';
-  }
-
-  String focusScaleRef() => get('focus_scale_ref');
-
-  /// Typed: only `slide_window` or `immediate`; otherwise empty.
-  String controlCardCommAlarmMode() {
-    final v = get('control_card_comm_alarm_mode');
-    return (v == 'slide_window' || v == 'immediate') ? v : '';
-  }
-
-  /// Load tunables from [path]; identity from Vendor Storage (not ini keys).
+  /// Load opaque properties from [path]; identity from Vendor Storage (not ini keys).
   ///
   /// [identityOverride] supplies brand/model/sn for tests (skips helper).
   static Future<ProductInfo> load({
-    String path = kProductIniPath,
+    String path = kPropertiesIniPath,
     DeviceSnReader deviceSnReader = const DeviceSnReader(),
     VendorIdentityReader vendorIdentityReader = const VendorIdentityReader(),
     Map<String, String>? keysOverride,

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Upsert one or more keys into /var/lib/hal/product.ini on the SSH target.
+# Upsert one or more keys into /var/lib/hal/properties.ini on the SSH target.
 # Usage: make set-prop CAMERA_IP=192.168.1.50
 # brand / model / sn are Vendor Storage identity — refused here (use write-identity).
 set -euo pipefail
@@ -10,15 +10,15 @@ source "$ROOT/scripts/usb-ssh-session.sh"
 # shellcheck source=scripts/product-ini-common.sh
 source "$ROOT/scripts/product-ini-common.sh"
 
-TARGET="${PRODUCT_INI_PATH:-/var/lib/hal/product.ini}"
+TARGET="${PROPERTIES_INI_PATH:-${PRODUCT_INI_PATH:-/var/lib/hal/properties.ini}}"
 
-# Make / host workflow vars — not product.ini keys.
+# Make / host workflow vars — not properties.ini keys.
 # SN= remains device selection (exported by Make); never a set-prop product key.
 _SET_PROP_SKIP=(
 	SERIAL CHIP_ID IP IMAGE FLUTTER_SDK BUILD_JOBS BUILD_BIND_MOUNT
 	USB_SSH_PASS USB_SSH_USER USB_SSH_ADDR IFACE
 	DOCKER_IMAGE DOCKER_PLATFORM SCOPE FORCE SRC
-	PRODUCT_INI_PATH
+	PRODUCT_INI_PATH PROPERTIES_INI_PATH
 	SN
 )
 
@@ -31,7 +31,7 @@ Examples:
   make set-prop CAMERA_IP=192.168.1.50 CAMERA_TYPE=2
   make set-prop CONTROL_CARD_COMM_ALARM_MODE=immediate
 
-Command-line keys use UPPERCASE; values are written to /var/lib/hal/product.ini
+Command-line keys use UPPERCASE; values are written to /var/lib/hal/properties.ini
 with lowercase keys. Multiple assignments are applied in one remote write.
 brand / model / sn live in Vendor Storage — use make write-identity (not set-prop).
 hmi.service is restarted once after a successful write.
@@ -109,6 +109,8 @@ local_file="$(mktemp)"
 trap 'rm -f "${local_file}"' EXIT
 
 remote "mkdir -p '$(dirname "$TARGET")'"
+# Prefer properties.ini; rename legacy product.ini on the device when needed.
+remote "props='$TARGET'; dir=\$(dirname \"\$props\"); legacy=\"\$dir/product.ini\"; if [ ! -f \"\$props\" ] && [ -f \"\$legacy\" ]; then mv -f \"\$legacy\" \"\$props\"; fi" >/dev/null 2>&1 || true
 if remote "test -f '$TARGET'" >/dev/null 2>&1; then
 	usb_ssh_session_run_scp "$ROOT" "$IFACE" \
 		"${TARGET_USER}@${TARGET_ADDR}:${TARGET}" "${local_file}" \

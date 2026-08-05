@@ -12,7 +12,7 @@ case "${1:-}" in
 esac
 
 read_vendor_sn() {
-	local helper="${READ_PRODUCT_IDENTITY:-/usr/libexec/hmi/read-product-identity.sh}"
+	local helper="${READ_PRODUCT_IDENTITY:-/usr/libexec/board/read-product-identity.sh}"
 	[ -x "$helper" ] || return 1
 	sn="$("$helper" sn 2>/dev/null || true)"
 	sn="$(printf '%s' "$sn" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"

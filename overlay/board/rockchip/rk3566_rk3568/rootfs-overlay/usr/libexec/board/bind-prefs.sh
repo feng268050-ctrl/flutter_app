@@ -2,7 +2,7 @@
 # Bind FHS subsystem state dirs to userdata (P2.3+). Call after userdata mount.
 set -eu
 
-. /usr/libexec/hmi/paths.sh
+. /usr/libexec/board/paths.sh
 
 log() {
 	echo "bind-prefs: $*"

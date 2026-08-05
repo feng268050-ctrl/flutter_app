@@ -7,8 +7,8 @@ fail() { echo "  [FAIL] $*"; }
 info() { echo "  [INFO] $*"; }
 
 echo "=== 1. USB OTG session ==="
-if [ -x /usr/libexec/hmi/usb-otg-mode.sh ]; then
-	info "$(/usr/libexec/hmi/usb-otg-mode.sh status 2>&1 || true)"
+if [ -x /usr/libexec/usb/usb-otg-mode.sh ]; then
+	info "$(/usr/libexec/usb/usb-otg-mode.sh status 2>&1 || true)"
 else
 	fail "usb-otg-mode.sh missing"
 fi

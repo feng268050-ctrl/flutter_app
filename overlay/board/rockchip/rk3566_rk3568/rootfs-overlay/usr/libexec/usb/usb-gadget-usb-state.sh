@@ -6,7 +6,7 @@
 # We persist the same into /run for HAL/status-bar.
 set -eu
 
-. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+. /usr/libexec/board/paths.sh 2>/dev/null || true
 
 STATE_FILE="${RUN_USB_GADGET_USB_STATE:-/run/usb-gadget-usb-state}"
 # 0 = disconnected (Android: connected=false)

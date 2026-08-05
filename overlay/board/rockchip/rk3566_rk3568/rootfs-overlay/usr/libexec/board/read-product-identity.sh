@@ -6,7 +6,7 @@
 # Empty / missing Vendor Storage field → empty string (caller applies chip-ID fallback for sn).
 set -eu
 
-IDS_FILE="${VENDOR_STORAGE_IDS:-/usr/libexec/hmi/vendor-storage-ids.txt}"
+IDS_FILE="${VENDOR_STORAGE_IDS:-/usr/libexec/board/vendor-storage-ids.txt}"
 VENDOR_STORAGE_BIN="${VENDOR_STORAGE_BIN:-/usr/bin/vendor_storage}"
 
 die() { echo "read-product-identity: ERROR: $*" >&2; exit 1; }

@@ -4,10 +4,10 @@
 # only when the generated weston.ini content actually changes.
 set -eu
 
-. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+. /usr/libexec/board/paths.sh 2>/dev/null || true
 PREF_DIR="${VAR_HAL:-/var/lib/hal}"
 PREF="$PREF_DIR/mouse.conf"
-WESTON_CFG=/usr/libexec/hmi/weston-hmi-config.sh
+WESTON_CFG=/usr/libexec/display/weston-hmi-config.sh
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}"
 WESTON_INI="$RUNTIME_DIR/weston.ini"
 

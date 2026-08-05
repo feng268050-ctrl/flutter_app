@@ -46,7 +46,7 @@ if [ ! -x /usr/bin/systemctl.real ]; then
 fi
 
 log "skipping hmi.service teardown; using SysRq $mode"
-/usr/libexec/hmi/pre-poweroff.sh
+/usr/libexec/power/pre-poweroff.sh
 
 log "sysrq sync"
 sysrq s || true

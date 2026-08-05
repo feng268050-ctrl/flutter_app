@@ -4,7 +4,7 @@
 # Must NOT wipe userdata, rewrite uboot, or overwrite the mounted root.
 set -eu
 
-LIB="${LWS_HMI_AB_LIB:-/usr/libexec/hmi/ab-slot-lib.sh}"
+LIB="${LWS_HMI_AB_LIB:-/usr/libexec/ab/ab-slot-lib.sh}"
 # shellcheck disable=SC1090
 . "$LIB"
 

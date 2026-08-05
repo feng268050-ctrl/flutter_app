@@ -6,7 +6,7 @@ case "${1:-}" in
 poweroff|halt|reboot)
 	mode="$1"
 	shift
-	exec /usr/libexec/hmi/shutdown.sh "$mode" "$@"
+	exec /usr/libexec/power/shutdown.sh "$mode" "$@"
 	;;
 esac
 

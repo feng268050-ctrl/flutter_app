@@ -192,12 +192,12 @@ if command -v systemctl >/dev/null 2>&1; then
 		;;
 	esac
 fi
-if [ -x /usr/libexec/hmi/pre-poweroff.sh ]; then
+if [ -x /usr/libexec/power/pre-poweroff.sh ]; then
 	pass "pre-poweroff.sh present and executable"
 else
 	fail "pre-poweroff.sh missing or not executable"
 fi
-if [ -x /usr/libexec/hmi/shutdown.sh ]; then
+if [ -x /usr/libexec/power/shutdown.sh ]; then
 	pass "shutdown.sh present and executable"
 else
 	fail "shutdown.sh missing or not executable"

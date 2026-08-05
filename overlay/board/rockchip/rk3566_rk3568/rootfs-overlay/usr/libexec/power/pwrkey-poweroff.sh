@@ -33,7 +33,7 @@ request_poweroff() {
 	if mkdir "$LOCK_DIR" 2>/dev/null; then
 		log "KEY_POWER released; requesting poweroff"
 		sleep 0.2
-		/usr/libexec/hmi/shutdown.sh poweroff
+		/usr/libexec/power/shutdown.sh poweroff
 	fi
 }
 

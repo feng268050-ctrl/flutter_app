@@ -7,7 +7,7 @@ set -eu
 # the embedder with code 141 and tear down Weston.
 trap '' PIPE
 
-. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+. /usr/libexec/board/paths.sh 2>/dev/null || true
 
 BUNDLE=/opt/hmi
 MODE_FILE="$BUNDLE/runtime-mode.json"
@@ -245,7 +245,7 @@ portrait_up)
 esac
 
 # shellcheck source=/dev/null
-. /usr/libexec/hmi/weston-hmi-config.sh
+. /usr/libexec/display/weston-hmi-config.sh
 WESTON_INI="$XDG_RUNTIME_DIR/weston.ini"
 weston_write_hmi_ini "$WESTON_INI" "$WESTON_TRANSFORM"
 

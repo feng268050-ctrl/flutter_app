@@ -7,7 +7,7 @@ log() {
 }
 
 log "stopping current g_ether session"
-/usr/libexec/hmi/usb-plug-ssh-stop.sh 2>/dev/null || true
+/usr/libexec/usb/usb-plug-ssh-stop.sh 2>/dev/null || true
 sleep 1
 
 if [ -d /sys/module/g_ether ]; then
@@ -16,4 +16,4 @@ if [ -d /sys/module/g_ether ]; then
 fi
 
 log "starting a fresh g_ether session"
-exec /usr/libexec/hmi/usb-plug-ssh-start.sh
+exec /usr/libexec/usb/usb-plug-ssh-start.sh

@@ -2,7 +2,7 @@
 # Start/stop USB plug-ssh when persisted OTG mode=debug and VBUS (USB=1).
 set -eu
 
-. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+. /usr/libexec/board/paths.sh 2>/dev/null || true
 
 LOCK_DIR="${RUN_USB_PLUG_SSH_VBUS_LOCK:-/run/usb-plug-ssh-vbus.lock}"
 PENDING="${RUN_USB_PLUG_SSH_VBUS_PENDING:-/run/usb-plug-ssh-vbus.pending}"

@@ -48,7 +48,7 @@ cmd_enable() {
 		return 1
 	fi
 	# Do NOT stop USB plug-ssh: LAN binds eth0/wlan0 only; USB keeps 192.168.55.1.
-	/usr/libexec/hmi/ensure-sshd-hostkeys.sh
+	/usr/libexec/ssh/ensure-sshd-hostkeys.sh
 	systemctl reset-failed "$UNIT" 2>/dev/null || true
 	systemctl start "$UNIT"
 	i=0
@@ -73,8 +73,8 @@ cmd_enable() {
 ensure_usb_sshd_if_needed() {
 	[ -d /sys/class/net/usb0 ] || return 0
 	usb_sshd_running && return 0
-	if [ -x /usr/libexec/hmi/usb-plug-ssh-start.sh ]; then
-		/usr/libexec/hmi/usb-plug-ssh-start.sh || true
+	if [ -x /usr/libexec/usb/usb-plug-ssh-start.sh ]; then
+		/usr/libexec/usb/usb-plug-ssh-start.sh || true
 	fi
 }
 

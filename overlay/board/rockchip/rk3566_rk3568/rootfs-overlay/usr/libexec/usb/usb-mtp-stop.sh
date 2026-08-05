@@ -2,7 +2,7 @@
 # Stop USB MTP responder and tear down FunctionFS/configfs gadget.
 set -eu
 
-. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+. /usr/libexec/board/paths.sh 2>/dev/null || true
 
 PIDFILE="${RUN_USB_MTP_PID:-/run/usb-mtp.pid}"
 GADGET_ROOT="${USB_MTP_GADGET_ROOT:-/sys/kernel/config/usb_gadget/lws-mtp}"

@@ -1,4 +1,4 @@
-# FHS OS path layout — source from board helpers: . /usr/libexec/hmi/paths.sh
+# FHS OS path layout — source from board helpers: . /usr/libexec/board/paths.sh
 VAR_WPA=/var/lib/wpa_supplicant
 VAR_NETWORK=/var/lib/network
 VAR_BLUETOOTH=/var/lib/bluetooth

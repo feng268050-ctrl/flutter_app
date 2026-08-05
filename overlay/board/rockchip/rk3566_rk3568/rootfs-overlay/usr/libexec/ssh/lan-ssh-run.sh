@@ -4,7 +4,7 @@
 # keep its own sshd on 192.168.55.1:22 at the same time.
 set -eu
 
-ensure=/usr/libexec/hmi/ensure-sshd-hostkeys.sh
+ensure=/usr/libexec/ssh/ensure-sshd-hostkeys.sh
 [ -x "$ensure" ] && "$ensure"
 mkdir -p /run/sshd
 chmod 0755 /run/sshd 2>/dev/null || true

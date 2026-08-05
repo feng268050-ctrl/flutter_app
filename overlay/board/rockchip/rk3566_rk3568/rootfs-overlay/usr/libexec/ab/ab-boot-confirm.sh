@@ -3,7 +3,7 @@
 # Fresh factory boot (try_boot=0) exits 0 immediately.
 set -eu
 
-LIB=/usr/libexec/hmi/ab-slot-lib.sh
+LIB=/usr/libexec/ab/ab-slot-lib.sh
 # shellcheck disable=SC1090
 . "$LIB"
 

@@ -6,7 +6,7 @@
 # Exits non-zero if /dev/vendor_storage is unavailable (e.g. QEMU emulator).
 set -eu
 
-IDS_FILE="${VENDOR_STORAGE_IDS:-/usr/libexec/hmi/vendor-storage-ids.txt}"
+IDS_FILE="${VENDOR_STORAGE_IDS:-/usr/libexec/board/vendor-storage-ids.txt}"
 VENDOR_STORAGE_BIN="${VENDOR_STORAGE_BIN:-/usr/bin/vendor_storage}"
 
 die() { echo "write-product-identity: ERROR: $*" >&2; exit 1; }
@@ -98,9 +98,9 @@ write_id "$VENDOR_MODEL_NAME" "$MODEL"
 write_id "$VENDOR_SN_NAME" "$PRODUCT_SN"
 
 # Readback verify
-rb_brand="$(/usr/libexec/hmi/read-product-identity.sh brand)"
-rb_model="$(/usr/libexec/hmi/read-product-identity.sh model)"
-rb_sn="$(/usr/libexec/hmi/read-product-identity.sh sn)"
+rb_brand="$(/usr/libexec/board/read-product-identity.sh brand)"
+rb_model="$(/usr/libexec/board/read-product-identity.sh model)"
+rb_sn="$(/usr/libexec/board/read-product-identity.sh sn)"
 [ "$rb_brand" = "$BRAND" ] || die "readback brand mismatch: got '$rb_brand'"
 [ "$rb_model" = "$MODEL" ] || die "readback model mismatch: got '$rb_model'"
 [ "$rb_sn" = "$PRODUCT_SN" ] || die "readback sn mismatch: got '$rb_sn'"

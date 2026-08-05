@@ -5,7 +5,7 @@
 # Does not restart HMI; callers restart when needed.
 set -eu
 
-. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+. /usr/libexec/board/paths.sh 2>/dev/null || true
 PREF_DIR="${VAR_HAL:-/var/lib/hal}"
 CONF="$PREF_DIR/display.conf"
 

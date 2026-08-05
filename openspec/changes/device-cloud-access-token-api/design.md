@@ -45,7 +45,9 @@ HMI cloud stack already pins a Worker origin and calls:
 ### D2 — Token cache + refresh
 
 - Cache `access_token` in memory (and optionally short-lived secure prefs if product already does); do not log the token.
-- Refresh when missing, near expiry (once server TTL is known), or after **401** on a gated call.
+- Treat the token as **opaque** aside from standard JWT **`exp`** (do not require client logic on `typ` / `sn`).
+- Server contract (api-server `device-ed25519-activate`): claims `{ typ: "device", sn, sub: sn, exp }`; TTL = user default **`expireMinutes = 30000`**.
+- Refresh when missing, near `exp` (proactive skew: e.g. refresh when remaining lifetime < 5% or < 1 hour, whichever is simpler to implement), or after **401** on a gated call.
 - Re-mint uses `POST /v1/devices/:sn/token` with Ed25519 signature (no Bearer on mint).
 - After refresh, retry the failed HTTP once; for WS, close and reconnect with new header.
 
@@ -88,5 +90,4 @@ WS URL construction in `device-api-origin-selection` stays `/ws/device?sn=...`. 
 
 ## Open Questions
 
-- Exact proactive refresh skew once JWT TTL is fixed in api-server activate design.
 - Whether WS libraries used on Linux need a specific header API for Bearer (spike in tasks if unclear).

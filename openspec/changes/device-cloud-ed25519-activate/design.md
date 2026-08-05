@@ -50,6 +50,7 @@ Sibling change lives in `../api-server` OpenSpec (device activate + Ed25519 toke
 - Public key: **base64** (standard) of the raw **32-byte** Ed25519 public key.
 - Activate: `POST /v1/devices/:sn/activate` body `{ "public_key": "<base64>" }` (snake_case; ApiResult). No user JWT; device-facing.
 - Token mint (same capability): device signs a canonical message (SN + timestamp/nonce per server spec); server verifies with stored pubkey and returns `access_token` over TLS.
+- Issued JWT (server-signed with platform `JWT_SECRET`; HMI treats as opaque Bearer): claims `{ typ: "device", sn, sub: sn, exp }`; TTL matches user default (`expireMinutes = 30000`). Client MAY read **`exp`** for proactive refresh; MUST NOT decrypt with the device key.
 
 ### D5 — Gating
 
@@ -81,5 +82,4 @@ Sibling change lives in `../api-server` OpenSpec (device activate + Ed25519 toke
 
 ## Open Questions
 
-- Exact token-mint path and signed-message canonicalization → finalize in api-server design; HMI mirrors.
-- Whether WebSocket upgrade should later require device `access_token` (follow-up).
+- Exact token-mint signed-message canonicalization details → finalize in api-server design; HMI mirrors.

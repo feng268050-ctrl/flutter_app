@@ -144,7 +144,7 @@
 ### E3 — 运行时集成 🔄
 
 - E3.1 改造 `hmi-launch.sh` / `hmi.service`:以 eLinux 命令行(或 Weston + 客户端)启动;保留 orientation、SSL_CERT、ALSA、LED 清理逻辑。✅（分支启动；unit 名仍为 `hmi.service`）。
-- E3.2 (仅 C)Weston 配置(单客户端全屏、禁用 shell 装饰、splash handoff、背光/DPMS)。✅ → **`desktop-shell.so`**（非 kiosk）：`panel-position=none` + `background-image=/usr/share/hmi/boot-splash.png`（与 `board/logo` 同图，`make build-boot-logo` 同步 PNG）。kiosk-shell **无** `background-image`，仅纯色 → DRM 接手后黑/白空档。运行时 ini：`weston-hmi-config.sh` → `/run/user/0/weston.ini`；静态/post-hook：`etc/xdg/weston/weston.ini` + `91-weston-ini.sh`。Flutter：`flutter-wayland-client --fullscreen`。
+- E3.2 (仅 C)Weston 配置(单客户端全屏、禁用 shell 装饰、splash handoff、背光/DPMS)。✅ → **`desktop-shell.so`**（非 kiosk）：`panel-position=none` + `background-image=/usr/share/hmi/boot-splash.png`（**横屏直立** 1280×800，`make build-boot-logo` 单独生成，非 portrait `logo.bmp`）。kiosk-shell **无** `background-image`，仅纯色 → DRM 接手后黑/白空档。运行时 ini：`weston-hmi-config.sh` → `/run/user/0/weston.ini`；静态/post-hook：`etc/xdg/weston/weston.ini` + `91-weston-ini.sh`。Flutter：`flutter-wayland-client --fullscreen`。
 - E3.3 boot KPI 实测与优化(R3);对齐 [`boot-verify.sh`](../overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/boot-verify.sh)。🔲 — **已知**：Weston 在 `Output enabled` 时即清掉内核 `drm_logo`（约早于 Flutter 首 present ~1.6–2.2s）；靠 desktop-shell 背景图桥接，不等同 flutter-pi「logo 留到首帧」机制。
 
 ### E4 — 验收与切换 🔲

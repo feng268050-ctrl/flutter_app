@@ -103,7 +103,7 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | **OS (keyboard)** | HID keyboard nodes; `xkeyboard-config` for layouts listed by HAL (`us`, `ru` in v1); `systemctl restart hmi` allowed if layout apply restarts UI |
 | **OS (mouse)** | USB HID mouse (presence probe); prefs in `/var/lib/hal/mouse.conf` |
 | **Helper** | `apply_mouse_settings` — **required**: helper rewrites runtime `weston.ini` via `weston-hmi-config.sh` (`cursor-size`, `[libinput]` accel / natural-scroll / left-handed; **desktop-shell** + splash background unchanged) and restarts `hmi` when needed. Do **not** map `scroll_speed` / `pointer_axes` (Weston ignores them). |
-| **Weston splash bridge** | After Weston takes DRM master the kernel `drm_logo` is gone; `desktop-shell` paints `/usr/share/hmi/boot-splash.png` (same canvas as `board/logo`, from `make build-boot-logo`) until `flutter-wayland-client` covers it. kiosk-shell cannot show a background image. |
+| **Weston splash bridge** | After Weston takes DRM master the kernel `drm_logo` is gone; `desktop-shell` paints `/usr/share/hmi/boot-splash.png` (**logical landscape** 1280×800 upright for `transform=rotate-270`; from `make build-boot-logo`, **not** a copy of portrait `logo.bmp`) until `flutter-wayland-client` covers it. kiosk-shell cannot show a background image. |
 
 ### `hal/datetime`
 

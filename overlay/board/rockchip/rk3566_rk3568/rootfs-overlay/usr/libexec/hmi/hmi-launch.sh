@@ -352,6 +352,13 @@ fi
 
 # desktop-shell.so: paints boot-splash.png until Flutter covers it.
 # VirGL + cocoa,gl=es requires GL renderer scanouts (pixman stays invisible).
+HMI_BOOT_SPLASH="${HMI_BOOT_SPLASH:-/usr/share/hmi/boot-splash.png}"
+if [ ! -f "$HMI_BOOT_SPLASH" ]; then
+	echo "hmi-launch: ERROR: boot splash missing: $HMI_BOOT_SPLASH (Weston falls back to white; logo bridge broken)" >&2
+else
+	echo "hmi-launch: splash=$HMI_BOOT_SPLASH" >&2
+fi
+
 # shellcheck disable=SC2086
 if [ "$is_emulator" -eq 1 ] && [ -n "$EMU_MESA_LIB" ]; then
 	env LD_LIBRARY_PATH="$EMU_MESA_LIB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
@@ -385,7 +392,53 @@ if [ ! -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
 	exit 1
 fi
 
-echo "hmi-launch: emulator — weston=gl dri=virtio_gpu" >&2
+# Socket ready ≠ splash painted: desktop-shell client loads background-image
+# asynchronously. Starting Flutter earlier covers DRM with an opaque black
+# surface before boot-splash.png appears.
+# Note: /proc/*/comm is TASK_COMM_LEN (15 chars) → "weston-desktop" only.
+desktop_shell_ready=0
+i=0
+while [ "$i" -lt 20 ]; do
+	if pidof weston-desktop-shell >/dev/null 2>&1 \
+		|| pgrep -x weston-desktop-shell >/dev/null 2>&1; then
+		desktop_shell_ready=1
+		break
+	fi
+	# BusyBox without pidof/pgrep: match truncated comm or cmdline.
+	for proc in /proc/[0-9]*; do
+		[ -r "$proc/comm" ] || continue
+		comm="$(cat "$proc/comm" 2>/dev/null || true)"
+		case "$comm" in
+		weston-desktop*)
+			desktop_shell_ready=1
+			break
+			;;
+		esac
+		if [ -r "$proc/cmdline" ] \
+			&& tr '\0' ' ' <"$proc/cmdline" 2>/dev/null | grep -q 'weston-desktop-shell'; then
+			desktop_shell_ready=1
+			break
+		fi
+	done
+	[ "$desktop_shell_ready" -eq 1 ] && break
+	if ! kill -0 "$WESTON_PID" 2>/dev/null; then
+		echo "hmi-launch: ERROR: weston exited before desktop-shell ready" >&2
+		exit 1
+	fi
+	sleep 0.1 2>/dev/null || sleep 1
+	i=$((i + 1))
+done
+if [ "$desktop_shell_ready" -eq 1 ]; then
+	# Brief settle so the first background buffer can commit.
+	sleep 0.15 2>/dev/null || sleep 1
+	echo "hmi-launch: desktop-shell ready splash=$HMI_BOOT_SPLASH" >&2
+else
+	echo "hmi-launch: WARNING: weston-desktop-shell not seen within timeout; starting Flutter anyway" >&2
+fi
+
+if [ "$is_emulator" -eq 1 ]; then
+	echo "hmi-launch: emulator — weston=gl dri=virtio_gpu" >&2
+fi
 
 # Keep shell as main PID so we can stop Weston when the client exits.
 # Do NOT use --force-scale-factor: on this board it presents FPS but the

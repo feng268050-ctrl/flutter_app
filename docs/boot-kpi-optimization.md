@@ -95,7 +95,7 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 |----|-----|------|
 | D0-1 | 上电 <1～2 s logo | **done** 板端秒表约 2 s，基本无优化空间 |
 | D0-2 | logo 保持至 Flutter 首帧接替 | **done** 板端确认：`Started hmi` / client 后屏上仍为 boot logo，至 `Freeing drm_logo` |
-| D0-3 | Weston 备选：DRM 接手后 logo 桥接 | **repo** desktop-shell + `boot-splash.png`（见 `embedder-migration-plan.md` E3.2）；冷启验收待补 |
+| D0-3 | Weston：DRM 接手后 logo 桥接 | **repo** desktop-shell + 横屏直立 `boot-splash.png`（`make build-boot-logo`，对齐 `rotate-270`）；`hmi-launch` 等 `weston-desktop-shell` 再起 Flutter；冷启：logo→splash→Home（`journalctl -u hmi` 见 `desktop-shell ready`） |
 
 ### B — systemd 方案 A 瘦身（通常 −1～2 s）
 

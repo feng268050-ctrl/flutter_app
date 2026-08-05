@@ -295,7 +295,7 @@ Weston notes (ynh960):
 
 - `hmi-launch.sh` starts Weston then `flutter-wayland-client --fullscreen`.
 - Shell is **desktop-shell** (`panel-position=none`) so `background-image` can show the product logo after DRM takeover (kiosk-shell only supports a solid color).
-- `make build-boot-logo` also writes overlay `usr/share/hmi/boot-splash.png` from the same canvas as `logo.bmp`.
+- `make build-boot-logo` also writes overlay `usr/share/hmi/boot-splash.png` as **logical landscape** (1280×800 upright) for Weston `transform=rotate-270` — not a copy of portrait `logo.bmp`.
 
 
 ```bash

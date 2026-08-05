@@ -55,6 +55,8 @@ mouse_pointer_speed_to_accel() {
 # desktop-shell (not kiosk): kiosk only has solid background-color; we need
 # background-image so the product logo survives until Flutter's first frame
 # (legacy DRM stacks kept kernel drm_logo).
+# Splash PNG is logical landscape (make build-boot-logo) for transform=rotate-270
+# — not the portrait pre-rotated kernel logo.bmp.
 # usage: weston_write_hmi_ini <out_path> <transform>
 weston_write_hmi_ini() {
 	out="$1"

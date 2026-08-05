@@ -52,11 +52,11 @@ Per-unit identity SHALL be stored in Rockchip Vendor Storage with this ID map: *
 
 ### Requirement: Host make write-identity provisions Vendor Storage
 
-The host build system SHALL provide `make write-identity` that writes `BRAND`, `MODEL`, and product serial onto the selected board over USB-SSH or registered SSH (same device selection rules as `push-app` / `shell`: `SN=` / `CHIP_ID=` / `IP=` for selection). The identity serial value SHALL be passed as **`PRODUCT_SN=`** so it is not confused with device-selection `SN=`. The host SHALL invoke on-board Vendor Storage write helpers (not package identity into `factory.img`). If a non-empty SN is already stored and `FORCE` is not `1`, the command SHALL refuse to overwrite and exit non-zero. After a successful write, tooling SHALL verify readback of the three fields and SHOULD restart `hmi.service` so the App reloads identity.
+The host build system SHALL provide `make write-identity` that writes `BRAND`, `MODEL`, and product serial onto the selected board over USB-SSH or registered SSH (same device selection rules as `push-app` / `shell`: `SN=` / `IP=` for selection; **`CHIP_ID=` MUST NOT be accepted**). The identity serial value SHALL be passed as **`PRODUCT_SN=`** so it is not confused with device-selection `SN=`. The host SHALL invoke on-board Vendor Storage write helpers (not package identity into `factory.img`). If a non-empty SN is already stored and `FORCE` is not `1`, the command SHALL refuse to overwrite and exit non-zero. After a successful write, tooling SHALL verify readback of the three fields and SHOULD restart `hmi.service` so the App reloads identity.
 
 #### Scenario: First-time write
 
-- **WHEN** Vendor Storage SN is empty and the operator runs `CHIP_ID=ABC123 make write-identity BRAND=LaserCyber MODEL=L1 Pro PRODUCT_SN=LC-001`
+- **WHEN** Vendor Storage SN is empty and the operator runs `SN=ABC123 make write-identity BRAND=LaserCyber MODEL=L1 Pro PRODUCT_SN=LC-001`
 - **THEN** the board SHALL store brand/model and SN `LC001` (hyphens stripped) in Vendor Storage and readback SHALL match
 
 #### Scenario: Strip hyphens from PRODUCT_SN
@@ -81,7 +81,7 @@ The host build system SHALL provide `make write-identity` that writes `BRAND`, `
 
 ### Requirement: HAL and board serial helpers read identity from Vendor Storage
 
-HAL `ProductInfo.brand`, `ProductInfo.model`, and `ProductInfo.sn` SHALL be loaded from Vendor Storage (IDs above), not from `product.ini` keys `brand` / `model` / `sn`. `ProductInfo.chipId` SHALL remain chip/board serial and MUST NEVER equal the product SN key from `product.ini`. Board helpers used for USB gadget iSerial and host `make devices` SN enrichment SHALL use the same product SN rule as `ProductInfo.sn`. Stale `brand`/`model`/`sn` lines in `/var/lib/hal/product.ini` MUST be ignored for these properties.
+HAL `ProductInfo.brand`, `ProductInfo.model`, and `ProductInfo.sn` SHALL be loaded from Vendor Storage (IDs above), not from `product.ini` keys `brand` / `model` / `sn`. `ProductInfo.chipId` SHALL remain chip/board serial for Apps, diagnostics, and secrets and MUST NEVER equal the product SN key from `product.ini`. Board helpers used for USB gadget iSerial and host `make devices` SN enrichment SHALL use the same product SN rule as `ProductInfo.sn`. Host `make devices` MUST list **SN** only (no ChipID column). Stale `brand`/`model`/`sn` lines in `/var/lib/hal/product.ini` MUST be ignored for these properties.
 
 #### Scenario: Ini stale keys ignored
 

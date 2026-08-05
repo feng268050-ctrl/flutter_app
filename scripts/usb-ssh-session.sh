@@ -36,6 +36,8 @@ usb_ssh_session_load_env() {
 	TRANSPORT=""
 	IFACE=""
 	LOCATION_ID=""
+	# Reject deprecated CHIP_ID= before select (device_select_sn also checks).
+	reject_chip_id_env
 }
 
 usb_ssh_session_is_remote() {

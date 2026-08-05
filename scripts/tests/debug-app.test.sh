@@ -103,11 +103,11 @@ else
 	fail=1
 fi
 
-# TSV is MODE SN ChipID LocationID IFACE IP USB — must not treat ChipID as IFACE.
-if grep -qE 'read -r _mode _serial _chip _loc iface' "$ROOT/scripts/usb-ssh-host-setup.sh"; then
-	echo "OK  usb-ssh-host-setup parses ChipID column"
+# TSV is MODE SN LocationID IFACE IP USB — must not treat LocationID as IFACE.
+if grep -qE 'read -r _mode _serial _loc iface' "$ROOT/scripts/usb-ssh-host-setup.sh"; then
+	echo "OK  usb-ssh-host-setup parses SN-only TSV (IFACE at field 4)"
 else
-	echo "FAIL usb-ssh-host-setup TSV parse missing ChipID (breaks make debug-app)" >&2
+	echo "FAIL usb-ssh-host-setup TSV parse wrong (breaks make debug-app)" >&2
 	fail=1
 fi
 

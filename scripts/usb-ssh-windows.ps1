@@ -54,11 +54,11 @@ function Get-GadgetNetAdapters {
 		$loc = ($pnp -replace '\\', '_')
 		if ($isMtp) {
 			$usb = ("0x{0}:0x{1}" -f $Vid, $PidMtp)
-			# MODE SN ChipID LocationID IFACE IP USB
-			$rows += ("USB-MTP`t{0}`t{0}`t{1}`t-`t-`t{2}" -f $serial, $loc, $usb)
+			# MODE SN LocationID IFACE IP USB
+			$rows += ("USB-MTP`t{0}`t{1}`t-`t-`t{2}" -f $serial, $loc, $usb)
 		} else {
 			$usb = ("0x{0}:0x{1}" -f $Vid, $PidSsh)
-			$rows += ("USB-SSH`t{0}`t{0}`t{1}`t{2}`t{3}`t{4}" -f $serial, $loc, $iface, $TargetAddress, $usb)
+			$rows += ("USB-SSH`t{0}`t{1}`t{2}`t{3}`t{4}" -f $serial, $loc, $iface, $TargetAddress, $usb)
 		}
 	}
 
@@ -79,7 +79,7 @@ function Get-GadgetNetAdapters {
 			}
 			$loc = ($pnp -replace '\\', '_')
 			$usb = ("0x{0}:0x{1}" -f $Vid, $PidSsh)
-			$rows += ("USB-SSH`t{0}`t{0}`t{1}`t{2}`t{3}`t{4}" -f $serial, $loc, $iface, $TargetAddress, $usb)
+			$rows += ("USB-SSH`t{0}`t{1}`t{2}`t{3}`t{4}" -f $serial, $loc, $iface, $TargetAddress, $usb)
 		}
 	}
 

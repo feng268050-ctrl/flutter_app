@@ -127,19 +127,23 @@ ssh_endpoint_reachable() {
 	(echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1
 }
 
-# Device selection: SN (or deprecated SERIAL) matches make devices SN or ChipID columns.
-# CHIP_ID matches ChipID only (when SN= would be ambiguous across boards).
+# Device selection: SN (or deprecated SERIAL) matches make devices SN column.
+# CHIP_ID= is removed from operator selection (die with hint).
+reject_chip_id_env() {
+	if [[ -n "${CHIP_ID:-}" ]]; then
+		echo "ERROR: CHIP_ID= is no longer supported for device selection; use SN=${CHIP_ID} (see make devices)." >&2
+		exit 1
+	fi
+}
+
 device_select_sn() {
+	reject_chip_id_env
 	printf '%s' "${SN:-${SERIAL:-}}"
 }
 
-device_select_chip_id() {
-	printf '%s' "${CHIP_ID:-}"
-}
-
-# Remote shell snippet: print SN<TAB>ChipID.
+# Remote shell snippet: print SN<TAB>chip (chip used only for SN fallback / HAL).
 # SN: Vendor Storage via read-serial (same as ProductInfo); empty → chip ID.
-# ChipID: prefer SoC Serial from /proc/cpuinfo, then DT, then machine-id.
+# Chip: prefer SoC Serial from /proc/cpuinfo, then DT, then machine-id.
 # Prefer inline cpuinfo over `read-serial --chip-id` when that helper still
 # prefers a polluted DT serial-number (half-upgraded boards).
 remote_device_identity_sh() {
@@ -209,9 +213,10 @@ printf '%s\t%s\n' "$sn" "$chip"
 EOF
 }
 
-# Prints SN<TAB>ChipID via remote SSH argv prefix (sshpass/ssh … user@host).
+# Prints SN<TAB>chip via remote SSH argv prefix (sshpass/ssh … user@host).
+# Chip is for SN fallback only — host device tables emit SN alone.
 # Pipe the script on stdin — do NOT use `ssh … sh -c "$(script)"`: remote shells
-# expand $vars / break awk inside the -c string, which collapses SN to ChipID.
+# expand $vars / break awk inside the -c string, which collapses SN to chip.
 remote_device_identity_via_ssh() {
 	local out sn chip
 	out="$(remote_device_identity_sh | "$@" sh 2>/dev/null | tr -d '\r' | head -n1 || true)"
@@ -224,7 +229,7 @@ remote_device_identity_via_ssh() {
 	printf '%s\t%s\n' "$sn" "$chip"
 }
 
-# Back-compat: SN only (first field of identity probe).
+# SN only (first field of identity probe).
 remote_device_serial_via_ssh() {
 	local pair sn chip
 	pair="$(remote_device_identity_via_ssh "$@" || true)"
@@ -257,7 +262,7 @@ warn_sshpass_if_usb_ssh() {
 	command -v sshpass >/dev/null 2>&1 && return 0
 	{
 		echo ""
-		echo "NOTE: USB-SSH/SSH device(s) present — install sshpass for SN/ChipID lookup, push-app, and reboot:"
+		echo "NOTE: USB-SSH/SSH device(s) present — install sshpass for SN lookup, push-app, and reboot:"
 		sshpass_install_hint
 	} >&2
 }

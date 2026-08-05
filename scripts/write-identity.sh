@@ -2,8 +2,8 @@
 # Provision brand/model/product SN into Rockchip Vendor Storage on the selected board.
 # Usage:
 #   make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001
-#   CHIP_ID=ABC123 FORCE=1 make write-identity BRAND=… MODEL=… PRODUCT_SN=…
-# Device selection: SN= / CHIP_ID= / IP= (same as push-app / set-prop).
+#   SN=ABC123 FORCE=1 make write-identity BRAND=… MODEL=… PRODUCT_SN=…
+# Device selection: SN= / IP= (same as push-app / set-prop).
 # Identity payload: BRAND= MODEL= PRODUCT_SN= (hyphens stripped). FORCE=1 overwrites SN.
 set -euo pipefail
 
@@ -17,12 +17,12 @@ usage() {
 	cat <<'EOF'
 Usage:
   make write-identity BRAND=<brand> MODEL=<model> PRODUCT_SN=<sn>
-  CHIP_ID=<chipid> make write-identity BRAND=… MODEL=… PRODUCT_SN=… [FORCE=1]
+  SN=<sn> make write-identity BRAND=… MODEL=… PRODUCT_SN=… [FORCE=1]
 
 Writes brand / model / product SN into Rockchip Vendor Storage on the board
 (SSH → /usr/bin/write-identity). Does not package identity into factory.img.
 
-Device selection (same as push-app / set-prop): SN= / CHIP_ID= / IP=
+Device selection (same as push-app / set-prop): SN= / IP=
 Identity value: PRODUCT_SN= — [A-Za-z0-9]; "-" allowed in input but stripped
   (L1P-S-001 → L1PS001) so Rockchip U-Boot serial# / DT serial-number stay intact.
 FORCE=1 required to overwrite a non-empty stored SN.

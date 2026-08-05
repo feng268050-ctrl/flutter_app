@@ -126,15 +126,16 @@ The P1 rootfs (excluding `/opt/hmi` Flutter app) SHOULD be between 220 MB and 45
 The repo SHALL provide `scripts/flash-usb.sh` and Makefile targets for ynh960 firmware programming on a **macOS, Linux (x86_64), or Windows (Git Bash / MSYS2)** host with Rockchip **upgrade_tool** vendored at `tools/upgrade_tool/{macos,linux,windows}/`, aligned with `tools/upgrade_tool/命令行开发工具使用文档.pdf`. The host script SHALL select the platform subdirectory from the host OS (`Darwin` → `macos`, `Linux` → `linux`, `MINGW*` / `MSYS*` / `CYGWIN*` → `windows`).
 
 - `make audit` — pre-flight before flash (firmware on host, upgrade_tool, RockUSB)
-- `make devices` — list connected devices (MODE / SN / ChipID / LocationID / USB)
+- `make devices` — list connected devices (MODE / SN / LocationID / USB; no ChipID column)
 - `make flash` — unified flash: `uf update.img`; auto `ul` loader when RockUSB is Maskrom; `IMAGE=` overrides firmware path
 
-Multi-device selection SHALL use `SN=` matching table **SN** or **ChipID** (adb SerialNo or RockUSB SerialNo for those modes). macOS Docker builds SHALL auto-export `output/firmware/` to host after `make build-img`.
+Multi-device selection SHALL use `SN=` matching table **SN** (adb SerialNo or RockUSB SerialNo for those modes). Host tooling MUST NOT accept **`CHIP_ID=`** as a device selector. macOS Docker builds SHALL auto-export `output/firmware/` to host after `make build-img`.
 
 #### Scenario: devices table lists RockUSB Loader
 
 - **WHEN** board is in RockUSB Loader mode and developer runs `make devices`
-- **THEN** output includes a row with MODE `Loader`, SN and ChipID matching device SerialNo, LocationID, and USB `0x2207:…`
+- **THEN** output includes a row with MODE `Loader`, SN matching device SerialNo, LocationID, and USB `0x2207:…`
+- **AND** the table SHALL NOT include a ChipID column
 
 #### Scenario: bootloader enters RockUSB from Android
 

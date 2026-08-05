@@ -22,14 +22,14 @@ Deployment SHALL stage files under **`/var/lib/hmi/push-app-staging/`**, replace
 
 ### Requirement: make devices lists RockUSB and USB-SSH targets
 
-The repository SHALL extend **`make devices`** to list **RockUSB** flash devices (`upgrade_tool ld`), **USB-SSH** Linux boards, **registered remote SSH** boards (`MODE=SSH`), and **adb-connected Android** devices (`MODE` column: `Loader`, `Maskrom`, `USB-SSH`, `SSH`, `android`, etc.) in a **single merged table** with columns including **`SN`**, **`ChipID`**, **`LocationID`**, host **`IFACE`** (USB-SSH only; `-` for SSH), and target **`IP`** (`192.168.55.1` for USB-SSH; registered IP for SSH; matches `IP=` selection for `MODE=SSH`). **SN** follows product identity (Vendor Storage SN, else chip ID). **ChipID** is the chip/board serial; for android adb and RockUSB loader rows, ChipID (and SN) SHALL be the adb SerialNo / upgrade_tool SerialNo. There SHALL NOT be a separate **`make devices-usb-ssh`** target.
+The repository SHALL extend **`make devices`** to list **RockUSB** flash devices (`upgrade_tool ld`), **USB-SSH** Linux boards, **registered remote SSH** boards (`MODE=SSH`), and **adb-connected Android** devices (`MODE` column: `Loader`, `Maskrom`, `USB-SSH`, `SSH`, `android`, etc.) in a **single merged table** with columns including **`SN`**, **`LocationID`**, host **`IFACE`** (USB-SSH only; `-` for SSH), and target **`IP`** (`192.168.55.1` for USB-SSH; registered IP for SSH; matches `IP=` selection for `MODE=SSH`). The table MUST NOT include a **ChipID** column. **SN** follows product identity (Vendor Storage SN, else chip serial); for android adb and RockUSB loader rows, SN SHALL be the adb SerialNo / upgrade_tool SerialNo. There SHALL NOT be a separate **`make devices-usb-ssh`** target.
 
 When USB-SSH device(s) are present and **`sshpass`** is not installed, the command SHALL print an install hint (push-app / reboot require sshpass).
 
 #### Scenario: Two boards connected
 
 - **WHEN** two boards are connected via USB ECM
-- **THEN** the command output contains two rows with distinct `SN` or `ChipID` values and distinct host `IFACE` values
+- **THEN** the command output contains two rows with distinct `SN` values and distinct host `IFACE` values
 
 #### Scenario: Mixed RockUSB and USB-SSH
 
@@ -43,7 +43,7 @@ When USB-SSH device(s) are present and **`sshpass`** is not installed, the comma
 
 ### Requirement: SN selects target for push-app
 
-When more than one deployable Linux target is available (USB-SSH and/or registered SSH), **`make push-app`** SHALL require **`SN=`** matching the board **SN** or **ChipID**, or **`IP=`** matching a registered **`MODE=SSH`** address. **`IP=`** SHALL NOT select USB-SSH devices. Multi-device selection remains consistent with `scripts/flash-usb.sh` SN ergonomics for USB-SSH. Deprecated **`SERIAL=`** SHALL be accepted as aliases for **`SN=`**. **`CHIP_ID=`** SHALL select by ChipID only.
+When more than one deployable Linux target is available (USB-SSH and/or registered SSH), **`make push-app`** SHALL require **`SN=`** matching the board **SN**, or **`IP=`** matching a registered **`MODE=SSH`** address. **`IP=`** SHALL NOT select USB-SSH devices. Multi-device selection remains consistent with `scripts/flash-usb.sh` SN ergonomics for USB-SSH. Deprecated **`SERIAL=`** SHALL be accepted as an alias for **`SN=`**. Host tooling MUST NOT accept **`CHIP_ID=`** as a device selector.
 
 #### Scenario: Multiple devices without SN
 
@@ -52,8 +52,8 @@ When more than one deployable Linux target is available (USB-SSH and/or register
 
 #### Scenario: Push with SN
 
-- **WHEN** `SN=<sn|chipid> make push-app` is run with multiple devices connected
-- **THEN** artifacts are deployed only to the board matching that SN or ChipID
+- **WHEN** `SN=<sn> make push-app` is run with multiple devices connected
+- **THEN** artifacts are deployed only to the board matching that SN
 
 #### Scenario: Push with IP to SSH device
 
@@ -127,8 +127,8 @@ The repository SHALL provide **`make reboot-loader`** (`scripts/flash-usb.sh`) s
 
 #### Scenario: SN selects board for reboot-loader
 
-- **WHEN** multiple USB-SSH devices are connected and the user runs `SN=<sn|chipid> make reboot-loader`
-- **THEN** only the board matching that serial receives the reboot command and becomes the RockUSB Loader device
+- **WHEN** multiple USB-SSH devices are connected and the user runs `SN=<sn> make reboot-loader`
+- **THEN** only the board matching that SN receives the reboot command and becomes the RockUSB Loader device
 
 #### Scenario: adb fallback when no USB-SSH target
 

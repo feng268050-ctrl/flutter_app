@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Host registry for remote SSH boards (make connect / disconnect / devices SSH rows).
 # Registry: .cache/lws-hmi/ssh-devices.tsv — IP<TAB>SN
-# Output TSV: MODE, SN, ChipID, LocationID, IFACE, IP, USB
+# Output TSV: MODE, SN, LocationID, IFACE, IP, USB
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,7 +32,6 @@ Usage: $0 {connect|disconnect|dismiss-target|list|--tsv|--select} [args]
 Env:
   IP=<addr>                  address for connect/disconnect/select
   SN                         select among registered SSH devices (SERIAL= deprecated)
-  CHIP_ID                    select by ChipID only
   USB_SSH_USER/PASS          same credentials as USB-SSH (default root/rockchip)
 EOF
 }
@@ -100,9 +99,9 @@ registry_dismiss_matching() {
 }
 
 ssh_row() {
-	local sn="$1" chip="$2" addr="$3"
-	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-		"$SSH_MODE" "$sn" "$chip" "-" "-" "$addr" "-"
+	local sn="$1" addr="$2"
+	printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+		"$SSH_MODE" "$sn" "-" "-" "$addr" "-"
 }
 
 remote_ssh_opts() {
@@ -143,18 +142,16 @@ list_ssh_devices() {
 		[[ -n "${ip:-}" ]] || continue
 		[[ -n "${serial:-}" ]] || serial="-"
 		sn="$serial"
-		chip="-"
-		# Refresh SN/ChipID from the board when reachable.
+		# Refresh SN from the board when reachable (chip used only for SN fallback).
 		live="$(fetch_identity_via_ssh "$ip" 2>/dev/null || true)"
 		if [[ -n "$live" ]]; then
 			IFS=$'\t' read -r sn chip <<<"$live"
 			[[ -n "$sn" ]] || sn="-"
-			[[ -n "$chip" ]] || chip="-"
 			if [[ "$sn" != "$serial" ]]; then
 				registry_write_row "$ip" "$sn"
 			fi
 		fi
-		ssh_row "$sn" "$chip" "$ip"
+		ssh_row "$sn" "$ip"
 	done <"$REGISTRY_FILE"
 }
 
@@ -179,9 +176,8 @@ cmd_connect() {
 	live="$(fetch_identity_via_ssh "$ip")"
 	IFS=$'\t' read -r sn chip <<<"${live:-}"
 	[[ -n "$sn" ]] || sn="-"
-	[[ -n "$chip" ]] || chip="-"
 	registry_write_row "$ip" "$sn"
-	echo "Registered SSH device: IP=$ip SN=$sn ChipID=$chip"
+	echo "Registered SSH device: IP=$ip SN=$sn"
 	echo "  make devices | IP=$ip make shell | IP=$ip make push-app"
 }
 
@@ -205,7 +201,7 @@ cmd_dismiss_target() {
 			serial="$(
 				bash "$ROOT/scripts/usb-ssh-devices.sh" --tsv 2>/dev/null |
 					awk -F'\t' -v iface="$iface" \
-						'$1 == "USB-SSH" && $5 == iface {print $2; exit}' ||
+						'$1 == "USB-SSH" && $4 == iface {print $2; exit}' ||
 					true
 			)"
 		fi
@@ -216,17 +212,16 @@ cmd_dismiss_target() {
 }
 
 select_ssh_device() {
-	local sn_sel chip_sel pick_ip
+	local sn_sel pick_ip
 	local -a rows=()
-	local row mode sn chip loc iface addr usb
+	local row mode sn loc iface addr usb
 
 	sn_sel="$(device_select_sn)"
-	chip_sel="$(device_select_chip_id)"
 	pick_ip="${IP:-}"
 
-	while IFS="$SSH_FS" read -r mode sn chip loc iface addr usb; do
+	while IFS="$SSH_FS" read -r mode sn loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
-		rows+=("${mode}${SSH_FS}${sn}${SSH_FS}${chip}${SSH_FS}${loc}${SSH_FS}${iface}${SSH_FS}${addr}${SSH_FS}${usb}")
+		rows+=("${mode}${SSH_FS}${sn}${SSH_FS}${loc}${SSH_FS}${iface}${SSH_FS}${addr}${SSH_FS}${usb}")
 	done < <(list_ssh_devices)
 
 	if [[ ${#rows[@]} -eq 0 ]]; then
@@ -236,7 +231,7 @@ select_ssh_device() {
 	if [[ -n "$pick_ip" ]]; then
 		pick_ip="$(normalize_ip "$pick_ip" || die "invalid IP=$pick_ip")"
 		for row in "${rows[@]}"; do
-			IFS="$SSH_FS" read -r mode sn chip loc iface addr usb <<<"$row"
+			IFS="$SSH_FS" read -r mode sn loc iface addr usb <<<"$row"
 			[[ "$addr" == "$pick_ip" ]] || continue
 			printf '%s\n' "$loc" "$iface" "$addr"
 			return 0
@@ -244,20 +239,10 @@ select_ssh_device() {
 		die "IP=$pick_ip not registered (make connect $pick_ip)"
 	fi
 
-	if [[ -n "$chip_sel" && "$chip_sel" != "-" ]]; then
-		for row in "${rows[@]}"; do
-			IFS="$SSH_FS" read -r mode sn chip loc iface addr usb <<<"$row"
-			[[ "$chip" == "$chip_sel" ]] || continue
-			printf '%s\n' "$loc" "$iface" "$addr"
-			return 0
-		done
-		die "CHIP_ID=$chip_sel not found in SSH devices (make devices / make connect)"
-	fi
-
 	if [[ -n "$sn_sel" && "$sn_sel" != "-" ]]; then
 		for row in "${rows[@]}"; do
-			IFS="$SSH_FS" read -r mode sn chip loc iface addr usb <<<"$row"
-			[[ "$sn" == "$sn_sel" || "$chip" == "$sn_sel" ]] || continue
+			IFS="$SSH_FS" read -r mode sn loc iface addr usb <<<"$row"
+			[[ "$sn" == "$sn_sel" ]] || continue
 			printf '%s\n' "$loc" "$iface" "$addr"
 			return 0
 		done
@@ -268,7 +253,7 @@ select_ssh_device() {
 		die "${#rows[@]} SSH devices — set IP= or SN= (see make devices)"
 	fi
 
-	IFS="$SSH_FS" read -r mode sn chip loc iface addr usb <<<"${rows[0]}"
+	IFS="$SSH_FS" read -r mode sn loc iface addr usb <<<"${rows[0]}"
 	printf '%s\n' "$loc" "$iface" "$addr"
 }
 

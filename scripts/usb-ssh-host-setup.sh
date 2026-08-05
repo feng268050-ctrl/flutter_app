@@ -38,8 +38,8 @@ find_mac_usb_gadget_iface() {
 	local row iface
 	row="$(bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 || true)"
 	if [[ -n "$row" ]]; then
-		# TSV: MODE SN ChipID LocationID IFACE IP USB
-		IFS=$'\t' read -r _mode _serial _chip _loc iface _addr _usb <<<"$row"
+		# TSV: MODE SN LocationID IFACE IP USB
+		IFS=$'\t' read -r _mode _serial _loc iface _addr _usb <<<"$row"
 		if [[ -n "$iface" && "$iface" != "-" ]]; then
 			echo "$iface"
 			return 0
@@ -70,8 +70,8 @@ find_linux_usb_gadget_iface() {
 }
 
 find_windows_usb_gadget_iface() {
-	local mode sn chip loc iface addr usb
-	while IFS=$'\t' read -r mode sn chip loc iface addr usb; do
+	local mode sn loc iface addr usb
+	while IFS=$'\t' read -r mode sn loc iface addr usb; do
 		[[ "$mode" == "USB-SSH" ]] || continue
 		[[ -n "$iface" && "$iface" != "-" ]] || continue
 		echo "$iface"
@@ -190,9 +190,7 @@ echo "Ping board at $TARGET_ADDR ..."
 if ping_target "$IFACE"; then
 	echo ""
 	sn="$(USB_SSH_SKIP_ENRICH=1 bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $2}')"
-	chip="$(USB_SSH_SKIP_ENRICH=1 bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $3}')"
 	[[ -n "$sn" && "$sn" != "-" ]] && echo "Board SN: $sn"
-	[[ -n "$chip" && "$chip" != "-" && "$chip" != "$sn" ]] && echo "Board ChipID: $chip"
 	echo ""
 	echo "OK — try: ssh root@${TARGET_ADDR}   (password: rockchip)"
 	echo "     or: make push-app"

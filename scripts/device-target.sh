@@ -17,18 +17,18 @@ die() {
 FS=$'\t'
 
 collect_rows() {
-	local mode sn chip loc iface addr usb
-	while IFS=$'\t' read -r mode sn chip loc iface addr usb; do
+	local mode sn loc iface addr usb
+	while IFS=$'\t' read -r mode sn loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
-		printf '%s\n' "${mode}${FS}${sn}${FS}${chip}${FS}${loc}${FS}${iface}${FS}${addr}${FS}${usb}"
+		printf '%s\n' "${mode}${FS}${sn}${FS}${loc}${FS}${iface}${FS}${addr}${FS}${usb}"
 	done < <(bash "$ROOT/scripts/usb-ssh-devices.sh" --tsv 2>/dev/null || true)
-	while IFS=$'\t' read -r mode sn chip loc iface addr usb; do
+	while IFS=$'\t' read -r mode sn loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
-		printf '%s\n' "${mode}${FS}${sn}${FS}${chip}${FS}${loc}${FS}${iface}${FS}${addr}${FS}${usb}"
+		printf '%s\n' "${mode}${FS}${sn}${FS}${loc}${FS}${iface}${FS}${addr}${FS}${usb}"
 	done < <(bash "$ROOT/scripts/ssh-devices.sh" --tsv 2>/dev/null || true)
-	while IFS=$'\t' read -r mode sn chip loc iface addr usb; do
+	while IFS=$'\t' read -r mode sn loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
-		printf '%s\n' "${mode}${FS}${sn}${FS}${chip}${FS}${loc}${FS}${iface}${FS}${addr}${FS}${usb}"
+		printf '%s\n' "${mode}${FS}${sn}${FS}${loc}${FS}${iface}${FS}${addr}${FS}${usb}"
 	done < <(bash "$ROOT/scripts/emulator-devices.sh" --tsv 2>/dev/null || true)
 }
 
@@ -62,13 +62,12 @@ emit_selection() {
 }
 
 select_device() {
-	local sn_sel chip_sel pick_ip pick_iface
+	local sn_sel pick_ip pick_iface
 	local -a rows=() selectable=()
-	local row mode sn chip loc iface addr usb
+	local row mode sn loc iface addr usb
 	local -a matches=() mtp_matches=()
 
 	sn_sel="$(device_select_sn)"
-	chip_sel="$(device_select_chip_id)"
 	pick_ip="${IP:-}"
 	pick_iface="${IFACE:-}"
 
@@ -81,7 +80,7 @@ select_device() {
 	fi
 
 	for row in "${rows[@]}"; do
-		IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
+		IFS="$FS" read -r mode sn loc iface addr usb <<<"$row"
 		is_ssh_selectable "$mode" && selectable+=("$row")
 	done
 
@@ -89,7 +88,7 @@ select_device() {
 	if [[ -n "$pick_ip" ]]; then
 		pick_ip="$(normalize_ssh_endpoint "$pick_ip" 2>/dev/null || die "invalid IP=$pick_ip")"
 		for row in "${rows[@]}"; do
-			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
+			IFS="$FS" read -r mode sn loc iface addr usb <<<"$row"
 			[[ "$mode" == "SSH" || "$mode" == "EMU" ]] || continue
 			[[ "$addr" == "$pick_ip" ]] || continue
 			emit_selection "$mode" "$loc" "$iface" "$addr"
@@ -101,7 +100,7 @@ select_device() {
 	# IFACE= is USB-SSH only.
 	if [[ -n "$pick_iface" ]]; then
 		for row in "${rows[@]}"; do
-			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
+			IFS="$FS" read -r mode sn loc iface addr usb <<<"$row"
 			[[ "$mode" == "USB-SSH" && "$iface" == "$pick_iface" ]] || continue
 			emit_selection "$mode" "$loc" "$iface" "$addr"
 			return 0
@@ -109,39 +108,12 @@ select_device() {
 		die "IFACE=$pick_iface not found (make devices)"
 	fi
 
-	# CHIP_ID= matches ChipID column only (SSH-selectable rows).
-	if [[ -n "$chip_sel" && "$chip_sel" != "-" ]]; then
-		for row in "${rows[@]}"; do
-			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
-			[[ "$chip" == "$chip_sel" ]] || continue
-			if [[ "$mode" == "USB-MTP" ]]; then
-				mtp_matches+=("$row")
-				continue
-			fi
-			is_ssh_selectable "$mode" || continue
-			matches+=("$row")
-		done
-		if [[ ${#matches[@]} -eq 0 ]]; then
-			if [[ ${#mtp_matches[@]} -gt 0 ]]; then
-				mtp_hint
-				die "CHIP_ID=$chip_sel is USB-MTP only (make devices)"
-			fi
-			die "CHIP_ID=$chip_sel not found (make devices)"
-		fi
-		if [[ ${#matches[@]} -gt 1 ]]; then
-			die "CHIP_ID=$chip_sel matches ${#matches[@]} devices — set IP= for SSH or IFACE= for USB-SSH"
-		fi
-		IFS="$FS" read -r mode sn chip loc iface addr usb <<<"${matches[0]}"
-		emit_selection "$mode" "$loc" "$iface" "$addr"
-		return 0
-	fi
-
-	# SN= (SERIAL= deprecated) matches SN or ChipID.
+	# SN= (SERIAL= deprecated) matches SN column only.
 	# SIM-EMU / EMU are stable aliases for MODE=EMU (probed SN e.g. SIM-0001).
 	if [[ -n "$sn_sel" && "$sn_sel" != "-" ]]; then
 		for row in "${rows[@]}"; do
-			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
-			if [[ "$sn" != "$sn_sel" && "$chip" != "$sn_sel" ]]; then
+			IFS="$FS" read -r mode sn loc iface addr usb <<<"$row"
+			if [[ "$sn" != "$sn_sel" ]]; then
 				if [[ "$mode" == "EMU" && ( "$sn_sel" == "SIM-EMU" || "$sn_sel" == "EMU" ) ]]; then
 					:
 				else
@@ -165,14 +137,14 @@ select_device() {
 		if [[ ${#matches[@]} -gt 1 ]]; then
 			die "SN=$sn_sel matches ${#matches[@]} devices — set IP= for SSH or IFACE= for USB-SSH"
 		fi
-		IFS="$FS" read -r mode sn chip loc iface addr usb <<<"${matches[0]}"
+		IFS="$FS" read -r mode sn loc iface addr usb <<<"${matches[0]}"
 		emit_selection "$mode" "$loc" "$iface" "$addr"
 		return 0
 	fi
 
 	if [[ ${#selectable[@]} -eq 0 ]]; then
 		for row in "${rows[@]}"; do
-			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
+			IFS="$FS" read -r mode sn loc iface addr usb <<<"$row"
 			[[ "$mode" == "USB-MTP" ]] || continue
 			mtp_hint
 			die "Only USB-MTP connected — no SSH target (make devices)"
@@ -184,7 +156,7 @@ select_device() {
 		die "${#selectable[@]} devices — set SN= or IP= (see make devices)"
 	fi
 
-	IFS="$FS" read -r mode sn chip loc iface addr usb <<<"${selectable[0]}"
+	IFS="$FS" read -r mode sn loc iface addr usb <<<"${selectable[0]}"
 	case "$mode" in
 	USB-SSH | SSH | EMU) ;;
 	*) die "No Linux SSH target (make devices)" ;;

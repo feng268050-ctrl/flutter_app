@@ -2,7 +2,7 @@
 # Discover running P3.2 QEMU guest for make devices (MODE=EMU).
 # Lists only when QEMU is alive or SSH hostfwd actually answers.
 # Stale ssh-endpoint (Ctrl-C / window close) is pruned — does not persist registry.
-# TSV: MODE, SN, ChipID, LocationID, IFACE, IP, USB
+# TSV: MODE, SN, LocationID, IFACE, IP, USB
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,7 +18,6 @@ EMU_MODE="EMU"
 # Placeholder when QEMU is up but identity SSH has not succeeded yet.
 # Also a stable SN= alias in device-target.sh (probed SN may be SIM-0001).
 EMU_SN_FALLBACK="SIM-EMU"
-EMU_CHIP_FALLBACK="-"
 
 die() {
 	echo "ERROR: $*" >&2
@@ -79,11 +78,10 @@ probe_endpoint() {
 }
 
 emit_emu_row() {
-	local sn="$1" chip="$2" ep="$3"
+	local sn="$1" ep="$2"
 	[[ -n "$sn" ]] || sn="$EMU_SN_FALLBACK"
-	[[ -n "$chip" ]] || chip="$EMU_CHIP_FALLBACK"
-	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-		"$EMU_MODE" "$sn" "$chip" "-" "-" "$ep" "-"
+	printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+		"$EMU_MODE" "$sn" "-" "-" "$ep" "-"
 }
 
 prune_stale_endpoint() {
@@ -117,7 +115,7 @@ list_emulator_devices() {
 		live="$(probe_endpoint "$ep" 2>/dev/null || true)"
 		if [[ -n "$live" ]]; then
 			IFS=$'\t' read -r sn chip <<<"$live"
-			emit_emu_row "$sn" "$chip" "$ep"
+			emit_emu_row "$sn" "$ep"
 			return 0
 		fi
 	done < <(candidate_endpoints)
@@ -125,13 +123,13 @@ list_emulator_devices() {
 	# QEMU is up (or SSH answered above) but identity probe pending.
 	ep="${reachable_ep:-${best_ep:-127.0.0.1:${EMULATOR_SSH_PORT:-2222}}}"
 	if ! command -v sshpass >/dev/null 2>&1; then
-		echo "NOTE: EMU ${ep} — install sshpass to probe SN/ChipID (brew install sshpass)" >&2
+		echo "NOTE: EMU ${ep} — install sshpass to probe SN (brew install sshpass)" >&2
 	elif [[ -z "$reachable_ep" ]]; then
 		echo "NOTE: EMU listed at ${ep} but SSH not accepting yet (guest still booting?)" >&2
 	else
 		echo "NOTE: EMU ${ep} reachable but identity probe failed (check root password)" >&2
 	fi
-	emit_emu_row "$EMU_SN_FALLBACK" "$EMU_CHIP_FALLBACK" "$ep"
+	emit_emu_row "$EMU_SN_FALLBACK" "$ep"
 }
 
 case "${1:-}" in

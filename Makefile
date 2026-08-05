@@ -194,8 +194,7 @@ help:
 	@echo "  BUILD_BIND_MOUNT=1         # macOS only: bind-mount SDK instead of Docker volume"
 	@echo "  NAS_CACHE_ROOT=...         # NAS mount for large .cache artifacts (see .env.example)"
 	@echo "  NAS_READ_ONLY=0|1          # 1 = never write back to NAS (default 0)"
-	@echo "  SN=<sn|chipid>             # select device by SN or ChipID (flash / USB-SSH / SSH)"
-	@echo "  CHIP_ID=<chipid>            # select by ChipID only (multi-board)"
+	@echo "  SN=<sn>                    # select device by SN (flash / USB-SSH / SSH)"
 	@echo "  PRODUCT_SN=<sn>            # write-identity product serial (not selection SN=)"
 	@echo "  FORCE=1                    # write-identity: overwrite non-empty Vendor Storage SN"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
@@ -622,7 +621,7 @@ del-prop:
 	@chmod +x scripts/del-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/del-product-prop.sh $(filter-out del-prop,$(MAKECMDGOALS)) $(MAKEOVERRIDES))
 
-# Write brand/model/product SN into Vendor Storage (SSH). Selection: SN=/CHIP_ID=/IP=.
+# Write brand/model/product SN into Vendor Storage (SSH). Selection: SN=/IP=.
 # Payload: BRAND= MODEL= PRODUCT_SN=. FORCE=1 to overwrite SN.
 # Pass via MAKEOVERRIDES only — do NOT wrap BRAND='$(BRAND)' inside WITH_DOTENV's
 # bash -c '…' (single quotes break on MODEL='L1 Pro' and silently no-op).

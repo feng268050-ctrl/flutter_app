@@ -15,7 +15,7 @@
 | Make 覆盖（写入类） | `make write-identity BRAND=x MODEL=y PRODUCT_SN=z` |
 | 位置参数 | `make connect 192.168.1.50`、`make extract-linux-sdk /path/to/volumes` |
 
-**优先级：** 命令行已设置的变量通常覆盖 `.env`（Makefile `WITH_DOTENV` 对 `SN`/`CHIP_ID`/`IP`/`APP`/`OEM_*`/`FLUTTER_SDK`/`BUILD_*` 等做了显式覆盖）。
+**优先级：** 命令行已设置的变量通常覆盖 `.env`（Makefile `WITH_DOTENV` 对 `SN`/`IP`/`APP`/`OEM_*`/`FLUTTER_SDK`/`BUILD_*` 等做了显式覆盖）。
 
 ---
 
@@ -48,15 +48,14 @@
 
 | 变量 | 说明 |
 |------|------|
-| `SN` | 按序列号或 ChipID 列匹配（多板时必填） |
-| `CHIP_ID` | 仅按 ChipID 列 |
+| `SN` | 按 `make devices` 的 SN 列匹配（多板时必填） |
 | `IP` | 已 `make connect` 的 LAN SSH，或模拟器 `127.0.0.1:2222` |
 | `IFACE` | 按主机 USB 网卡名选 USB-SSH |
 | `SERIAL` | 已弃用，等同 `SN` |
 | `IMAGE` | `make flash` 镜像路径覆盖 |
 | `SN=SIM-EMU` / `SN=EMU` | QEMU 模拟器稳定别名 |
 
-**选择优先级：** `IP` → `IFACE` → `CHIP_ID` → `SN` → 唯一已连接设备。
+**选择优先级：** `IP` → `IFACE` → `SN` → 唯一已连接设备。
 
 USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockchip`、`USB_SSH_ADDR=192.168.55.1`。
 
@@ -370,7 +369,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 
 - **怎么用：** `make devices`
 - **何时用：** 选板前看 RockUSB / USB-SSH / SSH / EMU 表。
-- **参数：** 无；输出用于填 `SN=` / `CHIP_ID=` / `IP=`。
+- **参数：** 无；输出用于填 `SN=` / `IP=`。
 
 ### `make shell`
 
@@ -389,7 +388,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `GREP` | journalctl `--grep` |
 | `PRIORITY` | `emerg`…`debug` 或 `0`–`7` |
 | `KERNEL_ONLY=1` | 仅内核日志 |
-| `SN` / `CHIP_ID` / `IP` | 选板 |
+| `SN` / `IP` | 选板 |
 
 ### `make push-app`
 
@@ -420,7 +419,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 
 - **怎么用：** `make write-identity BRAND=Innohi MODEL='L1 Pro' PRODUCT_SN=SN123`；覆盖已有 SN 加 `FORCE=1`
 - **何时用：** 产测/出厂写入 brand/model/产品 SN（Vendor Storage）。
-- **注意：** 选板用 `SN=`/`CHIP_ID=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。
+- **注意：** 选板用 `SN=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。
 
 ### `make alarm` / `make alarm-clean`
 
@@ -489,7 +488,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **怎么用：** `make flash`；覆盖镜像 `IMAGE=/path/to.img make flash`；指定 SKU `FACTORY_SKU=… APP=… make flash`
 - **何时用：** USB 烧 `factory.img`（或 Maskrom `ul` 路径）。
 - **默认镜像：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img`（或 `update.img` symlink）。
-- **参数：** `IMAGE`/`UPDATE_IMG`、`APP`、`FACTORY_SKU`、`SN`/`CHIP_ID`、`UPGRADE_NORESET=1`。
+- **参数：** `IMAGE`/`UPDATE_IMG`、`APP`、`FACTORY_SKU`、`SN`、`UPGRADE_NORESET=1`。
 
 ### `make flash-android`
 

@@ -22,7 +22,7 @@ The system SHALL treat `/var/lib/hal/properties.ini` as the **factory/operator t
 
 ### Requirement: Built-in product identity properties
 
-The HAL SHALL expose a `ProductInfo` (or equivalent) type with built-in string properties `brand`, `model`, `sn`, and `chipId`. `brand`, `model`, and `sn` SHALL come from Rockchip Vendor Storage (see `vendor-storage-identity` ID map). Absent or blank Vendor Storage brand/model SHALL yield the empty string. `chipId` SHALL be the chip/board serial from `/proc/cpuinfo` Serial → DT `serial-number` → documented fallbacks (never a `properties.ini` `sn` key). For `sn`: if Vendor Storage contains a non-empty SN, that value SHALL be used; otherwise `sn` SHALL equal `chipId`. Stale `brand` / `model` / `sn` keys in `properties.ini` MUST be ignored. Apps MUST obtain these values from HAL, not by reading Vendor Storage or `properties.ini` directly. `SysInfoSnapshot` SHALL expose `serialNumber` (product SN) and `chipId`.
+The HAL SHALL expose a `ProductInfo` (or equivalent) type with built-in string properties `brand`, `model`, `sn`, and `chipId`. `brand`, `model`, and `sn` SHALL come from Rockchip Vendor Storage (see `vendor-storage-identity` ID map). Absent or blank Vendor Storage brand/model SHALL yield the empty string. `chipId` SHALL be the chip/board serial from `/proc/cpuinfo` Serial → DT `serial-number` → documented fallbacks (never a `properties.ini` `sn` key). For `sn`: if Vendor Storage contains a non-empty SN, that value SHALL be used; otherwise `sn` SHALL equal `chipId`. Stale `brand` / `model` / `sn` keys in `properties.ini` MUST be ignored. Apps MUST obtain these values from HAL, not by reading Vendor Storage or `properties.ini` directly. `SysInfoSnapshot` SHALL expose `serialNumber` (product SN) and `chipId`. **Operator host identity** (`make devices`, device selection) SHALL use **SN only**; `chipId` remains a hardware field for Apps, diagnostics, and secrets — it MUST NOT appear as a host device-table column or `CHIP_ID=` selector.
 
 #### Scenario: Brand and model from Vendor Storage
 
@@ -68,23 +68,24 @@ The HAL `ProductInfo` SHALL expose built-in identity fields only: `brand`, `mode
 
 ### Requirement: Host SN matches ProductInfo sn
 
-Board serial helpers used for USB gadget iSerial and host device listing (`make devices` / SSH registry enrichment) SHALL resolve **SN** with the same rule as `ProductInfo.sn`: non-empty Vendor Storage SN first, then chip/board serial fallbacks. The `make devices` table SHALL include columns **SN** and **ChipID** (ChipID = chip serial / adb SerialNo / RockUSB SerialNo). Host tooling MUST prefer a live board identity probe over host USB gadget iSerial when both are available. Host device selection SHALL use env **`SN=`** (matching SN or ChipID). **`CHIP_ID=`** SHALL match ChipID only. Deprecated **`SERIAL=`** SHALL be accepted as an alias for **`SN=`**. Makefile `help`, README, and AGENTS.md SHALL document `SN=` (not `SERIAL=`) as the primary selector, and SHALL document `make write-identity` for provisioning brand/model/product SN.
+Board serial helpers used for USB gadget iSerial and host device listing (`make devices` / SSH registry enrichment) SHALL resolve **SN** with the same rule as `ProductInfo.sn`: non-empty Vendor Storage SN first, then chip/board serial fallbacks. The `make devices` table SHALL include column **SN** and MUST NOT include a **ChipID** column. Host tooling MUST prefer a live board identity probe over host USB gadget iSerial when both are available. Host device selection SHALL use env **`SN=`** matching the listed **SN** only. Deprecated **`SERIAL=`** SHALL be accepted as an alias for **`SN=`**. Host tooling MUST NOT accept **`CHIP_ID=`** as a device selector (if set, commands SHALL fail with a hint to use `SN=`). Makefile `help`, README, and AGENTS.md SHALL document `SN=` (not `SERIAL=` / `CHIP_ID=`) as the primary selector, and SHALL document `make write-identity` for provisioning brand/model/product SN.
 
-#### Scenario: make devices shows factory sn and chip id
+#### Scenario: make devices shows factory sn only
 
 - **WHEN** the device has Vendor Storage SN `FACTORY-001`, chip serial is `ABC123`, and the board is reachable via USB-SSH or LAN SSH enrichment
 - **THEN** the listed **SN** column SHALL be `FACTORY-001`
-- **AND** the listed **ChipID** column SHALL be `ABC123`
+- **AND** the table SHALL NOT include a **ChipID** column
 
 #### Scenario: make devices falls back to chip serial for SN
 
 - **WHEN** Vendor Storage SN is missing or blank and chip serial is `ABC123`
-- **THEN** the listed **SN** and **ChipID** columns SHALL both be `ABC123`
+- **THEN** the listed **SN** column SHALL be `ABC123`
 
-#### Scenario: Android or RockUSB row uses chip identity for both columns
+#### Scenario: Android or RockUSB row uses SerialNo as SN
 
 - **WHEN** listing an Android adb device or RockUSB loader device with SerialNo `RK123`
-- **THEN** **ChipID** SHALL show the adb serial / upgrade_tool SerialNo (chip identity)
+- **THEN** **SN** SHALL show the adb serial / upgrade_tool SerialNo
+- **AND** the table SHALL NOT include a separate ChipID column
 
 ### Requirement: Device Information empty display
 
@@ -102,7 +103,7 @@ When Device Information (or equivalent About UI) displays Device Model, Device S
 
 ### Requirement: Host make set-prop upserts properties.ini
 
-The host build system SHALL provide `make set-prop` that upserts one or more properties on the selected board (USB-SSH or registered SSH device, same selection rules as `push-app` / `shell`). Each assignment SHALL be `UPPERCASE_KEY=value` on the Make command line and SHALL be written to `/var/lib/hal/properties.ini` as the corresponding lowercase key (e.g. `CAMERA_IP` → `camera_ip`). **Multiple** assignments in one invocation SHALL be applied together via one remote file replace. Make/workflow variables that are not property keys (at least `CHIP_ID`, `IP`, deprecated `SERIAL`, `SN` as device selection, and other documented host vars) MUST be ignored as property keys. `make set-prop` MUST refuse to write identity keys `brand`, `model`, and `sn` (including `BRAND=` / `MODEL=` / a sole `SN=` property assignment) and MUST fail with an error that points operators to **`make write-identity`** (Vendor Storage). After a successful write, the host tooling SHALL restart the on-device HMI service so the App reloads tunables.
+The host build system SHALL provide `make set-prop` that upserts one or more properties on the selected board (USB-SSH or registered SSH device, same selection rules as `push-app` / `shell`). Each assignment SHALL be `UPPERCASE_KEY=value` on the Make command line and SHALL be written to `/var/lib/hal/properties.ini` as the corresponding lowercase key (e.g. `CAMERA_IP` → `camera_ip`). **Multiple** assignments in one invocation SHALL be applied together via one remote file replace. Make/workflow variables that are not property keys (at least `IP`, deprecated `SERIAL`, `SN` as device selection, and other documented host vars) MUST be ignored as property keys. `make set-prop` MUST refuse to write identity keys `brand`, `model`, and `sn` (including `BRAND=` / `MODEL=` / a sole `SN=` property assignment) and MUST fail with an error that points operators to **`make write-identity`** (Vendor Storage). After a successful write, the host tooling SHALL restart the on-device HMI service so the App reloads tunables.
 
 #### Scenario: Single property upsert
 

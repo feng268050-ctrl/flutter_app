@@ -531,14 +531,18 @@ class _HomeBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final size = MediaQuery.sizeOf(context);
+    final (cacheW, cacheH) = HomeAssets.backdropCachePx(
+      logicalSize: size,
+      devicePixelRatio: dpr,
+    );
     return Image.asset(
       HomeAssets.backdrop,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
       filterQuality: FilterQuality.medium,
-      cacheWidth: (size.width * dpr).round().clamp(640, 1920),
-      cacheHeight: (size.height * dpr).round().clamp(400, 1200),
+      cacheWidth: cacheW,
+      cacheHeight: cacheH,
       errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1A1A1A)),
     );
   }

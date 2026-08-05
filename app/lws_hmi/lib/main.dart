@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutterpi_gstreamer_video_player/flutterpi_gstreamer_video_player.dart';
 import 'package:lws_hmi/app/app.dart';
 import 'package:lws_hmi/features/ai/application/ai_daemon_supervisor.dart';
+import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/statistics/application/legacy_static_data_migrator.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
 import 'package:lws_hmi/hal/hal_assets.dart';
@@ -15,6 +16,9 @@ const _kRunBoardProfile = '/run/hmi/board_profile.json';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Overlap wallpaper decode with board profile / Linux bring-up so Home's
+  // first paint can hit the image cache (avoids cards-before-backdrop flash).
+  final backdropPrecache = HomeAssets.precacheBackdrop();
   if (Platform.isLinux) {
     await _migrateLegacyStatistics();
   }
@@ -32,6 +36,7 @@ Future<void> main() async {
     await AiDaemonSupervisor.instance.ensureStarted();
   }
   final profile = await _loadBoardProfile();
+  await backdropPrecache;
   runApp(LwsHmiApp(boardProfile: profile));
 }
 

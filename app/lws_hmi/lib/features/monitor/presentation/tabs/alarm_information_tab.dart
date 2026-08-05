@@ -15,7 +15,10 @@ import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// lws-ui `fragment_warn_info` — left status/temps + right history + live actives.
 ///
-/// Live Modbus (comm + temps) comes from [WarnAlarmController.monitor] only.
+/// Left column follows Advanced Settings: [SettingsSectionHeader] + inset
+/// [SettingsParamRow] grid. Metric / comm tiles use the same [MonitorGlassCard]
+/// plate as the right Alarm Log (page σ30 only). Live Modbus (comm + temps)
+/// comes from [WarnAlarmController.monitor] only.
 class AlarmInformationTab extends StatefulWidget {
   const AlarmInformationTab({super.key});
 
@@ -90,11 +93,13 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
     final l10n = AppLocalizations.of(context)!;
     final m = _monitor ?? WarnAlarmScope.maybeOf(context)?.monitor;
 
-    // Page edge + ambient gutter ≈ MonitorDimens.pad (24). Outer glow paints
-    // inside the gutter (SettingsGroup pattern); Clip.none lets inner edges
-    // bleed into the column gap without a hard truncate.
+    // Advanced Settings layout on the left: section headers + inset card grid
+    // (same MonitorGlassCard face as the right Alarm Log plate). Outer glow
+    // paints into shared inset gutters (Clip.none); gap ≈ SettingsDimens.inset.
     const ambient = MonitorDimens.outerAmbientExtent;
     const pageEdge = MonitorDimens.pad - ambient;
+    const hPad = EdgeInsets.symmetric(horizontal: SettingsDimens.inset);
+    const cardGap = SizedBox(height: SettingsDimens.inset);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(pageEdge, 0, pageEdge, 16),
@@ -106,113 +111,80 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
               children: [
                 Expanded(
                   flex: 740,
-                  child: SingleChildScrollView(
-                    // Default hardEdge clips SettingsPanel outer ambient.
-                    clipBehavior: Clip.none,
-                    // L/R gutters keep glow inside the viewport; top matches pad.
-                    padding: const EdgeInsets.fromLTRB(
-                      ambient,
-                      ambient,
-                      ambient,
-                      0,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        MonitorGlassCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              MonitorSectionHeader(l10n.alarmInfoLaserDevice),
-                              MonitorCommCard(
-                                label: l10n.pumpStatusText,
-                                kind: _commKind(m?.laserCommFault),
-                              ),
-                            ],
+                  child: SettingsScrollView(
+                    // Headers own the top inset (Advanced Settings parity).
+                    padding: EdgeInsets.zero,
+                    children: [
+                      SettingsSectionHeader(l10n.alarmInfoLaserDevice),
+                      Padding(
+                        padding: hPad,
+                        child: MonitorCommCard(
+                          label: l10n.pumpStatusText,
+                          kind: _commKind(m?.laserCommFault),
+                        ),
+                      ),
+                      SettingsSectionHeader(
+                        l10n.alarmInfoWeldingGun,
+                        topInset: 36,
+                      ),
+                      Padding(
+                        padding: hPad,
+                        child: SettingsParamRow(
+                          left: MonitorCommCard(
+                            label: l10n.gunHeadCommunicationText,
+                            kind: _commKind(m?.gunCommFault),
+                          ),
+                          right: MonitorCommCard(
+                            label: l10n.cameraCommStatusText,
+                            kind: _commKind(m?.cameraCommFault),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        MonitorGlassCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              MonitorSectionHeader(l10n.alarmInfoWeldingGun),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: MonitorCommCard(
-                                      label: l10n.gunHeadCommunicationText,
-                                      kind: _commKind(m?.gunCommFault),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  Expanded(
-                                    child: MonitorCommCard(
-                                      label: l10n.cameraCommStatusText,
-                                      kind: _commKind(m?.cameraCommFault),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: MonitorTempMetricCard(
-                                      series: m?.motor ?? _emptyTemp,
-                                      label: l10n.motorTempLabel,
-                                      overTemp: m?.gunMotorOverTemp ?? false,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  Expanded(
-                                    child: MonitorTempMetricCard(
-                                      series: m?.motorDriver ?? _emptyTemp,
-                                      label: l10n.motorDriverTempLabel,
-                                      overTemp: m?.driverOverTemp ?? false,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: MonitorTempMetricCard(
-                                      series: m?.protectiveMirror ?? _emptyTemp,
-                                      label: l10n.protectiveMirrorTempLabel,
-                                      overTemp:
-                                          m?.protectiveMirrorOverTemp ?? false,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  Expanded(
-                                    child: MonitorTempMetricCard(
-                                      series: m?.collimator ?? _emptyTemp,
-                                      label: l10n.collimatorTempLabel,
-                                      overTemp: m?.collimatorOverTemp ?? false,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                      ),
+                      cardGap,
+                      Padding(
+                        padding: hPad,
+                        child: SettingsParamRow(
+                          left: MonitorTempMetricCard(
+                            series: m?.motor ?? _emptyTemp,
+                            label: l10n.motorTempLabel,
+                            overTemp: m?.gunMotorOverTemp ?? false,
+                          ),
+                          right: MonitorTempMetricCard(
+                            series: m?.motorDriver ?? _emptyTemp,
+                            label: l10n.motorDriverTempLabel,
+                            overTemp: m?.driverOverTemp ?? false,
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        MonitorGlassCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              MonitorSectionHeader(l10n.alarmInfoWireFeeder),
-                              MonitorCommCard(
-                                label: l10n.wireFeedingMachineCommunicationText,
-                                kind: _commKind(m?.wireFeederCommFault),
-                              ),
-                            ],
+                      ),
+                      cardGap,
+                      Padding(
+                        padding: hPad,
+                        child: SettingsParamRow(
+                          left: MonitorTempMetricCard(
+                            series: m?.protectiveMirror ?? _emptyTemp,
+                            label: l10n.protectiveMirrorTempLabel,
+                            overTemp: m?.protectiveMirrorOverTemp ?? false,
+                          ),
+                          right: MonitorTempMetricCard(
+                            series: m?.collimator ?? _emptyTemp,
+                            label: l10n.collimatorTempLabel,
+                            overTemp: m?.collimatorOverTemp ?? false,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      SettingsSectionHeader(
+                        l10n.alarmInfoWireFeeder,
+                        topInset: 36,
+                      ),
+                      Padding(
+                        padding: hPad,
+                        child: MonitorCommCard(
+                          label: l10n.wireFeedingMachineCommunicationText,
+                          kind: _commKind(m?.wireFeederCommFault),
+                        ),
+                      ),
+                      const SizedBox(height: SettingsDimens.inset),
+                    ],
                   ),
                 ),
                 // Face-to-face gap ≈ pad: each column already reserves [ambient].
@@ -269,7 +241,9 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   ? Center(
                                       child: Text(
                                         l10n.noActiveAlarms,
-                                        style: context.hmiTypography.settingsRowTitle.copyWith(
+                                        style: context
+                                            .hmiTypography.settingsRowTitle
+                                            .copyWith(
                                           color: Colors.white54,
                                         ),
                                       ),
@@ -317,7 +291,8 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   const SizedBox(width: 4),
                                   Text(
                                     l10n.clearAlarmLogs,
-                                    style: context.hmiTypography.sectionTitle.copyWith(
+                                    style: context.hmiTypography.sectionTitle
+                                        .copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: CyberColors.buttonSecondaryText,
                                     ),

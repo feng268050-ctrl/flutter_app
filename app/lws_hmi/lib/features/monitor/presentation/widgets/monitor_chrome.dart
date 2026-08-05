@@ -355,9 +355,8 @@ class MonitorMetricCard extends StatelessWidget {
     final kind = !hasValue
         ? MonitorIndicatorKind.idle
         : (fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success);
-    // Nested inside Alarm section frost — keycap face, no second blur.
+    // Same plate chrome as Alarm Log / other MonitorGlassCards (page owns σ30).
     return MonitorGlassCard(
-      frosted: false,
       height: MonitorDimens.metricH,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
@@ -425,7 +424,7 @@ class MonitorCommCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Nested inside Alarm section frost — keycap face, no second blur.
+    // Same plate chrome as Alarm Log (page owns σ30; no panel BackdropFilter).
     // Idle → muted label; pass → white; fault → warn red (same as temp value).
     final labelColor = switch (kind) {
       MonitorIndicatorKind.idle => MonitorDimens.labelColor,
@@ -433,7 +432,6 @@ class MonitorCommCard extends StatelessWidget {
       MonitorIndicatorKind.failure => const Color(0xFFFF8A80),
     };
     return MonitorGlassCard(
-      frosted: false,
       height: MonitorDimens.metricH,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(

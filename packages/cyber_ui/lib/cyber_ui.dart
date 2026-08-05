@@ -21,6 +21,7 @@ export 'src/icons/cyber_wifi_status_icon.dart';
 export 'src/sound/cyber_click_sound.dart';
 export 'src/status_bar/cyber_home_status_bar.dart';
 export 'src/status_bar/cyber_page_status_bar.dart';
+export 'src/status_bar/cyber_product_date_format.dart';
 export 'src/status_bar/cyber_status_bar_clock.dart';
 export 'src/theme/cyber_colors.dart';
 export 'src/theme/cyber_dimens.dart';

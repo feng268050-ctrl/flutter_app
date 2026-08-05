@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:cyber_ui/cyber_ui.dart';
-import 'package:intl/intl.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 
 /// Design tokens from lws-ui `FrostClockAppearance` / `frostui_clock_colors.xml`.
@@ -133,18 +132,7 @@ class _HomeClockState extends State<HomeClock> {
   }
 
   static String _formatDateFallback(DateTime t) {
-    final mo = t.month.toString().padLeft(2, '0');
-    final d = t.day.toString().padLeft(2, '0');
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return '$mo-$d  ${weekdays[t.weekday - 1]}';
+    return formatProductDateWeekday(t, const Locale('en'));
   }
 
   String _format(DateTime t) {
@@ -166,9 +154,7 @@ class _HomeClockState extends State<HomeClock> {
       return _formatDateFallback(t);
     }
     try {
-      final locale = Localizations.localeOf(context).toString();
-      // mm-dd + localized weekday (same visual width as time via FittedBox).
-      return DateFormat('MM-dd  EEEE', locale).format(t);
+      return formatProductDateWeekday(t, Localizations.localeOf(context));
     } catch (_) {
       return _formatDateFallback(t);
     }
@@ -233,19 +219,6 @@ class _HomeClockState extends State<HomeClock> {
     )..layout();
   }
 
-  /// Letter-spacing so [text] at [fontSize] paints at exactly [targetWidth].
-  double _letterSpacingForWidth(
-    String text,
-    double fontSize,
-    double targetWidth,
-  ) {
-    if (text.length < 2) {
-      return 0;
-    }
-    final base = _measure(text, fontSize).width;
-    return (targetWidth - base) / (text.length - 1);
-  }
-
   Widget _glyphLine({
     required String text,
     required double fontSize,
@@ -293,6 +266,21 @@ class _HomeClockState extends State<HomeClock> {
     );
   }
 
+  /// Plain date/weekday under the frost time (no glyph blur chrome).
+  Widget _dateLine() {
+    return Text(
+      _dateText,
+      key: const ValueKey('home-clock-date'),
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        color: const Color(0xCCF2F2F2),
+        fontSize: _dateFontSize,
+        fontWeight: FontWeight.w600,
+        height: 1.1,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pad = widget.fontSize * (10 / 150);
@@ -303,12 +291,7 @@ class _HomeClockState extends State<HomeClock> {
     final showDate = widget.showDateLine && _dateText.isNotEmpty;
     final gap = widget.fontSize * HomeClockTokens.dateGapScale;
     final timeW = _measure(_text, widget.fontSize).width;
-    final dateSpacing = showDate
-        ? _letterSpacingForWidth(_dateText, _dateFontSize, timeW)
-        : 0.0;
 
-    // Shared width [timeW]: date letter-spacing expands/contracts so left and
-    // right edges match the time line exactly; both centered in the home frame.
     final column = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -322,14 +305,7 @@ class _HomeClockState extends State<HomeClock> {
         ),
         if (showDate) ...[
           SizedBox(height: gap),
-          _glyphLine(
-            text: _dateText,
-            fontSize: _dateFontSize,
-            overlay: overlay,
-            semanticsKey: const ValueKey('home-clock-date'),
-            letterSpacing: dateSpacing,
-            widthOverride: timeW,
-          ),
+          _dateLine(),
         ],
       ],
     );

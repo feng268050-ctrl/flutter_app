@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_ui/src/status_bar/cyber_product_date_format.dart';
 import 'package:flutter/material.dart';
 
 /// Compact status-bar clock (`HH:mm`, optional weekday + date on the left).
@@ -23,8 +24,8 @@ class CyberStatusBarClock extends StatefulWidget {
   /// When false, shows 12-hour time via [TimeOfDay.format].
   final bool use24HourFormat;
 
-  /// When true, prefixes localized weekday + month + day (e.g. `Wed Aug 5`).
-  /// Quick / Engineer equipment bars keep this false (time only).
+  /// When true, prefixes [formatProductDateWeekday] (e.g. `Wed Aug 5` /
+  /// `8月5日 周三`). Quick / Engineer equipment bars keep this false.
   final bool showDate;
 
   @override
@@ -51,31 +52,11 @@ class _CyberStatusBarClockState extends State<CyberStatusBarClock> {
     }
   }
 
-  /// `Wed Aug 5` / localized medium date (weekday + month + day).
   String _formatDatePrefix(DateTime t) {
     try {
-      // DefaultMaterialLocalizations: "Wed, Aug 5"; drop commas to match
-      // product chrome ("Wed Aug 5"). Other locales usually have no comma.
-      return MaterialLocalizations.of(context)
-          .formatMediumDate(t)
-          .replaceAll(',', '');
+      return formatProductDateWeekday(t, Localizations.localeOf(context));
     } catch (_) {
-      const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${weekdays[t.weekday - 1]} ${months[t.month - 1]} ${t.day}';
+      return formatProductDateWeekday(t, const Locale('en'));
     }
   }
 

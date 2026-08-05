@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
   testWidgets('HomeClock shows HH:mm and keeps ValueKey', (tester) async {
@@ -19,7 +20,7 @@ void main() {
     expect(RegExp(r'^\d{2}:\d{2}$').hasMatch(label), isTrue);
   });
 
-  testWidgets('HomeClock shows date and weekday under time', (tester) async {
+  testWidgets('HomeClock EN date is Wed Aug 5 plain text', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en', 'US'),
@@ -44,15 +45,35 @@ void main() {
     final dateFinder = find.byKey(const ValueKey('home-clock-date'));
     expect(dateFinder, findsOneWidget);
     final date = tester.widget<Text>(dateFinder).data!;
-    expect(date, contains('08-05'));
-    expect(date, isNot(contains('2026')));
-    expect(date, contains('Wednesday'));
+    expect(date, 'Wed Aug 5');
+    // Plain Text — no CustomPaint sibling for the date line.
+    expect(
+      find.descendant(of: dateFinder, matching: find.byType(CustomPaint)),
+      findsNothing,
+    );
+  });
 
-    // Date line left/right edges match the time line (letter-spacing fit).
-    final timeRect = tester.getRect(find.byKey(const ValueKey('home-clock-text')));
-    final dateRect = tester.getRect(find.byKey(const ValueKey('home-clock-date')));
-    expect(dateRect.width, closeTo(timeRect.width, 1.0));
-    expect(dateRect.left, closeTo(timeRect.left, 1.0));
-    expect(dateRect.right, closeTo(timeRect.right, 1.0));
+  testWidgets('HomeClock ZH date is 8月5日 周三 with space', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('zh', 'CN'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Center(
+            child: HomeClock(
+              fontSize: 48,
+              now: () => DateTime(2026, 8, 5, 15, 30),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final date = tester.widget<Text>(
+      find.byKey(const ValueKey('home-clock-date')),
+    ).data!;
+    expect(date, '8月5日 周三');
   });
 }

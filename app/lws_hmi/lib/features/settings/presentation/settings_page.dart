@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/keyboard_settings_page.dart';
@@ -73,9 +74,11 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends State<SettingsPage> with RouteAware {
   late int _currentTabIndex;
   bool _keyboardPushed = false;
+  /// Nested Settings push covers this route — pause live σ30 while covered.
+  bool _routeCovered = false;
 
   @override
   void initState() {
@@ -97,13 +100,46 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    appRouteObserver.unsubscribe(this);
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      appRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    appRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPushNext() {
+    if (!_routeCovered) {
+      setState(() => _routeCovered = true);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    if (_routeCovered) {
+      setState(() => _routeCovered = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final services = AppScope.of(context);
     final tabLabels = SettingsPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     // Sharp wallpaper → page ImageFiltered blur → panels with rim only (no fill).
+    // While a nested Settings route is up, skip live σ30 (parent stays under
+    // Cupertino slide; a second/ongoing Gaussian stalls RK3566 exit).
     return SettingsBlurredPageShell(
+      livePageBlur: !_routeCovered,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: ProductPageStatusBar(

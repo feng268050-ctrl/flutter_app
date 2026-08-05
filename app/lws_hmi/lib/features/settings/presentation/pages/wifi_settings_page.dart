@@ -87,6 +87,23 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     super.dispose();
   }
 
+  @override
+  void deactivate() {
+    // Pause scans while this route is covered or popping — avoids setState /
+    // HAL work during the Cupertino exit slide.
+    _scanTimer?.cancel();
+    _scanTimer = null;
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    if (mounted) {
+      _syncScanTimer();
+    }
+  }
+
   bool get _radioOn =>
       _radio == WifiRadioState.on || _radio == WifiRadioState.starting;
 

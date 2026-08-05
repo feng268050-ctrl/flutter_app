@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/ai_vision_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/alarm_information_tab.dart';
@@ -80,8 +81,10 @@ final class MonitorRouteArgs {
   final int initialTabIndex;
 }
 
-class _MonitorPageState extends State<MonitorPage> {
+class _MonitorPageState extends State<MonitorPage> with RouteAware {
   late int _currentTabIndex;
+  /// Nested Monitor routes (video detail / AI choose) — pause live σ30.
+  bool _routeCovered = false;
 
   @override
   void initState() {
@@ -95,12 +98,43 @@ class _MonitorPageState extends State<MonitorPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    appRouteObserver.unsubscribe(this);
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      appRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    appRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPushNext() {
+    if (!_routeCovered) {
+      setState(() => _routeCovered = true);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    if (_routeCovered) {
+      setState(() => _routeCovered = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tabLabels = MonitorPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     // Same shell as Settings: page Widget blur (σ30) + Custom Home panel faces.
     return SettingsBlurredPageShell(
+      livePageBlur: !_routeCovered,
       blurSigma: SettingsPerspectiveChrome.blurSigma,
       backdropBuilder: () => const Stack(
         fit: StackFit.expand,

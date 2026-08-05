@@ -1415,6 +1415,9 @@ class SettingsScrollView extends StatelessWidget {
 }
 
 /// Push a settings sub-page with industry L/R slide transitions.
+///
+/// Nested pages use a cheap backdrop via [SettingsScaffold] so exit does not
+/// stack two live page Gaussians during the animation.
 Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
   return pushAppSlidePage<T>(context, page);
 }
@@ -1644,19 +1647,31 @@ class SettingsPageBackdropBlur extends InheritedWidget {
       oldWidget.sigma != sigma;
 }
 
-/// Settings / Monitor page stack: sharp wallpaper (capture) → single page
+/// Settings / Monitor page stack: sharp wallpaper (capture) → optional page
 /// [ImageFiltered] Gaussian → [child] chrome.
 ///
 /// Capture for tip/IME frost stays on the sharp [CyberBlurBackdropTarget].
-/// The blurred wallpaper is the **only** Widget Gaussian between background
-/// and foreground (σ30). Panels use
+/// When [livePageBlur] is true, the blurred wallpaper is the **only** Widget
+/// Gaussian between background and foreground (σ30). Panels use
 /// [SettingsPerspectiveChrome] tint/rim/shadow only — no second BackdropFilter.
+///
+/// Nested Settings routes set [livePageBlur] false: Cupertino push/pop keeps
+/// the parent route painted under the slide, so a second full-screen
+/// [ImageFiltered] on RK3566/QEMU stalls the exit animation. Nested shells
+/// keep perspective chrome via [SettingsPageBackdropBlur] and a cheap dark
+/// wash over the wallpaper instead.
+///
+/// Root Settings / Monitor also set [livePageBlur] false while covered
+/// ([RouteAware.didPushNext]): only the top route should pay for live σ30
+/// during L/R transitions. Alternatives if jank remains: snapshot the blurred
+/// plate once (static [RawImage]), or ship a pre-blurred wallpaper asset.
 class SettingsBlurredPageShell extends StatelessWidget {
   const SettingsBlurredPageShell({
     super.key,
     required this.child,
     this.blurSigma = SettingsPerspectiveChrome.blurSigma,
     this.backdropBuilder,
+    this.livePageBlur = true,
   });
 
   final Widget child;
@@ -1664,13 +1679,44 @@ class SettingsBlurredPageShell extends StatelessWidget {
   /// Page wallpaper Gaussian sigma (foreground ↔ background).
   final double blurSigma;
 
-  /// Wallpaper under capture + blur layer. Called twice (sharp + blurred).
-  /// Defaults to [SettingsHomeBackdrop]. Monitor passes a dimmed stack.
+  /// Wallpaper under capture + blur layer. Called twice when [livePageBlur]
+  /// (sharp + blurred). Defaults to [SettingsHomeBackdrop]. Monitor passes a
+  /// dimmed stack.
   final Widget Function()? backdropBuilder;
+
+  /// When false, skip live [ImageFiltered] and use a dark wash (nested routes).
+  final bool livePageBlur;
 
   @override
   Widget build(BuildContext context) {
     final buildPlate = backdropBuilder ?? () => const SettingsHomeBackdrop();
+    final Widget underChrome;
+    if (livePageBlur) {
+      underChrome = IgnorePointer(
+        child: ImageFiltered(
+          imageFilter: ui.ImageFilter.blur(
+            sigmaX: blurSigma,
+            sigmaY: blurSigma,
+            tileMode: ui.TileMode.clamp,
+          ),
+          child: buildPlate(),
+        ),
+      );
+    } else {
+      // Match perspective frost fill without a second Gaussian during L/R
+      // Cupertino transitions (parent route already owns live blur).
+      underChrome = IgnorePointer(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            buildPlate(),
+            // Opaque enough that gutters do not flash sharp wallpaper under
+            // the sliding nested page; RGB matches CyberBlurTint.dark.
+            const ColoredBox(color: Color(0xE6101012)),
+          ],
+        ),
+      );
+    }
     return CyberBlurBackdropScope(
       child: SettingsPageBackdropBlur(
         sigma: blurSigma,
@@ -1682,20 +1728,7 @@ class SettingsBlurredPageShell extends StatelessWidget {
                 child: buildPlate(),
               ),
             ),
-            // Sole Gaussian between wallpaper and chrome (gutters / status /
-            // translucent plates). Panels add tint + rim only.
-            Positioned.fill(
-              child: IgnorePointer(
-                child: ImageFiltered(
-                  imageFilter: ui.ImageFilter.blur(
-                    sigmaX: blurSigma,
-                    sigmaY: blurSigma,
-                    tileMode: ui.TileMode.clamp,
-                  ),
-                  child: buildPlate(),
-                ),
-              ),
-            ),
+            Positioned.fill(child: underChrome),
             child,
           ],
         ),
@@ -1772,8 +1805,11 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final l10n = AppLocalizations.of(context)!;
-    // Page ImageFiltered (σ30) + perspective plates (tint/rim only).
+    // Nested routes: keep Cupertino L/R slide, but skip a second live
+    // ImageFiltered — parent SettingsPage already owns page blur and stays
+    // painted under the transition (RK3566/QEMU exit jank).
     return SettingsBlurredPageShell(
+      livePageBlur: !canPop,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: ProductPageStatusBar(

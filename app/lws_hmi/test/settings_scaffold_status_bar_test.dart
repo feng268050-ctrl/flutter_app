@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -30,5 +31,47 @@ void main() {
       find.byKey(const ValueKey('cyber-status-bar-clock')),
     );
     expect(clock.style?.fontSize, 20);
+  });
+
+  testWidgets('nested SettingsScaffold skips live page ImageFiltered',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      CupertinoPageRoute<void>(
+                        builder: (_) => const SettingsScaffold(
+                          title: 'Wi‑Fi',
+                          body: SizedBox.shrink(),
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('open'),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('open'));
+    await tester.pump(); // start route
+    await tester.pump(const Duration(milliseconds: 400)); // finish Cupertino slide
+
+    final shell = tester.widget<SettingsBlurredPageShell>(
+      find.byType(SettingsBlurredPageShell),
+    );
+    expect(shell.livePageBlur, isFalse);
+    expect(find.byType(ImageFiltered), findsNothing);
   });
 }

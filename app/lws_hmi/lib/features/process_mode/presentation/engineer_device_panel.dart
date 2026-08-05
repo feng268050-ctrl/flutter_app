@@ -696,10 +696,13 @@ final class _EngineerWireActionButtonState
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               color: solidHighlight ? actionOrange : idleFill,
-              border: Border.all(
-                color: actionOrange,
-                width: 1.5,
-              ),
+              // Spot / Seam / Wide / Cutting: no outline when wire unavailable.
+              border: widget.enabled
+                  ? Border.all(
+                      color: actionOrange,
+                      width: 1.5,
+                    )
+                  : null,
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),

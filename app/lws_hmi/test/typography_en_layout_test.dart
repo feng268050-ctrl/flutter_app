@@ -106,6 +106,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('EN Alarms Clear groups icon+label; icon matches label size',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        locale: const Locale('en', 'US'),
+        home: Scaffold(
+          body: Center(
+            child: MonitorFrostActionButton(
+              label: 'Clear',
+              variant: CyberButtonVariant.secondary,
+              groupIconWithLabel: true,
+              leading: Icon(
+                Icons.delete_outline,
+                color: CyberColors.buttonSecondaryText,
+              ),
+              onPressed: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final hmi = tester.widget<HmiButton>(find.byType(HmiButton));
+    expect(hmi.groupIconWithLabel, isTrue);
+    expect(find.text('Clear'), findsOneWidget);
+    final label = tester.widget<Text>(find.text('Clear'));
+    final fontSize = label.style!.fontSize!;
+    expect(fontSize, 18);
+    // Outer glyph box is fontSize×fontSize (FittedBox may keep Icon layout size).
+    final glyphBox = tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
+          (b) => b.width == fontSize && b.height == fontSize,
+        );
+    expect(glyphBox.width, fontSize);
+    expect(glyphBox.height, fontSize);
+    expect(tester.takeException(), isNull);
+  });
+
   test('HmiTypography roles match ladder sizes used by Settings chrome', () {
     const t = HmiTypography();
     expect(t.settingsRowTitle.fontSize, 20);

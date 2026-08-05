@@ -19,6 +19,7 @@ final class HmiButton extends StatelessWidget {
     this.icon,
     this.leading,
     this.trailing,
+    this.groupIconWithLabel = false,
     this.clickSoundEnabled = true,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
     this.borderGradientColors,
@@ -40,6 +41,11 @@ final class HmiButton extends StatelessWidget {
   final IconData? icon;
   final Widget? leading;
   final Widget? trailing;
+
+  /// When true with a leading icon, center icon+label as one Row group.
+  /// Default false: label centered on the button, icon left-inset (Reset…).
+  final bool groupIconWithLabel;
+
   final bool clickSoundEnabled;
   final CyberBorderGradientCenter borderGradientCenter;
   final List<Color>? borderGradientColors;
@@ -68,6 +74,7 @@ final class HmiButton extends StatelessWidget {
       icon: icon,
       leading: leading,
       trailing: trailing,
+      groupIconWithLabel: groupIconWithLabel,
     );
 
     // Always stretch so CyberButton uses [height] directly (not shrink-wrap
@@ -123,6 +130,7 @@ final class _HmiButtonLabel extends StatelessWidget {
     this.icon,
     this.leading,
     this.trailing,
+    this.groupIconWithLabel = false,
   });
 
   final String label;
@@ -133,6 +141,7 @@ final class _HmiButtonLabel extends StatelessWidget {
   final IconData? icon;
   final Widget? leading;
   final Widget? trailing;
+  final bool groupIconWithLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +152,8 @@ final class _HmiButtonLabel extends StatelessWidget {
 
     // Icon/leading without trailing: label centered on the full button;
     // icon left inset equals top/bottom inset (Reset / Save Favorite).
-    if (lead != null && trailing == null) {
+    // Opt out via [groupIconWithLabel] (e.g. Alarms Clear short pill).
+    if (lead != null && trailing == null && !groupIconWithLabel) {
       final edgeInset = ((buttonHeight - iconSize) / 2).clamp(0.0, buttonHeight);
       return SizedBox.expand(
         child: Stack(
@@ -177,25 +187,53 @@ final class _HmiButtonLabel extends StatelessWidget {
       );
     }
 
+    // Grouped icon+label (Clear) or leading+label+trailing: centered Row.
+    // When grouping, icon edge matches fixed label fontSize (text height @ 1.0).
+    final glyphSize = style.fontSize ?? iconSize;
+    final Widget? groupedLead = lead == null
+        ? null
+        : SizedBox(
+            width: glyphSize,
+            height: glyphSize,
+            child: IconTheme.merge(
+              data: IconThemeData(
+                size: glyphSize,
+                color: style.color ?? Colors.white,
+              ),
+              child: icon != null
+                  ? Icon(
+                      icon,
+                      size: glyphSize,
+                      color: style.color ?? Colors.white,
+                    )
+                  : FittedBox(fit: BoxFit.contain, child: lead),
+            ),
+          );
+    final labelText = Text(
+      label,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.visible,
+      textAlign: TextAlign.center,
+      style: style,
+    );
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: groupIconWithLabel ? MainAxisSize.min : MainAxisSize.max,
         children: [
-          if (lead != null) ...[
+          if (groupIconWithLabel && groupedLead != null) ...[
+            groupedLead,
+            const SizedBox(width: 8),
+          ] else if (lead != null) ...[
             lead,
             const SizedBox(width: 8),
           ],
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.visible,
-              textAlign: TextAlign.center,
-              style: style,
-            ),
-          ),
+          if (groupIconWithLabel && trailing == null)
+            labelText
+          else
+            Flexible(child: labelText),
           if (trailing != null) ...[
             const SizedBox(width: 8),
             trailing!,

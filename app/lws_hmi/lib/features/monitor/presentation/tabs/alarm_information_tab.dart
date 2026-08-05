@@ -274,18 +274,16 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                             child: MonitorFrostActionButton(
                               variant: CyberButtonVariant.secondary,
                               clickSoundEnabled: false,
+                              groupIconWithLabel: true,
                               onPressed:
                                   _history.isEmpty ? null : _clearHistory,
                               label: l10n.clearAlarmLogs,
                               leading: Image.asset(
                                 'assets/warn/alarm_button_icon.webp',
-                                width: 28,
-                                height: 28,
                                 color: CyberColors.buttonSecondaryText,
                                 colorBlendMode: BlendMode.srcIn,
-                                errorBuilder: (_, __, ___) => const Icon(
+                                errorBuilder: (_, __, ___) => Icon(
                                   Icons.delete_outline,
-                                  size: 28,
                                   color: CyberColors.buttonSecondaryText,
                                 ),
                               ),

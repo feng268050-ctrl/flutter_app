@@ -297,6 +297,27 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 Expanded(
                                   child: _EngineerWireActionButton(
                                     key: const ValueKey(
+                                        'engineer-panel-feed'),
+                                    label: DeviceControlFeedbackCopy.feedLabel(
+                                      l10n,
+                                    ),
+                                    icon: Icons.output,
+                                    height: _wireButtonsHeight,
+                                    enabled: _wireCapable,
+                                    laserBlocked: laserActive,
+                                    modeBlocked: false,
+                                    retract: false,
+                                    active: widget.controller.wireWork &&
+                                        !widget.controller.wireRetracting,
+                                    controller: widget.controller,
+                                    onMessage: (message) =>
+                                        _toast(context, message),
+                                  ),
+                                ),
+                                const SizedBox(width: _actionGap),
+                                Expanded(
+                                  child: _EngineerWireActionButton(
+                                    key: const ValueKey(
                                         'engineer-panel-retract'),
                                     label: l10n.retract,
                                     icon: Icons.output,
@@ -307,27 +328,6 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     retract: true,
                                     active: widget.controller.wireWork &&
                                         widget.controller.wireRetracting,
-                                    controller: widget.controller,
-                                    onMessage: (message) =>
-                                        _toast(context, message),
-                                  ),
-                                ),
-                                const SizedBox(width: _actionGap),
-                                Expanded(
-                                  child: _EngineerWireActionButton(
-                                    key: const ValueKey(
-                                        'engineer-panel-feed'),
-                                    label: DeviceControlFeedbackCopy.feedLabel(
-                                      l10n,
-                                    ),
-                                    icon: Icons.input,
-                                    height: _wireButtonsHeight,
-                                    enabled: _wireCapable,
-                                    laserBlocked: laserActive,
-                                    modeBlocked: false,
-                                    retract: false,
-                                    active: widget.controller.wireWork &&
-                                        !widget.controller.wireRetracting,
                                     controller: widget.controller,
                                     onMessage: (message) =>
                                         _toast(context, message),
@@ -767,12 +767,15 @@ final class _EngineerWireActionButtonState
                             SizedBox(
                               width: drawIcon,
                               height: drawIcon,
-                              child: Icon(
-                                widget.icon,
-                                color: widget.enabled
-                                    ? foreground
-                                    : disabledForeground,
-                                size: drawIcon,
+                              child: Transform.flip(
+                                flipX: widget.retract,
+                                child: Icon(
+                                  widget.icon,
+                                  color: widget.enabled
+                                      ? foreground
+                                      : disabledForeground,
+                                  size: drawIcon,
+                                ),
                               ),
                             ),
                           SizedBox(width: gap),

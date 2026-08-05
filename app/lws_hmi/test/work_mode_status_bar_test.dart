@@ -86,11 +86,10 @@ void main() {
     expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
     expect(find.byKey(const ValueKey('cyber-status-bt')), findsNothing);
 
-    // Side rails; camera+clock centered; label+icon groups with equal flexible
-    // gaps (prefer full labels over a fixed 28 gap).
-    expect(
-      tester.getSize(find.byKey(const ValueKey('work-mode-status-back'))).width,
-      WorkModeStatusBarDimens.sideRailWidth,
+    // Home / trailing are content-sized; cluster centered → equal side gaps.
+    // Inter-group gaps capped smaller than Home↔cluster / cluster↔trailing.
+    final home = tester.getRect(
+      find.byKey(const ValueKey('work-mode-status-back')),
     );
     final gun = tester.getRect(
       find.byKey(const ValueKey('work-mode-gun-switch')),
@@ -107,16 +106,14 @@ void main() {
     final eStop = tester.getRect(
       find.byKey(const ValueKey('work-mode-e-stop')),
     );
-    expect((gun.left + eStop.right) / 2, closeTo(640, 2));
     final camera = tester.getRect(
       find.byKey(const ValueKey('work-mode-status-camera')),
     );
     final clock = tester.getRect(find.text('14:30'));
-    final trailingMid = (camera.left + clock.right) / 2;
-    expect(
-      trailingMid,
-      closeTo(1280 - WorkModeStatusBarDimens.sideRailWidth / 2, 2),
-    );
+    final leftGap = gun.left - home.right;
+    final rightGap = camera.left - eStop.right;
+    expect(leftGap, closeTo(rightGap, 1.5));
+    expect(leftGap, greaterThan(WorkModeStatusBarDimens.equipmentItemGap));
     // Full English labels stay visible at design width.
     expect(find.text('Gun Switch'), findsOneWidget);
     expect(find.text('Safety Clamp'), findsOneWidget);
@@ -131,8 +128,11 @@ void main() {
     ];
     for (final gap in gaps) {
       expect(gap, closeTo(gaps.first, 0.5));
+      expect(gap, lessThanOrEqualTo(WorkModeStatusBarDimens.equipmentItemGap + 0.5));
+      expect(gap, lessThan(leftGap));
     }
     expect(gun.height, closeTo(WorkModeStatusBarDimens.primaryIconSize, 1));
+    expect(clock.right, lessThan(1280));
   });
 
   testWidgets('WorkModeStatusBar swaps e-stop assets by latch', (tester) async {

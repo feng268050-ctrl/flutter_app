@@ -536,7 +536,7 @@ select_usb_ssh_device() {
 	fi
 
 	IFS="$USB_SSH_FS" read -r mode sn chip loc iface addr usb <<<"${rows[0]}"
-	[[ "$iface" != "-" && -n "$iface" ]] || die "USB-SSH: no host IFACE (plug USB OTG; board: /usr/libexec/hmi/usb-plug-ssh-start.sh)"
+	[[ "$iface" != "-" && -n "$iface" ]] || die "USB-SSH: no host IFACE (plug USB OTG; board: /usr/libexec/usb/usb-plug-ssh-start.sh)"
 	printf '%s\n' "$loc" "$iface" "$addr"
 }
 

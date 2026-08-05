@@ -190,7 +190,7 @@ select_device() {
 	*) die "No Linux SSH target (make devices)" ;;
 	esac
 	if [[ "$mode" == "USB-SSH" && ( "$iface" == "-" || -z "$iface" ) ]]; then
-		die "USB-SSH: no host IFACE (plug USB OTG; board: /usr/libexec/hmi/usb-plug-ssh-start.sh)"
+		die "USB-SSH: no host IFACE (plug USB OTG; board: /usr/libexec/usb/usb-plug-ssh-start.sh)"
 	fi
 	emit_selection "$mode" "$loc" "$iface" "$addr"
 }

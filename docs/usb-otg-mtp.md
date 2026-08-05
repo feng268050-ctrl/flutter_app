@@ -10,8 +10,8 @@ Userspace:
 
 - **umtprd** (uMTP-Responder) — `make build-umtprd` → `prebuilt/umtprd/aarch64/` + overlay `/usr/bin/umtprd`
 - Helpers:
-  - `/usr/libexec/hmi/usb-mtp-start.sh` — unload `g_ether`, create configfs gadget `lws-mtp`, mount FunctionFS, start umtprd, bind UDC
-  - `/usr/libexec/hmi/usb-mtp-stop.sh` — kill umtprd, unbind UDC, unmount FunctionFS
+  - `/usr/libexec/usb/usb-mtp-start.sh` — unload `g_ether`, create configfs gadget `lws-mtp`, mount FunctionFS, start umtprd, bind UDC
+  - `/usr/libexec/usb/usb-mtp-stop.sh` — kill umtprd, unbind UDC, unmount FunctionFS
 - Storage root: `/userdata/storage` (created on start; FS stays mounted on device)
 - Conf generated at `/etc/hmi/mtp/umtprd.conf` (VID `0x2207`, PID `0x0011`, product **LWS Storage**, Android MTP extensions)
 

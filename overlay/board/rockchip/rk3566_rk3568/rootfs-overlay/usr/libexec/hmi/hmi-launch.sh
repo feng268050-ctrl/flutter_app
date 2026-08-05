@@ -155,30 +155,37 @@ if [ "$MODE" = "debug" ]; then
 		exit 1
 	fi
 	# eLinux DartProject expects ICU at <bundle>/data/icudtl.dat.
-	if [ ! -e "$BUNDLE/data/icudtl.dat" ]; then
-		mkdir -p "$BUNDLE/data"
-		cp -L "$RT/icudtl.dat" "$BUNDLE/data/icudtl.dat" 2>/dev/null || {
-			echo "hmi-launch: failed to install $BUNDLE/data/icudtl.dat from $RT" >&2
-			exit 1
-		}
-	fi
+	# Symlink (not copy) so /opt/hmi does not carry a payload duplicate.
+	mkdir -p "$BUNDLE/data"
+	rm -f "$BUNDLE/data/icudtl.dat"
+	ln -sf "$RT/icudtl.dat" "$BUNDLE/data/icudtl.dat" || {
+		echo "hmi-launch: failed to link $BUNDLE/data/icudtl.dat → $RT/icudtl.dat" >&2
+		exit 1
+	}
 	ELINUX_LD_LIBRARY_PATH="$RT"
 else
 	if [ ! -f "$BUNDLE/lib/libapp.so" ]; then
 		echo "hmi-launch: missing release AOT $BUNDLE/lib/libapp.so" >&2
 		exit 1
 	fi
-	# eLinux looks for ICU next to the bundle.
-	if [ ! -e "$BUNDLE/data/icudtl.dat" ]; then
-		for icu in \
-			/usr/share/flutter/release/data/icudtl.dat \
-			/usr/share/flutter/icudtl.dat; do
-			if [ -e "$icu" ]; then
-				mkdir -p "$BUNDLE/data"
-				cp -L "$icu" "$BUNDLE/data/icudtl.dat" 2>/dev/null || true
-				break
-			fi
-		done
+	# eLinux looks for ICU under bundle/data/; point at rootfs system ICU.
+	icu_src=
+	for icu in \
+		/usr/share/flutter/release/data/icudtl.dat \
+		/usr/share/flutter/icudtl.dat; do
+		if [ -e "$icu" ]; then
+			icu_src="$icu"
+			break
+		fi
+	done
+	if [ -n "$icu_src" ]; then
+		mkdir -p "$BUNDLE/data"
+		# Replace a prior cp payload with a symlink (verify-env forbids a real file).
+		rm -f "$BUNDLE/data/icudtl.dat"
+		ln -sf "$icu_src" "$BUNDLE/data/icudtl.dat" || {
+			echo "hmi-launch: failed to link $BUNDLE/data/icudtl.dat → $icu_src" >&2
+			exit 1
+		}
 	fi
 fi
 

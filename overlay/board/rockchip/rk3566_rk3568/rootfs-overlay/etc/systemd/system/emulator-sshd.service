@@ -6,7 +6,7 @@ ConditionKernelCommandLine=lws.emulator=1
 
 [Service]
 Type=simple
-ExecStartPre=/usr/libexec/hmi/ensure-sshd-hostkeys.sh
+ExecStartPre=/usr/libexec/ssh/ensure-sshd-hostkeys.sh
 ExecStartPre=/bin/mkdir -p /run/sshd
 ExecStart=/usr/sbin/sshd -D -e
 Restart=on-failure

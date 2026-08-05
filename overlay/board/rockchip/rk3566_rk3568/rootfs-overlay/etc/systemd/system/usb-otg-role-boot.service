@@ -9,7 +9,7 @@ ConditionKernelCommandLine=!lws.emulator=1
 [Service]
 Type=oneshot
 # Policy is static: /etc/usb-otg.ini
-ExecStart=/usr/libexec/hmi/usb-otg-mode.sh apply
+ExecStart=/usr/libexec/usb/usb-otg-mode.sh apply
 RemainAfterExit=yes
 
 [Install]

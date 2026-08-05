@@ -25,7 +25,7 @@ $HOST_ADDR/$MASK for board $TARGET_ADDR.
 
 Do NOT type literal "enX" — run this script or see Hardware Port / adapter name.
 
-Prereq (board): /usr/libexec/hmi/usb-plug-ssh-start.sh (or plug-ssh already active)
+Prereq (board): /usr/libexec/usb/usb-plug-ssh-start.sh (or plug-ssh already active)
 Windows host: Rockchip USB / RNDIS drivers; Git Bash or MSYS2; may need Administrator for IP.
 EOF
 }
@@ -176,7 +176,7 @@ echo "Looking for USB gadget ethernet (not Wi‑Fi) ..."
 IFACE="$(find_iface)" || die "No USB gadget NIC found.
 
 Plug OTG USB into the host PC, ensure the board plug-ssh is up:
-  /usr/libexec/hmi/usb-plug-ssh-start.sh
+  /usr/libexec/usb/usb-plug-ssh-start.sh
 
 Windows: install Rockchip USB / Remote NDIS drivers, then check Adapter settings for a new Ethernet/RNDIS device.
 macOS: networksetup -listallhardwareports | grep -A1 -iE 'RNDIS|Gadget|LWS|Innohi'

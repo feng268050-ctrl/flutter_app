@@ -121,8 +121,8 @@ mount_named_part private /mnt/private
 mount_named_part oem /oem
 mount_named_part userdata /userdata
 # Persist prefs across rootfs flash (P2.3): /var/lib/* → /userdata/{wpa_supplicant,network,bluetooth,hmi}
-if [ -x /usr/libexec/hmi/bind-prefs.sh ]; then
-	/usr/libexec/hmi/bind-prefs.sh || log "prefs-bind soft-fail"
+if [ -x /usr/libexec/board/bind-prefs.sh ]; then
+	/usr/libexec/board/bind-prefs.sh || log "prefs-bind soft-fail"
 fi
 seed_private1_params
 run_mountall

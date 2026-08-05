@@ -75,7 +75,7 @@ void main() {
     expect(b.dateTime().helperPath, '');
     expect(b.ethernetIface(), 'eth0');
     expect(b.wifiIface(), 'wlan0');
-    expect(b.sshDebug().enableHelper, ['/usr/libexec/hmi/enable-ssh-debug.sh']);
+    expect(b.sshDebug().enableHelper, ['/usr/libexec/ssh/enable-ssh-debug.sh']);
     expect(b.usbOtg().helper, ['/oem/boards/ynh960/helpers/usb-otg-mode.sh']);
     expect(b.mediaAudio().playbackPathControl, 'Playback Path');
     expect(b.mediaAudio().playbackPathValue, 'RING_SPK_HP');

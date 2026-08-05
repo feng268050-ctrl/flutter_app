@@ -82,7 +82,7 @@ HAL `ProductInfo.brand`, `ProductInfo.model`, and `ProductInfo.sn` SHALL be load
 
 ### Requirement: On-board vendor_storage tooling
 
-The appliance rootfs SHALL include a working Vendor Storage userspace tool (Rockchip `vendor_storage` or equivalent) and thin HMI helpers under `/usr/libexec/hmi/` that read and write the product identity ID map. After GPT adoption, `/dev/vendor_storage` SHALL be usable for these helpers on real hardware. Emulator or environments without Vendor Storage SHALL fail clearly on write and SHALL apply the documented empty-SN → chip-ID fallback on read.
+The appliance rootfs SHALL include a working Vendor Storage userspace tool (Rockchip `vendor_storage` or equivalent) and thin board helpers under **`/usr/libexec/board/`** that read and write the product identity ID map. After GPT adoption, `/dev/vendor_storage` SHALL be usable for these helpers on real hardware. Emulator or environments without Vendor Storage SHALL fail clearly on write and SHALL apply the documented empty-SN → chip-ID fallback on read.
 
 #### Scenario: Device node present on hardware
 

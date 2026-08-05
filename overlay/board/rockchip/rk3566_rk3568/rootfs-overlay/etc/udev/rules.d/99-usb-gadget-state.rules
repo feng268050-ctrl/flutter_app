@@ -1,6 +1,6 @@
 # Android-compatible USB gadget state (configfs CONFIG_USB_CONFIGFS_UEVENT).
 # Kernel android_work emits USB_STATE= on /devices/virtual/android_usb/*.
 # Same signal UsbDeviceManager observes on Android.
-ACTION=="change", SUBSYSTEM=="android_usb", ENV{USB_STATE}=="DISCONNECTED", RUN+="/usr/libexec/hmi/usb-gadget-usb-state.sh DISCONNECTED"
-ACTION=="change", SUBSYSTEM=="android_usb", ENV{USB_STATE}=="CONNECTED", RUN+="/usr/libexec/hmi/usb-gadget-usb-state.sh CONNECTED"
-ACTION=="change", SUBSYSTEM=="android_usb", ENV{USB_STATE}=="CONFIGURED", RUN+="/usr/libexec/hmi/usb-gadget-usb-state.sh CONFIGURED"
+ACTION=="change", SUBSYSTEM=="android_usb", ENV{USB_STATE}=="DISCONNECTED", RUN+="/usr/libexec/usb/usb-gadget-usb-state.sh DISCONNECTED"
+ACTION=="change", SUBSYSTEM=="android_usb", ENV{USB_STATE}=="CONNECTED", RUN+="/usr/libexec/usb/usb-gadget-usb-state.sh CONNECTED"
+ACTION=="change", SUBSYSTEM=="android_usb", ENV{USB_STATE}=="CONFIGURED", RUN+="/usr/libexec/usb/usb-gadget-usb-state.sh CONFIGURED"

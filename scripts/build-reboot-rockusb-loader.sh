@@ -38,12 +38,12 @@ resolve_br_out() {
 
 TARGET_DIR="${1:-}"
 if [[ -n "$TARGET_DIR" ]]; then
-	OUT="$TARGET_DIR/usr/libexec/hmi/reboot-loader"
+	OUT="$TARGET_DIR/usr/libexec/board/reboot-loader"
 	BR_OUT="$(resolve_br_out "$TARGET_DIR")"
 else
 	BR_OUT="$(resolve_br_out)"
 	TARGET_DIR="$BR_OUT/target"
-	OUT="$TARGET_DIR/usr/libexec/hmi/reboot-loader"
+	OUT="$TARGET_DIR/usr/libexec/board/reboot-loader"
 fi
 
 HOST_BIN="$BR_OUT/host/bin"

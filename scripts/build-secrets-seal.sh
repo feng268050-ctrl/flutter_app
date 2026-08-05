@@ -77,15 +77,17 @@ resolve_teec() {
 
 sync_overlay() {
 	mkdir -p "$OVERLAY_ROOT/usr/lib/optee_armtz" \
-		"$OVERLAY_ROOT/usr/libexec/hmi"
+		"$OVERLAY_ROOT/usr/libexec/board"
 	install -m 0644 "$OUT_DIR/$TA_NAME" \
 		"$OVERLAY_ROOT/usr/lib/optee_armtz/$TA_NAME"
 	install -m 0755 "$OUT_DIR/secrets-seal-ca" \
-		"$OVERLAY_ROOT/usr/libexec/hmi/secrets-seal-ca"
+		"$OVERLAY_ROOT/usr/libexec/board/secrets-seal-ca"
 	# Buildroot merged-/usr rejects overlay top-level /lib.
 	rm -f "$OVERLAY_ROOT/lib/optee_armtz/$TA_NAME"
 	rmdir "$OVERLAY_ROOT/lib/optee_armtz" 2>/dev/null || true
 	rmdir "$OVERLAY_ROOT/lib" 2>/dev/null || true
+	# Hard-cut: do not leave a stale CA under the old hmi/ path.
+	rm -f "$OVERLAY_ROOT/usr/libexec/hmi/secrets-seal-ca"
 	echo "build-secrets-seal: synced → overlay usr/lib/optee_armtz + secrets-seal-ca"
 }
 
@@ -187,6 +189,7 @@ if [[ "$FORCE" == "1" ]]; then
 	rm -rf "$OUT_DIR"
 	rm -f "$OVERLAY_ROOT/usr/lib/optee_armtz/$TA_NAME" \
 		"$OVERLAY_ROOT/lib/optee_armtz/$TA_NAME" \
+		"$OVERLAY_ROOT/usr/libexec/board/secrets-seal-ca" \
 		"$OVERLAY_ROOT/usr/libexec/hmi/secrets-seal-ca"
 fi
 

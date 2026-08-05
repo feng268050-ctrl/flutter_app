@@ -203,7 +203,7 @@ else
 	fail "shutdown.sh missing or not executable"
 fi
 case "$(readlink /usr/bin/systemctl 2>/dev/null)" in
-../libexec/hmi/systemctl-poweroff-wrapper.sh)
+../libexec/power/systemctl-poweroff-wrapper.sh|/usr/libexec/power/systemctl-poweroff-wrapper.sh)
 	wrap_ok=1 ;;
 esac
 if [ -x /usr/bin/systemctl.real ] && [ "${wrap_ok:-0}" = 1 ] && [ -e /usr/bin/systemctl ]; then

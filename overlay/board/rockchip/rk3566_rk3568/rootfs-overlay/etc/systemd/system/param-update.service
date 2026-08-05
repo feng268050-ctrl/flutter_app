@@ -9,7 +9,7 @@ ConditionKernelCommandLine=!lws.emulator=1
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/libexec/hmi/ynh960-display-init.sh
+ExecStart=/usr/libexec/display/ynh960-display-init.sh
 StandardOutput=journal
 StandardError=journal
 

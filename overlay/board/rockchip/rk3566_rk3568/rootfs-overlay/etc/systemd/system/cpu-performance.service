@@ -7,7 +7,7 @@ Before=mainserver.service hmi.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/libexec/hmi/set-performance-mode.sh
+ExecStart=/usr/libexec/board/set-performance-mode.sh
 
 [Install]
 WantedBy=multi-user.target

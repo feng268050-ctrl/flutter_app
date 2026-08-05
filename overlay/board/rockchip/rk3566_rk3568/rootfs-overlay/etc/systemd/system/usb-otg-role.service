@@ -5,5 +5,5 @@ After=sysinit.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/libexec/hmi/usb-otg-mode.sh apply
+ExecStart=/usr/libexec/usb/usb-otg-mode.sh apply
 RemainAfterExit=no

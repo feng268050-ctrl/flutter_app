@@ -32,7 +32,7 @@ Rockchip `parameter.txt` uses **512-byte sectors**.
 | vendor2 | `0x80` | `0x4BE100` |
 | vendor3 | `0x80` | `0x4BE180` |
 
-ID map: [`board/vendor-storage-ids.txt`](../board/vendor-storage-ids.txt) (SN=1, BRAND=20, MODEL=21). `package-file` / `factory.img` **must not** embed `vendor*.img` so `make flash` preserves identity. Factory order: **flash → `make write-identity` → verify**. Moving vendor LBAs is a breaking migration (identity data loss).
+ID map: [`board/vendor-storage-ids.txt`](../board/vendor-storage-ids.txt) (SN=1, BRAND=20, MODEL=21); on-device copy at `/usr/libexec/board/vendor-storage-ids.txt`. `package-file` / `factory.img` **must not** embed `vendor*.img` so `make flash` preserves identity. Factory order: **flash → `make write-identity` → verify**. Moving vendor LBAs is a breaking migration (identity data loss).
 
 Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL over raw `/dev/mmcblk0pN`.
 
@@ -100,7 +100,7 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | **Subsystem state (P2.3+)** | **`/userdata/{wpa_supplicant,network,bluetooth,hmi}/`** (symlinked from `/var/lib/*`) | userdata |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
-`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `/usr/libexec/hmi/ynh960-display-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/display-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`bind-prefs.sh`** to symlink:
+`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `/usr/libexec/display/ynh960-display-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/display-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`bind-prefs.sh`** to symlink:
 
 - `/var/lib/wpa_supplicant` → `/userdata/wpa_supplicant`
 - `/var/lib/network` → `/userdata/network`

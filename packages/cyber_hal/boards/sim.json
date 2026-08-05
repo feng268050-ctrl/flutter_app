@@ -31,7 +31,7 @@
     "eth0": 2000
   },
   "helpers": {
-    "ssh_debug": "/usr/libexec/hmi/enable-ssh-debug.sh",
+    "ssh_debug": "/usr/libexec/ssh/enable-ssh-debug.sh",
     "backlight_preferred_names": "backlight,acpi_video0",
     "alsa_volume_controls": "Master,PCM,Speaker,Playback",
     "apply_mouse_settings": "/usr/bin/apply-mouse-settings",

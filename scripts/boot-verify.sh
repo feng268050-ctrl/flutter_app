@@ -192,18 +192,18 @@ if command -v systemctl >/dev/null 2>&1; then
 		;;
 	esac
 fi
-if [ -x /usr/libexec/hmi/pre-poweroff.sh ]; then
+if [ -x /usr/libexec/power/pre-poweroff.sh ]; then
 	pass "pre-poweroff.sh present and executable"
 else
 	fail "pre-poweroff.sh missing or not executable"
 fi
-if [ -x /usr/libexec/hmi/shutdown.sh ]; then
+if [ -x /usr/libexec/power/shutdown.sh ]; then
 	pass "shutdown.sh present and executable"
 else
 	fail "shutdown.sh missing or not executable"
 fi
 case "$(readlink /usr/bin/systemctl 2>/dev/null)" in
-../libexec/hmi/systemctl-poweroff-wrapper.sh)
+../libexec/power/systemctl-poweroff-wrapper.sh|/usr/libexec/power/systemctl-poweroff-wrapper.sh)
 	wrap_ok=1 ;;
 esac
 if [ -x /usr/bin/systemctl.real ] && [ "${wrap_ok:-0}" = 1 ] && [ -e /usr/bin/systemctl ]; then

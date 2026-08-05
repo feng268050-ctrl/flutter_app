@@ -43,7 +43,7 @@ Also verify mounted-root / misc protection via board preflight:
 **Today (P2.5 helpers):** digest / `.sha256` (and optional manifest) under `/userdata/ota/` — integrity only, not product authenticity.
 
 1. Stage a valid bundle under `/userdata/ota/` (`boot.img`, `boot_b.img`, `rootfs.img`, digests, manifest)
-2. Run `/usr/libexec/hmi/ab-upgrade-apply.sh` (or the session copy under `/userdata/ota/`)
+2. Run `/usr/libexec/ab/ab-upgrade-apply.sh` (or the session copy under `/userdata/ota/`)
 3. Expect: digest verify → `dd` → arm try-boot → reboot
 
 Corrupt staged digest:

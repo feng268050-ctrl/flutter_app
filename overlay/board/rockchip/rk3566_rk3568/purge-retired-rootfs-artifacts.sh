@@ -114,6 +114,54 @@ rm -f \
 	"$TARGET_DIR/usr/libexec/hmi/render-mediamtx-config.sh"
 rm -rf "$TARGET_DIR/etc/mediamtx"
 
+# libexec-board: helpers moved out of /usr/libexec/hmi/. Buildroot overlay into
+# incremental target/ has no --delete for moved files — purge stale copies here.
+rm -f \
+	"$TARGET_DIR/usr/libexec/hmi/read-device-serial.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/read-product-identity.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/write-product-identity.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/vendor-storage-ids.txt" \
+	"$TARGET_DIR/usr/libexec/hmi/secrets-seal" \
+	"$TARGET_DIR/usr/libexec/hmi/secrets-seal-ca" \
+	"$TARGET_DIR/usr/libexec/hmi/paths.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/lws-hostname.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/device-mdns-advertise.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/serial-console-stty.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/reboot-loader" \
+	"$TARGET_DIR/usr/libexec/hmi/boot-verify.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/env-verify.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-otg-mode.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-gadget-usb-state.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-plug-ssh-start.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-plug-ssh-stop.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-plug-ssh-recover.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-plug-ssh-diag.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-plug-ssh-vbus-check.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-mtp-start.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/usb-mtp-stop.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/ab-slot-lib.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/ab-upgrade-apply.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/ab-upgrade-stream.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/ab-boot-confirm.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/oem-compose.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/ynh960-display-init.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/weston-hmi-config.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/change-orientation.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/apply-mouse-settings.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/set-performance-mode.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/bind-prefs.sh" \
+	"$TARGET_DIR/usr/libexec/display/set-performance-mode.sh" \
+	"$TARGET_DIR/usr/libexec/display/bind-prefs.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/pre-poweroff.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/shutdown.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/pwrkey-poweroff.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/systemctl-poweroff-wrapper.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/enable-ssh-debug.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/disable-ssh-debug.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/lan-ssh-run.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/ensure-sshd-hostkeys.sh"
+echo "post-build: purged moved libexec helpers from usr/libexec/hmi (if leftover)"
+
 # Wi-Fi/BT kitchen-sink firmware + Broadcom modules belong to OEM radio pack /
 # unused chip paths — purge incremental leftovers from older post-wifibt dumps.
 _fw_dirs="

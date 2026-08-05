@@ -10,7 +10,7 @@
   `isHardwareBound = false`).
 - **Selection is OEM `board_profile.json` → `secrets_backend`:**
   - `"software"` — live HW fingerprint → HKDF-SHA256 → AES-256-GCM
-  - `"optee"` — `/usr/libexec/hmi/secrets-seal` + seal TA
+  - `"optee"` — `/usr/libexec/board/secrets-seal` + seal TA
 - **Current product default (ynh960 OEM + App asset):** `"software"` until
   Innohi provides a matching TA signing key; switch to `"optee"` by editing the
   board profile only (no App code change).

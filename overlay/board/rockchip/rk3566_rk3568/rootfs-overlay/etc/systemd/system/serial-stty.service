@@ -7,7 +7,7 @@ Before=mainserver.service hmi.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/libexec/hmi/serial-console-stty.sh
+ExecStart=/usr/libexec/board/serial-console-stty.sh
 
 [Install]
 WantedBy=multi-user.target

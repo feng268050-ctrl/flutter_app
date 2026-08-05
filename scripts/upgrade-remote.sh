@@ -18,7 +18,7 @@ source "$ROOT/scripts/factory-sku.sh"
 
 FIRMWARE="${LWS_HMI_FIRMWARE_DIR:-$ROOT/output/firmware}"
 OTA_DIR="/userdata/ota"
-HELPER_SRC_DIR="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi"
+HELPER_SRC_DIR="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/ab"
 STREAM_SRC="$HELPER_SRC_DIR/ab-upgrade-stream.sh"
 LIB_SRC="$HELPER_SRC_DIR/ab-slot-lib.sh"
 STREAM="$OTA_DIR/ab-upgrade-stream.sh"

@@ -7,7 +7,7 @@ On-demand LAN/WLAN OpenSSH debug (`ssh-debug-lan.service`), default off, coexist
 ## Requirements
 ### Requirement: On-demand LAN SSH debug scripts
 
-The image SHALL provide `/usr/libexec/hmi/enable-ssh-debug.sh` and `/usr/libexec/hmi/disable-ssh-debug.sh` that start and stop **`ssh-debug-lan.service`** (on-demand LAN/WLAN OpenSSH). The unit MUST NOT be linked in `multi-user.target.wants` and scripts MUST NOT `systemctl enable` it. After a board reboot with no further action, port 22 MUST NOT be listening for LAN/WLAN solely due to a prior enable. LAN sshd MUST run **outside** `hmi.service`'s cgroup so `systemctl stop hmi` during `make push-app` does not terminate the SSH session.
+The image SHALL provide `/usr/libexec/ssh/enable-ssh-debug.sh` and `/usr/libexec/ssh/disable-ssh-debug.sh` that start and stop **`ssh-debug-lan.service`** (on-demand LAN/WLAN OpenSSH). The unit MUST NOT be linked in `multi-user.target.wants` and scripts MUST NOT `systemctl enable` it. After a board reboot with no further action, port 22 MUST NOT be listening for LAN/WLAN solely due to a prior enable. LAN sshd MUST run **outside** `hmi.service`'s cgroup so `systemctl stop hmi` during `make push-app` does not terminate the SSH session.
 
 #### Scenario: Enable then SSH over eth0 or wlan0
 

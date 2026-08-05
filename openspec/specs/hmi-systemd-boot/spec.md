@@ -121,7 +121,7 @@ The image SHALL provide `pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdo
 #### Scenario: systemctl wrapper installed
 
 - **WHEN** P1 rootfs is inspected
-- **THEN** `/usr/bin/systemctl` symlinks to `/usr/libexec/hmi/systemctl-poweroff-wrapper.sh` and `/usr/bin/systemctl.real` exists
+- **THEN** `/usr/bin/systemctl` symlinks to `/usr/libexec/power/systemctl-poweroff-wrapper.sh` and `/usr/bin/systemctl.real` exists
 
 #### Scenario: Poweroff avoids HMI teardown
 

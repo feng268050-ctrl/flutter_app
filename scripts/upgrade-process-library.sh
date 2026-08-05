@@ -48,7 +48,7 @@ usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
 echo "INFO: reading device model from Vendor Storage (read-identity)"
 DEVICE_MODEL="$(
-	remote "/usr/bin/read-identity model 2>/dev/null || /usr/libexec/hmi/read-product-identity.sh model 2>/dev/null || true" | tr -d '\r'
+	remote "/usr/bin/read-identity model 2>/dev/null || /usr/libexec/board/read-product-identity.sh model 2>/dev/null || true" | tr -d '\r'
 )"
 DEVICE_MODEL="$(printf '%s' "$DEVICE_MODEL" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
 [[ -n "$DEVICE_MODEL" ]] || die "device model empty/missing in Vendor Storage (make write-identity MODEL=…)"

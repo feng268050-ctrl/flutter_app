@@ -4,7 +4,7 @@
 set -eu
 
 TARGET_DIR="${1:?TARGET_DIR required}"
-wrapper="$TARGET_DIR/usr/libexec/hmi/systemctl-poweroff-wrapper.sh"
+wrapper="$TARGET_DIR/usr/libexec/power/systemctl-poweroff-wrapper.sh"
 real="$TARGET_DIR/usr/bin/systemctl.real"
 ctl="$TARGET_DIR/usr/bin/systemctl"
 bin_ctl="$TARGET_DIR/bin/systemctl"
@@ -26,7 +26,7 @@ install_links() {
 	mkdir -p "$TARGET_DIR/usr/bin" "$TARGET_DIR/bin"
 	rm -f "$ctl" "$bin_ctl"
 	# Relative link: ../libexec from /usr/bin → /usr/libexec (not ../../ → /libexec).
-	ln -sf ../libexec/hmi/systemctl-poweroff-wrapper.sh "$ctl"
+	ln -sf ../libexec/power/systemctl-poweroff-wrapper.sh "$ctl"
 	if ! bin_merged_with_usr; then
 		ln -sf ../usr/bin/systemctl "$bin_ctl"
 	fi
@@ -35,12 +35,17 @@ install_links() {
 wrapper_installed() {
 	[ -L "$ctl" ] || return 1
 	case "$(readlink "$ctl" 2>/dev/null)" in
-	../libexec/hmi/systemctl-poweroff-wrapper.sh) ;;
-	../../libexec/hmi/systemctl-poweroff-wrapper.sh)
+	../libexec/power/systemctl-poweroff-wrapper.sh) ;;
+	../../libexec/power/systemctl-poweroff-wrapper.sh)
 		# Broken legacy link (resolves to /libexec, not /usr/libexec).
 		return 1
 		;;
-	/usr/libexec/hmi/systemctl-poweroff-wrapper.sh)
+	../libexec/hmi/systemctl-poweroff-wrapper.sh|\
+	../../libexec/hmi/systemctl-poweroff-wrapper.sh)
+		# Pre-move relative link — rewrite.
+		return 1
+		;;
+	/usr/libexec/power/systemctl-poweroff-wrapper.sh)
 		# Normalize legacy absolute symlink (breaks staging verify -e checks).
 		return 1
 		;;

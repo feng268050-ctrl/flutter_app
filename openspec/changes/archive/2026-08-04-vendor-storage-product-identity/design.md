@@ -67,7 +67,8 @@ Constraints: ynh960 GPT is product-owned (`board/parameter-buildroot-fit.txt`); 
 ### D6 — Rootfs package
 
 - Enable Rockchip `rktoolkit` / `vendor_storage` binary (or vendor equivalent already in SDK Buildroot) on the appliance rootfs; ensure `/dev/vendor_storage` after GPT adoption.
-- Thin wrappers under `/usr/libexec/hmi/` for read/write identity (verb-noun), exposed as needed for host scripts.
+- Thin wrappers under `/usr/libexec/board/` for read/write identity (verb-noun), exposed as needed for host scripts.
+  (Originally landed under `/usr/libexec/hmi/`; relocated by `libexec-board`.)
 
 ### D7 — Emulator / SIM
 

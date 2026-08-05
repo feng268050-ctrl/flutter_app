@@ -10,7 +10,7 @@ Wants=param-update.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/libexec/hmi/oem-compose.sh
+ExecStart=/usr/libexec/oem/oem-compose.sh
 StandardOutput=journal
 StandardError=journal
 

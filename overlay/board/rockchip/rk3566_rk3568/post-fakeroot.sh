@@ -108,9 +108,9 @@ if [ -f "$SYNC_ELINUX" ]; then
 fi
 
 LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
-ENSURE_KEYS="$TARGET_DIR/usr/libexec/hmi/ensure-sshd-hostkeys.sh"
+ENSURE_KEYS="$TARGET_DIR/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 if [ ! -f "$ENSURE_KEYS" ]; then
-	ENSURE_KEYS="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/ensure-sshd-hostkeys.sh"
+	ENSURE_KEYS="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 fi
 if [ -f "$ENSURE_KEYS" ]; then
 	sh "$ENSURE_KEYS" "$TARGET_DIR"

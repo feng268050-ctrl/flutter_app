@@ -14,7 +14,7 @@ typedef OpteeSealRunner = Future<ProcessResult> Function(
 
 /// OP-TEE-backed Secrets provider (production default on real boards).
 ///
-/// Talks to [helperPath] (default `/usr/libexec/hmi/secrets-seal`). Fail-closed:
+/// Talks to [helperPath] (default `/usr/libexec/board/secrets-seal`). Fail-closed:
 /// missing TEE/TA → seal/unseal throw [HalIoException] (no silent software).
 final class OpteeKekProvider implements KekProvider {
   OpteeKekProvider({
@@ -22,7 +22,7 @@ final class OpteeKekProvider implements KekProvider {
     OpteeSealRunner? runner,
   }) : _runner = runner ?? _defaultRunner;
 
-  static const defaultHelperPath = '/usr/libexec/hmi/secrets-seal';
+  static const defaultHelperPath = '/usr/libexec/board/secrets-seal';
 
   final String helperPath;
   final OpteeSealRunner _runner;

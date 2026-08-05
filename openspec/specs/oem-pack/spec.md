@@ -93,7 +93,7 @@ Each screen pack SHALL provide `screen.json` with at least logical `width` / `he
 
 ### Requirement: oem-compose early boot
 
-Rootfs SHALL include `/usr/libexec/hmi/oem-compose.sh` and an `oem-compose.service` ordered before HMI. Compose SHALL ensure `PARTLABEL=oem` is mounted at `/oem`, validate manifest, and write at least `/run/hmi/oem.env` and `/run/hmi/board_profile.json` (and screen env) with `OEM_SOURCE=partition`. On missing or invalid OEM content it SHALL fail visibly in the journal and MUST NOT load a rootfs-bundled fallback pack or silently swap boards. Rootfs MUST NOT ship `/usr/share/hmi/oem-fallback`.
+Rootfs SHALL include `/usr/libexec/oem/oem-compose.sh` and an `oem-compose.service` ordered before HMI. Compose SHALL ensure `PARTLABEL=oem` is mounted at `/oem`, validate manifest, and write at least `/run/hmi/oem.env` and `/run/hmi/board_profile.json` (and screen env) with `OEM_SOURCE=partition`. On missing or invalid OEM content it SHALL fail visibly in the journal and MUST NOT load a rootfs-bundled fallback pack or silently swap boards. Rootfs MUST NOT ship `/usr/share/hmi/oem-fallback`.
 
 #### Scenario: Valid OEM exports run files
 

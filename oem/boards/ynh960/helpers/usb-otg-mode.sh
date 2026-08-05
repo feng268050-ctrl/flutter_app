@@ -16,7 +16,7 @@
 #   else restore conf (default debug)
 set -eu
 
-. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+. /usr/libexec/board/paths.sh 2>/dev/null || true
 
 PHY_OTG_MODE="${PHY_OTG_MODE:-/sys/devices/platform/fe8a0000.usb2-phy/otg_mode}"
 CONF="${VAR_HAL:-/var/lib/hal}/usb-otg.conf"
@@ -145,8 +145,8 @@ stop_attach_watch() {
 
 # Seed Android-style USB_STATE file after gadget bind (udev handles live edges).
 seed_usb_gadget_state() {
-	if [ -x /usr/libexec/hmi/usb-gadget-usb-state.sh ]; then
-		/usr/libexec/hmi/usb-gadget-usb-state.sh seed || true
+	if [ -x /usr/libexec/usb/usb-gadget-usb-state.sh ]; then
+		/usr/libexec/usb/usb-gadget-usb-state.sh seed || true
 	fi
 }
 
@@ -180,8 +180,8 @@ udc_state_summary() {
 stop_gadgets() {
 	stop_attach_watch
 	systemctl stop ssh-debug-usb.service 2>/dev/null || true
-	if [ -x /usr/libexec/hmi/usb-mtp-stop.sh ]; then
-		/usr/libexec/hmi/usb-mtp-stop.sh >/dev/null 2>&1 || true
+	if [ -x /usr/libexec/usb/usb-mtp-stop.sh ]; then
+		/usr/libexec/usb/usb-mtp-stop.sh >/dev/null 2>&1 || true
 	fi
 }
 
@@ -227,8 +227,8 @@ apply_suppressed() {
 
 go_debug() {
 	stop_attach_watch
-	if [ -x /usr/libexec/hmi/usb-mtp-stop.sh ]; then
-		/usr/libexec/hmi/usb-mtp-stop.sh >/dev/null 2>&1 || true
+	if [ -x /usr/libexec/usb/usb-mtp-stop.sh ]; then
+		/usr/libexec/usb/usb-mtp-stop.sh >/dev/null 2>&1 || true
 	fi
 	suppress_apply_storm
 	write_mode debug
@@ -240,7 +240,7 @@ go_debug() {
 	rm -f "${RUN_USB_OTG_DEBUG_RECONCILE:-/run/usb-otg-debug-reconcile}" 2>/dev/null || true
 	# Controlled restart so re-enum is clean after mode switch.
 	systemctl stop ssh-debug-usb.service 2>/dev/null || true
-	/usr/libexec/hmi/usb-plug-ssh-vbus-check.sh >/dev/null 2>&1 || true
+	/usr/libexec/usb/usb-plug-ssh-vbus-check.sh >/dev/null 2>&1 || true
 	stop_attach_watch
 	rm -f "${RUN_USB_GADGET_USB_STATE:-/run/usb-gadget-usb-state}" 2>/dev/null || true
 }
@@ -251,8 +251,8 @@ go_mtp() {
 	if systemctl is-active --quiet ssh-debug-usb.service 2>/dev/null ||
 		[ -d /sys/module/g_ether ] || [ -d /sys/class/net/usb0 ]; then
 		systemctl stop ssh-debug-usb.service 2>/dev/null || true
-		if [ -x /usr/libexec/hmi/usb-plug-ssh-stop.sh ]; then
-			/usr/libexec/hmi/usb-plug-ssh-stop.sh >/dev/null 2>&1 || true
+		if [ -x /usr/libexec/usb/usb-plug-ssh-stop.sh ]; then
+			/usr/libexec/usb/usb-plug-ssh-stop.sh >/dev/null 2>&1 || true
 		fi
 	fi
 	suppress_apply_storm
@@ -261,8 +261,8 @@ go_mtp() {
 	wait_peripheral_udc || true
 	# Brief settle after host role teardown before binding FunctionFS.
 	sleep 0.3
-	if [ -x /usr/libexec/hmi/usb-mtp-start.sh ]; then
-		/usr/libexec/hmi/usb-mtp-start.sh
+	if [ -x /usr/libexec/usb/usb-mtp-start.sh ]; then
+		/usr/libexec/usb/usb-mtp-start.sh
 	else
 		echo "usb-otg-mode: usb-mtp-start.sh missing" >&2
 		return 1

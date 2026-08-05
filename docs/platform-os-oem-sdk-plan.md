@@ -293,7 +293,7 @@ oem          = 模组 bringup、屏参、HAL profile、v1 product.ini
 | 迁出 rootfs | 留在 rootfs |
 |-------------|-------------|
 | 板专属 bringup 脚本（→ OEM helpers） | systemd、networkd、wpa `-u`、BlueZ、Weston、eLinux |
-| 板专属 `board_profile` | `/usr/libexec/hmi/oem-compose.sh`、通用 `hmi-launch.sh`（读 `/run/hmi`） |
+| 板专属 `board_profile` | `/usr/libexec/oem/oem-compose.sh`、通用 `hmi-launch.sh`（读 `/run/hmi`） |
 | 屏参种子（→ screen pack） | Flutter engine、共享库、Mali **运行时**（SoC 族）、`/opt/hmi` |
 | Innohi 演示 / 无用 unit | `cyber_hal` 可移植默认路径 |
 

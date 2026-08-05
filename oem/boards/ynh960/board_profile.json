@@ -34,7 +34,7 @@
   "helpers": {
     "usb_otg_mode": "/oem/boards/ynh960/helpers/usb-otg-mode.sh",
     "otg_mode_sysfs": "/sys/devices/platform/fe8a0000.usb2-phy/otg_mode",
-    "ssh_debug": "/usr/libexec/hmi/enable-ssh-debug.sh",
+    "ssh_debug": "/usr/libexec/ssh/enable-ssh-debug.sh",
     "wifi_modem": "/oem/boards/ynh960/helpers/wifibt-bringup.sh",
     "bt_modem": "/oem/boards/ynh960/helpers/wifibt-bringup.sh",
     "bt_a2dp_volume": "/usr/libexec/bluetooth/bt-a2dp-volume.sh",

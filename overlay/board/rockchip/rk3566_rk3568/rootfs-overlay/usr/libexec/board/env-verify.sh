@@ -59,8 +59,18 @@ if [ -f /opt/hmi/lib/libflutter_engine.so ]; then
 else
 	pass "bundle libflutter_engine.so absent (system engine)"
 fi
-if [ -f /opt/hmi/data/icudtl.dat ]; then
-	fail "/opt/hmi/data/icudtl.dat present (use /usr/share/flutter on rootfs)"
+if [ -L /opt/hmi/data/icudtl.dat ]; then
+	icu_link="$(readlink -f /opt/hmi/data/icudtl.dat 2>/dev/null || true)"
+	case "$icu_link" in
+	/usr/share/flutter/*)
+		pass "bundle icudtl.dat symlink → system icu"
+		;;
+	*)
+		fail "/opt/hmi/data/icudtl.dat symlink must resolve under /usr/share/flutter (got ${icu_link:-unresolved})"
+		;;
+	esac
+elif [ -e /opt/hmi/data/icudtl.dat ]; then
+	fail "/opt/hmi/data/icudtl.dat is a real file (use symlink or omit; ICU lives under /usr/share/flutter)"
 else
 	pass "bundle icudtl.dat absent (system icu)"
 fi
@@ -103,7 +113,7 @@ echo "--- RockUSB Loader reboot helper ---"
 if [ -x /usr/libexec/board/reboot-loader ] && [ -x /usr/bin/reboot-loader ]; then
 	pass "reboot-loader installed in PATH (RESTART2 loader — not busybox reboot)"
 else
-	fail "reboot-loader missing from /usr/libexec/hmi or /usr/bin"
+	fail "reboot-loader missing from /usr/libexec/board or /usr/bin"
 fi
 
 npu_sysfs=0
@@ -345,14 +355,12 @@ done
 if [ -x /usr/libexec/usb/usb-otg-mode.sh ] && [ -x /usr/libexec/display/ynh960-display-init.sh ]; then
 	pass "rootfs OEM helper stubs (usb-otg-mode / ynh960-display-init)"
 else
-	fail "rootfs OEM helper stubs missing under /usr/libexec/hmi/"
+	fail "rootfs OEM helper stubs missing under /usr/libexec/usb/ or /usr/libexec/display/"
 fi
-for helper in change-orientation.sh bind-prefs.sh; do
-	case "$helper" in
-	change-orientation.sh) helper_path="/usr/libexec/display/$helper" ;;
-	bind-prefs.sh) helper_path="/usr/libexec/board/$helper" ;;
-	*) helper_path="/usr/libexec/hmi/$helper" ;;
-	esac
+for helper_path in \
+	/usr/libexec/display/change-orientation.sh \
+	/usr/libexec/board/bind-prefs.sh; do
+	helper="$(basename "$helper_path")"
 	if [ -x "$helper_path" ]; then
 		pass "helper $helper"
 	else

@@ -14,9 +14,9 @@ else
 	exit 1
 fi
 
-ensure_script="$TARGET_DIR/usr/libexec/hmi/ensure-sshd-hostkeys.sh"
+ensure_script="$TARGET_DIR/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 if [ ! -f "$ensure_script" ]; then
-	ensure_script="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/ensure-sshd-hostkeys.sh"
+	ensure_script="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 fi
 
 if [ ! -f "$ensure_script" ]; then
@@ -50,22 +50,22 @@ fi
 bash "$BUILD_LOADER" "$TARGET_DIR"
 
 mkdir -p "$TARGET_DIR/usr/bin"
-ln -sf /usr/libexec/hmi/boot-verify.sh "$TARGET_DIR/usr/bin/verify-boot"
-ln -sf /usr/libexec/hmi/env-verify.sh "$TARGET_DIR/usr/bin/verify-env"
+ln -sf /usr/libexec/board/boot-verify.sh "$TARGET_DIR/usr/bin/verify-boot"
+ln -sf /usr/libexec/board/env-verify.sh "$TARGET_DIR/usr/bin/verify-env"
 ln -sf /usr/libexec/hmi/diagnose-hmi.sh "$TARGET_DIR/usr/bin/diagnose-hmi"
-ln -sf /usr/libexec/hmi/usb-plug-ssh-diag.sh "$TARGET_DIR/usr/bin/diagnose-usb-ssh"
-ln -sf /usr/libexec/hmi/read-device-serial.sh "$TARGET_DIR/usr/bin/read-serial"
-ln -sf /usr/libexec/hmi/read-product-identity.sh "$TARGET_DIR/usr/bin/read-identity"
-ln -sf /usr/libexec/hmi/write-product-identity.sh "$TARGET_DIR/usr/bin/write-identity"
-ln -sf /usr/libexec/hmi/usb-plug-ssh-start.sh "$TARGET_DIR/usr/bin/start-usb-ssh"
-ln -sf /usr/libexec/hmi/usb-plug-ssh-stop.sh "$TARGET_DIR/usr/bin/stop-usb-ssh"
-ln -sf /usr/libexec/hmi/usb-plug-ssh-recover.sh "$TARGET_DIR/usr/bin/recover-usb-ssh"
-ln -sf /usr/libexec/hmi/reboot-loader "$TARGET_DIR/usr/bin/reboot-loader"
-ln -sf /usr/libexec/hmi/change-orientation.sh "$TARGET_DIR/usr/bin/change-orientation"
-ln -sf /usr/libexec/hmi/enable-ssh-debug.sh "$TARGET_DIR/usr/bin/enable-ssh-debug"
-ln -sf /usr/libexec/hmi/disable-ssh-debug.sh "$TARGET_DIR/usr/bin/disable-ssh-debug"
-ln -sf /usr/libexec/hmi/usb-otg-mode.sh "$TARGET_DIR/usr/bin/usb-otg-mode"
-ln -sf /usr/libexec/hmi/set-performance-mode.sh "$TARGET_DIR/usr/bin/set-performance-mode"
+ln -sf /usr/libexec/usb/usb-plug-ssh-diag.sh "$TARGET_DIR/usr/bin/diagnose-usb-ssh"
+ln -sf /usr/libexec/board/read-device-serial.sh "$TARGET_DIR/usr/bin/read-serial"
+ln -sf /usr/libexec/board/read-product-identity.sh "$TARGET_DIR/usr/bin/read-identity"
+ln -sf /usr/libexec/board/write-product-identity.sh "$TARGET_DIR/usr/bin/write-identity"
+ln -sf /usr/libexec/usb/usb-plug-ssh-start.sh "$TARGET_DIR/usr/bin/start-usb-ssh"
+ln -sf /usr/libexec/usb/usb-plug-ssh-stop.sh "$TARGET_DIR/usr/bin/stop-usb-ssh"
+ln -sf /usr/libexec/usb/usb-plug-ssh-recover.sh "$TARGET_DIR/usr/bin/recover-usb-ssh"
+ln -sf /usr/libexec/board/reboot-loader "$TARGET_DIR/usr/bin/reboot-loader"
+ln -sf /usr/libexec/display/change-orientation.sh "$TARGET_DIR/usr/bin/change-orientation"
+ln -sf /usr/libexec/ssh/enable-ssh-debug.sh "$TARGET_DIR/usr/bin/enable-ssh-debug"
+ln -sf /usr/libexec/ssh/disable-ssh-debug.sh "$TARGET_DIR/usr/bin/disable-ssh-debug"
+ln -sf /usr/libexec/usb/usb-otg-mode.sh "$TARGET_DIR/usr/bin/usb-otg-mode"
+ln -sf /usr/libexec/board/set-performance-mode.sh "$TARGET_DIR/usr/bin/set-performance-mode"
 # Deprecated iface-named path (half-upgraded boards / old callers).
 rm -f \
 	"$TARGET_DIR/usr/bin/boot-verify" \
@@ -173,8 +173,8 @@ rm -f \
 	"$TARGET_DIR/etc/systemd/system/multi-user.target.wants/settings-restore.service"
 
 # Operator symlink for mouse prefs (Weston / eLinux).
-if [ -f "$TARGET_DIR/usr/libexec/hmi/apply-mouse-settings.sh" ]; then
-	ln -sf /usr/libexec/hmi/apply-mouse-settings.sh \
+if [ -f "$TARGET_DIR/usr/libexec/display/apply-mouse-settings.sh" ]; then
+	ln -sf /usr/libexec/display/apply-mouse-settings.sh \
 		"$TARGET_DIR/usr/bin/apply-mouse-settings"
 fi
 

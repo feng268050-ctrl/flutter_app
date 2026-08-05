@@ -349,7 +349,7 @@ ping_usb_ssh_target() {
 }
 
 # Background sysrq reboot; remote shell exits immediately (for make reboot / push-app).
-USB_SSH_SYSRQ_REBOOT_CMD='sh -c "(sleep 1; sync; if [ -w /proc/sysrq-trigger ]; then echo 1 >/proc/sys/kernel/sysrq 2>/dev/null; echo b >/proc/sysrq-trigger; elif [ -x /usr/libexec/hmi/shutdown.sh ]; then /usr/libexec/hmi/shutdown.sh reboot; fi) >/dev/console 2>&1 & exit 0"'
+USB_SSH_SYSRQ_REBOOT_CMD='sh -c "(sleep 1; sync; if [ -w /proc/sysrq-trigger ]; then echo 1 >/proc/sys/kernel/sysrq 2>/dev/null; echo b >/proc/sysrq-trigger; elif [ -x /usr/libexec/power/shutdown.sh ]; then /usr/libexec/power/shutdown.sh reboot; fi) >/dev/console 2>&1 & exit 0"'
 
 # Reachability for registered remote SSH (MODE=SSH) or EMU hostfwd (host:port).
 ping_remote_ssh_target() {

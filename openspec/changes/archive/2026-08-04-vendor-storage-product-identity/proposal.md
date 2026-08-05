@@ -26,7 +26,7 @@ Per-unit product identity (`brand` / `model` / `sn`) today lives in OEM `product
 
 - GPT: `board/parameter-buildroot-fit.txt` (one-time repartition via `make flash`); docs `storage-layout.md`, AGENTS/README rebuild notes.
 - Factory pack: `board/package-file-*`, `scripts/build-img.sh` / verify scripts (reject vendor payloads).
-- Rootfs: Rockchip `vendor_storage` / `rktoolkit` (or equivalent), board helpers under `/usr/libexec/hmi/`, `oem-compose.sh`, `read-device-serial.sh`.
+- Rootfs: Rockchip `vendor_storage` / `rktoolkit` (or equivalent), board helpers under `/usr/libexec/board/` (relocated from `hmi/` by `libexec-board`), `oem-compose.sh`, `read-device-serial.sh`.
 - HAL: `packages/cyber_hal` `ProductInfo` identity load path; App unchanged at API surface.
 - Host: new write-identity script + Makefile; `set-prop`/`del-prop` keep refusing identity; factory flow = flash then write-identity.
 - Emulator / SIM: stub or skip Vendor Storage with documented chip-ID / seed fallback.

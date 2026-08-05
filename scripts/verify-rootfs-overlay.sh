@@ -71,9 +71,9 @@ check_poweroff_hook() {
 
 	echo ""
 	echo "--- $label: crash-safe poweroff hook ---"
-	if [[ -x "$root/usr/libexec/hmi/pre-poweroff.sh" && \
-		-x "$root/usr/libexec/hmi/shutdown.sh" && \
-		-x "$root/usr/libexec/hmi/systemctl-poweroff-wrapper.sh" ]]; then
+	if [[ -x "$root/usr/libexec/power/pre-poweroff.sh" && \
+		-x "$root/usr/libexec/power/shutdown.sh" && \
+		-x "$root/usr/libexec/power/systemctl-poweroff-wrapper.sh" ]]; then
 		echo "OK:  pre-poweroff/shutdown/systemctl wrapper scripts present in $label"
 	else
 		echo "FAIL: missing graceful poweroff helper scripts in $label" >&2
@@ -88,7 +88,8 @@ check_poweroff_hook() {
 		missing=1
 	else
 		case "$(readlink "$root/usr/bin/systemctl")" in
-		../libexec/hmi/systemctl-poweroff-wrapper.sh) ;;
+		../libexec/power/systemctl-poweroff-wrapper.sh) ;;
+		/usr/libexec/power/systemctl-poweroff-wrapper.sh) ;;
 		*)
 			echo "FAIL: /usr/bin/systemctl not wrapped in $label (readlink=$(readlink "$root/usr/bin/systemctl" 2>/dev/null))" >&2
 			missing=1
@@ -188,6 +189,13 @@ run_check() {
 	local target="$1"
 	local out_dir
 	local libexec_hmi="$target/usr/libexec/hmi"
+	local libexec_board="$target/usr/libexec/board"
+	local libexec_usb="$target/usr/libexec/usb"
+	local libexec_ab="$target/usr/libexec/ab"
+	local libexec_oem="$target/usr/libexec/oem"
+	local libexec_display="$target/usr/libexec/display"
+	local libexec_power="$target/usr/libexec/power"
+	local libexec_ssh="$target/usr/libexec/ssh"
 	local libexec_wpa="$target/usr/libexec/wpa"
 	local libexec_net="$target/usr/libexec/network"
 	local libexec_bt="$target/usr/libexec/bluetooth"
@@ -207,7 +215,8 @@ run_check() {
 	echo "--- Buildroot output size ---"
 	bash "$SIZE_HELPER" "$target" "$out_dir/images/rootfs.ext2" "$out_dir/images/rootfs.ext4"
 
-	for tier in "$libexec_hmi" "$libexec_wpa" "$libexec_net" "$libexec_bt"; do
+	for tier in "$libexec_hmi" "$libexec_board" "$libexec_usb" "$libexec_ab" "$libexec_oem" \
+		"$libexec_display" "$libexec_power" "$libexec_ssh" "$libexec_wpa" "$libexec_net" "$libexec_bt"; do
 		if [[ ! -d "$tier" ]]; then
 			echo "FAIL: $tier missing — overlay not applied or wrong Buildroot profile" >&2
 			missing=1
@@ -258,17 +267,19 @@ run_check() {
 		echo "OK:  profile.d/lws-hmi-serial-stty.sh absent"
 	fi
 	if [[ -f "$target/etc/profile.d/serial-stty.sh" ]] && \
-		grep -q '/usr/libexec/hmi/serial-console-stty.sh' \
+		grep -q '/usr/libexec/board/serial-console-stty.sh' \
 		"$target/etc/profile.d/serial-stty.sh" 2>/dev/null; then
-		echo "OK:  profile.d/serial-stty.sh uses /usr/libexec/hmi/"
+		echo "OK:  profile.d/serial-stty.sh uses /usr/libexec/board/"
 	else
-		echo "FAIL: profile.d/serial-stty.sh missing or still points at /usr/lib/lws-hmi/" >&2
+		echo "FAIL: profile.d/serial-stty.sh missing or not pointing at /usr/libexec/board/serial-console-stty.sh" >&2
 		missing=1
 	fi
 
 	echo ""
-	echo "--- usr/libexec/hmi ---"
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh oem-compose.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-gadget-usb-state.sh usb-mtp-start.sh usb-mtp-stop.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh change-orientation.sh bind-prefs.sh push-app-apply-and-restart.sh hmi-launch.sh secrets-seal secrets-seal-ca; do
+	echo "--- usr/libexec/hmi (App/UI only) ---"
+	for f in hmi-launch.sh hmi-stop-and-wait.sh push-app-apply-and-restart.sh \
+		debug-app-apply.sh debug-app-run.sh debug-runtime-install.sh \
+		diagnose-hmi.sh extract-video-frame; do
 		if [[ -x "$libexec_hmi/$f" ]]; then
 			echo "OK:  hmi/$f"
 		else
@@ -276,6 +287,109 @@ run_check() {
 			missing=1
 		fi
 	done
+	for stale in read-device-serial.sh read-product-identity.sh write-product-identity.sh \
+		vendor-storage-ids.txt secrets-seal secrets-seal-ca paths.sh lws-hostname.sh \
+		device-mdns-advertise.sh serial-console-stty.sh reboot-loader boot-verify.sh env-verify.sh \
+		usb-otg-mode.sh usb-gadget-usb-state.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh \
+		usb-plug-ssh-recover.sh usb-plug-ssh-diag.sh usb-plug-ssh-vbus-check.sh \
+		usb-mtp-start.sh usb-mtp-stop.sh ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh \
+		ab-boot-confirm.sh oem-compose.sh ynh960-display-init.sh weston-hmi-config.sh \
+		change-orientation.sh apply-mouse-settings.sh set-performance-mode.sh bind-prefs.sh \
+		pre-poweroff.sh shutdown.sh pwrkey-poweroff.sh systemctl-poweroff-wrapper.sh \
+		enable-ssh-debug.sh disable-ssh-debug.sh lan-ssh-run.sh ensure-sshd-hostkeys.sh; do
+		if [[ -e "$libexec_hmi/$stale" ]]; then
+			echo "FAIL: moved helper still under hmi/$stale" >&2
+			missing=1
+		fi
+	done
+
+	echo ""
+	echo "--- usr/libexec/board ---"
+	for f in read-device-serial.sh read-product-identity.sh write-product-identity.sh \
+		secrets-seal secrets-seal-ca paths.sh lws-hostname.sh device-mdns-advertise.sh \
+		serial-console-stty.sh reboot-loader boot-verify.sh env-verify.sh \
+		set-performance-mode.sh bind-prefs.sh; do
+		if [[ -x "$libexec_board/$f" ]] || [[ -f "$libexec_board/$f" && "$f" == paths.sh ]]; then
+			echo "OK:  board/$f"
+		else
+			echo "FAIL: board/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+	if [[ -f "$libexec_board/vendor-storage-ids.txt" ]]; then
+		echo "OK:  board/vendor-storage-ids.txt"
+	else
+		echo "FAIL: board/vendor-storage-ids.txt missing" >&2
+		missing=1
+	fi
+
+	echo ""
+	echo "--- usr/libexec/usb ---"
+	for f in usb-otg-mode.sh usb-gadget-usb-state.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh \
+		usb-plug-ssh-recover.sh usb-plug-ssh-diag.sh usb-plug-ssh-vbus-check.sh \
+		usb-mtp-start.sh usb-mtp-stop.sh; do
+		if [[ -x "$libexec_usb/$f" ]]; then
+			echo "OK:  usb/$f"
+		else
+			echo "FAIL: usb/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+
+	echo ""
+	echo "--- usr/libexec/ab ---"
+	for f in ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh ab-boot-confirm.sh; do
+		if [[ -x "$libexec_ab/$f" ]] || [[ -f "$libexec_ab/$f" && "$f" == ab-slot-lib.sh ]]; then
+			echo "OK:  ab/$f"
+		else
+			echo "FAIL: ab/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+
+	echo ""
+	echo "--- usr/libexec/oem ---"
+	if [[ -x "$libexec_oem/oem-compose.sh" ]]; then
+		echo "OK:  oem/oem-compose.sh"
+	else
+		echo "FAIL: oem/oem-compose.sh missing or not executable" >&2
+		missing=1
+	fi
+
+	echo ""
+	echo "--- usr/libexec/display ---"
+	for f in ynh960-display-init.sh weston-hmi-config.sh change-orientation.sh \
+		apply-mouse-settings.sh; do
+		if [[ -x "$libexec_display/$f" ]]; then
+			echo "OK:  display/$f"
+		else
+			echo "FAIL: display/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+
+	echo ""
+	echo "--- usr/libexec/power ---"
+	for f in pre-poweroff.sh shutdown.sh pwrkey-poweroff.sh systemctl-poweroff-wrapper.sh; do
+		if [[ -x "$libexec_power/$f" ]]; then
+			echo "OK:  power/$f"
+		else
+			echo "FAIL: power/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+
+	echo ""
+	echo "--- usr/libexec/ssh ---"
+	for f in enable-ssh-debug.sh disable-ssh-debug.sh lan-ssh-run.sh ensure-sshd-hostkeys.sh; do
+		if [[ -x "$libexec_ssh/$f" ]]; then
+			echo "OK:  ssh/$f"
+		else
+			echo "FAIL: ssh/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+
 	if [[ -x "$target/usr/bin/umtprd" ]]; then
 		echo "OK:  usr/bin/umtprd"
 	else
@@ -287,12 +401,6 @@ run_check() {
 		echo "OK:  usr/lib/optee_armtz seal TA"
 	else
 		echo "FAIL: seal TA missing (make build-secrets-seal)" >&2
-		missing=1
-	fi
-	if [[ -f "$libexec_hmi/paths.sh" ]]; then
-		echo "OK:  hmi/paths.sh"
-	else
-		echo "FAIL: hmi/paths.sh missing" >&2
 		missing=1
 	fi
 
@@ -439,21 +547,23 @@ run_check() {
 			missing=1
 		fi
 	done <<'EOF'
-verify-boot /usr/libexec/hmi/boot-verify.sh
-verify-env /usr/libexec/hmi/env-verify.sh
+verify-boot /usr/libexec/board/boot-verify.sh
+verify-env /usr/libexec/board/env-verify.sh
 diagnose-hmi /usr/libexec/hmi/diagnose-hmi.sh
-diagnose-usb-ssh /usr/libexec/hmi/usb-plug-ssh-diag.sh
-read-serial /usr/libexec/hmi/read-device-serial.sh
-start-usb-ssh /usr/libexec/hmi/usb-plug-ssh-start.sh
-stop-usb-ssh /usr/libexec/hmi/usb-plug-ssh-stop.sh
-recover-usb-ssh /usr/libexec/hmi/usb-plug-ssh-recover.sh
-reboot-loader /usr/libexec/hmi/reboot-loader
-change-orientation /usr/libexec/hmi/change-orientation.sh
-enable-ssh-debug /usr/libexec/hmi/enable-ssh-debug.sh
-disable-ssh-debug /usr/libexec/hmi/disable-ssh-debug.sh
-usb-otg-mode /usr/libexec/hmi/usb-otg-mode.sh
-set-performance-mode /usr/libexec/hmi/set-performance-mode.sh
-apply-mouse-settings /usr/libexec/hmi/apply-mouse-settings.sh
+diagnose-usb-ssh /usr/libexec/usb/usb-plug-ssh-diag.sh
+read-serial /usr/libexec/board/read-device-serial.sh
+read-identity /usr/libexec/board/read-product-identity.sh
+write-identity /usr/libexec/board/write-product-identity.sh
+start-usb-ssh /usr/libexec/usb/usb-plug-ssh-start.sh
+stop-usb-ssh /usr/libexec/usb/usb-plug-ssh-stop.sh
+recover-usb-ssh /usr/libexec/usb/usb-plug-ssh-recover.sh
+reboot-loader /usr/libexec/board/reboot-loader
+change-orientation /usr/libexec/display/change-orientation.sh
+enable-ssh-debug /usr/libexec/ssh/enable-ssh-debug.sh
+disable-ssh-debug /usr/libexec/ssh/disable-ssh-debug.sh
+usb-otg-mode /usr/libexec/usb/usb-otg-mode.sh
+set-performance-mode /usr/libexec/board/set-performance-mode.sh
+apply-mouse-settings /usr/libexec/display/apply-mouse-settings.sh
 EOF
 	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply change-backlight change-volume apply-proxy sync-time; do
 		if [[ -e "$target/usr/bin/$retired" || -L "$target/usr/bin/$retired" ]]; then
@@ -522,13 +632,13 @@ EOF
 			missing=1
 		fi
 	done
-	if grep -q 'ListenAddress=192.168.55.1' "$libexec_hmi/usb-plug-ssh-start.sh" 2>/dev/null; then
+	if grep -q 'ListenAddress=192.168.55.1' "$libexec_usb/usb-plug-ssh-start.sh" 2>/dev/null; then
 		echo "OK:  usb-plug-ssh-start binds ListenAddress=192.168.55.1"
 	else
 		echo "FAIL: usb-plug-ssh-start missing ListenAddress=192.168.55.1 override" >&2
 		missing=1
 	fi
-	if grep -q 'skip USB-only sshd' "$libexec_hmi/usb-plug-ssh-start.sh" 2>/dev/null; then
+	if grep -q 'skip USB-only sshd' "$libexec_usb/usb-plug-ssh-start.sh" 2>/dev/null; then
 		echo "FAIL: usb-plug-ssh-start must not skip USB sshd when LAN is up" >&2
 		missing=1
 	else
@@ -557,8 +667,8 @@ EOF
 		echo "FAIL: missing /etc/ssh/ssh_host_*_key (ensure-sshd-hostkeys / post-fakeroot)" >&2
 		missing=1
 	fi
-	if grep -q 'modprobe g_ether' "$libexec_hmi/usb-plug-ssh-start.sh" 2>/dev/null && \
-		! grep -q '/sys/kernel/config/usb_gadget/lws_hmi' "$libexec_hmi/usb-plug-ssh-start.sh" 2>/dev/null; then
+	if grep -q 'modprobe g_ether' "$libexec_usb/usb-plug-ssh-start.sh" 2>/dev/null && \
+		! grep -q '/sys/kernel/config/usb_gadget/lws_hmi' "$libexec_usb/usb-plug-ssh-start.sh" 2>/dev/null; then
 		echo "OK:  USB plug-ssh uses g_ether without configfs UDC binding"
 	else
 		echo "FAIL: USB plug-ssh is not the g_ether implementation" >&2
@@ -790,7 +900,7 @@ EOF
 		echo "OK:  mediamtx.service absent"
 	fi
 
-	if [[ -x "$target/usr/libexec/hmi/enable-ssh-debug.sh" && -x "$target/usr/libexec/hmi/disable-ssh-debug.sh" ]]; then
+	if [[ -x "$target/usr/libexec/ssh/enable-ssh-debug.sh" && -x "$target/usr/libexec/ssh/disable-ssh-debug.sh" ]]; then
 		echo "OK:  enable-ssh-debug.sh / disable-ssh-debug.sh"
 	else
 		echo "FAIL: missing enable-ssh-debug.sh or disable-ssh-debug.sh" >&2
@@ -1040,9 +1150,9 @@ EOF
 	else
 		echo "OK:  settings-restore retired (HAL-owned restore)"
 	fi
-	if [[ -x "$libexec_hmi/bind-prefs.sh" ]] && \
+	if [[ -x "$libexec_board/bind-prefs.sh" ]] && \
 		( grep -q 'bind-prefs.sh' \
-			"$libexec_hmi/ynh960-display-init.sh" 2>/dev/null || \
+			"$libexec_display/ynh960-display-init.sh" 2>/dev/null || \
 		  grep -q 'bind-prefs.sh' \
 			"$ROOT/oem/boards/ynh960/helpers/display-init.sh" 2>/dev/null ); then
 		echo "OK:  bind-prefs (four /var/lib/* → /userdata/*)"
@@ -1085,7 +1195,7 @@ EOF
 		echo "FAIL: preset missing disable ssh-debug-lan.service" >&2
 		missing=1
 	fi
-	if [[ -x "$target/usr/libexec/hmi/lan-ssh-run.sh" ]]; then
+	if [[ -x "$target/usr/libexec/ssh/lan-ssh-run.sh" ]]; then
 		echo "OK:  lan-ssh-run.sh"
 	else
 		echo "FAIL: missing lan-ssh-run.sh" >&2
@@ -1104,9 +1214,9 @@ EOF
 	echo ""
 	echo "--- A/B upgrade helpers (P2.4) ---"
 	for f in \
-		"$target/usr/libexec/hmi/ab-slot-lib.sh" \
-		"$target/usr/libexec/hmi/ab-upgrade-apply.sh" \
-		"$target/usr/libexec/hmi/ab-boot-confirm.sh" \
+		"$target/usr/libexec/ab/ab-slot-lib.sh" \
+		"$target/usr/libexec/ab/ab-upgrade-apply.sh" \
+		"$target/usr/libexec/ab/ab-boot-confirm.sh" \
 		"$target/etc/systemd/system/ab-boot-confirm.service"; do
 		if [[ -e "$f" ]]; then
 			echo "OK:  ${f#$target/}"
@@ -1121,32 +1231,32 @@ EOF
 	else
 		echo "OK:  retired ab-upgrade-app-only.sh absent"
 	fi
-	if grep -q 'ab_current_root_dev' "$target/usr/libexec/hmi/ab-slot-lib.sh" 2>/dev/null && \
-		grep -q '^AB_MISC_OFFSET=1048576$' "$target/usr/libexec/hmi/ab-slot-lib.sh" 2>/dev/null && \
-		grep -q 'ab_slot_marker_valid' "$target/usr/libexec/hmi/ab-slot-lib.sh" 2>/dev/null && \
-		grep -q 'LWS_HMI_AB_LIB' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'ab_same_block_device' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'metadata_active' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'disagrees with mounted root' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+	if grep -q 'ab_current_root_dev' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q '^AB_MISC_OFFSET=1048576$' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q 'ab_slot_marker_valid' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q 'LWS_HMI_AB_LIB' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'ab_same_block_device' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'metadata_active' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'disagrees with mounted root' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null; then
 		echo "OK:  A/B marker uses safe misc offset; apply derives mounted root and refuses self-overwrite"
 	else
 		echo "FAIL: A/B apply must protect the currently mounted root block device" >&2
 		missing=1
 	fi
-	if grep -q 'userdata' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -qE 'refuse|must NOT|ab_refuse' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+	if grep -q 'userdata' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -qE 'refuse|must NOT|ab_refuse' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null; then
 		echo "OK:  ab-upgrade-apply mentions userdata safety"
 	else
 		# Soft: apply sources ab-slot-lib refuse helper
-		if grep -q 'ab_refuse_userdata_wipe\|userdata' "$target/usr/libexec/hmi/ab-slot-lib.sh" 2>/dev/null; then
+		if grep -q 'ab_refuse_userdata_wipe\|userdata' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null; then
 			echo "OK:  ab-slot-lib userdata refuse helper present"
 		else
 			echo "FAIL: A/B helpers missing userdata safety checks" >&2
 			missing=1
 		fi
 	fi
-	if grep -qE 'uboot|MiniLoader' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -qiE 'refusing|must not|never' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+	if grep -qE 'uboot|MiniLoader' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -qiE 'refusing|must not|never' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null; then
 		echo "OK:  ab-upgrade-apply refuses uboot writes"
 	else
 		echo "FAIL: ab-upgrade-apply must refuse uboot writes" >&2
@@ -1161,7 +1271,7 @@ EOF
 	fi
 
 	if grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
-		"$target/usr/libexec/hmi/lan-ssh-run.sh" 2>/dev/null || \
+		"$target/usr/libexec/ssh/lan-ssh-run.sh" 2>/dev/null || \
 		grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
 		"$target/etc/systemd/system/ssh-debug-lan.service" 2>/dev/null; then
 		echo "FAIL: LAN SSH must not bind 0.0.0.0 (breaks coexistence with USB-SSH)" >&2
@@ -1179,17 +1289,17 @@ EOF
 		echo "FAIL: ssh-debug-lan.service must not use PidFile=" >&2
 		missing=1
 	fi
-	if grep -qE 'eth0|wlan0' "$target/usr/libexec/hmi/lan-ssh-run.sh" 2>/dev/null && \
-		grep -q 'ListenAddress=' "$target/usr/libexec/hmi/lan-ssh-run.sh" 2>/dev/null && \
+	if grep -qE 'eth0|wlan0' "$target/usr/libexec/ssh/lan-ssh-run.sh" 2>/dev/null && \
+		grep -q 'ListenAddress=' "$target/usr/libexec/ssh/lan-ssh-run.sh" 2>/dev/null && \
 		! grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
-			"$target/usr/libexec/hmi/lan-ssh-run.sh" 2>/dev/null; then
+			"$target/usr/libexec/ssh/lan-ssh-run.sh" 2>/dev/null; then
 		echo "OK:  lan-ssh-run binds eth0/wlan0 only (not 0.0.0.0)"
 	else
 		echo "FAIL: lan-ssh-run must bind eth0/wlan0 only, not 0.0.0.0" >&2
 		missing=1
 	fi
 	if grep -qE 'systemctl stop.*usb-plug|kill.*usb-plug-sshd|rm -f /run/usb-plug-sshd' \
-		"$libexec_hmi/enable-ssh-debug.sh" 2>/dev/null; then
+		"$libexec_ssh/enable-ssh-debug.sh" 2>/dev/null; then
 		echo "FAIL: enable-ssh-debug must not stop USB sshd" >&2
 		missing=1
 	else

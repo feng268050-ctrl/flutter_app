@@ -5,7 +5,7 @@ ConditionPathExists=/dev/input
 
 [Service]
 Type=simple
-ExecStart=/usr/libexec/hmi/pwrkey-poweroff.sh
+ExecStart=/usr/libexec/power/pwrkey-poweroff.sh
 Restart=always
 RestartSec=2
 

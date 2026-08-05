@@ -24,7 +24,7 @@ Produces:
 
 - `prebuilt/secrets_seal/aarch64/b8e4f2a1-9c3d-4e6f-8a1b-2c3d4e5f6071.ta`
 - `prebuilt/secrets_seal/aarch64/secrets-seal-ca`
-- Overlay copies under `usr/lib/optee_armtz/` and `usr/libexec/hmi/secrets-seal-ca`
+- Overlay copies under `usr/lib/optee_armtz/` and `usr/libexec/board/secrets-seal-ca`
   (merged `/usr`; do not use overlay top-level `lib/`)
 
 TA is built against **OP-TEE OS 3.13** `export-ta_arm64` (matches ynh960 BL32
@@ -41,7 +41,7 @@ on hardware.
 
 ## Protocol
 
-Same as `/usr/libexec/hmi/secrets-seal` → execs `secrets-seal-ca` when present:
+Same as `/usr/libexec/board/secrets-seal` → execs `secrets-seal-ca` when present:
 
 - `probe` → exit 0 if TEE + TA session OK
 - `seal` ← JSON `{"plaintext_b64","aad_b64"}` → one line `blob_b64`

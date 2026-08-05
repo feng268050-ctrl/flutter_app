@@ -418,7 +418,7 @@ Remote SSH (board LAN/WLAN sshd on — Demo **LAN SSH debug** or `enable-ssh-deb
 
 ```bash
 # On device (serial / USB-SSH / Demo toggle):
-#   /usr/libexec/hmi/enable-ssh-debug.sh
+#   /usr/libexec/ssh/enable-ssh-debug.sh
 make connect 192.168.1.50       # or: make connect IP=192.168.1.50
 make devices                    # MODE=SSH row
 IP=192.168.1.50 make shell

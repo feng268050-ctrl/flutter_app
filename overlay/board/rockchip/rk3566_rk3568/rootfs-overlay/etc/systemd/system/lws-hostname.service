@@ -8,7 +8,7 @@ Conflicts=shutdown.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/libexec/hmi/lws-hostname.sh
+ExecStart=/usr/libexec/board/lws-hostname.sh
 StandardOutput=journal+console
 StandardError=journal+console
 

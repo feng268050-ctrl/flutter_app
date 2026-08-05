@@ -1,7 +1,7 @@
 #!/bin/sh
 # §3.4 platform stack verification on ynh960 device (excludes HMI boot KPI).
 # Run after flash: verify-env
-# Canonical copy: overlay/.../rootfs-overlay/usr/libexec/hmi/env-verify.sh
+# Canonical copy: overlay/.../rootfs-overlay/usr/libexec/board/env-verify.sh
 set -u
 
 pass() { echo "PASS: $*"; }
@@ -59,8 +59,18 @@ if [ -f /opt/hmi/lib/libflutter_engine.so ]; then
 else
 	pass "bundle libflutter_engine.so absent (system engine)"
 fi
-if [ -f /opt/hmi/data/icudtl.dat ]; then
-	fail "/opt/hmi/data/icudtl.dat present (use /usr/share/flutter on rootfs)"
+if [ -L /opt/hmi/data/icudtl.dat ]; then
+	icu_link="$(readlink -f /opt/hmi/data/icudtl.dat 2>/dev/null || true)"
+	case "$icu_link" in
+	/usr/share/flutter/*)
+		pass "bundle icudtl.dat symlink → system icu"
+		;;
+	*)
+		fail "/opt/hmi/data/icudtl.dat symlink must resolve under /usr/share/flutter (got ${icu_link:-unresolved})"
+		;;
+	esac
+elif [ -e /opt/hmi/data/icudtl.dat ]; then
+	fail "/opt/hmi/data/icudtl.dat is a real file (use symlink or omit; ICU lives under /usr/share/flutter)"
 else
 	pass "bundle icudtl.dat absent (system icu)"
 fi
@@ -100,10 +110,10 @@ fi
 
 echo ""
 echo "--- RockUSB Loader reboot helper ---"
-if [ -x /usr/libexec/hmi/reboot-loader ] && [ -x /usr/bin/reboot-loader ]; then
+if [ -x /usr/libexec/board/reboot-loader ] && [ -x /usr/bin/reboot-loader ]; then
 	pass "reboot-loader installed in PATH (RESTART2 loader — not busybox reboot)"
 else
-	fail "reboot-loader missing from /usr/libexec/hmi or /usr/bin"
+	fail "reboot-loader missing from /usr/libexec/board or /usr/bin"
 fi
 
 npu_sysfs=0
@@ -342,16 +352,19 @@ for oem_helper in \
 		fail "OEM not mounted — cannot verify $oem_helper (flash/upgrade oem.img)"
 	fi
 done
-if [ -x /usr/libexec/hmi/usb-otg-mode.sh ] && [ -x /usr/libexec/hmi/ynh960-display-init.sh ]; then
+if [ -x /usr/libexec/usb/usb-otg-mode.sh ] && [ -x /usr/libexec/display/ynh960-display-init.sh ]; then
 	pass "rootfs OEM helper stubs (usb-otg-mode / ynh960-display-init)"
 else
-	fail "rootfs OEM helper stubs missing under /usr/libexec/hmi/"
+	fail "rootfs OEM helper stubs missing under /usr/libexec/usb/ or /usr/libexec/display/"
 fi
-for helper in change-orientation.sh bind-prefs.sh; do
-	if [ -x "/usr/libexec/hmi/$helper" ]; then
+for helper_path in \
+	/usr/libexec/display/change-orientation.sh \
+	/usr/libexec/board/bind-prefs.sh; do
+	helper="$(basename "$helper_path")"
+	if [ -x "$helper_path" ]; then
 		pass "helper $helper"
 	else
-		fail "helper $helper missing or not executable (/usr/libexec/hmi/)"
+		fail "helper $helper missing or not executable ($helper_path)"
 	fi
 done
 year="$(date -u +%Y 2>/dev/null || echo 0)"

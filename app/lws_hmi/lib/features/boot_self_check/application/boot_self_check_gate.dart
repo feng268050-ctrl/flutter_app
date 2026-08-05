@@ -6,8 +6,8 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_boo
 /// `BootSelfCheckGate`). [AppServices.ensureModbusLive] also no-ops while
 /// [isActive] so continuous RTU poll does not fight self-check group reads.
 ///
-/// Completion is also recorded in [BootSelfCheckBootMarker] so HMI restarts
-/// within the same system boot skip the dialog.
+/// Self-check runs once per HMI process start (not once per OS boot). A new
+/// process always shows the dialog again when settings allow it.
 abstract final class BootSelfCheckGate {
   static bool _active = false;
   static bool _completedInProcess = false;
@@ -16,22 +16,20 @@ abstract final class BootSelfCheckGate {
 
   static bool get isCompletedInProcess => _completedInProcess;
 
-  /// True when the tmpfs boot marker exists (survives HMI process restart).
+  /// Legacy tmpfs marker (no longer used to skip the dialog).
   static bool get hasCompletedThisBoot => BootSelfCheckBootMarker.exists();
 
-  /// Skip starting self-check: already done in this process or this boot.
-  static bool get shouldSkip =>
-      _completedInProcess || BootSelfCheckBootMarker.exists();
+  /// Skip starting self-check only when already done in this process.
+  static bool get shouldSkip => _completedInProcess;
 
   static void setActive(bool active) {
     _active = active;
   }
 
-  /// Mark complete for this process and this boot (writes tmpfs marker).
+  /// Mark complete for this process (does not persist across HMI restarts).
   static void markCompletedInProcess() {
     _completedInProcess = true;
     _active = false;
-    BootSelfCheckBootMarker.mark();
   }
 
   /// Wait until Home bootstrap has finished self-check (or skipped it).
@@ -63,7 +61,7 @@ abstract final class BootSelfCheckGate {
     Duration armGrace = const Duration(seconds: 2),
     Duration pollInterval = const Duration(milliseconds: 40),
   }) async {
-    if (isCompletedInProcess || hasCompletedThisBoot) {
+    if (isCompletedInProcess) {
       while (isActive) {
         await Future<void>.delayed(pollInterval);
       }

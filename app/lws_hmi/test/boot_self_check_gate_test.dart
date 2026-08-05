@@ -212,32 +212,33 @@ void main() {
   group('BootSelfCheckGate', () {
     test('shouldSkip false until marked', () {
       expect(BootSelfCheckGate.shouldSkip, isFalse);
-      expect(BootSelfCheckGate.hasCompletedThisBoot, isFalse);
       expect(BootSelfCheckGate.isCompletedInProcess, isFalse);
     });
 
-    test('markCompletedInProcess sets process + boot marker', () {
+    test('markCompletedInProcess sets process only (no boot marker)', () {
       BootSelfCheckGate.markCompletedInProcess();
       expect(BootSelfCheckGate.isCompletedInProcess, isTrue);
-      expect(BootSelfCheckGate.hasCompletedThisBoot, isTrue);
+      expect(BootSelfCheckGate.hasCompletedThisBoot, isFalse);
       expect(BootSelfCheckGate.shouldSkip, isTrue);
       expect(BootSelfCheckGate.isActive, isFalse);
     });
 
-    test('reset in-process only keeps boot marker (simulates HMI restart)', () {
+    test('reset in-process with leftover marker still does not skip', () {
+      BootSelfCheckBootMarker.mark();
       BootSelfCheckGate.markCompletedInProcess();
       BootSelfCheckGate.resetForTest(clearBootMarker: false);
 
       expect(BootSelfCheckGate.isCompletedInProcess, isFalse);
       expect(BootSelfCheckGate.hasCompletedThisBoot, isTrue);
-      expect(BootSelfCheckGate.shouldSkip, isTrue);
+      // New HMI process: leftover tmpfs marker must not suppress the dialog.
+      expect(BootSelfCheckGate.shouldSkip, isFalse);
     });
 
-    test('full reset clears marker', () {
+    test('full reset clears process gate', () {
       BootSelfCheckGate.markCompletedInProcess();
       BootSelfCheckGate.resetForTest();
       expect(BootSelfCheckGate.shouldSkip, isFalse);
-      expect(BootSelfCheckGate.hasCompletedThisBoot, isFalse);
+      expect(BootSelfCheckGate.isCompletedInProcess, isFalse);
     });
 
     test('waitForModbusAccess returns after gate clears', () async {
@@ -256,105 +257,24 @@ void main() {
     });
   });
 
-  group('BootSelfCheckCoordinator once-per-boot', () {
-    testWidgets(
-      'boot marker present → second process start skips without dialog',
-      (tester) async {
-        BootSelfCheckBootMarker.mark();
-        BootSelfCheckCoordinator.resetForTest(clearBootMarker: false);
+  group('BootSelfCheckCoordinator once-per-process', () {
+    test('boot marker alone does not skip (new HMI process)', () {
+      BootSelfCheckBootMarker.mark();
+      BootSelfCheckCoordinator.resetForTest(clearBootMarker: false);
+      expect(BootSelfCheckGate.hasCompletedThisBoot, isTrue);
+      expect(BootSelfCheckGate.shouldSkip, isFalse);
+    });
 
-        var completed = false;
-        final services = _testServices();
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Builder(
-              builder: (context) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  BootSelfCheckCoordinator.startWhenHomeEntered(
-                    context: context,
-                    services: services,
-                    settings:
-                        BootSelfCheckSettings(enabledOverrideForTest: true),
-                    onComplete: () => completed = true,
-                  );
-                });
-                return const SizedBox.shrink();
-              },
-            ),
-          ),
-        );
-        await tester.pump();
-        await tester.pump();
+    test('preference disabled warmRead returns false', () {
+      final settings =
+          BootSelfCheckSettings(enabledOverrideForTest: false);
+      expect(settings.warmRead(), isFalse);
+    });
 
-        expect(completed, isTrue);
-        expect(BootSelfCheckCoordinator.isRunning, isFalse);
-        expect(find.text('Startup Self-Check'), findsNothing);
-        expect(BootSelfCheckGate.isCompletedInProcess, isTrue);
-      },
-    );
-
-    testWidgets(
-      'preference disabled marks boot consumed; later enabled still skips',
-      (tester) async {
-        var completed = false;
-        final services = _testServices();
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Builder(
-              builder: (context) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  BootSelfCheckCoordinator.startWhenHomeEntered(
-                    context: context,
-                    services: services,
-                    settings:
-                        BootSelfCheckSettings(enabledOverrideForTest: false),
-                    onComplete: () => completed = true,
-                  );
-                });
-                return const SizedBox.shrink();
-              },
-            ),
-          ),
-        );
-        await tester.pump();
-        await tester.pump();
-
-        expect(completed, isTrue);
-        expect(BootSelfCheckGate.hasCompletedThisBoot, isTrue);
-        expect(find.text('Startup Self-Check'), findsNothing);
-
-        BootSelfCheckCoordinator.resetForTest(clearBootMarker: false);
-        completed = false;
-
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Builder(
-              builder: (context) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  BootSelfCheckCoordinator.startWhenHomeEntered(
-                    context: context,
-                    services: services,
-                    settings:
-                        BootSelfCheckSettings(enabledOverrideForTest: true),
-                    onComplete: () => completed = true,
-                  );
-                });
-                return const SizedBox.shrink();
-              },
-            ),
-          ),
-        );
-        await tester.pump();
-        await tester.pump();
-
-        expect(completed, isTrue);
-        expect(find.text('Startup Self-Check'), findsNothing);
-        expect(BootSelfCheckCoordinator.isRunning, isFalse);
-      },
-    );
-
-    test('missing marker does not skip (shouldSkip false)', () {
-      expect(BootSelfCheckBootMarker.exists(), isFalse);
+    test('process reset after complete allows another start', () {
+      BootSelfCheckGate.markCompletedInProcess();
+      expect(BootSelfCheckGate.shouldSkip, isTrue);
+      BootSelfCheckCoordinator.resetForTest();
       expect(BootSelfCheckGate.shouldSkip, isFalse);
     });
   });

@@ -10,8 +10,11 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_set
 import 'package:lws_hmi/features/boot_self_check/domain/boot_self_check_item.dart';
 import 'package:lws_hmi/features/boot_self_check/presentation/boot_self_check_dialog.dart';
 
-/// Orchestrates once-per-boot self-check when Home is entered
-/// (lws-ui `BootSelfCheckCoordinator`, boot-scoped via tmpfs marker).
+/// Orchestrates once-per-process self-check when Home is entered.
+///
+/// Each HMI process start shows the dialog again (settings toggle still
+/// applies). "Don't show again" only suppresses for the remainder of this
+/// process — it no longer writes a permanent preference / boot marker.
 abstract final class BootSelfCheckCoordinator {
   /// Visible dwell so each row paints Checking… before the next item.
   static const minStepDuration = Duration(milliseconds: 280);
@@ -33,11 +36,7 @@ abstract final class BootSelfCheckCoordinator {
       return;
     }
     if (BootSelfCheckGate.shouldSkip) {
-      debugPrint('boot-self-check: skip (marker/process complete)');
-      // Sync in-process flag when only the boot marker is set (new HMI process).
-      if (!BootSelfCheckGate.isCompletedInProcess) {
-        BootSelfCheckGate.markCompletedInProcess();
-      }
+      debugPrint('boot-self-check: skip (already completed this process)');
       onComplete?.call();
       return;
     }
@@ -67,9 +66,7 @@ abstract final class BootSelfCheckCoordinator {
       finished = true;
       autoDismissTimer?.cancel();
       session.markDismissed();
-      if (session.dontShowAgain) {
-        await settings.setEnabled(false);
-      }
+      // Don't persist "don't show again" — every HMI process start shows again.
       if (context.mounted) {
         final nav = Navigator.of(context, rootNavigator: true);
         if (nav.canPop()) {

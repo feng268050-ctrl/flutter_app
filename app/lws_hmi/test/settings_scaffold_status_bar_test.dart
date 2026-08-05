@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -47,7 +47,7 @@ void main() {
                 child: TextButton(
                   onPressed: () {
                     Navigator.of(context).push(
-                      CupertinoPageRoute<void>(
+                      buildAppSlideRoute<void>(
                         builder: (_) => const SettingsScaffold(
                           title: 'Wi‑Fi',
                           body: SizedBox.shrink(),

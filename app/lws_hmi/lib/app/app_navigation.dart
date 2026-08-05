@@ -81,12 +81,15 @@ Route<dynamic> buildAppPageRoute({
 ///
 /// Used for Settings sub-pages, Monitor detail/choose flows, Quick→Engineer
 /// handoff, etc. Keeps industry L/R Cupertino transitions.
+///
+/// Edge swipe-to-pop is **disabled** — exit via Back / explicit buttons only
+/// (HMI anti-mis-touch).
 Route<T> buildAppSlideRoute<T>({
   RouteSettings? settings,
   required WidgetBuilder builder,
   bool fullscreenDialog = false,
 }) {
-  return CupertinoPageRoute<T>(
+  return AppSlidePageRoute<T>(
     settings: settings,
     builder: builder,
     fullscreenDialog: fullscreenDialog,
@@ -98,4 +101,16 @@ Future<T?> pushAppSlidePage<T>(BuildContext context, Widget page) {
   return Navigator.of(context).push<T>(
     buildAppSlideRoute<T>(builder: (_) => page),
   );
+}
+
+/// Cupertino L/R slide without the iOS edge back-swipe gesture.
+final class AppSlidePageRoute<T> extends CupertinoPageRoute<T> {
+  AppSlidePageRoute({
+    required super.builder,
+    super.settings,
+    super.fullscreenDialog,
+  });
+
+  @override
+  bool get popGestureEnabled => false;
 }

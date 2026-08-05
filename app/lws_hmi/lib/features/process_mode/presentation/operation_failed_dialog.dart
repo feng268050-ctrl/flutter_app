@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -11,37 +12,87 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 /// lws-ui [FrostStatusDialog] failure / tip mode (`OperationDialogBuilder.openErrorDialog`).
 ///
 /// Singleton-guarded so key-switch + e-stop paths cannot stack dialogs.
-/// Chrome: opaque charcoal fill (no page透视) — red error tip preset.
+/// Key-off / E-stop tips auto-dismiss when the safety edge clears (warn-style
+/// falling → dismiss), unless the operator already closed them.
 abstract final class OperationFailedDialogHost {
   static bool _showing = false;
+  static BuildContext? _dialogContext;
+
+  /// Which safety tip is open (`emergencyStop` / `keySwitchOff`), or null for
+  /// generic Operation-failed tips (laser preflight, etc.).
+  static DeviceControlSafetyEvent? _shownFor;
 
   @visibleForTesting
   static bool get isShowing => _showing;
 
   @visibleForTesting
+  static DeviceControlSafetyEvent? get shownFor => _shownFor;
+
+  @visibleForTesting
   static void debugReset() {
     _showing = false;
+    _dialogContext = null;
+    _shownFor = null;
   }
 
   /// Shows once; no-ops while another Operation-failed tip is open.
+  ///
+  /// Pass [safetyEvent] for key-off / e-stop so [dismissForSafetyClear] can
+  /// match the tip that should auto-exit on restore.
   static Future<void> show(
     BuildContext context, {
     required String message,
     String? title,
+    DeviceControlSafetyEvent? safetyEvent,
   }) async {
     if (_showing || !context.mounted) {
       return;
     }
     _showing = true;
+    _shownFor = safetyEvent;
     try {
       final l10n = AppLocalizations.of(context)!;
       await showOperationFailedDialog(
         context,
         title: title ?? DeviceControlFeedbackCopy.operationFailedTitle(l10n),
         message: message,
+        onDialogContext: (dialogContext) {
+          _dialogContext = dialogContext;
+        },
       );
     } finally {
+      _dialogContext = null;
+      _shownFor = null;
       _showing = false;
+    }
+  }
+
+  /// Auto-dismiss open tip when e-stop releases or key returns ON.
+  ///
+  /// Mirrors warn frost falling → [WarnPresentation.dismiss]: only the matching
+  /// tip closes; generic Operation-failed tips are left alone.
+  static void dismissForSafetyClear(DeviceControlSafetyEvent clearEvent) {
+    final expected = switch (clearEvent) {
+      DeviceControlSafetyEvent.emergencyStopCleared =>
+        DeviceControlSafetyEvent.emergencyStop,
+      DeviceControlSafetyEvent.keySwitchRestored =>
+        DeviceControlSafetyEvent.keySwitchOff,
+      _ => null,
+    };
+    if (expected == null || _shownFor != expected) {
+      return;
+    }
+    dismissIfShowing();
+  }
+
+  static void dismissIfShowing() {
+    final dialogContext = _dialogContext;
+    _dialogContext = null;
+    if (dialogContext != null && dialogContext.mounted) {
+      final nav = Navigator.of(dialogContext, rootNavigator: true);
+      if (nav.canPop()) {
+        nav.pop();
+      }
     }
   }
 }
@@ -50,16 +101,20 @@ Future<void> showOperationFailedDialog(
   BuildContext context, {
   required String message,
   String? title,
+  void Function(BuildContext dialogContext)? onDialogContext,
 }) {
   final l10n = AppLocalizations.of(context)!;
   return TipDialogHost.showError<void>(
     context: context,
     barrierDismissible: true,
-    builder: (dialogContext) => _OperationFailedBody(
-      title: title ?? DeviceControlFeedbackCopy.operationFailedTitle(l10n),
-      message: message,
-      onConfirm: () => Navigator.of(dialogContext).pop(),
-    ),
+    builder: (dialogContext) {
+      onDialogContext?.call(dialogContext);
+      return _OperationFailedBody(
+        title: title ?? DeviceControlFeedbackCopy.operationFailedTitle(l10n),
+        message: message,
+        onConfirm: () => Navigator.of(dialogContext).pop(),
+      );
+    },
   );
 }
 

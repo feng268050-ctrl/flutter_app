@@ -176,6 +176,16 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (!mounted) {
       return;
     }
+    switch (event) {
+      case DeviceControlSafetyEvent.emergencyStopCleared:
+      case DeviceControlSafetyEvent.keySwitchRestored:
+        // Warn-style auto-dismiss when the safety condition clears.
+        OperationFailedDialogHost.dismissForSafetyClear(event);
+        return;
+      case DeviceControlSafetyEvent.emergencyStop:
+      case DeviceControlSafetyEvent.keySwitchOff:
+        break;
+    }
     WorkStatusDialogHost.closeDialog();
     final l10n = AppLocalizations.of(context)!;
     final message = switch (event) {
@@ -183,11 +193,15 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         DeviceControlFeedbackCopy.emergencyStopError(l10n),
       DeviceControlSafetyEvent.keySwitchOff =>
         DeviceControlFeedbackCopy.keySwitchOffError(l10n),
+      DeviceControlSafetyEvent.emergencyStopCleared ||
+      DeviceControlSafetyEvent.keySwitchRestored =>
+        '', // unreachable — handled above
     };
     unawaited(
       OperationFailedDialogHost.show(
         context,
         message: message,
+        safetyEvent: event,
       ),
     );
   }

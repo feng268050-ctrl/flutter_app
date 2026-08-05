@@ -6,7 +6,7 @@ Before starting whole-device transfer or verify-and-apply (including when trigge
 
 #### Scenario: make upgrade trigger stops work and opens upgrade page
 
-- **WHEN** a host starts a whole-device upgrade session (before or as zip upload begins) while the operator is on a work screen (e.g. quick/engineer/monitor with an active session)
+- **WHEN** a host starts a whole-device upgrade session (before or as package upload begins) while the operator is on a work screen (e.g. quick/engineer/monitor with an active session)
 - **THEN** the HMI stops laser/work activity and navigates directly to the dedicated upgrade page
 - **AND** MUST NOT begin partition writes before that page is showing the session
 - **AND** MUST NOT require navigating to Home first
@@ -18,18 +18,18 @@ Before starting whole-device transfer or verify-and-apply (including when trigge
 
 ### Requirement: Dedicated upgrade page unifies transfer as download progress
 
-Whole-device OTA progress SHALL be shown on a **dedicated upgrade page** (full-screen route) driven by `cyber_ota` progress callbacks — not as a dialog layered on top of laser work screens. The **transferring** phase SHALL be presented to the operator as **download** progress for both cloud HTTP download and host `make upgrade` zip upload (host upload bytes are mapped into the same download/transfer UX). Subsequent extract, verify, and burn/write progress SHALL use the same page. The upgrade page SHALL NOT provide laser firing or welding/job start controls. While partition writes are in progress, the operator MUST NOT be offered a control that cancels an in-flight write. The page SHALL remain until apply finishes successfully (reboot requested) or fails with an error state.
+Whole-device OTA progress SHALL be shown on a **dedicated upgrade page** (full-screen route) driven by `cyber_ota` progress callbacks — not as a dialog layered on top of laser work screens. The **transferring** phase SHALL be presented to the operator as **download** progress for both cloud HTTP download and host `make upgrade` package upload (host upload bytes are mapped into the same download/transfer UX). Subsequent phases SHALL use the same page: **cloud** sessions include **verify** then extract/burn; **host-upload** sessions skip verify and continue with extract/burn. The upgrade page SHALL NOT provide laser firing or welding/job start controls. While partition writes are in progress, the operator MUST NOT be offered a control that cancels an in-flight write. The page SHALL remain until apply finishes successfully (reboot requested) or fails with an error state.
 
 #### Scenario: Host upload appears as download progress on upgrade page
 
-- **WHEN** `make upgrade` is uploading the OTA zip and the on-device session is active
+- **WHEN** `make upgrade` is uploading the OTA `tar.gz` and the on-device session is active
 - **THEN** the dedicated upgrade page shows advancing download/transfer progress that reflects uploaded bytes
-- **AND** after the zip is complete, the same page advances through extract/verify/burn as applicable
+- **AND** after the package is complete, the same page advances through extract/burn without requiring a verify success state
 
 #### Scenario: Cloud download uses the same upgrade page
 
-- **WHEN** a cloud/Settings-initiated download of the OTA zip runs (or continues) on the upgrade page
-- **THEN** the HMI shows download progress on the dedicated upgrade page and then extract/verify/burn for the subsequent phases
+- **WHEN** a cloud/Settings-initiated download of the OTA `tar.gz` runs (or continues) on the upgrade page
+- **THEN** the HMI shows download progress on the dedicated upgrade page and then verify/extract/burn for the subsequent phases
 
 #### Scenario: Upgrade page has no laser job entry
 
@@ -38,7 +38,7 @@ Whole-device OTA progress SHALL be shown on a **dedicated upgrade page** (full-s
 
 #### Scenario: Verify failure surfaces error without claiming flash success
 
-- **WHEN** signature verification fails after ingress/extract
+- **WHEN** cloud package signature verification fails after ingress
 - **THEN** the upgrade page or error UI reports failure and MUST NOT claim that partitions were successfully updated
 
 ### Requirement: Settings check-for-updates uses cyber_ota

@@ -59,6 +59,7 @@ final class HmiButton extends StatelessWidget {
       label: label,
       style: labelStyle,
       iconSize: metrics.iconSize,
+      buttonHeight: metrics.height,
       horizontalPadding: metrics.horizontalPadding,
       icon: icon,
       leading: leading,
@@ -113,6 +114,7 @@ final class _HmiButtonLabel extends StatelessWidget {
     required this.label,
     required this.style,
     required this.iconSize,
+    required this.buttonHeight,
     required this.horizontalPadding,
     this.icon,
     this.leading,
@@ -122,6 +124,7 @@ final class _HmiButtonLabel extends StatelessWidget {
   final String label;
   final TextStyle style;
   final double iconSize;
+  final double buttonHeight;
   final double horizontalPadding;
   final IconData? icon;
   final Widget? leading;
@@ -134,46 +137,16 @@ final class _HmiButtonLabel extends StatelessWidget {
             ? null
             : Icon(icon, size: iconSize, color: style.color ?? Colors.white));
 
-    // Icon/leading without trailing: `[gap][icon][gap][label][gap]` so left
-    // inset equals icon↔label spacing (Reset / Save / wire CTAs).
+    // Icon/leading without trailing: label centered on the full button;
+    // icon left inset equals top/bottom inset (Reset / Save Favorite).
     if (lead != null && trailing == null) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final painter = TextPainter(
-            text: TextSpan(text: label, style: style),
-            maxLines: 1,
-            textDirection: TextDirection.ltr,
-          )..layout();
-          final textW = painter.width;
-          var drawIcon = iconSize;
-          var gap = (constraints.maxWidth - drawIcon - textW) / 3;
-          if (gap < 0) {
-            drawIcon = (constraints.maxWidth - textW).clamp(0.0, iconSize);
-            gap = (constraints.maxWidth - drawIcon - textW) / 3;
-            if (gap < 0) {
-              gap = 0;
-              drawIcon = (constraints.maxWidth - textW).clamp(0.0, iconSize);
-            }
-          }
-          final row = Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(width: gap),
-              if (drawIcon > 0)
-                SizedBox(
-                  width: drawIcon,
-                  height: drawIcon,
-                  child: icon != null
-                      ? Icon(
-                          icon,
-                          size: drawIcon,
-                          color: style.color ?? Colors.white,
-                        )
-                      : FittedBox(fit: BoxFit.contain, child: lead),
-                ),
-              SizedBox(width: gap),
-              Text(
+      final edgeInset = ((buttonHeight - iconSize) / 2).clamp(0.0, buttonHeight);
+      return SizedBox.expand(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: Text(
                 label,
                 maxLines: 1,
                 softWrap: false,
@@ -181,15 +154,22 @@ final class _HmiButtonLabel extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: style,
               ),
-              SizedBox(width: gap),
-            ],
-          );
-          return FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.center,
-            child: row,
-          );
-        },
+            ),
+            Positioned(
+              left: edgeInset,
+              top: edgeInset,
+              width: iconSize,
+              height: iconSize,
+              child: icon != null
+                  ? Icon(
+                      icon,
+                      size: iconSize,
+                      color: style.color ?? Colors.white,
+                    )
+                  : FittedBox(fit: BoxFit.contain, child: lead),
+            ),
+          ],
+        ),
       );
     }
 

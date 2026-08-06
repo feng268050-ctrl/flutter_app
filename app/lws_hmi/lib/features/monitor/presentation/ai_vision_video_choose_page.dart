@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
-import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// lws-ui `AiVisionVideoChooseActivity` — table pick → [ProcessVideoRecord].
 ///
@@ -180,10 +181,12 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
         ),
         DataCell(
           Center(
-            child: MonitorFrostActionButton(
-              variant: CyberButtonVariant.primary,
-              onPressed: () => _select(row),
+            child: HmiButton(
               label: l10n.aiVisionSelectBtn,
+              size: HmiButtonSize.medium,
+              variant: CyberButtonVariant.primary,
+              shape: CyberButtonShape.rounded,
+              onPressed: () => _select(row),
             ),
           ),
         ),

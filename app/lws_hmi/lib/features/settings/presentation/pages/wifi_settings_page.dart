@@ -503,6 +503,10 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                   child: HmiButton(
                     label: l10n.wifiHiddenNetworkConnect,
                     size: HmiButtonSize.medium,
+                    // Flat 1px rim — same opacity as home quick-action tiles.
+                    strokeWidth: 1,
+                    borderGradientCenter: CyberBorderGradientCenter.uniform,
+                    borderColor: const Color(0x4DFFFFFF),
                     onPressed: _busy != null
                         ? null
                         : () => unawaited(_joinHidden()),

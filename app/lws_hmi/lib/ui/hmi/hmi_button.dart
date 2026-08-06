@@ -23,6 +23,7 @@ final class HmiButton extends StatelessWidget {
     this.clickSoundEnabled = true,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
     this.borderGradientColors,
+    this.borderColor,
     this.strokeWidth,
     this.paintFill = true,
   });
@@ -49,6 +50,9 @@ final class HmiButton extends StatelessWidget {
   final bool clickSoundEnabled;
   final CyberBorderGradientCenter borderGradientCenter;
   final List<Color>? borderGradientColors;
+
+  /// Flat stroke when [borderGradientCenter] is uniform (home QA rim).
+  final Color? borderColor;
   final double? strokeWidth;
   final bool paintFill;
 
@@ -89,6 +93,7 @@ final class HmiButton extends StatelessWidget {
       stretch: true,
       borderGradientCenter: borderGradientCenter,
       borderGradientColors: borderGradientColors,
+      borderColor: borderColor,
       strokeWidth: strokeWidth,
       paintFill: paintFill,
       child: child,

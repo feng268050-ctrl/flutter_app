@@ -101,6 +101,7 @@ class CyberButton extends StatefulWidget {
     this.onLongPress,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
     this.borderGradientColors,
+    this.borderColor,
     this.strokeWidth,
     this.inkWellGestures = true,
     this.externalPress,
@@ -138,6 +139,10 @@ class CyberButton extends StatefulWidget {
   /// Optional HL / mid / shadow override for the frost rim (e.g. brighter
   /// engineer Reset / Save pills). When null, uses [variant] defaults.
   final List<Color>? borderGradientColors;
+
+  /// Flat stroke color when [borderGradientCenter] is
+  /// [CyberBorderGradientCenter.uniform] (e.g. home quick-action 30% white).
+  final Color? borderColor;
 
   /// Stroke width override; defaults to [CyberDimens.buttonStrokeWidth].
   final double? strokeWidth;
@@ -262,7 +267,7 @@ class _CyberButtonState extends State<CyberButton>
       gradientCenter: widget.borderGradientCenter,
       gradientColorsOverride:
           widget.borderGradientColors ?? _borderGradientColors(widget.variant),
-      uniformColor: _borderFlat(widget.variant),
+      uniformColor: widget.borderColor ?? _borderFlat(widget.variant),
     );
 
     final label = DefaultTextStyle(

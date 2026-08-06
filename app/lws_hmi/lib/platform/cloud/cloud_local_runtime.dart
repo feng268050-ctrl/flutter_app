@@ -33,6 +33,7 @@ import 'package:lws_hmi/platform/cloud/cloud_settings_store.dart';
 import 'package:lws_hmi/platform/cloud/device_ai_report_client.dart';
 import 'package:lws_hmi/platform/cloud/device_api_origin_config.dart';
 import 'package:lws_hmi/platform/cloud/device_api_origin_prober.dart';
+import 'package:lws_hmi/platform/cloud/device_cloud_ed25519.dart';
 import 'package:lws_hmi/platform/cloud/device_r2_put_object_client.dart';
 import 'package:lws_hmi/platform/cloud/device_r2_sts_client.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
@@ -71,6 +72,12 @@ final class CloudLocalRuntime {
     cloudHttp = CloudHttpClient(http: services.http);
     prober = DeviceApiOriginProber(http: services.http);
     usersClient = DeviceUsersClient(cloudHttp: cloudHttp);
+    ed25519Client = DeviceCloudEd25519Client(cloudHttp: cloudHttp);
+    ed25519 = DeviceCloudEd25519Coordinator(
+      identity: services.bindings.cloudEd25519Identity(),
+      client: ed25519Client,
+      vendorIdentity: const VendorIdentityReader(),
+    );
     r2StsClient = DeviceR2StsClient(cloudHttp: cloudHttp);
     r2PutClient = DeviceR2PutObjectClient(cloudHttp: cloudHttp);
     videoMetadataClient = DeviceVideoMetadataClient(cloudHttp: cloudHttp);
@@ -156,6 +163,8 @@ final class CloudLocalRuntime {
   late final CloudHttpClient cloudHttp;
   late final DeviceApiOriginProber prober;
   late final DeviceUsersClient usersClient;
+  late final DeviceCloudEd25519Client ed25519Client;
+  late final DeviceCloudEd25519Coordinator ed25519;
   late final DeviceR2StsClient r2StsClient;
   late final DeviceR2PutObjectClient r2PutClient;
   late final DeviceVideoMetadataClient videoMetadataClient;
@@ -557,6 +566,7 @@ final class CloudLocalRuntime {
     _originPinned = true;
     _publishLinkStatus();
     unawaited(processVideoUpload.enqueuePendingCovers());
+    unawaited(_ensureEd25519Activated(pin));
     final product = await services.ensureProductInfo();
     final sn = product.sn.trim();
     if (sn.isEmpty) {
@@ -592,6 +602,7 @@ final class CloudLocalRuntime {
     _originPinned = true;
     _cancelCloudLinkRetries();
     unawaited(processVideoUpload.enqueuePendingCovers());
+    unawaited(_ensureEd25519Activated(pin));
     final product = await services.ensureProductInfo();
     final sn = product.sn.trim().isEmpty ? 'UNKNOWN' : product.sn.trim();
     if (sn != 'UNKNOWN') {
@@ -654,6 +665,7 @@ final class CloudLocalRuntime {
       _linkFollowUpTimer = null;
       _publishLinkStatus();
       unawaited(processVideoUpload.enqueuePendingCovers());
+      unawaited(_ensureEd25519Activated(pin));
       debugPrint('cloud-runtime: pinned $pin');
       final product = await services.ensureProductInfo();
       final sn = product.sn.trim();
@@ -749,6 +761,50 @@ final class CloudLocalRuntime {
       await services.dateTime.ensureSaneForTls();
     } catch (e) {
       debugPrint('cloud-runtime: clock sync failed: $e');
+    }
+  }
+
+  /// First-online Ed25519 ensure-activated (non-blocking for local HMI).
+  ///
+  /// Skips on emulator / missing Vendor Storage, HTTP-only origins, empty VS
+  /// SN, or 云服务 off. Failures are logged and retried on the next link.
+  Future<void> _ensureEd25519Activated(Uri pinnedBase) async {
+    try {
+      final result = await ed25519.ensureActivated(
+        pinnedBase: pinnedBase,
+        cloudServicesEnabled: cloudSettings.cloudServicesEnabled,
+      );
+      switch (result.status) {
+        case DeviceCloudEd25519EnsureStatus.activated:
+          debugPrint('cloud-ed25519: activated (pubkey ready)');
+          unawaited(_mintEd25519AccessToken(pinnedBase));
+        case DeviceCloudEd25519EnsureStatus.skipped:
+          debugPrint('cloud-ed25519: skipped (${result.error})');
+        case DeviceCloudEd25519EnsureStatus.retryLater:
+          debugPrint('cloud-ed25519: activate retry later (${result.error})');
+        case DeviceCloudEd25519EnsureStatus.foreignKeyConflict:
+          debugPrint(
+            'cloud-ed25519: FOREIGN KEY CONFLICT — fail closed (${result.error})',
+          );
+      }
+    } catch (e) {
+      debugPrint('cloud-ed25519: ensure-activated error: $e');
+    }
+  }
+
+  Future<void> _mintEd25519AccessToken(Uri pinnedBase) async {
+    try {
+      final tok = await ed25519.mintAccessToken(
+        pinnedBase: pinnedBase,
+        cloudServicesEnabled: cloudSettings.cloudServicesEnabled,
+      );
+      if (tok.ok) {
+        debugPrint('cloud-ed25519: access_token minted');
+      } else {
+        debugPrint('cloud-ed25519: token mint failed (${tok.error})');
+      }
+    } catch (e) {
+      debugPrint('cloud-ed25519: token mint error: $e');
     }
   }
 

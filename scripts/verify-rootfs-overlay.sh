@@ -306,6 +306,7 @@ run_check() {
 	echo ""
 	echo "--- usr/libexec/board ---"
 	for f in read-device-serial.sh read-product-identity.sh write-product-identity.sh \
+		read-cloud-ed25519-sealed.sh write-cloud-ed25519-sealed.sh \
 		secrets-seal secrets-seal-ca paths.sh lws-hostname.sh device-mdns-advertise.sh \
 		serial-console-stty.sh reboot-loader boot-verify.sh env-verify.sh \
 		set-performance-mode.sh bind-prefs.sh; do
@@ -318,6 +319,14 @@ run_check() {
 	done
 	if [[ -f "$libexec_board/vendor-storage-ids.txt" ]]; then
 		echo "OK:  board/vendor-storage-ids.txt"
+		if grep -q 'VENDOR_CLOUD_ED25519_ID=22' "$libexec_board/vendor-storage-ids.txt" \
+			&& grep -q 'VENDOR_CLOUD_ED25519_NAME=VENDOR_CUSTOM_ID_16' \
+				"$libexec_board/vendor-storage-ids.txt"; then
+			echo "OK:  board/vendor-storage-ids.txt cloud Ed25519 ID 22"
+		else
+			echo "FAIL: board/vendor-storage-ids.txt missing cloud Ed25519 ID 22" >&2
+			missing=1
+		fi
 	else
 		echo "FAIL: board/vendor-storage-ids.txt missing" >&2
 		missing=1
@@ -562,6 +571,8 @@ diagnose-usb-ssh /usr/libexec/usb/usb-plug-ssh-diag.sh
 read-serial /usr/libexec/board/read-device-serial.sh
 read-identity /usr/libexec/board/read-product-identity.sh
 write-identity /usr/libexec/board/write-product-identity.sh
+read-cloud-ed25519-sealed /usr/libexec/board/read-cloud-ed25519-sealed.sh
+write-cloud-ed25519-sealed /usr/libexec/board/write-cloud-ed25519-sealed.sh
 start-usb-ssh /usr/libexec/usb/usb-plug-ssh-start.sh
 stop-usb-ssh /usr/libexec/usb/usb-plug-ssh-stop.sh
 recover-usb-ssh /usr/libexec/usb/usb-plug-ssh-recover.sh

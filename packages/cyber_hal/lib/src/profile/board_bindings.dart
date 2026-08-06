@@ -414,4 +414,15 @@ final class BoardBindings {
       runner: opteeRunner,
     );
   }
+
+  /// Cloud Ed25519 identity (seal → Vendor Storage ID 22). Inject [store] in tests.
+  CloudEd25519Identity cloudEd25519Identity({
+    KekProvider? secrets,
+    CloudEd25519SealedStore? store,
+  }) {
+    return CloudEd25519Identity(
+      secrets: secrets ?? this.secrets(),
+      store: store,
+    );
+  }
 }

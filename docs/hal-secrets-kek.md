@@ -51,6 +51,11 @@ whole-disk+same-SoC identity clones.
 ## What this is / is not
 
 - This is a **shared HAL Secrets seal API** for Wi‑Fi PSK vault and future secrets.
+- **Cloud Ed25519** (`CloudEd25519Identity`): seals the device cloud private-key
+  seed with AAD `cloud-ed25519-v1\\0<product SN>` and stores the opaque blob in
+  Vendor Storage ID **22** via board helpers (`read-cloud-ed25519-sealed` /
+  `write-cloud-ed25519-sealed`). Emulator / boards without `/dev/vendor_storage`
+  fail closed (helpers exit non-zero; App skips activate — no fake prod key).
 - This does **not** by itself claim **RED / EN 18031** conformity or complete a
   Notified Body dossier. Technical file work remains outside this repo change.
 

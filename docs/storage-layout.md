@@ -18,7 +18,7 @@ Rockchip `parameter.txt` uses **512-byte sectors**.
 | system | **rootfs_a**, **rootfs_b** | each **1 GiB** | Userspace; remote upgrade writes inactive letter |
 | | oem | ~128 MiB | Board×screen pack |
 | | private, private1 | unchanged | LCD/MIPI params / private data |
-| | **vendor0–vendor3** | each **64 KiB** (`0x80`) | Rockchip Vendor Storage (product **brand** / **model** / **sn**); **geometry frozen ABI** |
+| | **vendor0–vendor3** | each **64 KiB** (`0x80`) | Rockchip Vendor Storage (product **brand** / **model** / **sn** + sealed cloud Ed25519 blob ID 22); **geometry frozen ABI** |
 | | userdata | grow from `0x4BE200` | Operator prefs, models, OTA staging |
 
 **Letter pair:** A = `boot` + `rootfs_a`; B = `boot_b` (storage) + `rootfs_b`. Never mix letters.
@@ -32,7 +32,7 @@ Rockchip `parameter.txt` uses **512-byte sectors**.
 | vendor2 | `0x80` | `0x4BE100` |
 | vendor3 | `0x80` | `0x4BE180` |
 
-ID map: [`board/vendor-storage-ids.txt`](../board/vendor-storage-ids.txt) (SN=1, BRAND=20, MODEL=21); on-device copy at `/usr/libexec/board/vendor-storage-ids.txt`. `package-file` / `factory.img` **must not** embed `vendor*.img` so `make flash` preserves identity. Factory order: **flash → `make write-identity` → verify**. Moving vendor LBAs is a breaking migration (identity data loss).
+ID map: [`board/vendor-storage-ids.txt`](../board/vendor-storage-ids.txt) (SN=1, BRAND=20, MODEL=21, sealed cloud Ed25519 private-key blob=**22** / `VENDOR_CUSTOM_ID_16`); on-device copy at `/usr/libexec/board/vendor-storage-ids.txt`. ID 22 holds **Secrets-sealed ciphertext only** (never plaintext). Helpers: `read-cloud-ed25519-sealed` / `write-cloud-ed25519-sealed`. `package-file` / `factory.img` **must not** embed `vendor*.img` so `make flash` preserves identity (including cloud key). Factory order: **flash → `make write-identity` → verify**. Moving vendor LBAs is a breaking migration (identity data loss).
 
 Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL over raw `/dev/mmcblk0pN`.
 

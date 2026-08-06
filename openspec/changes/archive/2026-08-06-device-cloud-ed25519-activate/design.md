@@ -82,4 +82,6 @@ Sibling change lives in `../api-server` OpenSpec (device activate + Ed25519 toke
 
 ## Open Questions
 
-- Exact token-mint signed-message canonicalization details → finalize in api-server design; HMI mirrors.
+- ~~Exact token-mint signed-message canonicalization details → finalize in api-server design; HMI mirrors.~~ **Frozen** (api-server `device-ed25519-activate` main spec, 2026-08-05 archive):
+  - Activate: `POST /v1/devices/:sn/activate` body `{ "public_key": "<base64 32 raw bytes>" }`; unknown SN → `404`; bad key length → `400`; same key retry → `200`; different key → `409` `DEVICE_ALREADY_ACTIVATED`.
+  - Token: `POST /v1/devices/:sn/token` body `{ "ts", "nonce", "signature" }` over UTF-8 `ed25519-token-v1\n<sn>\n<ts>\n<nonce>`; skew ≤ 300s; `data.access_token` is platform HS512 JWT (`typ: "device"`, `sn`/`sub`, `exp`; TTL `expireMinutes = 30000`).

@@ -116,6 +116,8 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `overlay/.../oem-compose*` | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `packages/cyber_hal` profile APIs / App OEM load path | `make build-app`, `make push-app` |
 | `packages/cyber_hal` Secrets/KEK (`lib/secrets.dart`, software fallback) | `make build-app`, `make push-app` (host: `flutter test` in package); OP-TEE image path also needs overlay/kernel below |
+| `packages/cyber_hal` cloud Ed25519 (`lib/src/secrets/cloud_ed25519_identity.dart`) + App `device_cloud_ed25519` / `cloud_local_runtime` | `make build-app`, `make push-app` (host: package + App unit tests); first ship of VS ID 22 helpers also needs overlay below |
+| Board VS cloud-key helpers (`read/write-cloud-ed25519-sealed.sh`, `board/vendor-storage-ids.txt` ID 22) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `overlay/kernel/**/ynh960-optee.dtsi` + `chips/lws_hmi_optee.config` / `tee-supplicant.service` / `secrets-seal` | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`, `bash scripts/br-make-packages.sh optee optee-client`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `packages/cyber_pm` (process supervisor) | `make build-app`, `make push-app` (host: `dart test` in package) |
 | `prebuilt/mediamtx/**`, `scripts/build-mediamtx.sh`, App MediaMTX relay / `/opt/hmi/bin` | `make build-mediamtx` (if prebuilt missing), `make build-app`, `make push-app`; purge old rootfs binary/unit: `make apply-overlay`, `make build-rootfs`, `make upgrade` |

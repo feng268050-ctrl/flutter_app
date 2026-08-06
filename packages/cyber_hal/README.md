@@ -16,6 +16,7 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
 | `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` | procfs/sysfs + Vendor Storage identity (`brand`/`model`/`sn`/`chipId`) + opaque `/var/lib/hal/properties.ini` bag via `get(key)` |
+| `package:cyber_hal/secrets.dart` | KEK seal/unseal; cloud Ed25519 identity (VS ID 22) | OP-TEE / software KEK; sealed blob helpers |
 | `package:cyber_hal/datetime.dart` | wall clock | `/var/lib/hal/datetime.conf` (`sync_mode`, `timezone`) |
 | `package:cyber_hal/stub.dart` | in-memory stubs | P3.2 emulator / host tests |
 | `package:cyber_hal/cyber_hal.dart` | core only | `Capabilities`, `BoardProfile`, errors |

@@ -55,14 +55,15 @@ void main() {
 
     expect(find.byType(SafetyTipsPage), findsOneWidget);
     expect(find.text('Safety Tips'), findsOneWidget);
-    expect(find.textContaining('Keep bystanders'), findsOneWidget);
+    // Body is word-boundary wrapped (one Text per English token).
+    expect(find.text('bystanders,'), findsOneWidget);
     expect(SafetyTipsGate.isActive, isTrue);
 
     // Product Disclaimer is a named route (slide), not a nested dialog.
     await tester.tap(find.byKey(const ValueKey('safety-tips-disclaimer-link')));
     await tester.pumpAndSettle();
     expect(find.text('Product Disclaimer'), findsOneWidget);
-    expect(find.textContaining('Dear User:'), findsOneWidget);
+    expect(find.text('Dear'), findsWidgets);
     expect(find.byType(ProductDisclaimerPage), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('product-disclaimer-agree-btn')));

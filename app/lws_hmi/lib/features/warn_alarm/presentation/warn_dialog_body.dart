@@ -3,8 +3,9 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// lws-ui warn prompt metrics (`FrostPromptDialog` + `dialog_frost_body_prompt`).
 ///
@@ -271,9 +272,8 @@ class WarnDialogBody extends StatelessWidget {
             height: scrollMax,
             width: double.infinity,
             child: SingleChildScrollView(
-              child: Text(
-                body,
-                textAlign: TextAlign.start,
+              child: WordBoundaryBody(
+                text: body,
                 style: WarnDialogMetrics.bodyStyle(fontSize: bodyFont),
               ),
             ),

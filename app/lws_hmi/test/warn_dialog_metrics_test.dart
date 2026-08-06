@@ -140,7 +140,9 @@ void main() {
     await tester.pump();
 
     final titleSize = tester.widget<Text>(find.text(title)).style!.fontSize!;
-    final bodySize = tester.widget<Text>(find.text(body)).style!.fontSize!;
+    // Body is word-boundary wrapped — sample one token for font size.
+    final bodySize =
+        tester.widget<Text>(find.text('Power')).style!.fontSize!;
     expect(titleSize, lessThan(WarnDialogMetrics.titleSize));
     expect(bodySize, lessThanOrEqualTo(titleSize));
   });

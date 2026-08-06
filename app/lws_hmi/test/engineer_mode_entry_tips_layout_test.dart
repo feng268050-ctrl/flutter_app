@@ -34,10 +34,8 @@ void main() {
     );
     // Full title — not ellipsized ("Engineer Mode No…").
     expect(find.text('Engineer Mode Notice'), findsOneWidget);
-    expect(
-      find.textContaining('before making fine adjustments.'),
-      findsOneWidget,
-    );
+    // Body is word-boundary wrapped (one Text per English token).
+    expect(find.text('adjustments.'), findsOneWidget);
     expect(find.byType(CyberCheckbox), findsOneWidget);
     final checkbox = tester.widget<CyberCheckbox>(find.byType(CyberCheckbox));
     expect(checkbox.size, CyberDimens.checkboxLargeSize);

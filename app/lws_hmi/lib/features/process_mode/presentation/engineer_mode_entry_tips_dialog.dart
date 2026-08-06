@@ -6,6 +6,7 @@ import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Process-lifetime suppress for the engineer entry tip (not persisted).
@@ -176,9 +177,8 @@ final class _EngineerModeEntryTipsBodyState
           // above Confirm while empty space sat below.
           Expanded(
             child: SingleChildScrollView(
-              child: Text(
-                l10n.engineerModeEntryBody,
-                textAlign: TextAlign.start,
+              child: WordBoundaryBody(
+                text: l10n.engineerModeEntryBody,
                 style: bodyStyle,
               ),
             ),

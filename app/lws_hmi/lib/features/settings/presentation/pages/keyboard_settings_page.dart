@@ -12,6 +12,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// Keyboard settings: soft layout Segment + preview + physical keyboard status.
 class KeyboardSettingsPage extends StatefulWidget {
@@ -100,8 +101,8 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              l10n.keyboardApplyConfirmBody,
+            WordBoundaryBody(
+              text: l10n.keyboardApplyConfirmBody,
               style: const TextStyle(color: CyberColors.textSecondary),
             ),
             const SizedBox(height: 20),

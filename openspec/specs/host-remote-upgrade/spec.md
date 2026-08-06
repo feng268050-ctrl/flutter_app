@@ -86,6 +86,20 @@ For the SSH path, the host SHALL: obtain the `tar.gz` and `.sig`; preflight the 
 - **WHEN** a developer reads Make/docs for cloud publish
 - **THEN** `make ota-package` (output `tar.gz` + `.sig`) is documented as the required prerequisite artifact for `make publish`
 
+### Requirement: make upgrade honors UPGRADE_PACKAGE when set
+
+In addition to upgrading from tree-built firmware outputs (or the default `ota-package` artifact when that path is active), **`make upgrade` SHALL** honor **`UPGRADE_PACKAGE=`** as specified by the `upgrade-package-input` capability: when the variable is non-empty, use that local `.tar` / `.tar.gz` / `.tgz` as the package input, branching by transport (**SSH/USB-SSH** → host HTTP serve archive **+ sibling `.sig`** + device download + staged **verify**-apply; **RockUSB Loader/Maskrom** → host extract + `di` OTA images). When `UPGRADE_PACKAGE` is unset or empty, existing input resolution for `make upgrade` remains unchanged by this requirement.
+
+#### Scenario: Unset keeps default inputs
+
+- **WHEN** the operator runs `make upgrade` without `UPGRADE_PACKAGE`
+- **THEN** the command uses the default firmware/package inputs for the selected transport (not an operator-supplied tarball)
+
+#### Scenario: Set overrides default package source
+
+- **WHEN** the operator runs `UPGRADE_PACKAGE=/path/to/pkg.tar.gz make upgrade` with a valid archive and a selected transport
+- **THEN** the upgrade uses that archive per `upgrade-package-input` and does not require regenerating a package solely because tree outputs changed
+
 ### Requirement: make publish shares ota-package artifact with make upgrade
 
 **`make publish`** SHALL use the **same** OTA `tar.gz` (and detached `.sig`) produced by **`make ota-package`** (for the selected `APP` and packaging mode) as its upload artifact. **`make publish`** MUST invoke `ota-package` (or equivalent prerequisite) before upload when using the full `publish` target. Host documentation SHALL state that cloud publish and SSH `make upgrade` share that archive shape; publish MUST NOT invent a second unsigned or differently laid-out cloud-only archive.

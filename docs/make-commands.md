@@ -479,15 +479,17 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 
 - **怎么用：**
   - 全量 A/B（SSH）：`make upgrade`（先 `ota-package`，host 临时 HTTP 托管 `tar.gz`+`.sig`，设备下载后验签写盘；需签名钥）
-  - 现成包：`UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade`（同目录须有 `<path>.sig`）
-  - 全量（RockUSB Loader/Maskrom）：`make reboot-loader` 后 `make upgrade`，或 `UPGRADE_TRANSPORT=rockusb make upgrade`（`di` 写 boot + boot_b + 双 rootfs + 可选 oem；**不** `uf factory.img`）
-  - 仅 OEM：`OEM_ONLY=1 make upgrade`
+  - 现成包（SSH）：`UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade`（同目录须有 `<path>.sig`；跳过重新打包）
+  - 现成包（Loader）：`make reboot-loader` 后 `UPGRADE_TRANSPORT=rockusb UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade`（host 解压成员后 `di`；**不**需要 `.sig`）
+  - 全量（RockUSB Loader/Maskrom，树内镜像）：`make reboot-loader` 后 `make upgrade`，或 `UPGRADE_TRANSPORT=rockusb make upgrade`（`di` 写 boot + boot_b + 双 rootfs + 可选 oem；**不** `uf factory.img`）
+  - 仅 OEM：`OEM_ONLY=1 make upgrade`（oem-only 归档也须显式 `OEM_ONLY=1`，不会从成员自动推断）
   - 跳过 oem：`OEM_IMG= make upgrade`
   - 强制传输：`UPGRADE_TRANSPORT=ssh|rockusb`（默认 `auto`）
   - HTTP 绑定：`OTA_HTTP_HOST=` / `OTA_HTTP_PORT=`（USB-SSH 默认 `192.168.55.2`）
-- **何时用：** 板已具备 P2.4 GPT/helpers 后的日常 kernel/rootfs/oem 迭代（**不**传 `factory.img`）；板卡停在 Loader/Maskrom 时同一入口刷 OTA 等价松散镜像。
-- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、`UPGRADE_TRANSPORT`、`UPGRADE_PACKAGE`、`OTA_HTTP_HOST`、`OTA_HTTP_PORT`、设备选择、`WAIT_SEC`。
-- **行为：** SSH 路径触发升级页 → 设备从 host HTTP 下载归档 → staged verify/apply → 请求重启后立即返回；RockUSB 路径 `di` 完成后 `rd`。与云 OTA 同源落盘与验签。与 `make flash`（factory `uf`）不同。若 macOS 防火墙拦截入站，允许 Python 接收连接。
+- **何时用：** 板已具备 P2.4 GPT/helpers 后的日常 kernel/rootfs/oem 迭代（**不**传 `factory.img`）；板卡停在 Loader/Maskrom 时同一入口刷 OTA 等价松散镜像；或用同事/CI 已打好的 `ota-package.tar.gz`。
+- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、`UPGRADE_TRANSPORT`、`UPGRADE_PACKAGE`（`.tar` / `.tar.gz` / `.tgz`）、`OTA_HTTP_HOST`、`OTA_HTTP_PORT`、设备选择、`WAIT_SEC`。
+- **行为：** SSH 路径触发升级页 → 设备从 host HTTP 下载归档 → staged verify/apply → 请求重启后立即返回；RockUSB 路径 `di` 完成后 `rd`（`UPGRADE_PACKAGE` 时先解压）。与云 OTA 同源落盘与验签。与 `make flash`（factory `uf`）不同。若 macOS 防火墙拦截入站，允许 Python 接收连接。
+- **归档成员：** 与 `make ota-package` 一致：`boot.img` + `boot_b.img` + `rootfs.img`（可选 `oem.img`）；`OEM_ONLY=1` 时只要 `oem.img`。
 
 ### `make debug-setup` / `make debug-app`
 

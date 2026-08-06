@@ -80,7 +80,7 @@ Missing sibling `.sig` → fail fast on SSH (aligned with `unified-ota-cyber-ota
 2. Document `UPGRADE_PACKAGE=` examples for SSH and Loader.
 3. No board flash required for host-only RockUSB extract path beyond existing Loader workflow.
 
-## Open Questions
+## Resolved Questions
 
-1. Exact member filenames when packaging variants change—confirm RockUSB package variant (dual FIT) naming in `ota-package` docs.
-2. Whether `UPGRADE_PACKAGE=` implies `OEM_ONLY` when archive contains only oem (auto-detect vs require `OEM_ONLY=1`).
+1. **Member filenames:** Same as `make ota-package` / `lws-ota-tar-v1`: flat `boot.img`, `boot_b.img`, `rootfs.img`, optional `oem.img` (+ `manifest.json`). SSH and RockUSB both use the dual-FIT archive; SSH apply uses the inactive letter only, RockUSB `di`s both FITs + both rootfs letters.
+2. **OEM-only archives:** Do **not** auto-set `OEM_ONLY` from member list. Operators MUST pass **`OEM_ONLY=1`** for oem-only packages; otherwise full-system member checks apply and fail fast if FITs/rootfs are missing.

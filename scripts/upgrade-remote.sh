@@ -80,20 +80,25 @@ Env (also in repo-root \`.env\`; command-line env overrides \`.env\`):
   APP                       Flutter product under app/ (default: lws_hmi)
   SN / IP                   select board
   UPGRADE_TRANSPORT         auto|ssh|rockusb (default: auto)
-  UPGRADE_PACKAGE           existing .tar/.tar.gz; SSH also needs <path>.sig
+  UPGRADE_PACKAGE           existing .tar/.tar.gz/.tgz; skips ota-package rebuild.
+                            SSH: also needs sibling <path>.sig (host HTTP + device pull).
+                            RockUSB: host extracts then di (no .sig required).
+                            Members: boot.img + boot_b.img + rootfs.img [/oem.img];
+                            OEM_ONLY=1 requires oem.img (no auto-detect from archive).
   OTA_SIGNING_KEY           Ed25519 PEM (default keys/ota/ed25519.pem if present)
   OTA_HTTP_HOST             bind/advertise IP for host HTTP (USB-SSH default 192.168.55.2)
   OTA_HTTP_PORT             host HTTP port (default 0 = ephemeral)
   LWS_HMI_FIRMWARE_DIR      default: output/firmware
   FACTORY_SKU / OEM_ID      resolve default oem.img
   OEM_IMG                   oem.img path; unset=auto; empty=skip oem
-  OEM_ONLY                  0|1 — 1 = oem partition only
+  OEM_ONLY                  0|1 — 1 = oem partition only (required for oem-only packages)
 
 Examples:
   APP=cnc_hmi make upgrade
   OEM_ONLY=1 make upgrade
   OEM_IMG= make upgrade
   UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade
+  UPGRADE_TRANSPORT=rockusb UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade
   UPGRADE_TRANSPORT=rockusb make upgrade
 EOF
 }
@@ -175,20 +180,163 @@ resolve_bundle_images() {
 	echo "upgrade: APP=$APP rootfs=$ROOTFS_IMG"
 }
 
+# Normalize UPGRADE_PACKAGE to an absolute readable regular file; reject non-tar suffixes.
+validate_upgrade_package_path() {
+	local pkg="${UPGRADE_PACKAGE:-}"
+	[[ -n "$pkg" ]] || return 0
+	# Relative paths are resolved from the caller's cwd (Make runs from repo root).
+	if [[ "$pkg" != /* ]]; then
+		pkg="$(pwd)/$pkg"
+	fi
+	[[ -e "$pkg" ]] || die "UPGRADE_PACKAGE not found: $pkg"
+	[[ -f "$pkg" ]] || die "UPGRADE_PACKAGE must be a regular file (got: $pkg)"
+	[[ -r "$pkg" ]] || die "UPGRADE_PACKAGE not readable: $pkg"
+	case "$pkg" in
+	*.tar.gz | *.tgz | *.tar) ;;
+	*) die "UPGRADE_PACKAGE must be .tar / .tar.gz / .tgz (got: $pkg)" ;;
+	esac
+	[[ "$(file_size "$pkg")" -gt 0 ]] || die "UPGRADE_PACKAGE is empty: $pkg"
+	UPGRADE_PACKAGE="$pkg"
+	echo "upgrade: using UPGRADE_PACKAGE=$UPGRADE_PACKAGE"
+}
+
+# List basename of each archive member (handles ./boot.img → boot.img).
+list_upgrade_package_basenames() {
+	local pkg="$1"
+	local line base
+	local -a raw=()
+	case "$pkg" in
+	*.tar.gz | *.tgz)
+		while IFS= read -r line; do
+			[[ -n "$line" ]] && raw+=("$line")
+		done < <(tar -tzf "$pkg" 2>/dev/null) \
+			|| die "failed to list UPGRADE_PACKAGE (gzip tar): $pkg"
+		;;
+	*.tar)
+		while IFS= read -r line; do
+			[[ -n "$line" ]] && raw+=("$line")
+		done < <(tar -tf "$pkg" 2>/dev/null) \
+			|| die "failed to list UPGRADE_PACKAGE (tar): $pkg"
+		;;
+	*) die "UPGRADE_PACKAGE must be .tar / .tar.gz / .tgz (got: $pkg)" ;;
+	esac
+	[[ ${#raw[@]} -gt 0 ]] || die "UPGRADE_PACKAGE has no members: $pkg"
+	for line in "${raw[@]}"; do
+		base="${line%/}"
+		base="${base##*/}"
+		[[ -n "$base" ]] || continue
+		printf '%s\n' "$base"
+	done
+}
+
+archive_has_member() {
+	local needle="$1"
+	local m
+	for m in "${UPGRADE_PACKAGE_MEMBERS[@]:-}"; do
+		[[ "$m" == "$needle" ]] && return 0
+	done
+	return 1
+}
+
+	# Fail fast if required members for OEM_ONLY / transport are missing (before transfer/di).
+verify_upgrade_package_members() {
+	local transport="$1"
+	local missing=()
+	local m line
+	UPGRADE_PACKAGE_MEMBERS=()
+	while IFS= read -r line; do
+		[[ -n "$line" ]] && UPGRADE_PACKAGE_MEMBERS+=("$line")
+	done < <(list_upgrade_package_basenames "$UPGRADE_PACKAGE" | sort -u)
+	echo "upgrade: archive members: ${UPGRADE_PACKAGE_MEMBERS[*]}"
+
+	if [[ "$OEM_ONLY" == "1" ]]; then
+		archive_has_member oem.img || missing+=(oem.img)
+	else
+		for m in boot.img boot_b.img rootfs.img; do
+			archive_has_member "$m" || missing+=("$m")
+		done
+	fi
+	if [[ ${#missing[@]} -gt 0 ]]; then
+		die "UPGRADE_PACKAGE missing required member(s) for ${transport} OEM_ONLY=${OEM_ONLY}: ${missing[*]} (set OEM_ONLY=1 for oem-only archives)"
+	fi
+}
+
+cleanup_upgrade_package_extract() {
+	if [[ -n "${UPGRADE_PACKAGE_EXTRACT_DIR:-}" && -d "${UPGRADE_PACKAGE_EXTRACT_DIR:-}" ]]; then
+		rm -rf "$UPGRADE_PACKAGE_EXTRACT_DIR"
+		UPGRADE_PACKAGE_EXTRACT_DIR=""
+	fi
+}
+
+# Extract OTA images for RockUSB upgrade-ota / di. No .sig required.
+extract_upgrade_package_rockusb() {
+	local pkg="$UPGRADE_PACKAGE"
+	local -a want=()
+	local name
+
+	UPGRADE_PACKAGE_EXTRACT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/lws-upgrade-pkg.XXXXXX")"
+	trap 'cleanup_upgrade_package_extract' EXIT
+
+	if [[ "$OEM_ONLY" == "1" ]]; then
+		want=(oem.img)
+	else
+		want=(boot.img boot_b.img rootfs.img)
+		archive_has_member oem.img && want+=(oem.img)
+	fi
+
+	echo "upgrade: extracting ${want[*]} from $pkg → $UPGRADE_PACKAGE_EXTRACT_DIR"
+	case "$pkg" in
+	*.tar.gz | *.tgz)
+		tar -xzf "$pkg" -C "$UPGRADE_PACKAGE_EXTRACT_DIR" "${want[@]}" \
+			|| die "failed to extract required members from $pkg"
+		;;
+	*.tar)
+		tar -xf "$pkg" -C "$UPGRADE_PACKAGE_EXTRACT_DIR" "${want[@]}" \
+			|| die "failed to extract required members from $pkg"
+		;;
+	esac
+
+	# Flatten if archive used a leading ./ or nested path (basename already verified).
+	for name in "${want[@]}"; do
+		if [[ ! -f "$UPGRADE_PACKAGE_EXTRACT_DIR/$name" ]]; then
+			local found
+			found="$(find "$UPGRADE_PACKAGE_EXTRACT_DIR" -type f -name "$name" 2>/dev/null | head -n1 || true)"
+			[[ -n "$found" ]] || die "extract missing $name after untar: $pkg"
+			mv -f "$found" "$UPGRADE_PACKAGE_EXTRACT_DIR/$name"
+		fi
+		[[ -f "$UPGRADE_PACKAGE_EXTRACT_DIR/$name" ]] || die "extract missing $name: $pkg"
+	done
+
+	if [[ "$OEM_ONLY" == "1" ]]; then
+		OEM_IMG="$UPGRADE_PACKAGE_EXTRACT_DIR/oem.img"
+		BOOT_IMG=""
+		BOOT_B_IMG=""
+		ROOTFS_IMG=""
+	else
+		BOOT_IMG="$UPGRADE_PACKAGE_EXTRACT_DIR/boot.img"
+		BOOT_B_IMG="$UPGRADE_PACKAGE_EXTRACT_DIR/boot_b.img"
+		ROOTFS_IMG="$UPGRADE_PACKAGE_EXTRACT_DIR/rootfs.img"
+		if [[ -f "$UPGRADE_PACKAGE_EXTRACT_DIR/oem.img" ]]; then
+			OEM_IMG="$UPGRADE_PACKAGE_EXTRACT_DIR/oem.img"
+		else
+			OEM_IMG=""
+			echo "WARNING: UPGRADE_PACKAGE has no oem.img — RockUSB will di boot/rootfs only" >&2
+		fi
+	fi
+	echo "upgrade: RockUSB images from package (APP=$APP)"
+}
+
 ensure_ota_package() {
 	local pkg="${UPGRADE_PACKAGE:-}"
 	local sig=""
 	if [[ -n "$pkg" ]]; then
-		[[ -f "$pkg" ]] || die "UPGRADE_PACKAGE not found: $pkg"
-		case "$pkg" in
-		*.tar.gz | *.tgz | *.tar) ;;
-		*) die "UPGRADE_PACKAGE must be .tar / .tar.gz / .tgz (got: $pkg)" ;;
-		esac
+		# Path/format already validated; SSH requires sibling .sig.
 		OTA_ARCHIVE="$pkg"
 		sig="${pkg}.sig"
 		[[ -f "$sig" ]] || die "missing sibling signature $sig (required for SSH make upgrade)"
+		[[ -r "$sig" ]] || die "sibling signature not readable: $sig"
 		OTA_SIG="$sig"
-		echo "upgrade: using UPGRADE_PACKAGE=$OTA_ARCHIVE (+ $OTA_SIG)"
+		echo "upgrade: SSH serving UPGRADE_PACKAGE=$OTA_ARCHIVE (+ $OTA_SIG)"
 		return 0
 	fi
 
@@ -313,7 +461,11 @@ run_rockusb_upgrade() {
 		ls -lh "$OEM_IMG"
 	else
 		ls -lh "$BOOT_IMG" "$BOOT_B_IMG" "$ROOTFS_IMG" ${OEM_IMG:+"$OEM_IMG"}
-		bash "$ROOT/scripts/verify-firmware-partitions.sh" "$FIRMWARE" "$ROOT/board/parameter-buildroot-fit.txt" \
+		local verify_dir="$FIRMWARE"
+		if [[ -n "${UPGRADE_PACKAGE_EXTRACT_DIR:-}" && -d "${UPGRADE_PACKAGE_EXTRACT_DIR:-}" ]]; then
+			verify_dir="$UPGRADE_PACKAGE_EXTRACT_DIR"
+		fi
+		bash "$ROOT/scripts/verify-firmware-partitions.sh" "$verify_dir" "$ROOT/board/parameter-buildroot-fit.txt" \
 			"$ROOTFS_IMG" \
 			|| die "bundle exceeds GPT slot sizes"
 	fi
@@ -328,6 +480,8 @@ run_rockusb_upgrade() {
 	export UPGRADE_OTA_OEM_IMG="${OEM_IMG:-}"
 	export OEM_ONLY
 	bash "$ROOT/scripts/flash-usb.sh" upgrade-ota
+	cleanup_upgrade_package_extract
+	trap - EXIT
 }
 
 wait_ota_http_transfer_complete() {
@@ -484,7 +638,8 @@ run_ssh_upgrade() {
 
 	echo "Bundle (host check):"
 	ls -lh "$OTA_ARCHIVE" "$OTA_SIG"
-	if [[ "$OEM_ONLY" != "1" ]]; then
+	# Tree GPT size check only when packaging from loose imgs (not UPGRADE_PACKAGE).
+	if [[ -z "${UPGRADE_PACKAGE:-}" && "$OEM_ONLY" != "1" ]]; then
 		bash "$ROOT/scripts/verify-firmware-partitions.sh" "$FIRMWARE" "$ROOT/board/parameter-buildroot-fit.txt" \
 			"$ROOTFS_IMG" \
 			|| die "bundle exceeds GPT slot sizes"
@@ -510,8 +665,11 @@ run_ssh_upgrade() {
 	if [[ "$OEM_ONLY" == "1" ]]; then
 		[[ -n "$OEM_DEV" ]] || die "OEM_ONLY=1 but board has no oem partition. Got:
 $PREFLIGHT_RAW"
-		OEM_BYTES="$(file_size "$OEM_IMG")"
-		[[ "$OEM_BYTES" -le "${OEM_CAP:-0}" ]] || die "oem.img ($OEM_BYTES) > oem cap ($OEM_CAP)"
+		# Host size check needs a local oem.img; skip when serving a prebuilt package.
+		if [[ -z "${UPGRADE_PACKAGE:-}" ]]; then
+			OEM_BYTES="$(file_size "$OEM_IMG")"
+			[[ "$OEM_BYTES" -le "${OEM_CAP:-0}" ]] || die "oem.img ($OEM_BYTES) > oem cap ($OEM_CAP)"
+		fi
 	else
 		[[ -n "$INACTIVE" && -n "$ROOT_DEV" && -n "$BOOT_DEV" && -n "$FIT_NAME" ]] \
 			|| die "preflight missing fields (inactive/root_dev/boot_dev/fit_name). Got:
@@ -563,10 +721,23 @@ if [[ "$_CLI_UPGRADE_PACKAGE_SET" == 1 ]]; then
 	UPGRADE_PACKAGE="$_CLI_UPGRADE_PACKAGE"
 fi
 
-# Fail fast on missing images before device transport selection (RockUSB / packaging).
-resolve_bundle_images
+UPGRADE_PACKAGE_EXTRACT_DIR=""
+UPGRADE_PACKAGE_MEMBERS=()
+
+if [[ -n "${UPGRADE_PACKAGE:-}" ]]; then
+	validate_upgrade_package_path
+	# Member checks do not depend on transport (same dual-FIT / oem-only rules).
+	verify_upgrade_package_members "${UPGRADE_TRANSPORT:-auto}"
+else
+	# Fail fast on missing tree images before device transport selection.
+	resolve_bundle_images
+fi
 
 decide_transport
+
+if [[ -n "${UPGRADE_PACKAGE:-}" && "$CHOSEN_TRANSPORT" == rockusb ]]; then
+	extract_upgrade_package_rockusb
+fi
 
 case "$CHOSEN_TRANSPORT" in
 ssh)

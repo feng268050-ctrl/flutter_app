@@ -1,4 +1,5 @@
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_library/domain/process_parameter_defaults.dart';
 
 /// Maps library/UI process values onto Modbus engineering units for apply.
 ///
@@ -22,9 +23,10 @@ abstract final class ProcessParameterWireCodec {
     required ProcessPreset preset,
     required Map<String, double> baseline,
   }) {
+    final resolved = ProcessParameterDefaults.resolve(preset);
     final values = <String, double>{
       ...baseline,
-      ...preset.parameters.values,
+      ...resolved.parameters.values,
     };
 
     final laserPower = values['process.laser_power'] ?? 0;
@@ -35,7 +37,7 @@ abstract final class ProcessParameterWireCodec {
     values['process.piercing_frequency'] = forcedPiercingFrequencyHz;
     values['process.piercing_duty_cycle'] = forcedDutyCyclePercent;
 
-    if (preset.processType == ProcessType.wideCleaning) {
+    if (resolved.processType == ProcessType.wideCleaning) {
       final swing = values['process.swing_width'] ?? 0;
       values['process.swing_width'] = swing / wideCleaningSwingDivisor;
     }

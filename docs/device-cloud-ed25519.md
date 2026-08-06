@@ -14,3 +14,12 @@ call activate against production. Local HMI features keep working.
 
 **After `make flash` that preserves vendor0–vendor3:** the sealed blob at ID 22
 survives; ensure-activated must not regenerate or re-activate as first-time.
+
+## Device Bearer (`access_token`)
+
+After a successful mint, gated Worker calls (`GET /ws/device`,
+`GET /v1/devices/:sn/users`, AI report, device R2 STS, …) send
+`Authorization: Bearer <access_token>` on the **same v1** paths. Activate and
+token mint remain without Bearer. Old “SN-only forever” admission applies only
+to sample SNs on the **server** allowlist until those units OTA; new firmware
+always mints and sends Bearer when 云服务 is on and a sealed key exists.

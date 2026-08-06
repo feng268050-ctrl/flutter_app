@@ -249,6 +249,12 @@ final class DeviceCloudEd25519Coordinator {
   /// Last minted device access token (opaque Bearer), if any.
   String? get cachedAccessToken => _cachedAccessToken;
 
+  /// Drop cached Bearer (e.g. when 云服务 turns off).
+  void clearCachedAccessToken() {
+    _cachedAccessToken = null;
+    _cachedAccessTokenExp = null;
+  }
+
   /// Product SN from Vendor Storage only (empty when unset — no chipId fallback).
   Future<String> readVendorProductSn() async {
     return (await vendorIdentity.readSn()).trim();
@@ -354,10 +360,11 @@ final class DeviceCloudEd25519Coordinator {
     if (!forceRefresh) {
       final cached = _cachedAccessToken;
       final exp = _cachedAccessTokenExp;
+      // Proactive refresh when remaining lifetime < 1h (opaque JWT aside from exp).
       if (cached != null &&
           cached.isNotEmpty &&
           exp != null &&
-          exp.isAfter(DateTime.now().toUtc().add(const Duration(minutes: 5)))) {
+          exp.isAfter(DateTime.now().toUtc().add(const Duration(hours: 1)))) {
         return DeviceAccessTokenResult(ok: true, accessToken: cached);
       }
     }

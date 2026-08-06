@@ -78,6 +78,8 @@ final class CloudLocalRuntime {
       client: ed25519Client,
       vendorIdentity: const VendorIdentityReader(),
     );
+    cloudHttp.deviceAccessToken = _resolveDeviceAccessToken;
+    cloudHttp.refreshDeviceAccessToken = _refreshDeviceAccessToken;
     r2StsClient = DeviceR2StsClient(cloudHttp: cloudHttp);
     r2PutClient = DeviceR2PutObjectClient(cloudHttp: cloudHttp);
     videoMetadataClient = DeviceVideoMetadataClient(cloudHttp: cloudHttp);
@@ -530,6 +532,7 @@ final class CloudLocalRuntime {
     _linkInFlight = false;
     _originPinned = false;
     _clearRegistrationPromptLatch();
+    ed25519.clearCachedAccessToken();
     prober.clearPin();
     if (ws.state == DeviceWsState.connected ||
         ws.state == DeviceWsState.connecting ||
@@ -565,8 +568,8 @@ final class CloudLocalRuntime {
     }
     _originPinned = true;
     _publishLinkStatus();
+    await _ensureDeviceCloudAuth(pin);
     unawaited(processVideoUpload.enqueuePendingCovers());
-    unawaited(_ensureEd25519Activated(pin));
     final product = await services.ensureProductInfo();
     final sn = product.sn.trim();
     if (sn.isEmpty) {
@@ -601,8 +604,8 @@ final class CloudLocalRuntime {
     }
     _originPinned = true;
     _cancelCloudLinkRetries();
+    await _ensureDeviceCloudAuth(pin);
     unawaited(processVideoUpload.enqueuePendingCovers());
-    unawaited(_ensureEd25519Activated(pin));
     final product = await services.ensureProductInfo();
     final sn = product.sn.trim().isEmpty ? 'UNKNOWN' : product.sn.trim();
     if (sn != 'UNKNOWN') {
@@ -664,8 +667,9 @@ final class CloudLocalRuntime {
       _linkFollowUpTimer?.cancel();
       _linkFollowUpTimer = null;
       _publishLinkStatus();
+      // Mint device Bearer before gated WS / users / STS (token auth on v1).
+      await _ensureDeviceCloudAuth(pin);
       unawaited(processVideoUpload.enqueuePendingCovers());
-      unawaited(_ensureEd25519Activated(pin));
       debugPrint('cloud-runtime: pinned $pin');
       final product = await services.ensureProductInfo();
       final sn = product.sn.trim();
@@ -764,11 +768,12 @@ final class CloudLocalRuntime {
     }
   }
 
-  /// First-online Ed25519 ensure-activated (non-blocking for local HMI).
+  /// Ensure-activated + mint device Bearer before gated Worker HTTP/WS.
   ///
   /// Skips on emulator / missing Vendor Storage, HTTP-only origins, empty VS
-  /// SN, or 云服务 off. Failures are logged and retried on the next link.
-  Future<void> _ensureEd25519Activated(Uri pinnedBase) async {
+  /// SN, or 云服务 off. Failures are logged; gated calls may still proceed
+  /// without Bearer (server allowlist covers sample SNs).
+  Future<void> _ensureDeviceCloudAuth(Uri pinnedBase) async {
     try {
       final result = await ed25519.ensureActivated(
         pinnedBase: pinnedBase,
@@ -777,7 +782,7 @@ final class CloudLocalRuntime {
       switch (result.status) {
         case DeviceCloudEd25519EnsureStatus.activated:
           debugPrint('cloud-ed25519: activated (pubkey ready)');
-          unawaited(_mintEd25519AccessToken(pinnedBase));
+          await _mintEd25519AccessToken(pinnedBase);
         case DeviceCloudEd25519EnsureStatus.skipped:
           debugPrint('cloud-ed25519: skipped (${result.error})');
         case DeviceCloudEd25519EnsureStatus.retryLater:
@@ -806,6 +811,51 @@ final class CloudLocalRuntime {
     } catch (e) {
       debugPrint('cloud-ed25519: token mint error: $e');
     }
+  }
+
+  Future<String?> _resolveDeviceAccessToken() async {
+    final cached = ed25519.cachedAccessToken;
+    if (cached != null && cached.isNotEmpty) {
+      // Prefer cache; mintAccessToken also refreshes near exp.
+    }
+    final pin = prober.pinnedBase;
+    if (pin == null || !cloudSettings.cloudServicesEnabled) {
+      return cached;
+    }
+    try {
+      final tok = await ed25519.mintAccessToken(
+        pinnedBase: pin,
+        cloudServicesEnabled: cloudSettings.cloudServicesEnabled,
+      );
+      if (tok.ok && tok.accessToken != null && tok.accessToken!.isNotEmpty) {
+        return tok.accessToken;
+      }
+    } catch (e) {
+      debugPrint('cloud-ed25519: resolve token failed: $e');
+    }
+    return ed25519.cachedAccessToken;
+  }
+
+  Future<String?> _refreshDeviceAccessToken() async {
+    final pin = prober.pinnedBase;
+    if (pin == null || !cloudSettings.cloudServicesEnabled) {
+      return null;
+    }
+    try {
+      final tok = await ed25519.mintAccessToken(
+        pinnedBase: pin,
+        cloudServicesEnabled: cloudSettings.cloudServicesEnabled,
+        forceRefresh: true,
+      );
+      if (tok.ok && tok.accessToken != null && tok.accessToken!.isNotEmpty) {
+        debugPrint('cloud-ed25519: access_token reminted after 401');
+        return tok.accessToken;
+      }
+      debugPrint('cloud-ed25519: remint failed (${tok.error})');
+    } catch (e) {
+      debugPrint('cloud-ed25519: remint error: $e');
+    }
+    return null;
   }
 
   void _armCloudLinkRetries() {

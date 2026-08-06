@@ -32,6 +32,9 @@ final class DeviceWsConnectionManager {
   final CloudHttpClient cloudHttp;
   DeviceWsMessageHandler? onMessage;
   void Function(DeviceWsState state)? onStateChanged;
+
+  /// Fired when auth fails after remint+reconnect and the failure looks like
+  /// `INVALID_SN` (registration UX). Token-only 401s latch without this.
   void Function()? onAuthError;
   final Duration? pingInterval;
 
@@ -41,6 +44,7 @@ final class DeviceWsConnectionManager {
   bool _forcedDisconnect = false;
   bool _authErrorLatch = false;
   bool _disposed = false;
+  bool _authRetryUsed = false;
   int _attempt = 0;
   Timer? _reconnectTimer;
   StreamSubscription? _sub;
@@ -67,6 +71,7 @@ final class DeviceWsConnectionManager {
     if (resumeAfterAuth) {
       _authErrorLatch = false;
       _forcedDisconnect = false;
+      _authRetryUsed = false;
       _attempt = 0;
     }
     _url = wsUrl;
@@ -84,6 +89,7 @@ final class DeviceWsConnectionManager {
   Future<void> reconnectClearingAuthLatch() async {
     _authErrorLatch = false;
     _forcedDisconnect = false;
+    _authRetryUsed = false;
     _attempt = 0;
     if (_url != null) {
       await _open();
@@ -158,8 +164,14 @@ final class DeviceWsConnectionManager {
       client = await cloudHttp.openClient(
         timeout: const Duration(seconds: 20),
       );
+      final headers = await cloudHttp.deviceCloudAuthHeaders(url: _url);
+      final hasBearer = headers.containsKey('Authorization');
+      debugPrint(
+        'device-ws: upgrading $_url bearer=$hasBearer',
+      );
       final socket = await WebSocket.connect(
         _url.toString(),
+        headers: headers,
         customClient: client,
       ).timeout(const Duration(seconds: 20));
       // WebSocket takes ownership; do not force-close client here.
@@ -167,9 +179,10 @@ final class DeviceWsConnectionManager {
       socket.pingInterval = pingInterval;
       _socket = socket;
       _attempt = 0;
+      _authRetryUsed = false;
       _setState(DeviceWsState.connected);
       debugPrint(
-        'device-ws: connected $_url pingInterval=$pingInterval',
+        'device-ws: connected $_url pingInterval=$pingInterval bearer=$hasBearer',
       );
       _sub = socket.listen(
         _onData,
@@ -183,15 +196,18 @@ final class DeviceWsConnectionManager {
           debugPrint(
             'device-ws: closed code=$code reason=$reason url=$_url',
           );
-          final auth = code == 401 || code == 4401;
+          final auth = code == 401 || code == 403 || code == 4401;
           unawaited(_handleFailure(auth: auth));
         },
         cancelOnError: true,
       );
     } catch (e) {
       debugPrint('device-ws: connect failed: $e');
-      final auth = await _classifyConnectFailure(e, _url!);
-      await _handleFailure(auth: auth);
+      final classify = await _classifyConnectFailure(e, _url!);
+      await _handleFailure(
+        auth: classify.isAuth,
+        invalidSn: classify.invalidSn,
+      );
     } finally {
       client?.close(force: true);
     }
@@ -200,19 +216,25 @@ final class DeviceWsConnectionManager {
   /// Dart [WebSocket.connect] on HTTP 401 often throws
   /// `WebSocketException: … was not upgraded to websocket` with **no** "401"
   /// in the message — so we HTTP-GET the same path to classify INVALID_SN.
-  Future<bool> _classifyConnectFailure(Object e, Uri wsUrl) async {
+  Future<_WsAuthClassify> _classifyConnectFailure(Object e, Uri wsUrl) async {
     final msg = e.toString();
-    if (msg.contains('401') ||
-        msg.contains('4401') ||
-        msg.toLowerCase().contains('invalid_sn')) {
-      return true;
+    if (msg.toLowerCase().contains('invalid_sn')) {
+      return const _WsAuthClassify(isAuth: true, invalidSn: true);
+    }
+    // 403 SN_MISMATCH (token present, claim SN ≠ request SN after normalize).
+    if (msg.contains('403') ||
+        msg.toLowerCase().contains('sn_mismatch')) {
+      return const _WsAuthClassify(isAuth: true, invalidSn: false);
+    }
+    if (msg.contains('401') || msg.contains('4401')) {
+      return const _WsAuthClassify(isAuth: true, invalidSn: false);
     }
     final looksLikeFailedUpgrade = e is WebSocketException ||
         e is HandshakeException ||
         msg.contains('not upgraded') ||
         msg.contains('HandshakeException');
     if (!looksLikeFailedUpgrade) {
-      return false;
+      return const _WsAuthClassify(isAuth: false, invalidSn: false);
     }
     try {
       final httpUrl = wsUrl.replace(
@@ -223,19 +245,27 @@ final class DeviceWsConnectionManager {
         httpUrl,
         timeout: const Duration(seconds: 8),
       );
-      if (resp.statusCode == 401) {
-        return true;
-      }
       final body = resp.body.toLowerCase();
-      if (body.contains('invalid_sn') ||
+      final invalidSn = body.contains('invalid_sn') ||
           body.contains('invalid device serial') ||
-          body.contains('"code":401')) {
-        return true;
+          body.contains('"errorcode":"invalid_sn"');
+      final snMismatch = body.contains('sn_mismatch');
+      if (resp.statusCode == 401 ||
+          resp.statusCode == 403 ||
+          invalidSn ||
+          snMismatch) {
+        return _WsAuthClassify(
+          isAuth: true,
+          invalidSn: invalidSn,
+        );
+      }
+      if (body.contains('"code":401') || body.contains('"code":403')) {
+        return _WsAuthClassify(isAuth: true, invalidSn: invalidSn);
       }
     } catch (probeErr) {
       debugPrint('device-ws: auth classify probe failed: $probeErr');
     }
-    return false;
+    return const _WsAuthClassify(isAuth: false, invalidSn: false);
   }
 
   void _onData(dynamic data) {
@@ -253,15 +283,41 @@ final class DeviceWsConnectionManager {
     }
   }
 
-  Future<void> _handleFailure({required bool auth}) async {
+  Future<void> _handleFailure({
+    required bool auth,
+    bool invalidSn = false,
+  }) async {
     await _closeSocket();
     if (_disposed) {
       return;
     }
     if (auth) {
+      // One remint + reconnect before latching (token expiry / server auth).
+      if (!_authRetryUsed) {
+        _authRetryUsed = true;
+        final refresher = cloudHttp.refreshDeviceAccessToken;
+        if (refresher != null) {
+          final token = await refresher();
+          if (token != null &&
+              token.trim().isNotEmpty &&
+              !_forcedDisconnect &&
+              _url != null) {
+            debugPrint('device-ws: auth fail → reminted token, reconnecting');
+            await _open();
+            return;
+          }
+        }
+      }
       _authErrorLatch = true;
       _setState(DeviceWsState.offlineAuthError);
-      onAuthError?.call();
+      if (invalidSn) {
+        onAuthError?.call();
+      } else {
+        debugPrint(
+          'device-ws: auth latched without INVALID_SN '
+          '(token/auth failure — not registration)',
+        );
+      }
       return;
     }
     // Arm backoff before publishing disconnected so listeners see
@@ -303,4 +359,11 @@ final class DeviceWsConnectionManager {
     }
     onStateChanged?.call(next);
   }
+}
+
+final class _WsAuthClassify {
+  const _WsAuthClassify({required this.isAuth, required this.invalidSn});
+
+  final bool isAuth;
+  final bool invalidSn;
 }

@@ -73,6 +73,9 @@ abstract final class DeviceApiOriginConfig {
   }
 
   /// Build `ws(s)://{pinned}/ws/device?sn=…`.
+  ///
+  /// Path stays `/ws/device` under device Bearer auth; the `access_token` is
+  /// attached on the WebSocket upgrade `Authorization` header, not via a v2 path.
   static Uri deviceWebSocketUri({
     required Uri pinnedHttpBase,
     required String deviceSn,

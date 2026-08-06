@@ -26,10 +26,9 @@ final class DeviceUsersProbeResult {
   /// Cloud does not recognize this SN — show “Register This Device”.
   ///
   /// Worker returns HTTP 401 + `errorCode: INVALID_SN` for unknown serials.
+  /// Bare 401 without `INVALID_SN` is treated as token/auth failure (not
+  /// registration) once device Bearer auth is required.
   bool get needsRegistration {
-    if (statusCode == 401) {
-      return true;
-    }
     final code = (errorCode ?? '').toUpperCase();
     if (code == 'INVALID_SN') {
       return true;

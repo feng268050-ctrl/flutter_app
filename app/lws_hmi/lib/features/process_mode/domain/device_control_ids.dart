@@ -84,7 +84,7 @@ extension LaserEnableBlockReasonMessage on LaserEnableBlockReason {
         return l10n?.laserEnableBlockAlarmBlocked ??
             'Alarm Blocks Laser Enable';
       case LaserEnableBlockReason.writeFailed:
-        return l10n?.laserEnableBlockWriteFailed ?? 'Laser Enable Write Failed';
+        return l10n?.laserEnableBlockWriteFailed ??             'Laser Enable Did Not Take Effect';
       case LaserEnableBlockReason.busy:
         return l10n?.laserEnableBlockBusy ?? 'Control Busy';
     }

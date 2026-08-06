@@ -82,7 +82,10 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
 
   void _pointerDown(PointerDownEvent event) {
     if (widget.busy) {
-      widget.onBlocked(LaserEnableBlockReason.busy.message);
+      final l10n = AppLocalizations.of(context);
+      widget.onBlocked(
+        LaserEnableBlockReason.busy.localizedMessage(l10n),
+      );
       return;
     }
     if (!_QuickLaserTrapezoid.contains(

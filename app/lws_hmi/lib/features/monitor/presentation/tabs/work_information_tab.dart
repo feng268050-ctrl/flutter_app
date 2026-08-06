@@ -180,6 +180,7 @@ class _WorkInfoBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Edge inset == inter-card gap ([MonitorDimens.pad] / [MonitorDimens.gap]).
     return Padding(
       padding: const EdgeInsets.all(MonitorDimens.pad),
       child: Column(
@@ -197,7 +198,7 @@ class _WorkInfoBody extends StatelessWidget {
                         CyberBorderGradientCenter.topLeftBottomRight,
                   ),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: MonitorDimens.gap),
                 Expanded(
                   child: _PercentCard(
                     title: l10n.cuttingProportionText,
@@ -206,7 +207,7 @@ class _WorkInfoBody extends StatelessWidget {
                     borderGradientCenter: CyberBorderGradientCenter.topBottom,
                   ),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: MonitorDimens.gap),
                 Expanded(
                   child: _PercentCard(
                     title: l10n.washProportionText,
@@ -219,7 +220,7 @@ class _WorkInfoBody extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: MonitorDimens.gap),
           Expanded(
             flex: 2,
             child: Row(
@@ -233,7 +234,7 @@ class _WorkInfoBody extends StatelessWidget {
                         CyberBorderGradientCenter.topLeftBottomRight,
                   ),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: MonitorDimens.gap),
                 Expanded(
                   child: MonitorWorkDataCard(
                     title: l10n.warnInfoWeldingConsumables,
@@ -242,7 +243,7 @@ class _WorkInfoBody extends StatelessWidget {
                     borderGradientCenter: CyberBorderGradientCenter.topBottom,
                   ),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: MonitorDimens.gap),
                 Expanded(
                   child: MonitorWorkDataCard(
                     title: l10n.warnInfoLastWork,

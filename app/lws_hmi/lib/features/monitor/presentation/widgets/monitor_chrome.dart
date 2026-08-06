@@ -13,7 +13,12 @@ import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
 abstract final class MonitorDimens {
+  /// Page-edge inset for Work Info / Machine Status (and shared Monitor pad).
   static const pad = 24.0;
+
+  /// Face-to-face gap between sibling containers — equals [pad] so card rhythm
+  /// matches top / bottom / left / right screen insets.
+  static const gap = pad;
 
   /// Matches [SettingsDimens.outerAmbientExtent] — layout gutter so panel
   /// outer glow can paint without being clipped by scroll/flex ancestors.

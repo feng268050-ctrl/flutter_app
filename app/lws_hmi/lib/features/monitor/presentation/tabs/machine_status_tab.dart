@@ -86,17 +86,19 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
       (l10n.ipCameraText, s?.cameraOn),
     ];
 
+    // Edge inset == inter-card / inter-tile gap ([MonitorDimens.pad] /
+    // [MonitorDimens.gap]) on all four sides and between sibling containers.
     return Padding(
       padding: const EdgeInsets.all(MonitorDimens.pad),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final gaugeH = (constraints.maxHeight * 0.52).clamp(220.0, 300.0);
-          final gaugeSize = (gaugeH - 24).clamp(180.0, 260.0);
-          return Column(
-            children: [
-              SizedBox(
-                height: gaugeH,
-                child: Row(
+      child: Column(
+        children: [
+          Expanded(
+            flex: 5,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final gaugeSize = (constraints.maxHeight - 16)
+                    .clamp(160.0, 260.0);
+                return Row(
                   children: [
                     Expanded(
                       child: MonitorGlassCard(
@@ -121,7 +123,7 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 24),
+                    const SizedBox(width: MonitorDimens.gap),
                     Expanded(
                       child: MonitorGlassCard(
                         padding: const EdgeInsets.all(8),
@@ -146,56 +148,76 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, tileConstraints) {
-                    const cols = 4;
-                    const gap = 24.0;
-                    final tileW =
-                        (tileConstraints.maxWidth - gap * (cols - 1)) / cols;
-                    // Keep both rows visible: shrink tile height if needed.
-                    final rows = (tiles.length / cols).ceil();
-                    final maxTileH =
-                        (tileConstraints.maxHeight - gap * (rows - 1)) / rows;
-                    final tileH = maxTileH.clamp(72.0, MonitorDimens.tileH);
-                    return Align(
-                      alignment: Alignment.topCenter,
-                      child: Wrap(
-                        spacing: gap,
-                        runSpacing: gap,
-                        children: [
-                          for (var i = 0; i < tiles.length; i++)
-                            SizedBox(
-                              width: tileW,
-                              height: tileH,
-                              child: MonitorStatusTile(
-                                label: tiles[i].$1,
-                                on: tiles[i].$2,
-                                height: tileH,
-                                // Machine Status: diagonal bright edges only.
-                                borderGradientCenter: switch (i % 3) {
-                                  0 => CyberBorderGradientCenter
-                                      .topLeftBottomRight,
-                                  1 => CyberBorderGradientCenter
-                                      .bottomLeftTopRight,
-                                  _ => CyberBorderGradientCenter
-                                      .topRightBottomLeft,
-                                },
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          );
-        },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: MonitorDimens.gap),
+          Expanded(
+            flex: 4,
+            child: _MachineStatusTileGrid(tiles: tiles),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _MachineStatusTileGrid extends StatelessWidget {
+  const _MachineStatusTileGrid({required this.tiles});
+
+  final List<(String, bool?)> tiles;
+
+  static const _cols = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = (tiles.length / _cols).ceil();
+    return Column(
+      children: [
+        for (var row = 0; row < rows; row++) ...[
+          if (row > 0) const SizedBox(height: MonitorDimens.gap),
+          Expanded(
+            child: Row(
+              children: [
+                for (var col = 0; col < _cols; col++) ...[
+                  if (col > 0) const SizedBox(width: MonitorDimens.gap),
+                  Expanded(
+                    child: Builder(
+                      builder: (context) {
+                        final index = row * _cols + col;
+                        if (index >= tiles.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Fill the cell so row/column gaps stay exactly
+                            // [MonitorDimens.gap] (same as page edge inset).
+                            final tileH = constraints.maxHeight;
+                            return MonitorStatusTile(
+                              label: tiles[index].$1,
+                              on: tiles[index].$2,
+                              height: tileH,
+                              borderGradientCenter: switch (index % 3) {
+                                0 => CyberBorderGradientCenter
+                                    .topLeftBottomRight,
+                                1 => CyberBorderGradientCenter
+                                    .bottomLeftTopRight,
+                                _ => CyberBorderGradientCenter
+                                    .topRightBottomLeft,
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

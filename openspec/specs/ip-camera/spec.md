@@ -226,3 +226,12 @@ A Wi‑Fi-facing HTTP reverse proxy to the camera module HTTP API (lws-ui `:9000
 - **AND** local HTTP `:5580` is running
 - **THEN** `GET /lasercyber` MUST still succeed
 
+### Requirement: Camera settings primary actions use HmiButton
+
+IP Camera Settings primary operator actions (e.g. connect / record / stop equivalents presented as buttons on that page) SHALL use `HmiButton` rather than Material `FilledButton` / `TextButton` for those CTAs.
+
+#### Scenario: Settings CTA is HmiButton
+
+- **WHEN** the operator views primary actions on IP Camera Settings
+- **THEN** those CTAs are `HmiButton` instances
+

@@ -1,8 +1,10 @@
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Reusable “current network” panel for Demo / Settings.
 class WifiConnectedPanel extends StatelessWidget {
@@ -77,22 +79,20 @@ class WifiConnectedPanel extends StatelessWidget {
           spacing: 8,
           children: [
             if (onDisconnect != null)
-              FilledButton(
-                onPressed: () {
-                  CyberClickSoundRegistry.playClick();
-                  onDisconnect!();
-                },
-                child: Text(l10n.wifiDisconnect),
+              HmiButton(
+                label: l10n.wifiDisconnect,
+                size: HmiButtonSize.medium,
+                variant: CyberButtonVariant.primary,
+                onPressed: onDisconnect,
               ),
             if (onForget != null &&
                 connection.ssid != null &&
                 connection.ssid!.isNotEmpty)
-              TextButton(
-                onPressed: () {
-                  CyberClickSoundRegistry.playClick();
-                  onForget!();
-                },
-                child: Text(l10n.wifiForgetSsid(connection.ssid!)),
+              HmiButton(
+                label: l10n.wifiForgetSsid(connection.ssid!),
+                size: HmiButtonSize.medium,
+                variant: CyberButtonVariant.secondary,
+                onPressed: onForget,
               ),
           ],
         ),
@@ -139,12 +139,11 @@ class WifiAvailableList extends StatelessWidget {
               ),
               trailing: onConnect == null
                   ? null
-                  : TextButton(
-                      onPressed: () {
-                        CyberClickSoundRegistry.playClick();
-                        onConnect!(ap);
-                      },
-                      child: Text(l10n.wifiDialogConnect),
+                  : HmiButton(
+                      label: l10n.wifiDialogConnect,
+                      size: HmiButtonSize.small,
+                      variant: CyberButtonVariant.primary,
+                      onPressed: () => onConnect!(ap),
                     ),
             ),
           )

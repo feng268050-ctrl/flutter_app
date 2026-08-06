@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
@@ -178,17 +179,20 @@ final class _ManualGasSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
+    return Row(
       key: const ValueKey('device-control-manual-gas'),
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      title: Text(
-        l10n.manualGas,
-        style: context.hmiTypography.caption.copyWith(color: Colors.white),
-      ),
-      value: value,
-      onChanged: enabled ? onChanged : null,
-      activeColor: ProcessModeTokens.tabCleanActive,
+      children: [
+        Expanded(
+          child: Text(
+            l10n.manualGas,
+            style: context.hmiTypography.caption.copyWith(color: Colors.white),
+          ),
+        ),
+        CyberSwitch(
+          value: value,
+          onChanged: enabled ? onChanged : null,
+        ),
+      ],
     );
   }
 }

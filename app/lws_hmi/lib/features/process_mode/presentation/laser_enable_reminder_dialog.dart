@@ -68,7 +68,6 @@ final class _LaserEnableReminderBodyState
 
   static const _titleDark = Color(0xFF1A1A1A);
   static const _labelMuted = Color(0x80222222);
-  static const _checkboxGreen = Color(0xFF34C759);
 
   @override
   Widget build(BuildContext context) {
@@ -148,36 +147,24 @@ final class _LaserEnableReminderBodyState
         ),
         const SizedBox(height: 14),
         Center(
-          child: InkWell(
+          child: Row(
             key: const ValueKey('laser-enable-reminder-dont-show-again'),
-            borderRadius: BorderRadius.circular(8),
-            onTap: () {
-              CyberClickSoundRegistry.playClick();
-              setState(() => _dontShowAgain = !_dontShowAgain);
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IgnorePointer(
-                  child: SizedBox(
-                    width: CyberDimens.checkboxLargeSize,
-                    height: CyberDimens.checkboxLargeSize,
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: Checkbox(
-                        value: _dontShowAgain,
-                        activeColor: _checkboxGreen,
-                        checkColor: Colors.white,
-                        side: const BorderSide(color: _labelMuted, width: 1.5),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                        onChanged: (_) {},
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CyberCheckbox(
+                value: _dontShowAgain,
+                size: CyberDimens.checkboxLargeSize,
+                onChanged: (v) {
+                  setState(() => _dontShowAgain = v ?? false);
+                },
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () {
+                  CyberClickSoundRegistry.playClick();
+                  setState(() => _dontShowAgain = !_dontShowAgain);
+                },
+                child: Text(
                   l10n.dontShowAgainThisSession,
                   style: context.hmiTypography.sectionTitle.copyWith(
                     color: _labelMuted,
@@ -185,8 +172,8 @@ final class _LaserEnableReminderBodyState
                     decoration: TextDecoration.none,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],

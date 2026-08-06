@@ -1,3 +1,4 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_tips_dialog.dart';
@@ -37,6 +38,9 @@ void main() {
       find.textContaining('before making fine adjustments.'),
       findsOneWidget,
     );
+    expect(find.byType(CyberCheckbox), findsOneWidget);
+    final checkbox = tester.widget<CyberCheckbox>(find.byType(CyberCheckbox));
+    expect(checkbox.size, CyberDimens.checkboxLargeSize);
 
     final card = tester.getSize(
       find

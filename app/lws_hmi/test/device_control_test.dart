@@ -1,6 +1,7 @@
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:cyber_hal/stub.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_services.dart';
@@ -8,6 +9,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/device_control_bar.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 void main() {
@@ -385,11 +387,14 @@ void main() {
       await tester.binding.setSurfaceSize(null);
     });
 
-    final controller =
-        DeviceControlController(servicesWith(_RecordingModbus()));
+    final services = servicesWith(_RecordingModbus());
+    final controller = DeviceControlController(services);
     controller.keySwitchOn = true;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: DeviceControlBar(
             controller: controller,
@@ -403,11 +408,15 @@ void main() {
     expect(find.byKey(const ValueKey('device-control-bar')), findsOneWidget);
     expect(find.byKey(const ValueKey('device-control-manual-gas')),
         findsOneWidget);
+    expect(find.byType(CyberSwitch), findsOneWidget);
     expect(find.byKey(const ValueKey('device-control-laser')), findsOneWidget);
     expect(
       find.byKey(const ValueKey('device-control-wire-stub')),
       findsOneWidget,
     );
+    // Cancel OsWallClock before Flutter's post-test timer invariant.
+    services.wallClock.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
   });
 
   testWidgets('DeviceControlBar hides wire stub for cleaning', (tester) async {
@@ -416,10 +425,13 @@ void main() {
       await tester.binding.setSurfaceSize(null);
     });
 
-    final controller =
-        DeviceControlController(servicesWith(_RecordingModbus()));
+    final services = servicesWith(_RecordingModbus());
+    final controller = DeviceControlController(services);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: DeviceControlBar(
             controller: controller,
@@ -434,6 +446,9 @@ void main() {
       find.byKey(const ValueKey('device-control-wire-stub')),
       findsNothing,
     );
+    // Cancel OsWallClock before Flutter's post-test timer invariant.
+    services.wallClock.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
   });
 }
 

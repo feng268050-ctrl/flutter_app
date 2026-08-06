@@ -99,7 +99,6 @@ final class _EngineerModeEntryTipsBodyState
   static const _bodyDark = Color(0xFF1A1A1A);
   static const _labelMuted = Color(0x80222222);
   static const _titleOrange = Color(0xFFF37535);
-  static const _checkboxGreen = Color(0xFF34C759);
 
   /// Mirrors lws-ui `FrostPromptDialog.resolveTitleBasedWidthPx`.
   static double resolveCardWidth(BuildContext context, String title) {
@@ -214,40 +213,24 @@ final class _EngineerModeEntryTipsBodyState
           ),
           const SizedBox(height: _dontShowAgainInset),
           Center(
-            child: InkWell(
+            child: Row(
               key: const ValueKey('engineer-mode-entry-dont-show-again'),
-              borderRadius: BorderRadius.circular(8),
-              onTap: () {
-                CyberClickSoundRegistry.playClick();
-                setState(() => _dontShowAgain = !_dontShowAgain);
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IgnorePointer(
-                    child: SizedBox(
-                      width: CyberDimens.checkboxLargeSize,
-                      height: CyberDimens.checkboxLargeSize,
-                      child: FittedBox(
-                        fit: BoxFit.contain,
-                        child: Checkbox(
-                          value: _dontShowAgain,
-                          activeColor: _checkboxGreen,
-                          checkColor: Colors.white,
-                          side: const BorderSide(
-                            color: _labelMuted,
-                            width: 1.5,
-                          ),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          onChanged: (_) {},
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Flexible(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CyberCheckbox(
+                  value: _dontShowAgain,
+                  size: CyberDimens.checkboxLargeSize,
+                  onChanged: (v) {
+                    setState(() => _dontShowAgain = v ?? false);
+                  },
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: GestureDetector(
+                    onTap: () {
+                      CyberClickSoundRegistry.playClick();
+                      setState(() => _dontShowAgain = !_dontShowAgain);
+                    },
                     child: Text(
                       l10n.dontShowAgainThisSession,
                       style: context.hmiTypography.sectionTitle.copyWith(
@@ -256,8 +239,8 @@ final class _EngineerModeEntryTipsBodyState
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],

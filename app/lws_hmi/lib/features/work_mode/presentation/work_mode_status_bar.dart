@@ -149,7 +149,7 @@ abstract final class WorkModeStatusBarDimens {
 
   /// Text ↔ icon gap within one equipment status group.
   /// Negative pulls the icon toward the label (mipmaps have transparent padding).
-  static const double statusIconGap = -8;
+  static const double statusIconGap = -4;
 
   /// Design size for camera (same as HomeStatusBar `iconSize: 32` on 1280×800).
   static const double trailingIconSize = 32;

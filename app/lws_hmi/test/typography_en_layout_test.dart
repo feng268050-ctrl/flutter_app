@@ -6,7 +6,7 @@ import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
-import 'package:lws_hmi/features/warn_alarm/presentation/warn_dialog_body.dart';
+import 'package:cyber_alarm_ui/cyber_alarm_ui.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 void main() {

@@ -50,6 +50,10 @@ dependencies:
   cyber_alarm:
     path: ../../packages/cyber_alarm
 
+  # Shared warn frost chrome (shell / dialog body / icons). Path dep.
+  cyber_alarm_ui:
+    path: ../../packages/cyber_alarm_ui
+
   # Child-process supervisor (MediaMTX, future AI). Path dep.
   cyber_pm:
     path: ../../packages/cyber_pm
@@ -110,10 +114,8 @@ flutter:
     - assets/audio/click_effect_3.mp3
     # Warn dialog loop (lws-ui res/raw/warn_mp3.mp3).
     - assets/audio/warn_mp3.mp3
-    # Warn dialog icons (lws-ui mipmap alarm_warn_icon / alarm_info_icon).
-    - assets/warn/alarm_warn_icon.webp
-    - assets/warn/alarm_info_icon.webp
     # Alarm log row siren + Clear pill trash (lws-ui warn_icon / alarm_button_icon).
+    # Dialog warn/info icons live in packages/cyber_alarm_ui.
     - assets/warn/warn_icon.webp
     - assets/warn/alarm_button_icon.webp
     # Product HAL pack (board profile + gpio/modbus catalogs).

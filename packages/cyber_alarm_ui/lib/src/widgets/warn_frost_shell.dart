@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:cyber_alarm_ui/src/widgets/warn_dialog_metrics.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/features/warn_alarm/presentation/warn_dialog_body.dart';
 
 /// Light alarm prompt chrome: **card-only** Gaussian frost + cream wash.
 ///
@@ -168,8 +168,7 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
                     width: panel.width,
                   ),
                 ),
-                // [StackFit.loose] shrink-wraps to [WarnDialogBody] — never
-                // expand to maxH (passthrough caused the huge top gap).
+                // [StackFit.loose] shrink-wraps to child — never expand to maxH.
                 child: Stack(
                   fit: StackFit.loose,
                   children: [

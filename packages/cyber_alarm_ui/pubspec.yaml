@@ -1,0 +1,27 @@
+name: cyber_alarm_ui
+description: >
+  Shared warn/alarm frost chrome for LWS product HMIs — card-only frost shell,
+  severity-styled dialog body, unified metrics, and warn/info icons.
+  Episode policy stays in cyber_alarm; Apps wire presentation hosts and copy.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cyber_ui:
+    path: ../cyber_ui
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/warn/alarm_warn_icon.webp
+    - assets/warn/alarm_info_icon.webp

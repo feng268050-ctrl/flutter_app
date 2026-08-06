@@ -11,7 +11,8 @@ import 'package:flutter/material.dart';
 /// - [showLightPrompt]: original lws-ui cream capture frost (Engineer tip /
 ///   Laser Enable Important Reminder).
 ///
-/// **Excluded:** warn/alarm dialogs ([WarnFrostShell]) stay on their own path.
+/// **Excluded:** warn/alarm dialogs (`cyber_alarm_ui` WarnFrostShell) stay on
+/// their own path.
 abstract final class TipDialogHost {
   /// Shared Startup Self-Check backdrop (see [showBootSelfCheckDialog]).
   static Future<T?> _showSelfCheckFrost<T>({

@@ -6,7 +6,7 @@ Shared warn/alarm domain package (`packages/cyber_alarm`): catalog model, episod
 ## Requirements
 ### Requirement: Warn alarm orchestration lives in cyber_alarm
 
-The product stack SHALL place warn/alarm **domain policy and orchestration** in `packages/cyber_alarm`, including alarm-code catalog model, episode lifecycle, presentation ports, and historical log repository ports. Product Apps SHALL wire adapters (e.g. Modbus), implement presentation/host and storage ports, and seed product catalog/locale data. `packages/cyber_hal` MUST NOT open warn dialogs, store warn episodes, or implement resist-ack / queue policy. `packages/cyber_ui` MUST NOT own episode policy. Monitor (and other) UI widgets MUST NOT implement episode policy inline; they SHALL bind to App façades backed by `cyber_alarm`.
+The product stack SHALL place warn/alarm **domain policy and orchestration** in `packages/cyber_alarm`, including alarm-code catalog model, episode lifecycle, presentation ports, and historical log repository ports. Product Apps SHALL wire adapters (e.g. Modbus), implement presentation/host and storage ports, and seed product catalog/locale data. Modal warn **frost chrome** (shell, dialog body, metrics, icons) SHALL come from `packages/cyber_alarm_ui`; the App presentation host SHALL compose those widgets when implementing the presentation port. `packages/cyber_hal` MUST NOT open warn dialogs, store warn episodes, or implement resist-ack / queue policy. `packages/cyber_ui` MUST NOT own episode policy. Monitor (and other) UI widgets MUST NOT implement episode policy inline; they SHALL bind to App façades backed by `cyber_alarm`.
 
 #### Scenario: HAL does not present warn UI
 
@@ -25,6 +25,12 @@ The product stack SHALL place warn/alarm **domain policy and orchestration** in 
 - **WHEN** a second product App reuses the same warn episode semantics
 - **THEN** it SHALL depend on `packages/cyber_alarm` for orchestration
 - **AND** MUST NOT fork a second episode state machine inside page widgets
+
+#### Scenario: Presentation chrome comes from cyber_alarm_ui
+
+- **WHEN** the App presentation host shows a modal warn frost dialog
+- **THEN** shell/body/metrics/icons SHALL come from `packages/cyber_alarm_ui`
+- **AND** episode arming and recover/ack policy SHALL remain in `cyber_alarm`
 
 ### Requirement: Alarm signal ports abstract transport
 
@@ -154,13 +160,13 @@ Alarm Information Cyber status lights (Success Icon / Failure Icon / Idle) SHALL
 
 ### Requirement: Package dependency boundaries
 
-`packages/cyber_alarm` domain and coordinator libraries MUST NOT depend on `package:cyber_hal` or `package:flutter` for episode policy. Modbus transport adapters and CyberUI hosts SHALL live in the product App (or optional App-facing glue), not inside HAL.
+`packages/cyber_alarm` domain and coordinator libraries MUST NOT depend on `package:cyber_hal`, `package:flutter`, or `package:cyber_alarm_ui` for episode policy. Modbus transport adapters SHALL live in the product App (or optional App-facing glue), not inside HAL. CyberUI-backed warn frost chrome SHALL live in `packages/cyber_alarm_ui`; the App SHALL implement the presentation host that enqueues onto the global prompt queue and composes those widgets.
 
 #### Scenario: Domain stays portable
 
 - **WHEN** package unit tests for the coordinator run on host
 - **THEN** they SHALL execute without a Flutter test binding requirement for core episode logic
-- **AND** without importing `cyber_hal`
+- **AND** without importing `cyber_hal` or `cyber_alarm_ui`
 
 ### Requirement: Product adapters may filter alarm signal edges
 

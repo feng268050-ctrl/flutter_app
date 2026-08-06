@@ -1,11 +1,10 @@
 import 'package:cyber_alarm/cyber_alarm.dart';
+import 'package:cyber_alarm_ui/cyber_alarm_ui.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
-import 'package:lws_hmi/features/warn_alarm/presentation/warn_dialog_body.dart';
-import 'package:lws_hmi/features/warn_alarm/presentation/warn_frost_shell.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Warn frost host backed by [GlobalPromptQueue] (no private modal FIFO).

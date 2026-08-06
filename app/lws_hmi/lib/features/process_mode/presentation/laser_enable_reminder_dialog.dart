@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -193,10 +194,14 @@ final class _ReminderCard extends StatelessWidget {
   static const _cardFill = Color(0xFFF8F0E8);
   static const _tipDark = Color(0xFF1A1A1A);
   static const _illustrationSize = 200.0;
-  static const _tipFontSize = 26.0;
 
   @override
   Widget build(BuildContext context) {
+    // Title uses [HmiTypography.navigation]; tip copy is one ladder step below.
+    final tipSize = AppTypography.tipBodySizeForTitle(
+      context.hmiTypography.navigation.fontSize ??
+          AppTypography.navigationSize,
+    );
     return Column(
       children: [
         SizedBox(
@@ -219,14 +224,14 @@ final class _ReminderCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // No fixed height — allow full tip lines (was 60dp, clipped at 26sp).
+        // No fixed height — allow full tip lines.
         tip == null
             ? const SizedBox.shrink()
             : Text(
                 tip!,
                 textAlign: TextAlign.center,
                 style: context.hmiTypography.caption.copyWith(
-                  fontSize: _tipFontSize,
+                  fontSize: tipSize,
                   color: _tipDark,
                   height: 1.25,
                   fontWeight: FontWeight.w500,

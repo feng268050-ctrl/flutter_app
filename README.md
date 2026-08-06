@@ -397,9 +397,6 @@ APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/
 make version                    # print app/<APP> pubspec versionName+build (default APP=lws_hmi; host-only)
 make version-bump VERSION=1.0.40  # bump pubspec (+ app_version.dart when present); 5-digit build encode
 make build-rootfs               # → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)
-make ota-package                # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig]
-make ota-release-keys           # release Ed25519 keys → keys/ota/ + overlay /etc/ota/ed25519.pub
-make upgrade                    # ota-package + host HTTP; device downloads tar.gz+.sig → verify/apply; or RockUSB di
 make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img
 make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= override
 make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
@@ -408,18 +405,25 @@ make reset-process-library      # clear process-library DB via HMI watcher; re-i
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/properties.ini (multi-key OK); restarts hmi
 # brand / model / sn → Vendor Storage: make write-identity (not set-prop / del-prop / OEM seed)
 make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphens stripped → LC001; SN=… FORCE=1 to overwrite
-make login                          # api-server login → output/cloud/credentials.json (access_token)
-make register-device                # SN=/IP= select board; SSH read-identity → admin register (needs make login)
-make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign on api-prod; staging.json)
-RELEASE=1 make publish              # same → release.json (no -beta)
-make publish-only                   # upload existing output/firmware/<APP>/ota-package.tar.gz +.sig
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
 make smoke-ai                   # upload stain demo JPG; offline RKNN via AI daemon sock (HMI running)
 make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if changed
-make upgrade                    # auto: SSH host-HTTP + device pull if Linux up; else RockUSB di OTA images (Loader/Maskrom)
+```
+
+### Cloud + OTA (api-server / R2 publish / A/B package)
+
+```bash
+make login                          # api-server login → output/cloud/credentials.json (access_token)
+make register-device                # SN=/IP= select board; SSH read-identity → admin register (needs make login)
+make ota-release-keys               # release Ed25519 keys → keys/ota/ + overlay /etc/ota/ed25519.pub
+make ota-package                    # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig]
+make upgrade                        # ota-package + host HTTP; device downloads tar.gz+.sig → verify/apply; or RockUSB di
 UPGRADE_TRANSPORT=rockusb make upgrade  # force RockUSB path after make reboot-loader / Maskrom
+make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign on api-prod; staging.json)
+RELEASE=1 make publish              # same → release.json (no -beta)
+make publish-only                   # upload existing output/firmware/<APP>/ota-package.tar.gz +.sig
 ```
 
 Device selection: use **`SN=`** (matches `make devices` **SN**). Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** / **`UPGRADE_TRANSPORT=`** in `.env` for IDE / daily use.

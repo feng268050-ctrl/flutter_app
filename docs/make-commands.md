@@ -421,20 +421,6 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **何时用：** 产测/出厂写入 brand/model/产品 SN（Vendor Storage）。
 - **注意：** 选板用 `SN=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。
 
-### `make login`
-
-- **怎么用：** `make login`（交互输入账号/密码）；或 `CLOUD_ACCOUNT=… CLOUD_PASSWORD=… make login`（勿把密码写进已跟踪文件）
-- **何时用：** 登录 sibling **api-server**（`POST /v1/login`），把 `access_token` 落到 `output/cloud/credentials.json`（gitignore，mode 600），供 `make register-device` / `make publish` 使用。
-- **参数：** `CLOUD_API_BASE`（默认正式环境 `https://api-prod.lasercyber.workers.dev`；测试：`https://api-test.lasercyber.workers.dev`）、`CLOUD_ACCOUNT`、`CLOUD_PASSWORD`
-
-### `make register-device`
-
-- **怎么用：** `make login` 后 `make register-device`；多板时用 **`SN=`** / **`IP=`** 选板（与 `push-app` / `write-identity` 相同）
-- **何时用：** SSH 读板端 `read-identity` 的 sn+model，再以登录 JWT 调用 `POST /v1/admin/devices` 向云端注册设备（需 operator/admin）。
-- **前提：** 板端已 `make write-identity`；已 `make login` 或设置 `CLOUD_ACCESS_TOKEN=`。
-- **注意：** **不要**传 `PRODUCT_SN=` / `MODEL=`（会报错）；身份以板端 Vendor Storage 为准，选板只用 `SN=`/`IP=`。
-- **参数：** `CLOUD_API_BASE`、`CLOUD_ACCESS_TOKEN`、设备选择 `SN`/`IP`
-
 ### `make alarm` / `make alarm-clean`
 
 - **怎么用：** `make alarm CODE=L001`；清理限制：`make alarm-clean`
@@ -445,52 +431,6 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **怎么用：** `make smoke-ai`；自定义图 `SMOKE_AI_IMAGE=foo.jpg make smoke-ai`
 - **何时用：** 上传 stain demo，经 AI daemon sock 做离线 RKNN 冒烟。
 - **前提：** 板端 AI daemon（通常随 HMI）。
-
-### `make ota-release-keys`
-
-- **怎么用：** `make ota-release-keys`；强制重生成 `FORCE=1 make ota-release-keys`（会使旧 `.sig` 失效）
-- **何时用：** 产品 **release** Ed25519 钥对（无独立 lab/dev 钥）。私钥在 `keys/ota/`（勿提交），公钥进 overlay `/etc/ota/ed25519.pub`（云验签唯一公钥）。
-- **参数：** `FORCE`、`OTA_KEY_DIR`
-
-### `make ota-package`
-
-- **怎么用：** `make ota-package`；仅 OEM：`OEM_ONLY=1 make ota-package`；发布/CI：`OTA_SIGNING_KEY=keys/ota/ed25519.pem REQUIRE_OTA_SIG=1 make ota-package`
-- **何时用：** 打整机 OTA `tar.gz`（供 `make upgrade` / `make publish`）。SSH upgrade 与 publish/云均需 `.sig`（`OTA_SIGNING_KEY` / `make ota-release-keys`）。
-- **产出：** `output/firmware/<APP>/ota-package.tar.gz`；有钥时旁路 `.sig`
-- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`OTA_SIGNING_KEY`、`REQUIRE_OTA_SIG`
-
-### `make publish` / `make publish-only`
-
-- **怎么用：**
-  - 打包并发布（staging）：`make publish`（内部 `REQUIRE_OTA_SIG=1 make ota-package` 再上传）
-  - 仅上传已有包：`make publish-only`
-  - 正式渠道：`RELEASE=1 make publish`
-  - 其它 HMI：`APP=cnc_hmi make publish`（R2 前缀 `cnc-hmi/`；需 `app/cnc_hmi`）
-- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新渠道 manifest，供设备云端拉取。
-- **上传路径：** 与 `lws-ui` / `make login` 同源——默认 **`CLOUD_API_BASE=https://api-prod.lasercyber.workers.dev`**，`GET /v1/storage/r2/presigned-url` 取凭证后 Python **直传 R2**（不走 `PUT /upload/…`）。
-- **渠道：** 默认 `staging.json`，版本 `{pubspec-semver}-beta`；`RELEASE=1` → `release.json`，无 `-beta`。版本取自 `app/<APP>/pubspec.yaml`（去 `+build`）。
-- **设备比较：** Settings / 云检查用运行中 HMI 版本与 channel `version` 做 semver 比较；**同数字基线的 `-beta` 视为低于正式版**（设备已是 `1.0.40` 时，`1.0.40-beta` **不会**提示更新——请发布更高基线如 `1.0.41-beta`，或降低设备版本后再测）。
-- **Manifest 字段：** `version`、`filename`、`published_at`、`url`（**无 `sha512`**；完整性靠旁路 `.sig`，设备侧 `url`/`package_url` + `".sig"`）。
-- **鉴权：** `PUBLISH_API_TOKEN`（优先）→ `CLOUD_ACCESS_TOKEN` → `make login` 的 `output/cloud/credentials.json`。
-- **产出对象（默认 APP）：** `lws-hmi/v{ver}[-beta].tar.gz`、同名 `.sig`、`lws-hmi/staging.json|release.json`。
-- **参数：** `APP`、`RELEASE`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
-- **前提：** `make ota-release-keys` / `OTA_SIGNING_KEY`；`make login` 或静态 token。
-
-### `make upgrade`
-
-- **怎么用：**
-  - 全量 A/B（SSH）：`make upgrade`（先 `ota-package`，host 临时 HTTP 托管 `tar.gz`+`.sig`，设备下载后验签写盘；需签名钥）
-  - 现成包（SSH）：`UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade`（同目录须有 `<path>.sig`；跳过重新打包）
-  - 现成包（Loader）：`make reboot-loader` 后 `UPGRADE_TRANSPORT=rockusb UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade`（host 解压成员后 `di`；**不**需要 `.sig`）
-  - 全量（RockUSB Loader/Maskrom，树内镜像）：`make reboot-loader` 后 `make upgrade`，或 `UPGRADE_TRANSPORT=rockusb make upgrade`（`di` 写 boot + boot_b + 双 rootfs + 可选 oem；**不** `uf factory.img`）
-  - 仅 OEM：`OEM_ONLY=1 make upgrade`（oem-only 归档也须显式 `OEM_ONLY=1`，不会从成员自动推断）
-  - 跳过 oem：`OEM_IMG= make upgrade`
-  - 强制传输：`UPGRADE_TRANSPORT=ssh|rockusb`（默认 `auto`）
-  - HTTP 绑定：`OTA_HTTP_HOST=` / `OTA_HTTP_PORT=`（USB-SSH 默认 `192.168.55.2`）
-- **何时用：** 板已具备 P2.4 GPT/helpers 后的日常 kernel/rootfs/oem 迭代（**不**传 `factory.img`）；板卡停在 Loader/Maskrom 时同一入口刷 OTA 等价松散镜像；或用同事/CI 已打好的 `ota-package.tar.gz`。
-- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、`UPGRADE_TRANSPORT`、`UPGRADE_PACKAGE`（`.tar` / `.tar.gz` / `.tgz`）、`OTA_HTTP_HOST`、`OTA_HTTP_PORT`、设备选择、`WAIT_SEC`。
-- **行为：** SSH 路径触发升级页 → 设备从 host HTTP 下载归档 → staged verify/apply → 请求重启后立即返回；RockUSB 路径 `di` 完成后 `rd`（`UPGRADE_PACKAGE` 时先解压）。与云 OTA 同源落盘与验签。与 `make flash`（factory `uf`）不同。若 macOS 防火墙拦截入站，允许 Python 接收连接。
-- **归档成员：** 与 `make ota-package` 一致：`boot.img` + `boot_b.img` + `rootfs.img`（可选 `oem.img`）；`OEM_ONLY=1` 时只要 `oem.img`。
 
 ### `make debug-setup` / `make debug-app`
 
@@ -517,6 +457,73 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `SNIFF_SEC` | `8` | sniff 每档波特率监听秒数 |
 
 退出：TTL `Ctrl+]`；RS485/RS232 `Esc` 或 `:q`。
+
+---
+
+## Cloud + OTA（api-server / R2 发布 / A/B 打包）
+
+### `make login`
+
+- **怎么用：** `make login`；或 `CLOUD_ACCOUNT=… CLOUD_PASSWORD=… make login`
+- **做什么：** 登录 api-server，把 token 写到 `output/cloud/credentials.json`（供 `register-device` / `publish`）。
+- **参数：** `CLOUD_API_BASE`、`CLOUD_ACCOUNT`、`CLOUD_PASSWORD`
+
+### `make register-device`
+
+- **怎么用：** `make login` 后 `make register-device`（多板 `SN=`/`IP=`）
+- **做什么：** SSH 读板端 identity，向云端注册该设备（勿传 `PRODUCT_SN=`/`MODEL=`）。
+- **前提：** 板端已 `write-identity`；已 login 或 `CLOUD_ACCESS_TOKEN=`。
+
+### `make ota-release-keys`
+
+- **怎么用：** `make ota-release-keys`；强制重生成 `FORCE=1 make ota-release-keys`（会使旧 `.sig` 失效）
+- **做什么：** 生成 release Ed25519 钥对 → 私钥 `keys/ota/`（勿提交），公钥进 overlay `/etc/ota/ed25519.pub`。
+- **参数：** `FORCE`、`OTA_KEY_DIR`
+
+### `make ota-package`
+
+- **怎么用：** `make ota-package`；仅 OEM：`OEM_ONLY=1 make ota-package`；强制签名：`REQUIRE_OTA_SIG=1 make ota-package`
+- **做什么（不编译）：**
+  1. 从已有产物拷贝分区镜像到临时目录：`boot.img` + `boot_b.img`（`output/firmware/`）+ `rootfs.img`（`output/firmware/<APP>/`）+ 可选 `oem.img`（`OEM_ONLY=1` 时只要 oem）
+  2. 写 `manifest.json`（各文件 sha256 / size）
+  3. 打成 `output/firmware/<APP>/ota-package.tar.gz`（平铺成员，供板端 BusyBox tar）
+  4. 若有签名钥（`OTA_SIGNING_KEY` 或默认 `keys/ota/ed25519.pem`）→ 旁路写 `ota-package.tar.gz.sig`；`REQUIRE_OTA_SIG=1` 时无钥则失败
+- **前提：** 先有对应镜像（`make build-kernel` / `build-rootfs` / 可选 `build-oem`）；签名需 `make ota-release-keys`。
+- **谁会用：** `make upgrade`（SSH）与 `make publish` 都依赖这份归档（+ `.sig`）。
+- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`OTA_SIGNING_KEY`、`REQUIRE_OTA_SIG`
+
+### `make upgrade`
+
+- **怎么用：**
+  - 全量 A/B（SSH）：`make upgrade`（先 `ota-package`，host 临时 HTTP 托管 `tar.gz`+`.sig`，设备下载后验签写盘；需签名钥）
+  - 现成包（SSH）：`UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade`（同目录须有 `<path>.sig`；跳过重新打包）
+  - 现成包（Loader）：`make reboot-loader` 后 `UPGRADE_TRANSPORT=rockusb UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade`（host 解压成员后 `di`；**不**需要 `.sig`）
+  - 全量（RockUSB Loader/Maskrom，树内镜像）：`make reboot-loader` 后 `make upgrade`，或 `UPGRADE_TRANSPORT=rockusb make upgrade`（`di` 写 boot + boot_b + 双 rootfs + 可选 oem；**不** `uf factory.img`）
+  - 仅 OEM：`OEM_ONLY=1 make upgrade`（oem-only 归档也须显式 `OEM_ONLY=1`，不会从成员自动推断）
+  - 跳过 oem：`OEM_IMG= make upgrade`
+  - 强制传输：`UPGRADE_TRANSPORT=ssh|rockusb`（默认 `auto`）
+  - HTTP 绑定：`OTA_HTTP_HOST=` / `OTA_HTTP_PORT=`（USB-SSH 默认 `192.168.55.2`）
+- **何时用：** 板已具备 P2.4 GPT/helpers 后的日常 kernel/rootfs/oem 迭代（**不**传 `factory.img`）；板卡停在 Loader/Maskrom 时同一入口刷 OTA 等价松散镜像；或用同事/CI 已打好的 `ota-package.tar.gz`。
+- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、`UPGRADE_TRANSPORT`、`UPGRADE_PACKAGE`（`.tar` / `.tar.gz` / `.tgz`）、`OTA_HTTP_HOST`、`OTA_HTTP_PORT`、设备选择、`WAIT_SEC`。
+- **行为：** SSH 路径触发升级页 → 设备从 host HTTP 下载归档 → staged verify/apply → 请求重启后立即返回；RockUSB 路径 `di` 完成后 `rd`（`UPGRADE_PACKAGE` 时先解压）。与云 OTA 同源落盘与验签。与 `make flash`（factory `uf`）不同。若 macOS 防火墙拦截入站，允许 Python 接收连接。
+- **归档成员：** 与 `make ota-package` 一致：`boot.img` + `boot_b.img` + `rootfs.img`（可选 `oem.img`）；`OEM_ONLY=1` 时只要 `oem.img`。
+
+### `make publish` / `make publish-only`
+
+- **怎么用：**
+  - 打包并发布（staging）：`make publish`（内部 `REQUIRE_OTA_SIG=1 make ota-package` 再上传）
+  - 仅上传已有包：`make publish-only`
+  - 正式渠道：`RELEASE=1 make publish`
+  - 其它 HMI：`APP=cnc_hmi make publish`（R2 前缀 `cnc-hmi/`；需 `app/cnc_hmi`）
+- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新渠道 manifest，供设备云端拉取。
+- **上传路径：** 与 `lws-ui` / `make login` 同源——默认 **`CLOUD_API_BASE=https://api-prod.lasercyber.workers.dev`**，`GET /v1/storage/r2/presigned-url` 取凭证后 Python **直传 R2**（不走 `PUT /upload/…`）。
+- **渠道：** 默认 `staging.json`，版本 `{pubspec-semver}-beta`；`RELEASE=1` → `release.json`，无 `-beta`。版本取自 `app/<APP>/pubspec.yaml`（去 `+build`）。
+- **设备比较：** Settings / 云检查用运行中 HMI 版本与 channel `version` 做 semver 比较；**同数字基线的 `-beta` 视为低于正式版**（设备已是 `1.0.40` 时，`1.0.40-beta` **不会**提示更新——请发布更高基线如 `1.0.41-beta`，或降低设备版本后再测）。
+- **Manifest 字段：** `version`、`filename`、`published_at`、`url`（**无 `sha512`**；完整性靠旁路 `.sig`，设备侧 `url`/`package_url` + `".sig"`）。
+- **鉴权：** `PUBLISH_API_TOKEN`（优先）→ `CLOUD_ACCESS_TOKEN` → `make login` 的 `output/cloud/credentials.json`。
+- **产出对象（默认 APP）：** `lws-hmi/v{ver}[-beta].tar.gz`、同名 `.sig`、`lws-hmi/staging.json|release.json`。
+- **参数：** `APP`、`RELEASE`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
+- **前提：** `make ota-release-keys` / `OTA_SIGNING_KEY`；`make login` 或静态 token。
 
 ---
 

@@ -7,7 +7,7 @@
 ## 2. Host publish client (lws-hmi)
 
 - [ ] 2.1 Add publish script that maps `APP` → artifact slug, reads **HMI app** `app/<APP>/pubspec.yaml` version as the sole cloud semver source, applies `RELEASE=` channel rules, and uploads via `PUT /upload/...` per api-server contract
-- [ ] 2.2 Wire Makefile `publish` (depends on `ota-package`) and `publish-only`; rename/copy `tar.gz` (+ `.sig`) to server basename if needed; require `PUBLISH_API_TOKEN` / base URL from env + `.env`
+- [ ] 2.2 Wire Makefile `publish` (depends on `ota-package`) and `publish-only`; rename/copy `tar.gz` (+ `.sig`) to server basename if needed; resolve Bearer via `scripts/cloud-credentials.sh` `cloud_resolve_publish_token` (`PUBLISH_API_TOKEN` → login credentials / `CLOUD_ACCESS_TOKEN`; base URL `CLOUD_API_BASE`)
 - [ ] 2.3 Refuse non-`*_hmi` `APP` values with a clear error (unless documented override)
 - [ ] 2.4 Print `artifact_url` and `manifest_url` on success; fail fast on HTTP/ApiResult errors
 

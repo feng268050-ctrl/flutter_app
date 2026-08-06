@@ -26,12 +26,12 @@ The host build system SHALL provide **`make register-device`** that registers th
 
 ### Requirement: register-device reads identity over SSH before calling the API
 
-Before calling the admin register API, **`make register-device`** SHALL select a board using the same host device-selection rules as **`make write-identity` / `push-app` / `shell`** (`SN=` / `IP=` / USB-SSH as applicable; **`CHIP_ID=` MUST NOT be accepted** as a selector). The host SHALL SSH to the target and read product **`sn`** and **`model`** via on-board **`read-identity`** (or the equivalent `/usr/libexec/board/read-product-identity.sh` helpers). If either value is empty/missing, the command SHALL fail and point operators to **`make write-identity`**. Documented optional overrides (**`PRODUCT_SN=`**, **`MODEL=`**) MAY replace the corresponding SSH-read field for operator override; when an override is unset, the SSH value SHALL be used. The host MUST NOT invent sn/model from the Make device-selection `SN=` alone when Vendor Storage product SN differs, unless the operator explicitly set **`PRODUCT_SN=`**.
+Before calling the admin register API, **`make register-device`** SHALL select a board using the same host device-selection rules as **`make write-identity` / `push-app` / `shell`** (`SN=` / `IP=` / USB-SSH as applicable; **`CHIP_ID=` MUST NOT be accepted** as a selector). The host SHALL SSH to the target and read product **`sn`** and **`model`** via on-board **`read-identity`** (or the equivalent `/usr/libexec/board/read-product-identity.sh` helpers). If either value is empty/missing, the command SHALL fail and point operators to **`make write-identity`**. The command MUST NOT accept **`PRODUCT_SN=`**, **`MODEL=`**, or **`BRAND=`** as identity payload overrides (those belong to **`make write-identity`**). Device-selection **`SN=`** SHALL only choose which board to SSH to; the admin POST body **`sn`** / **`model`** SHALL always come from Vendor Storage via **`read-identity`**, not from inventing values from the selection `SN=` alone when they differ.
 
 #### Scenario: SSH identity drives register body
 
-- **WHEN** Vendor Storage on the selected board has sn `LC-001` and model `YNH960`
-- **AND** the operator runs `make register-device` without `PRODUCT_SN` / `MODEL` overrides
+- **WHEN** Vendor Storage on the board selected by `SN=` has sn `LC-001` and model `YNH960`
+- **AND** the operator runs `SN=<selection> make register-device`
 - **THEN** the admin POST body SHALL use sn `LC-001` and model `YNH960`
 
 #### Scenario: Missing model refuses register
@@ -40,8 +40,8 @@ Before calling the admin register API, **`make register-device`** SHALL select a
 - **THEN** `make register-device` SHALL exit non-zero without calling the admin API
 - **AND** the error SHALL mention `make write-identity`
 
-#### Scenario: PRODUCT_SN override
+#### Scenario: PRODUCT_SN override is refused
 
-- **WHEN** the operator runs `PRODUCT_SN=LC-OVERRIDE make register-device` and SSH model is `L1 Pro`
-- **THEN** the admin POST body sn SHALL be `LC-OVERRIDE`
-- **AND** model SHALL still come from SSH unless `MODEL=` is also set
+- **WHEN** the operator runs `PRODUCT_SN=LC-OVERRIDE make register-device`
+- **THEN** the command SHALL exit non-zero without calling the admin API
+- **AND** the error SHALL point operators to `SN=` selection and `make write-identity`

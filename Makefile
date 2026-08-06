@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity ota-release-keys ota-package upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity login register-device ota-release-keys ota-package upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -57,6 +57,11 @@ bash -c 'set -euo pipefail; \
   if [[ -n "$${UPGRADE_PACKAGE+x}" ]]; then __ENV_UPGRADE_PACKAGE_SET=1; __ENV_UPGRADE_PACKAGE="$${UPGRADE_PACKAGE-}"; else __ENV_UPGRADE_PACKAGE_SET=0; fi; \
   __ENV_OTA_SIGNING_KEY="$${OTA_SIGNING_KEY-}"; \
   __ENV_REQUIRE_OTA_SIG="$${REQUIRE_OTA_SIG-}"; \
+  __ENV_CLOUD_API_BASE="$${CLOUD_API_BASE-}"; \
+  __ENV_CLOUD_ACCESS_TOKEN="$${CLOUD_ACCESS_TOKEN-}"; \
+  __ENV_CLOUD_ACCOUNT="$${CLOUD_ACCOUNT-}"; \
+  __ENV_CLOUD_PASSWORD="$${CLOUD_PASSWORD-}"; \
+  __ENV_PUBLISH_API_TOKEN="$${PUBLISH_API_TOKEN-}"; \
   __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
@@ -72,6 +77,11 @@ bash -c 'set -euo pipefail; \
   [[ "$$__ENV_UPGRADE_PACKAGE_SET" == 1 ]] && export UPGRADE_PACKAGE="$$__ENV_UPGRADE_PACKAGE"; \
   [[ -n "$$__ENV_OTA_SIGNING_KEY" ]] && export OTA_SIGNING_KEY="$$__ENV_OTA_SIGNING_KEY"; \
   [[ -n "$$__ENV_REQUIRE_OTA_SIG" ]] && export REQUIRE_OTA_SIG="$$__ENV_REQUIRE_OTA_SIG"; \
+  [[ -n "$$__ENV_CLOUD_API_BASE" ]] && export CLOUD_API_BASE="$$__ENV_CLOUD_API_BASE"; \
+  [[ -n "$$__ENV_CLOUD_ACCESS_TOKEN" ]] && export CLOUD_ACCESS_TOKEN="$$__ENV_CLOUD_ACCESS_TOKEN"; \
+  [[ -n "$$__ENV_CLOUD_ACCOUNT" ]] && export CLOUD_ACCOUNT="$$__ENV_CLOUD_ACCOUNT"; \
+  [[ -n "$$__ENV_CLOUD_PASSWORD" ]] && export CLOUD_PASSWORD="$$__ENV_CLOUD_PASSWORD"; \
+  [[ -n "$$__ENV_PUBLISH_API_TOKEN" ]] && export PUBLISH_API_TOKEN="$$__ENV_PUBLISH_API_TOKEN"; \
   [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
   [[ -n "$$__ENV_BUILD_JOBS" ]] && export BUILD_JOBS="$$__ENV_BUILD_JOBS"; \
   [[ -n "$$__ENV_BUILD_BIND_MOUNT" ]] && export BUILD_BIND_MOUNT="$$__ENV_BUILD_BIND_MOUNT"; \
@@ -169,6 +179,8 @@ help:
 	@echo "  make set-prop KEY=val ...  # upsert product.ini tunables (not brand/model/sn); restart hmi"
 	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
 	@echo "  make write-identity …      # Vendor Storage BRAND/MODEL/PRODUCT_SN (FORCE=1 overwrite); restart hmi"
+	@echo "  make login                 # api-server POST /v1/login → output/cloud/credentials.json (access_token)"
+	@echo "  make register-device       # SN=/IP= select board; SSH read-identity → POST /v1/admin/devices (needs login)"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
 	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
@@ -204,8 +216,12 @@ help:
 	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
 	@echo "  SN=<sn|chipid>             # select device by SN or ChipID (flash / USB-SSH / SSH)"
 	@echo "  CHIPID=<chipid>            # select by ChipID only (multi-board)"
-	@echo "  PRODUCT_SN=<sn>            # write-identity product serial (alias IDENTITY_SN=; not selection SN=)"
+	@echo "  PRODUCT_SN=<sn>            # write-identity product serial only (not selection SN=; not register-device)"
 	@echo "  FORCE=1                    # write-identity: overwrite non-empty Vendor Storage SN"
+	@echo "  CLOUD_API_BASE=<url>       # api-server origin (default api-prod; test: api-test.lasercyber.workers.dev)"
+	@echo "  CLOUD_ACCESS_TOKEN=<jwt>   # override saved login token (else output/cloud/credentials.json)"
+	@echo "  CLOUD_ACCOUNT= / PASSWORD= # non-interactive make login (do not commit password)"
+	@echo "  PUBLISH_API_TOKEN=<tok>    # make publish static upload override (else login token)"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  UPGRADE_TRANSPORT=auto|ssh|rockusb  # make upgrade transport (default auto)"
 	@echo "  IMAGE=<path>               # firmware image for make flash"
@@ -639,6 +655,17 @@ del-prop:
 write-identity:
 	@chmod +x scripts/write-identity.sh
 	@$(call WITH_DOTENV,bash scripts/write-identity.sh $(MAKEOVERRIDES))
+
+# Log in to sibling api-server; persist access_token under output/cloud/ (gitignored).
+login:
+	@chmod +x scripts/cloud-login.sh scripts/cloud-credentials.sh
+	@$(call WITH_DOTENV,bash scripts/cloud-login.sh)
+
+# Register selected board with api-server admin devices (SSH identity + login JWT).
+# Selection: SN=/IP= (same as push-app). Identity always from on-board read-identity.
+register-device:
+	@chmod +x scripts/register-device.sh scripts/cloud-credentials.sh
+	@$(call WITH_DOTENV,bash scripts/register-device.sh $(MAKEOVERRIDES))
 
 # Print selected APP pubspec versionName+build (host-only; default APP=lws_hmi).
 version:

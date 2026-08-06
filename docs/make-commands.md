@@ -421,6 +421,20 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **何时用：** 产测/出厂写入 brand/model/产品 SN（Vendor Storage）。
 - **注意：** 选板用 `SN=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。
 
+### `make login`
+
+- **怎么用：** `make login`（交互输入账号/密码）；或 `CLOUD_ACCOUNT=… CLOUD_PASSWORD=… make login`（勿把密码写进已跟踪文件）
+- **何时用：** 登录 sibling **api-server**（`POST /v1/login`），把 `access_token` 落到 `output/cloud/credentials.json`（gitignore，mode 600），供 `make register-device` / `make publish` 使用。
+- **参数：** `CLOUD_API_BASE`（默认正式环境 `https://api-prod.lasercyber.workers.dev`；测试：`https://api-test.lasercyber.workers.dev`）、`CLOUD_ACCOUNT`、`CLOUD_PASSWORD`
+
+### `make register-device`
+
+- **怎么用：** `make login` 后 `make register-device`；多板时用 **`SN=`** / **`IP=`** 选板（与 `push-app` / `write-identity` 相同）
+- **何时用：** SSH 读板端 `read-identity` 的 sn+model，再以登录 JWT 调用 `POST /v1/admin/devices` 向云端注册设备（需 operator/admin）。
+- **前提：** 板端已 `make write-identity`；已 `make login` 或设置 `CLOUD_ACCESS_TOKEN=`。
+- **注意：** **不要**传 `PRODUCT_SN=` / `MODEL=`（会报错）；身份以板端 Vendor Storage 为准，选板只用 `SN=`/`IP=`。
+- **参数：** `CLOUD_API_BASE`、`CLOUD_ACCESS_TOKEN`、设备选择 `SN`/`IP`
+
 ### `make alarm` / `make alarm-clean`
 
 - **怎么用：** `make alarm CODE=L001`；清理限制：`make alarm-clean`

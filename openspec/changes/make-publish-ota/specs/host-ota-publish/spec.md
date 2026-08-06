@@ -4,11 +4,11 @@
 
 The repository SHALL provide **`make publish`** that (1) ensures a signed OTA `tar.gz` exists via **`make ota-package`** (or Make prerequisite equivalent) for the selected `APP`, and (2) uploads that archive (and its detached `.sig`) to the application R2 bucket under the publish artifact prefix derived from `APP`, updating the channel manifest (**`staging.json`** or **`release.json`**) so devices can discover the package the same way `lws-ui` discovers `lws-app` builds. The repository SHALL also provide **`make publish-only`** that performs only the upload/manifest step against an already-built OTA `tar.gz` (+ `.sig`) and MUST fail if that archive or signature is missing.
 
-Upload authentication SHALL use a static publish token from the environment (e.g. **`PUBLISH_API_TOKEN`**), loadable from repo-root **`.env`** via the same dotenv pattern as other Make targets, with a non-empty command-line/env value overriding `.env`. Tokens MUST NOT be committed to git.
+Upload authentication SHALL resolve a Bearer token in this order: (1) **`PUBLISH_API_TOKEN`** when set (Worker **`STATIC_API_TOKENS`** member — preferred for `PUT /upload`), (2) **`CLOUD_ACCESS_TOKEN`** when set, (3) **`access_token`** from the **`make login`** credentials file (`output/cloud/credentials.json`, see **`make-login-register-device`** / `cloud_resolve_publish_token`). Values are loadable from repo-root **`.env`** via the same dotenv pattern as other Make targets, with a non-empty command-line/env value overriding `.env`. Tokens MUST NOT be committed to git. API base URL SHALL use **`CLOUD_API_BASE`** (same default as login).
 
 #### Scenario: Default publish builds package then uploads staging
 
-- **WHEN** the operator runs `make publish` with default `APP` after images required by `ota-package` exist and signing is configured, and `PUBLISH_API_TOKEN` is set
+- **WHEN** the operator runs `make publish` with default `APP` after images required by `ota-package` exist and signing is configured, and a publish token is available (`PUBLISH_API_TOKEN` or login credentials)
 - **THEN** a signed OTA `tar.gz` is produced or refreshed via `ota-package`, uploaded under the `lws-hmi/` R2 prefix (with `.sig` per documented convention), and `lws-hmi/staging.json` is updated (default channel) with fields suitable for client download (`version`, `filename`, `published_at`, `sha512`, `url`)
 
 #### Scenario: publish-only refuses missing archive
@@ -18,8 +18,9 @@ Upload authentication SHALL use a static publish token from the environment (e.g
 
 #### Scenario: Missing token refuses publish
 
-- **WHEN** `PUBLISH_API_TOKEN` is empty after dotenv load and the operator runs `make publish` or `make publish-only`
+- **WHEN** `PUBLISH_API_TOKEN`, `CLOUD_ACCESS_TOKEN`, and the login credentials file are all empty/missing after dotenv load and the operator runs `make publish` or `make publish-only`
 - **THEN** the command exits non-zero before uploading
+- **AND** the error SHALL mention `make login` or `PUBLISH_API_TOKEN`
 
 ### Requirement: Publish version is the HMI app version
 
@@ -76,7 +77,7 @@ The channel manifest written for publish (by the upload API or an equivalent cli
 
 ### Requirement: Host documents publish Make surface
 
-Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table as needed) SHALL document `make publish` / `publish-only`, `APP=`, `RELEASE=1`, and required env (`PUBLISH_API_TOKEN`, API base URL). Docs SHALL point to sibling api-server OpenSpec **`hmi-ota-static-upload`** for Worker artifact / basename / view rules, and MUST NOT duplicate that Worker design in this repository.
+Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table as needed) SHALL document `make publish` / `publish-only`, `APP=`, `RELEASE=1`, and auth env (`PUBLISH_API_TOKEN`, `CLOUD_API_BASE`, and `make login` fallback). Docs SHALL point to sibling api-server OpenSpec **`hmi-ota-static-upload`** for Worker artifact / basename / view rules, and MUST NOT duplicate that Worker design in this repository.
 
 #### Scenario: Operator finds publish in help
 

@@ -10,7 +10,7 @@ Worker 侧 artifact 白名单扩展见 sibling **`../api-server`** OpenSpec **`h
 - R2 对象前缀默认 **`lws-hmi/`**；实际前缀由 **`APP=`** 推导（`lws_hmi` → `lws-hmi`），与多产品 `APP=` 选择一致。
 - Manifest 形状对齐现有静态库 / `lws-app`：`version`、`filename`、`published_at`、`sha512`、`url`；默认写 **`staging.json`**，**`RELEASE=1`** 写 **`release.json`**。
 - **云侧发布版本号 = 所选 HMI app 版本**：取自 `app/<APP>/pubspec.yaml` 的 `version:` semver 段（忽略 `+build`）。
-- 主机脚本 / Make 目标、help、README / AGENTS 重建表；凭据经 **`PUBLISH_API_TOKEN`**（及 `.env`）鉴权。
+- 主机脚本 / Make 目标、help、README / AGENTS 重建表；凭据经 **`PUBLISH_API_TOKEN`**（静态上传）或 sibling **`make login`** 落盘的 `access_token`（及 `.env` / `CLOUD_API_BASE`）鉴权。
 - 上传契约依赖 api-server **`hmi-ota-static-upload`**（`PUT /upload/{artifact}/*` + `GET /view/{artifact}/…`）；本仓只做客户端与文档对接。
 
 ## Capabilities

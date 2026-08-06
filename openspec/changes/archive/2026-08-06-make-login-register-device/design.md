@@ -52,7 +52,7 @@
 
 ### 3. API 基址：`CLOUD_API_BASE`
 
-**选择：** 环境 / `.env` 键 **`CLOUD_API_BASE`**（无尾斜杠），默认 **`https://api-test.lasercyber.workers.dev`**（与设备 test 主候选一致）。login / register-device /（建议）publish 共用。
+**选择：** 环境 / `.env` 键 **`CLOUD_API_BASE`**（无尾斜杠），默认 **`https://api-prod.lasercyber.workers.dev`**（正式环境，与设备 prod 主候选一致）。测试用 **`CLOUD_API_BASE=https://api-test.lasercyber.workers.dev`**。login / register-device /（建议）publish 共用。
 
 **备选：** 复用板端探测逻辑——主机 Make 不需要并发 probe；显式基址更可预期。
 
@@ -70,7 +70,7 @@
 
 1. 复用 `usb-ssh-session` / `device-target`（与 `write-identity`、`upgrade-process-library` 相同选择规则）。
 2. 远程执行 `read-identity sn` 与 `read-identity model`（缺一则失败，提示 `make write-identity`）。
-3. 可选覆盖：`PRODUCT_SN=` / `MODEL=` 跳过板读（仅排障；默认仍以板为准）。
+3. **`SN=` / `IP=` 仅选板**：与 `push-app` / `write-identity` 相同；**不接受** `PRODUCT_SN=` / `MODEL=` / `BRAND=` 手填身份（缺 identity 则提示先 `make write-identity`）。
 4. `model` 原样提交；服务端会做 `LaserCyber` 前缀归一——主机不必预剥。
 5. **409**（活跃 sn 已存在）：打印清晰错误；可选 `FORCE` 不在本变更做软删/复活（Worker 复活语义若存在则仅文档说明，默认不自动 DELETE）。
 
@@ -106,5 +106,5 @@
 
 ## Open Questions
 
-- 生产默认基址是否也要一键切换（`CLOUD_API_ENV=prod|test`）——倾向仅 `CLOUD_API_BASE=`，实现时按需加薄别名。
+- 生产默认基址是否也要一键切换（`CLOUD_API_ENV=prod|test`）——**已定**：默认 prod；测试仅靠 `CLOUD_API_BASE=` 覆盖。
 - 是否在成功 register 后打印 `device_id` / `is_activated`（ApiResult `DeviceInfo`）——倾向是，便于确认未激活态。

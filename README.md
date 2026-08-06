@@ -407,6 +407,8 @@ make reset-process-library      # clear process-library DB via HMI watcher; re-i
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/properties.ini (multi-key OK); restarts hmi
 # brand / model / sn → Vendor Storage: make write-identity (not set-prop / del-prop / OEM seed)
 make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphens stripped → LC001; SN=… FORCE=1 to overwrite
+make login                          # api-server login → output/cloud/credentials.json (access_token)
+make register-device                # SN=/IP= select board; SSH read-identity → admin register (needs make login)
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup

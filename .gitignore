@@ -1,4 +1,5 @@
 # Local outputs / caches (repo-root firmware/artifacts only)
+# Includes output/cloud/credentials.json from make login (never commit tokens).
 /output/
 .cache/
 __pycache__/

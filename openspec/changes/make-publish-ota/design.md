@@ -11,7 +11,7 @@ Worker 契约（artifact 白名单、basename、`PUT`/`GET /view`、大文件 fa
 - **`make publish`**（确保 ota-package + 上传）与 **`make publish-only`**（仅上传已有包）。
 - R2 前缀 = `APP` kebab（默认 `lws_hmi` → **`lws-hmi/`**）；归档 basename 与 artifact 对齐。
 - 渠道 / 版本规则对齐 `lws-ui`：默认 `-beta`→staging，`RELEASE=1`→release；版本 = HMI app pubspec semver。
-- 凭据仅经环境 / `.env`。
+- 凭据：`PUBLISH_API_TOKEN`（Worker `STATIC_API_TOKENS`）优先；否则 `CLOUD_ACCESS_TOKEN` / `make login` 落盘的 `output/cloud/credentials.json`（见 sibling **`make-login-register-device`** / `scripts/cloud-credentials.sh` `cloud_resolve_publish_token`）。用户 JWT 未必能通过静态 `PUT /upload`——静态 token 仍是可靠发布路径。
 - 上传 **`tar.gz` 与旁路 `.sig`**（签名发现约定与 `unified-ota-cyber-ota` 一致）。
 
 **Non-Goals:**
@@ -33,7 +33,9 @@ Worker 契约（artifact 白名单、basename、`PUT`/`GET /view`、大文件 fa
 
 ### 3. 上传 API：对接 api-server 静态库 PUT
 
-**选择：** 主机客户端对 **`PUT /upload/{artifact}/{archive-basename}`**（Bearer `PUBLISH_API_TOKEN` / `STATIC_API_TOKENS`），期望 ApiResult 含 **`artifact_url`** / **`manifest_url`**；设备用 **`GET /view/{artifact}/{json}`**。Basename 与白名单以 api-server **`hmi-ota-static-upload`** 为准（形如 `lws-hmi_v1.0.38-beta.tar.gz`）。旁路签名以同 basename + `.sig` 上传（或等价约定），供设备整包验签。
+**选择：** 主机客户端对 **`PUT /upload/{artifact}/{archive-basename}`**（Bearer 见下），期望 ApiResult 含 **`artifact_url`** / **`manifest_url`**；设备用 **`GET /view/{artifact}/{json}`**。Basename 与白名单以 api-server **`hmi-ota-static-upload`** 为准（形如 `lws-hmi_v1.0.38-beta.tar.gz`）。旁路签名以同 basename + `.sig` 上传（或等价约定），供设备整包验签。
+
+**Token 解析（与 `make-login-register-device` 对齐）：** `PUBLISH_API_TOKEN` → `CLOUD_ACCESS_TOKEN` → `output/cloud/credentials.json` 的 `access_token`（`cloud_resolve_publish_token`）；皆无则失败并提示 `make login` 或设置静态 token。API 基址共用 **`CLOUD_API_BASE`**。
 
 若 PUT 尚未部署，可临时用 presigned 双传作桥，但契约以 PUT + view 为准。
 

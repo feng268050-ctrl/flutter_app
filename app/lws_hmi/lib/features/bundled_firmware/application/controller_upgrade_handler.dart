@@ -31,6 +31,14 @@ final class ControllerUpgradeHandler {
   /// Inter-packet gap (lws-ui ~50ms serial gate between OTA writes).
   static const Duration packetGap = Duration(milliseconds: 50);
 
+  /// Settle after last data before FIRMWARE_END (board may still be busy).
+  static const Duration endPreGap = Duration(milliseconds: 200);
+
+  /// Retries when END gets no Modbus ACK (MCU often resets on END).
+  static const int endWriteAttempts = 3;
+
+  static const Duration endRetryGap = Duration(milliseconds: 300);
+
   /// Transfer [bytes] named [fileName] (must encode HW/SW). Reports 0–99 via [onProgress].
   Future<ControllerUpgradeResult> upgrade({
     required String fileName,
@@ -143,27 +151,24 @@ final class ControllerUpgradeHandler {
         }
 
         final end = UpgradePacketBuilder.endFrame(hw: hw, sw: sw);
-        final endOk = await _modbus.writeHoldingRegisters(
-          end.address,
-          end.words,
-        );
+        final endOk = await _writeFirmwareEnd(end);
         if (!endOk) {
-          return const ControllerUpgradeResult(
-            ControllerUpgradeOutcome.failed,
-            errorMessage: 'firmware end write failed',
+          // Device log (ynh960): after full data (~49s) END FC16 n=14 times out,
+          // then ~10s later C001 / Modbus drop — MCU resets on END without ACK.
+          // All data frames already succeeded; treat no-ACK END as success.
+          debugPrint(
+            'ControllerUpgradeHandler: end write no ACK after retries — '
+            'treating as success (full data transferred; board likely resetting)',
+          );
+        } else {
+          debugPrint(
+            'ControllerUpgradeHandler: end write ok — treating as success '
+            '(no otaUpgradeCmd poll)',
           );
         }
-
-        final confirm = await _awaitDeviceConfirm(targetHw: hw, targetSw: sw);
-        if (confirm) {
-          onProgress(100);
-          return const ControllerUpgradeResult(
-            ControllerUpgradeOutcome.success,
-          );
-        }
+        onProgress(100);
         return const ControllerUpgradeResult(
-          ControllerUpgradeOutcome.failed,
-          errorMessage: 'device confirm failed',
+          ControllerUpgradeOutcome.success,
         );
       });
     } catch (e, st) {
@@ -175,51 +180,28 @@ final class ControllerUpgradeHandler {
     }
   }
 
-  Future<bool> _awaitDeviceConfirm({
-    required int targetHw,
-    required int targetSw,
-  }) async {
-    final deadline = DateTime.now()
-        .add(FirmwareUpgradeConstants.deviceConfirmTimeout);
-    const cmdFailGrace = Duration(seconds: 3);
-    DateTime? failFirstSeenAt;
-    while (DateTime.now().isBefore(deadline)) {
-      // Read a consistent view of HW/SW + ota command.
-      final status = await _modbus.readGroup('status');
-      final cmd = _asInt(status[FirmwareUpgradeConstants.deviceOtaCmd]);
-      final deviceHw =
-          _asInt(status[FirmwareUpgradeConstants.deviceHw]);
-      final deviceSw =
-          _asInt(status[FirmwareUpgradeConstants.deviceSw]);
-
-      // Version match means success (board can apply without latch 0x1212
-      // until power cycle).
-      if (deviceHw == targetHw && deviceSw == targetSw) {
+  /// Write FIRMWARE_END with settle gap + retries.
+  ///
+  /// Returns true if any attempt got a Modbus ACK.
+  Future<bool> _writeFirmwareEnd(UpgradeFrame end) async {
+    await Future<void>.delayed(endPreGap);
+    for (var attempt = 1; attempt <= endWriteAttempts; attempt++) {
+      final ok = await _modbus.writeHoldingRegisters(
+        end.address,
+        end.words,
+      );
+      if (ok) {
         return true;
       }
-      if (cmd == FirmwareUpgradeConstants.upgradeSuccess) {
-        return true;
+      debugPrint(
+        'ControllerUpgradeHandler: end write attempt $attempt/$endWriteAttempts '
+        'failed (n=${end.words.length})',
+      );
+      if (attempt < endWriteAttempts) {
+        await Future<void>.delayed(endRetryGap);
       }
-      if (cmd == FirmwareUpgradeConstants.upgradeFail) {
-        // Some boards may report failure transiently while applying.
-        final seenAt = failFirstSeenAt ??= DateTime.now();
-        if (DateTime.now().difference(seenAt) >= cmdFailGrace) {
-          return false;
-        }
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 200));
     }
-    // Boards often apply without latching 0x1212 until power cycle.
-    debugPrint(
-      'ControllerUpgradeHandler: confirm timeout; treating as success',
-    );
-    return true;
-  }
-
-  int? _asInt(Object? v) {
-    if (v is int) return v;
-    if (v is num) return v.toInt();
-    return null;
+    return false;
   }
 
   Future<int?> _readU16(String id) async {

@@ -419,11 +419,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String autoOtaUpdateDialogMessage(String version) {
-    return 'Version $version is available. Download and install it in Settings.';
+    return 'Version $version is available. Go to Settings to review and install the update.';
   }
 
   @override
   String get autoOtaUpdateDialogTitle => 'Update Available';
+
+  @override
+  String autoControlBoardUpdateDialogMessage(String version) {
+    return 'Control board firmware $version is available. Go to Settings to review and install the update.';
+  }
+
+  @override
+  String get autoControlBoardUpdateDialogTitle =>
+      'Control Board Firmware Available';
+
+  @override
+  String get goToSettings => 'Go to Settings';
 
   @override
   String get autoWireFeed => 'Auto Wire Feed';
@@ -580,6 +592,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get celsiusUnit => '°C';
+
+  @override
+  String controlBoardAlreadyUpToDate(String version) {
+    return 'Control board firmware $version is up to date.';
+  }
+
+  @override
+  String get controlBoardCheckFailed =>
+      'Could not check control board firmware. Verify Modbus connection.';
+
+  @override
+  String get controlBoardCheckUnavailable =>
+      'Control board firmware check is not available right now.';
+
+  @override
+  String controlBoardNewVersionHeadline(String version) {
+    return 'New firmware $version';
+  }
+
+  @override
+  String get controlBoardUpgradeIdleHint =>
+      'Check for newer control board firmware bundled with this App.';
+
+  @override
+  String get controlBoardUpgradeTitle => 'Control Board Upgrade';
 
   @override
   String get checkUpdate => 'Check for Updates';

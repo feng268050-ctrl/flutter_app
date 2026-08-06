@@ -806,7 +806,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoOtaUpdateDialogMessage.
   ///
   /// In en, this message translates to:
-  /// **'Version {version} is available. Download and install it in Settings.'**
+  /// **'Version {version} is available. Go to Settings to review and install the update.'**
   String autoOtaUpdateDialogMessage(String version);
 
   /// No description provided for @autoOtaUpdateDialogTitle.
@@ -814,6 +814,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update Available'**
   String get autoOtaUpdateDialogTitle;
+
+  /// No description provided for @autoControlBoardUpdateDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Control board firmware {version} is available. Go to Settings to review and install the update.'**
+  String autoControlBoardUpdateDialogMessage(String version);
+
+  /// No description provided for @autoControlBoardUpdateDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Control Board Firmware Available'**
+  String get autoControlBoardUpdateDialogTitle;
+
+  /// No description provided for @goToSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Settings'**
+  String get goToSettings;
 
   /// No description provided for @autoWireFeed.
   ///
@@ -1108,6 +1126,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'°C'**
   String get celsiusUnit;
+
+  /// No description provided for @controlBoardAlreadyUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Control board firmware {version} is up to date.'**
+  String controlBoardAlreadyUpToDate(String version);
+
+  /// No description provided for @controlBoardCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check control board firmware. Verify Modbus connection.'**
+  String get controlBoardCheckFailed;
+
+  /// No description provided for @controlBoardCheckUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Control board firmware check is not available right now.'**
+  String get controlBoardCheckUnavailable;
+
+  /// No description provided for @controlBoardNewVersionHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'New firmware {version}'**
+  String controlBoardNewVersionHeadline(String version);
+
+  /// No description provided for @controlBoardUpgradeIdleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for newer control board firmware bundled with this App.'**
+  String get controlBoardUpgradeIdleHint;
+
+  /// No description provided for @controlBoardUpgradeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Control Board Upgrade'**
+  String get controlBoardUpgradeTitle;
 
   /// No description provided for @checkUpdate.
   ///

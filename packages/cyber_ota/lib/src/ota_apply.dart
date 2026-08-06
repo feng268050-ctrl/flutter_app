@@ -100,7 +100,8 @@ class OtaApply {
           message: 'oem apply ok',
         ),
       );
-      await Future<void>.delayed(const Duration(seconds: 1));
+      // Pause so UI can show the auto-reboot notice before reboot.
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
       await _slot.reboot();
     } catch (e) {
       await _setStatus(stagingDir, 'fail');
@@ -314,7 +315,8 @@ class OtaApply {
         ),
       );
       await _proc.run('sync', const <String>[]);
-      await Future<void>.delayed(const Duration(seconds: 1));
+      // Pause so UI can show the auto-reboot notice before reboot.
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
       await _slot.reboot();
     } catch (e) {
       await _setStatus(stagingDir, 'fail');

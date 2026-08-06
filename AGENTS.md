@@ -127,6 +127,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `scripts/ota-package.sh`, `scripts/ota-sign.sh`, `scripts/ota-release-keys.sh`, `scripts/ota-http-serve.py`, Makefile `ota-package` / `ota-release-keys` | none for board until upgrade; exercise `make ota-release-keys`, `make ota-package` (publish: `REQUIRE_OTA_SIG=1 OTA_SIGNING_KEY=…`); `make upgrade` runs packaging unless `UPGRADE_PACKAGE=` |
 | `scripts/upgrade-remote.sh` (SSH host-HTTP + device pull / RockUSB di / `UPGRADE_PACKAGE=` extract), Makefile `upgrade` only (board already has P2.4 overlay + A/B GPT + OTA HMI) | `make upgrade` (or `OEM_ONLY=1 make upgrade` / `UPGRADE_PACKAGE=… make upgrade`); no firmware rebuild unless image inputs are stale; App must understand `download <url>` (`make build-app` / `push-app` if watcher is old) |
 | `packages/cyber_ota` / App system OTA UI (`app/lws_hmi/lib/features/system_ota/**`) | `make build-app`, `make push-app` |
+| `packages/cyber_upgrade_ui` (shared update check / multi-phase progress UX) + App OTA / control-board / camera-channel adapters | `make build-app`, `make push-app` (host: `flutter test` in package) |
 | `overlay/buildroot/chips/lws_hmi_platform.config` (openssl for OTA verify) | `make apply-overlay`, `bash scripts/br-make-packages.sh openssl libopenssl`, `make build-rootfs`, `make upgrade` |
 | `scripts/upgrade-remote.sh` / `scripts/flash-usb.sh` RockUSB OTA-images path (`upgrade-ota` / `di`) | none for firmware; exercise `make upgrade` on Loader/Maskrom (or `UPGRADE_TRANSPORT=rockusb make upgrade`); no rebuild unless `boot.img` / `boot_b.img` / `rootfs.img` / oem are stale |
 | Control-board host upgrade helper (`scripts/upgrade-control-board.sh`, Makefile `upgrade-control-board`) | none (host SSH writes `/run/hmi/upgrade-control-board.cmd` and uploads one control-board `.bin`); board needs HMI with watcher (`make build-app` + `make push-app` once if app is stale); exercise `make upgrade-control-board` |
@@ -195,7 +196,7 @@ Keep long command examples in **README.md**; keep agent-only rules (rebuild bloc
 | `packages/cyber_hal/` | Dart HAL path 包 |
 | `packages/cyber_pm/` | 子进程监护（MediaMTX、AI daemon） |
 | `native/lws_ai/` | AI C++（`lws_ai_daemon`）；产物经 `make build-ai` → `/opt/hmi` |
-| `packages/cyber_ui/` / `cyber_ime/` / `cyber_alarm/` | UI / IME / 告警引擎 |
+| `packages/cyber_ui/` / `cyber_ime/` / `cyber_alarm/` / `cyber_upgrade_ui/` | UI / IME / 告警引擎 / 升级 UX |
 | `overlay/.../rootfs-overlay/` | Rootfs overlay (systemd, scripts, `/opt/hmi` staging) |
 | `overlay/buildroot/` | Defconfig fragments, package pins |
 | `overlay/kernel/` | DTS / kernel config |

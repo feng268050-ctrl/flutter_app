@@ -16,6 +16,7 @@ class ProductPageStatusBar extends StatelessWidget
     super.key,
     required this.title,
     this.onBack,
+    this.backEnabled = true,
     this.backLabel,
     this.backAccent = WorkModeAccent.weld,
     this.actions,
@@ -33,6 +34,10 @@ class ProductPageStatusBar extends StatelessWidget
 
   final String title;
   final VoidCallback? onBack;
+
+  /// When false, the product Back/Home control stays visible but disabled
+  /// (grayed) — used while an upgrade transfer must not be left.
+  final bool backEnabled;
 
   /// When set with [onBack], uses the product [CallBackHomeButton] (icon +
   /// label + accent press FX) instead of the Material arrow back.
@@ -85,6 +90,7 @@ class ProductPageStatusBar extends StatelessWidget
                   ? CallBackHomeButton(
                       accent: backAccent,
                       label: backLabel!,
+                      enabled: backEnabled,
                       onPressed: onBack!,
                     )
                   : null,

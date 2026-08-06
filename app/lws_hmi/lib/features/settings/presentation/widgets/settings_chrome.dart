@@ -1965,11 +1965,15 @@ class SettingsScaffold extends StatelessWidget {
     required this.title,
     required this.body,
     this.actions,
+    this.backEnabled = true,
   });
 
   final String title;
   final Widget body;
   final List<Widget>? actions;
+
+  /// When false, Back stays visible but grayed out (e.g. upgrade in progress).
+  final bool backEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -1992,6 +1996,7 @@ class SettingsScaffold extends StatelessWidget {
           // Nested settings pop → "Back".
           backLabel: l10n.equipmentStatusBack,
           backAccent: WorkModeAccent.weld,
+          backEnabled: backEnabled,
           onBack: canPop ? () => Navigator.of(context).maybePop() : null,
         ),
         // Clip at status-bar hairline so scroll cannot enter the Back row.

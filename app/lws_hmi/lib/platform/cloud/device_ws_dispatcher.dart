@@ -211,7 +211,7 @@ final class DeviceWsDispatcher {
   }
 
   /// Emit OTA progress to cloud subscribers.
-  Future<void> sendUpdateProgress(Map<String, Object?> data) {
+  Future<void> sendUpgradeProgress(Map<String, Object?> data) {
     return ws.send(
       DeviceWsEnvelope.build(
         type: 'device.update_progress',

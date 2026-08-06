@@ -4,5 +4,6 @@ abstract final class GlobalPromptIds {
   static const deviceRegister = 'deviceRegister';
   static const deviceBind = 'deviceBind';
   static const bundledFirmware = 'bundledFirmware';
+  static const systemOta = 'systemOta';
   static const remoteLock = 'remoteLock';
 }

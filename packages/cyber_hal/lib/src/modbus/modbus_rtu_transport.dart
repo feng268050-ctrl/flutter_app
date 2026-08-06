@@ -209,12 +209,20 @@ class ModbusRtuTransport {
       buffer.addAll(chunk);
       if (buffer.length >= 5 && (buffer[1] & 0x80) != 0) {
         if (buffer.length >= 5 && verifyModbusCrc(buffer.sublist(0, 5))) {
+          debugPrint(
+            'Modbus: FC16 exception addr=0x${startAddress.toRadixString(16)} '
+            'n=$count code=0x${buffer[2].toRadixString(16)}',
+          );
           return false;
         }
       }
     }
     if (buffer.length < expectedLen ||
         !verifyModbusCrc(buffer.sublist(0, expectedLen))) {
+      debugPrint(
+        'Modbus: FC16 no ACK addr=0x${startAddress.toRadixString(16)} '
+        'n=$count rx=${buffer.length} timeoutMs=${transport.timeoutMs}',
+      );
       return false;
     }
     if (buffer[0] != unit || buffer[1] != 0x10) {

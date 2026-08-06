@@ -214,7 +214,7 @@ final class CloudLocalRuntime {
 
   /// Push OTA progress to cloud WS subscribers.
   Future<void> emitOtaProgress(Map<String, Object?> data) {
-    return dispatcher.sendUpdateProgress(data);
+    return dispatcher.sendUpgradeProgress(data);
   }
 
   void _wireLocalHttpHandlers() {

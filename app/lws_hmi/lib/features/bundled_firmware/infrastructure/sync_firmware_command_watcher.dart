@@ -1,16 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:lws_hmi/features/bundled_firmware/application/bundled_firmware_bootstrap.dart';
+import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
-import 'package:lws_hmi/app/app_services.dart';
-import 'package:flutter/material.dart';
 
 /// Host helper (`make upgrade-control-board`) command watcher.
-///
-/// Writes a command file on the device (tmpfs) and HMI executes a sync
-/// firmware upgrade without confirm / without version gate.
 ///
 /// File format (one command per line):
 /// - `upgrade /run/hmi/control-board-upgrade/LSW01H####S####.bin`
@@ -25,10 +22,9 @@ final class SyncFirmwareCommandWatcher {
 
   static const defaultPath = '${OsPaths.runHmi}/upgrade-control-board.cmd';
 
-  /// HMI services used to access Modbus.
   final AppServices services;
 
-  /// When a command arrives, watcher uses the current context to show dialogs.
+  /// Retained for API compatibility; host path uses navigatorKey via coordinator.
   final BuildContext? Function() navigatorContext;
 
   final String path;
@@ -58,7 +54,6 @@ final class SyncFirmwareCommandWatcher {
       return;
     }
     final raw = await file.readAsString();
-    // Claim the file before handling so a second write is not lost silently.
     try {
       await file.writeAsString('', flush: true);
     } catch (_) {
@@ -92,11 +87,9 @@ final class SyncFirmwareCommandWatcher {
     switch (op) {
       case 'upgrade':
         if (parts.length < 2) return;
-        final firmwarePath = parts[1];
-        await _sync(firmwarePath);
+        await _sync(parts[1]);
         break;
       case 'clean':
-        // No-op: file was already cleared by the claim step.
         break;
       default:
         break;
@@ -108,26 +101,13 @@ final class SyncFirmwareCommandWatcher {
       if (!FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
         return;
       }
-      final ctx = navigatorContext();
-      if (ctx == null || !ctx.mounted) {
-        return;
-      }
       final file = File(firmwarePath);
       if (!await file.exists()) {
         return;
       }
-      await BundledFirmwareBootstrap.startSyncFirmwareUpgrade(
-        // ignore: use_build_context_synchronously
-        context: ctx,
-        services: services,
-        firmwareFile: file,
-      );
-      if (!ctx.mounted) {
-        return;
-      }
+      await ControlBoardUpgradeCoordinator.instance.startHostUpgrade(file);
     } catch (_) {
       // Keep watcher alive; host will retry if needed.
     }
   }
 }
-

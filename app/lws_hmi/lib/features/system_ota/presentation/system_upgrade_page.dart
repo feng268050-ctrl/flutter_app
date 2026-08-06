@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_ota/cyber_ota.dart';
 import 'package:cyber_ui/cyber_ui.dart';
+import 'package:cyber_upgrade_ui/cyber_upgrade_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
@@ -10,6 +11,7 @@ import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
+import 'package:lws_hmi/features/system_ota/application/system_ota_upgrade_mapping.dart';
 import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
@@ -19,7 +21,8 @@ import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 /// System Upgrade — Settings chrome; one content card fills remaining height.
 ///
 /// - From Device Information (System Version): check + auto-check + apply.
-/// - Host `make upgrade` / cleared-stack: [progressOnly] (no check chrome).
+/// - Host `make upgrade` / cleared-stack: [progressOnly] with
+///   [SystemOtaUpgradeMapping.hostForcePolicy] (no version check).
 class SystemUpgradePage extends StatefulWidget {
   const SystemUpgradePage({
     super.key,
@@ -30,27 +33,25 @@ class SystemUpgradePage extends StatefulWidget {
 
   final bool autoCheckOnOpen;
   final OtaManifest? initialManifest;
+
+  /// Host / WS apply — skip check chrome; uses [UpgradePolicy.hostForce].
   final bool progressOnly;
 
   @override
   State<SystemUpgradePage> createState() => _SystemUpgradePageState();
 }
 
-enum _CheckUi {
-  idle,
-  checking,
-  upToDate,
-  available,
-  unavailable,
-  failed,
-}
-
 class _SystemUpgradePageState extends State<SystemUpgradePage> {
   StreamSubscription<OtaProgress>? _sub;
   OtaProgress? _progress;
   OtaManifest? _availableManifest;
-  _CheckUi _checkUi = _CheckUi.idle;
+  UpgradeCheckUiState _checkUi = UpgradeCheckUiState.idle;
   bool _applyUi = false;
+
+  /// Effective policy for this page entry.
+  UpgradePolicy get _policy => widget.progressOnly
+      ? SystemOtaUpgradeMapping.hostForcePolicy
+      : SystemOtaUpgradeMapping.operatorPolicy;
 
   bool get _showProgress {
     if (widget.progressOnly || _applyUi) {
@@ -79,10 +80,12 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     _progress = coordinator.lastProgress;
     if (widget.progressOnly) {
       _applyUi = true;
+      // Host force: version check must not gate apply.
+      assert(!shouldRunVersionCheck(_policy));
     }
     if (widget.initialManifest != null) {
       _availableManifest = widget.initialManifest;
-      _checkUi = _CheckUi.available;
+      _checkUi = UpgradeCheckUiState.available;
     }
     _sub = coordinator.uiProgress.listen((p) {
       if (!mounted) {
@@ -130,20 +133,23 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
   }
 
   Future<void> _runCheck() async {
-    if (_checkUi == _CheckUi.checking ||
+    if (_checkUi == UpgradeCheckUiState.checking ||
         SystemOtaCoordinator.instance.isSessionActive) {
+      return;
+    }
+    if (!shouldRunVersionCheck(_policy)) {
       return;
     }
     final url = _resolveManifestUrl();
     if (url == null) {
       setState(() {
-        _checkUi = _CheckUi.unavailable;
+        _checkUi = UpgradeCheckUiState.unavailable;
         _availableManifest = null;
       });
       return;
     }
     setState(() {
-      _checkUi = _CheckUi.checking;
+      _checkUi = UpgradeCheckUiState.checking;
       _availableManifest = null;
     });
     try {
@@ -155,12 +161,12 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       }
       if (result.hasUpdate && result.manifest != null) {
         setState(() {
-          _checkUi = _CheckUi.available;
+          _checkUi = UpgradeCheckUiState.available;
           _availableManifest = result.manifest;
         });
       } else {
         setState(() {
-          _checkUi = _CheckUi.upToDate;
+          _checkUi = UpgradeCheckUiState.upToDate;
           _availableManifest = null;
         });
       }
@@ -170,7 +176,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
         return;
       }
       setState(() {
-        _checkUi = _CheckUi.failed;
+        _checkUi = UpgradeCheckUiState.failed;
         _availableManifest = null;
       });
     }
@@ -192,7 +198,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       if (mounted) {
         setState(() {
           _applyUi = false;
-          _checkUi = _CheckUi.available;
+          _checkUi = UpgradeCheckUiState.available;
         });
       }
     }
@@ -207,29 +213,6 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       return false;
     }
     return true;
-  }
-
-  String _statusLabel(AppLocalizations l10n, OtaProgress progress) {
-    if (progress.phase == OtaPhase.writing) {
-      return switch (progress.message) {
-        'writing rootfs' => l10n.otaUpgradeStatusWritingRootfs,
-        'writing kernel' => l10n.otaUpgradeStatusWritingKernel,
-        'writing oem' => l10n.otaUpgradeStatusWritingOem,
-        _ => l10n.otaUpgradeStatusWriting,
-      };
-    }
-    return switch (progress.phase) {
-      OtaPhase.preparing => l10n.otaUpgradeStatusPreparing,
-      OtaPhase.checking => l10n.checkUpdate,
-      OtaPhase.transferring => l10n.otaUpgradeStatusDownloading,
-      OtaPhase.verifying => l10n.otaUpgradeStatusVerifying,
-      OtaPhase.extracting => l10n.otaUpgradeStatusExtracting,
-      OtaPhase.writing => l10n.otaUpgradeStatusWriting,
-      OtaPhase.arming => l10n.otaUpgradeStatusArming,
-      OtaPhase.ok => l10n.otaUpgradeStatusComplete,
-      OtaPhase.fail => l10n.otaUpgradeStatusFailed,
-      OtaPhase.idle => l10n.otaUpgradeStatusPreparing,
-    };
   }
 
   void _goHome() {
@@ -248,6 +231,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       canPop: _canPop,
       child: SettingsScaffold(
         title: l10n.systemUpgradeTitle,
+        backEnabled: _canPop,
         body: Padding(
           padding: const EdgeInsets.fromLTRB(
             SettingsDimens.inset,
@@ -283,10 +267,9 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                           padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
                           child: inProgress
                               ? _buildProgressBody(l10n)
-                              : _buildCheckStatus(l10n),
+                              : _buildCheckBody(l10n),
                         ),
                       ),
-                      if (!inProgress) _buildCheckFooter(l10n),
                     ],
                   ),
                 ),
@@ -298,80 +281,49 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     );
   }
 
-  Widget _buildCheckStatus(AppLocalizations l10n) {
+  Widget _buildCheckBody(AppLocalizations l10n) {
     final available = _availableManifest;
     final style = context.hmiTypography.settingsRowValue.copyWith(
       color: CyberColors.textSecondary,
       height: 1.4,
     );
-    final status = switch (_checkUi) {
-      _CheckUi.idle => Text(l10n.otaUpgradeIdleHint, style: style),
-      _CheckUi.checking => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 36,
-              height: 36,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                color: CyberColors.buttonPrimaryFill,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.checkingStatus,
-              textAlign: TextAlign.center,
-              style: style,
-            ),
-          ],
-        ),
-      _CheckUi.upToDate => Text(
-          l10n.otaAlreadyUpToDate(kSystemVersion),
-          style: style,
-        ),
-      _CheckUi.unavailable => Text(l10n.otaCheckUnavailable, style: style),
-      _CheckUi.failed => Text(l10n.otaCheckFailed, style: style),
-      _CheckUi.available => available == null
-          ? const SizedBox.shrink()
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  l10n.otaNewVersionHeadline(available.displayTitle),
-                  style: context.hmiTypography.settingsRowTitle.copyWith(
-                    color: CyberColors.textPrimary,
-                    fontSize: 22,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  (available.content?.trim().isNotEmpty ?? false)
-                      ? available.content!.trim()
-                      : l10n.otaUpdateAvailableMessage(
-                          kSystemVersion,
-                          available.version,
-                        ),
-                  style: style,
-                ),
-              ],
-            ),
-    };
-    return Align(
-      alignment: _checkUi == _CheckUi.checking
-          ? Alignment.center
-          : Alignment.topCenter,
-      child: status,
+    final headlineStyle = context.hmiTypography.settingsRowTitle.copyWith(
+      color: CyberColors.textPrimary,
+      fontSize: 22,
+    );
+
+    return UpgradeCheckCard(
+      state: _checkUi,
+      idleHint: l10n.otaUpgradeIdleHint,
+      checkingLabel: l10n.checkingStatus,
+      upToDateMessage: l10n.otaAlreadyUpToDate(kSystemVersion),
+      unavailableMessage: l10n.otaCheckUnavailable,
+      failedMessage: l10n.otaCheckFailed,
+      availableHeadline: available == null
+          ? null
+          : l10n.otaNewVersionHeadline(available.displayTitle),
+      availableBody: available == null
+          ? null
+          : ((available.content?.trim().isNotEmpty ?? false)
+              ? available.content!.trim()
+              : l10n.otaUpdateAvailableMessage(
+                  kSystemVersion,
+                  available.version,
+                )),
+      statusStyle: style,
+      headlineStyle: headlineStyle,
+      actions: _buildCheckFooter(l10n),
     );
   }
 
   Widget _buildCheckFooter(AppLocalizations l10n) {
     final available = _availableManifest;
     final showUpdateActions =
-        _checkUi == _CheckUi.available && available != null;
-    final checking = _checkUi == _CheckUi.checking;
+        _checkUi == UpgradeCheckUiState.available && available != null;
+    final checking = _checkUi == UpgradeCheckUiState.checking;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -402,7 +354,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                   CyberClickSoundRegistry.playClick();
                   setState(() {
                     _availableManifest = null;
-                    _checkUi = _CheckUi.idle;
+                    _checkUi = UpgradeCheckUiState.idle;
                   });
                 },
               ),
@@ -455,97 +407,57 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
   }
 
   Widget _buildProgressBody(AppLocalizations l10n) {
-    final progress =
+    final otaProgress =
         _progress ?? const OtaProgress(phase: OtaPhase.preparing);
-    final failed = progress.phase == OtaPhase.fail;
-    final complete = progress.phase == OtaPhase.ok;
-    final showPercent = progress.phase == OtaPhase.transferring ||
-        progress.phase == OtaPhase.verifying ||
-        progress.phase == OtaPhase.extracting ||
-        progress.phase == OtaPhase.writing ||
-        progress.phase == OtaPhase.arming;
-    final percent = progress.percent.clamp(0, 100);
+    final updateProgress =
+        SystemOtaUpgradeMapping.toUpgradeProgress(otaProgress);
+    final failed = updateProgress.isTerminalFail;
+    final complete = updateProgress.isTerminalOk;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Spacer(),
-        Text(
-          _statusLabel(l10n, progress),
-          textAlign: TextAlign.center,
-          style: context.hmiTypography.settingsRowTitle.copyWith(
-            color: CyberColors.textPrimary,
-            fontSize: 20,
-          ),
-        ),
-        if (showPercent) ...[
-          const SizedBox(height: 24),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percent / 100.0,
-              minHeight: 10,
-              backgroundColor:
-                  CyberColors.textSecondary.withOpacity(0.25),
-              color: CyberColors.buttonPrimaryFill,
+        Expanded(
+          child: UpgradePhaseProgressView(
+            phases: SystemOtaUpgradeMapping.phases(l10n),
+            progress: updateProgress,
+            statusLabel:
+                SystemOtaUpgradeMapping.statusLabel(l10n, otaProgress),
+            titleStyle: context.hmiTypography.settingsRowTitle.copyWith(
+              color: CyberColors.textPrimary,
+              fontSize: 20,
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '$percent%',
-            textAlign: TextAlign.center,
-            style: context.hmiTypography.settingsRowValue.copyWith(
+            percentStyle: context.hmiTypography.settingsRowValue.copyWith(
               color: CyberColors.textSecondary,
             ),
+            footer: failed
+                ? Center(
+                    child: HmiButton(
+                      label: l10n.closeText,
+                      size: HmiButtonSize.medium,
+                      shape: CyberButtonShape.rounded,
+                      variant: CyberButtonVariant.primary,
+                      borderGradientCenter:
+                          CyberBorderGradientCenter.topLeftBottomRight,
+                      onPressed: _goHome,
+                    ),
+                  )
+                : null,
           ),
-        ] else if (!failed && !complete) ...[
-          const SizedBox(height: 28),
-          const Center(
-            child: SizedBox(
-              width: 36,
-              height: 36,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                color: CyberColors.buttonPrimaryFill,
+        ),
+        if (complete)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: UpgradeCompletionTip(
+              progress: updateProgress,
+              config: UpgradeCompletionConfig.autoReboot(
+                rebootNotice: l10n.otaUpgradeRebootHint,
+              ),
+              style: context.hmiTypography.settingsRowValue.copyWith(
+                color: CyberColors.textSecondary,
               ),
             ),
           ),
-        ],
-        if (failed && progress.message.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            progress.message,
-            textAlign: TextAlign.center,
-            style: context.hmiTypography.settingsRowValue.copyWith(
-              color: CyberColors.textSecondary,
-            ),
-          ),
-        ],
-        if (complete) ...[
-          const SizedBox(height: 16),
-          Text(
-            l10n.otaUpgradeRebootHint,
-            textAlign: TextAlign.center,
-            style: context.hmiTypography.settingsRowValue.copyWith(
-              color: CyberColors.textSecondary,
-            ),
-          ),
-        ],
-        if (failed) ...[
-          const SizedBox(height: 24),
-          Center(
-            child: HmiButton(
-              label: l10n.closeText,
-              size: HmiButtonSize.medium,
-              shape: CyberButtonShape.rounded,
-              variant: CyberButtonVariant.primary,
-              borderGradientCenter:
-                  CyberBorderGradientCenter.topLeftBottomRight,
-              onPressed: _goHome,
-            ),
-          ),
-        ],
-        const Spacer(),
       ],
     );
   }

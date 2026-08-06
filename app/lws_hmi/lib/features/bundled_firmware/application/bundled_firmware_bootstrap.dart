@@ -1,33 +1,49 @@
-import 'package:flutter/foundation.dart';
+import 'package:cyber_ui/cyber_ui.dart';
+import 'package:cyber_upgrade_ui/cyber_upgrade_ui.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/features/bundled_firmware/application/controller_upgrade_handler.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
-import 'package:lws_hmi/features/bundled_firmware/domain/bundled_firmware_version_gate.dart';
-import 'package:lws_hmi/features/bundled_firmware/domain/firmware_upgrade_constants.dart';
-import 'package:lws_hmi/features/bundled_firmware/infrastructure/bundled_firmware_assets.dart';
-import 'package:lws_hmi/features/bundled_firmware/presentation/bundled_firmware_dialogs.dart';
+import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
-import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
+import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
-/// Home-only: detect App-bundled control-board firmware and prompt before Modbus flash.
+/// Home / host entry points for control-board firmware upgrade.
+///
+/// Home auto-detect tip runs **once per HMI process**. Later / dismiss /
+/// go-to-Settings consume the attempt so Home [didPopNext] (also fired when
+/// TipDialogHost closes) does not re-prompt.
 abstract final class BundledFirmwareBootstrap {
-  static bool _sessionActive = false;
+  static const UpgradePolicy operatorPolicy = UpgradePolicy.operator;
 
-  /// Evaluate + optional confirm/upgrade. Safe to call repeatedly from Home.
-  ///
-  /// Enqueues on [GlobalPromptQueue] so confirm/progress cannot stack over
-  /// other prompts.
+  static const UpgradePolicy hostForcePolicy = UpgradePolicy.hostForce;
+
+  static bool _homeAutoPromptConsumed = false;
+
+  /// Test helper.
+  static void resetHomeAutoPromptForTest() {
+    _homeAutoPromptConsumed = false;
+  }
+
+  /// On Product Home: tip → Settings control-board upgrade page (Update Now / Later).
   static Future<void> checkAndPromptIfNeeded(
     BuildContext context,
     AppServices services,
   ) async {
+    if (_homeAutoPromptConsumed) {
+      return;
+    }
     if (!context.mounted) {
       return;
     }
-    if (_sessionActive || !FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
+    if (ControlBoardUpgradeCoordinator.instance.isSessionActive ||
+        !FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
       return;
     }
     if (!services.modbusLiveAllowed) {
@@ -39,7 +55,12 @@ abstract final class BundledFirmwareBootstrap {
       return;
     }
 
-    final offer = await _evaluateOffer(services);
+    final offer =
+        await ControlBoardUpgradeCoordinator.instance.evaluateOffer(
+      policy: operatorPolicy,
+    );
+    // One-shot home auto-detect for this process.
+    _homeAutoPromptConsumed = true;
     if (offer == null || !context.mounted) {
       return;
     }
@@ -47,263 +68,73 @@ abstract final class BundledFirmwareBootstrap {
     await queue.enqueue(
       id: GlobalPromptIds.bundledFirmware,
       present: (host) async {
-        if (_sessionActive || FirmwareUpgradeCoordinator.isBusy) {
+        if (ControlBoardUpgradeCoordinator.instance.isSessionActive ||
+            FirmwareUpgradeCoordinator.isBusy) {
           return;
         }
         final ctx = host.context;
         if (!ctx.mounted) {
           return;
         }
-        final confirmed = await BundledFirmwareDialogs.showConfirm(
+
+        final go = await _showGoToSettingsTip(
           context: ctx,
-          currentVersion: '${offer.deviceSw}',
-          newVersion: '${offer.bundledSw}',
+          versionLabel: '${offer.bundledSw}',
         );
-        if (!confirmed || !ctx.mounted) {
+        if (!go || !ctx.mounted) {
           return;
         }
-        await _runUpgrade(
-          context: ctx,
-          services: services,
-          offer: offer,
-        );
+
+        await _openSettingsUpgradePage(ctx, offer);
       },
     );
   }
 
-  /// Dev/ops helper: start bundled control-board firmware upgrade from a
-  /// host-pushed `.bin` file (no confirm, no version gate).
-  static Future<void> startSyncFirmwareUpgrade({
+  static Future<bool> _showGoToSettingsTip({
     required BuildContext context,
-    required AppServices services,
-    required File firmwareFile,
+    required String versionLabel,
   }) async {
-    if (!context.mounted) {
-      return;
-    }
-    if (!services.modbusLiveAllowed) {
-      return;
-    }
-    if (_sessionActive || !FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
-      return;
-    }
-    if (!await firmwareFile.exists()) {
-      return;
-    }
-
-    final fileName = firmwareFile.path.split('/').last;
-    Uint8List bytes;
-    try {
-      bytes = await firmwareFile.readAsBytes();
-    } catch (_) {
-      if (context.mounted) {
-        await BundledFirmwareDialogs.showFailed(context);
-      }
-      return;
-    }
-
-    _sessionActive = true;
-    FirmwareUpgradeCoordinator.markBundledUpgradeStarted();
-    final percent = ValueNotifier<int>(0);
-    Future<void> Function() closeProgress = () async {};
-    bool progressClosed = false;
-
-    try {
-      if (!context.mounted) {
-        return;
-      }
-      closeProgress = BundledFirmwareDialogs.showProgress(
-        context: context,
-        percent: percent,
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      final handler = ControllerUpgradeHandler(services.modbus);
-      final result = await handler.upgrade(
-        fileName: fileName,
-        bytes: bytes,
-        onProgress: (p) => percent.value = p,
-        skipSameVersionCheck: true,
-      );
-
-      await closeProgress();
-      progressClosed = true;
-
-      if (!context.mounted) {
-        return;
-      }
-
-      if (result.isSuccess) {
-        // Refresh live control SW for Device Information.
-        await services.modbus.readAttribute(FirmwareUpgradeConstants.deviceSw);
-        if (!context.mounted) {
-          return;
-        }
-        await BundledFirmwareDialogs.showSuccess(context);
-      } else {
-        if (!context.mounted) {
-          return;
-        }
-        await BundledFirmwareDialogs.showFailed(context);
-      }
-    } finally {
-      percent.dispose();
-      if (!progressClosed) {
-        try {
-          await closeProgress();
-        } catch (_) {}
-      }
-      FirmwareUpgradeCoordinator.markBundledUpgradeEnded();
-      _sessionActive = false;
-    }
-  }
-
-  static Future<_HomeOffer?> _evaluateOffer(AppServices services) async {
-    final deviceHw = await _readU16(
-      services,
-      FirmwareUpgradeConstants.deviceHw,
-    );
-    final deviceSw = await _readU16(
-      services,
-      FirmwareUpgradeConstants.deviceSw,
-    );
-    if (deviceHw == null || deviceSw == null) {
-      return null;
-    }
-
-    final assetKey = await BundledFirmwareAssets.discoverAssetKey(
-      deviceHw: deviceHw,
-    );
-    if (assetKey == null) {
-      return null;
-    }
-    final fileName = assetKey.split('/').last;
-    if (!BundledFirmwareVersionGate.isUpgradeCandidate(
-      bundledFileName: fileName,
-      deviceHw: deviceHw,
-      deviceSw: deviceSw,
-    )) {
-      return null;
-    }
-    final bundledSw = BundledFirmwareVersionGate.softwareVersion(fileName)!;
-    return _HomeOffer(
-      assetKey: assetKey,
-      fileName: fileName,
-      deviceSw: deviceSw,
-      bundledSw: bundledSw,
-    );
-  }
-
-  static Future<void> _runUpgrade({
-    required BuildContext context,
-    required AppServices services,
-    required _HomeOffer offer,
-  }) async {
-    if (!FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
-      debugPrint('BundledFirmwareBootstrap: coordinator busy');
-      return;
-    }
-
-    final data = await BundledFirmwareAssets.loadBytes(offer.assetKey);
-    if (data == null) {
-      if (context.mounted) {
-        await BundledFirmwareDialogs.showFailed(context);
-      }
-      return;
-    }
-    final bytes = data.buffer.asUint8List(
-      data.offsetInBytes,
-      data.lengthInBytes,
-    );
-
-    _sessionActive = true;
-    FirmwareUpgradeCoordinator.markBundledUpgradeStarted();
-    final percent = ValueNotifier<int>(0);
-    Future<void> Function()? closeProgress;
-
-    try {
-      if (!context.mounted) {
-        return;
-      }
-      final close = BundledFirmwareDialogs.showProgress(
-        context: context,
-        percent: percent,
-      );
-      closeProgress = close;
-      // Let the progress dialog paint before Modbus work.
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      final handler = ControllerUpgradeHandler(services.modbus);
-      final result = await handler.upgrade(
-        fileName: offer.fileName,
-        bytes: Uint8List.fromList(bytes),
-        onProgress: (p) {
-          percent.value = p;
-        },
-      );
-
-      await close();
-      closeProgress = null;
-
-      if (!context.mounted) {
-        return;
-      }
-      if (result.outcome == ControllerUpgradeOutcome.skippedSameVersion) {
-        return;
-      }
-      if (result.isSuccess) {
-        // Refresh live control SW for Device Information.
-        await services.modbus.readAttribute(
-          FirmwareUpgradeConstants.deviceSw,
+    final result = await TipDialogHost.showDarkPrompt<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return UpgradeCheckDialog(
+          title: l10n.autoControlBoardUpdateDialogTitle,
+          body: Text(
+            l10n.autoControlBoardUpdateDialogMessage(versionLabel),
+          ),
+          actions: [
+            HmiButton(
+              label: l10n.otaUpdateLater,
+              size: HmiButtonSize.medium,
+              variant: CyberButtonVariant.secondary,
+              onPressed: () => Navigator.pop(ctx, false),
+            ),
+            HmiButton(
+              label: l10n.goToSettings,
+              size: HmiButtonSize.medium,
+              variant: CyberButtonVariant.primary,
+              onPressed: () => Navigator.pop(ctx, true),
+            ),
+          ],
         );
-        if (!context.mounted) {
-          return;
-        }
-        await BundledFirmwareDialogs.showSuccess(context);
-      } else {
-        debugPrint(
-          'BundledFirmwareBootstrap: upgrade failed ${result.errorMessage}',
-        );
-        if (!context.mounted) {
-          return;
-        }
-        await BundledFirmwareDialogs.showFailed(context);
-      }
-    } finally {
-      percent.dispose();
-      final pendingClose = closeProgress;
-      if (pendingClose != null) {
-        try {
-          await pendingClose();
-        } catch (_) {}
-      }
-      FirmwareUpgradeCoordinator.markBundledUpgradeEnded();
-      _sessionActive = false;
-    }
+      },
+    );
+    return result == true;
   }
 
-  static Future<int?> _readU16(AppServices services, String id) async {
-    final v = await services.modbus.readAttribute(id);
-    if (v is int) {
-      return v;
-    }
-    if (v is num) {
-      return v.toInt();
-    }
-    return null;
+  static Future<void> _openSettingsUpgradePage(
+    BuildContext context,
+    ControlBoardFirmwareOffer offer,
+  ) async {
+    // Pass nested page via Settings args — do not await settings then push
+    // (pushNamed completes only when Settings is popped).
+    await Navigator.of(context, rootNavigator: true).pushNamed(
+      AppRoutes.settings,
+      arguments: SettingsRouteArgs(
+        initialNestedPage: ControlBoardUpgradePage(initialOffer: offer),
+      ),
+    );
   }
-}
-
-final class _HomeOffer {
-  const _HomeOffer({
-    required this.assetKey,
-    required this.fileName,
-    required this.deviceSw,
-    required this.bundledSw,
-  });
-
-  final String assetKey;
-  final String fileName;
-  final int deviceSw;
-  final int bundledSw;
 }

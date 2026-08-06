@@ -117,8 +117,11 @@
   "anyMaterialLabel": "任意材料",
   "applyToDevice": "应用到设备",
   "autoCheckOtaUpdate": "自动检查更新",
-  "autoOtaUpdateDialogMessage": "新版本 {version} 可用，请前往设置下载并安装。",
+  "autoOtaUpdateDialogMessage": "新版本 {version} 可用，请前往设置查看并更新。",
   "autoOtaUpdateDialogTitle": "新版本可用",
+  "autoControlBoardUpdateDialogMessage": "控制板固件 {version} 可用，请前往设置查看并更新。",
+  "autoControlBoardUpdateDialogTitle": "控制板固件更新可用",
+  "goToSettings": "前往设置",
   "autoWireFeed": "自动送丝",
   "blowOnLabel": "通气状态",
   "blowText": "通气状态",
@@ -180,6 +183,26 @@
   "celsiusUnit": "℃",
   "checkUpdate": "检查更新",
   "checkingStatus": "检测中…",
+  "controlBoardAlreadyUpToDate": "控制板固件 {version} 已是最新。",
+  "@controlBoardAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "controlBoardCheckFailed": "无法检查控制板固件，请确认通信正常。",
+  "controlBoardCheckUnavailable": "当前无法检查控制板固件。",
+  "controlBoardNewVersionHeadline": "新固件版本 {version}",
+  "@controlBoardNewVersionHeadline": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "controlBoardUpgradeIdleHint": "检查本机 App 内是否有更新的控制板固件。",
+  "controlBoardUpgradeTitle": "控制板升级",
   "clearAlarmLogs": "清除",
   "closeText": "关闭",
   "cloudEnvironmentTier": "云环境",

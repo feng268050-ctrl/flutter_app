@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
 import 'package:lws_hmi/features/global_prompt/wifi_connect_tip_prompt.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/bundled_firmware_bootstrap.dart';
+import 'package:lws_hmi/features/system_ota/application/system_ota_home_bootstrap.dart';
 import 'package:lws_hmi/features/device_registration/device_registration_dialogs.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
@@ -116,14 +117,14 @@ class _HomePageState extends State<HomePage> with RouteAware {
   @override
   void didPopNext() {
     // Returning to Home from Settings / Monitor / etc.
-    _maybeCheckBundledFirmware();
+    _maybeCheckHomeUpgradePrompts();
     final refresh = _customHomeStatisticsKey.currentState?.refresh();
     if (refresh != null) {
       unawaited(refresh);
     }
   }
 
-  void _maybeCheckBundledFirmware() {
+  void _maybeCheckHomeUpgradePrompts() {
     if (!mounted) {
       return;
     }
@@ -131,9 +132,15 @@ class _HomePageState extends State<HomePage> with RouteAware {
     if (services == null || !services.modbusLiveStarted) {
       return;
     }
-    unawaited(
-      BundledFirmwareBootstrap.checkAndPromptIfNeeded(context, services),
-    );
+    unawaited(_runHomeUpgradePrompts(services));
+  }
+
+  Future<void> _runHomeUpgradePrompts(AppServices services) async {
+    await BundledFirmwareBootstrap.checkAndPromptIfNeeded(context, services);
+    if (!mounted) {
+      return;
+    }
+    await SystemOtaHomeBootstrap.checkAndPromptIfNeeded(context);
   }
 
   /// After first frame: IP camera session (async), optional once-per-boot
@@ -246,11 +253,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
             ),
           );
         }
-        // Bundled control-board firmware: after Modbus (+ warn gate) ready.
-        await BundledFirmwareBootstrap.checkAndPromptIfNeeded(
-          context,
-          services,
-        );
+        // Bundled control-board + system OTA tips (after Modbus / warn gate).
+        await _runHomeUpgradePrompts(services);
       }());
     }
 

@@ -197,7 +197,7 @@
   "anyMaterialLabel": "Any Material",
   "applyToDevice": "Apply To Device",
   "autoCheckOtaUpdate": "Automatically check for updates",
-  "autoOtaUpdateDialogMessage": "Version {version} is available. Download and install it in Settings.",
+  "autoOtaUpdateDialogMessage": "Version {version} is available. Go to Settings to review and install the update.",
   "@autoOtaUpdateDialogMessage": {
     "placeholders": {
       "version": {
@@ -206,6 +206,16 @@
     }
   },
   "autoOtaUpdateDialogTitle": "Update Available",
+  "autoControlBoardUpdateDialogMessage": "Control board firmware {version} is available. Go to Settings to review and install the update.",
+  "@autoControlBoardUpdateDialogMessage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "autoControlBoardUpdateDialogTitle": "Control Board Firmware Available",
+  "goToSettings": "Go to Settings",
   "autoWireFeed": "Auto Wire Feed",
   "blowOnLabel": "Gas Flow",
   "blowText": "Gas Flow",
@@ -272,6 +282,26 @@
   "cancelText": "Cancel",
   "cellularNetworkText": "Cellular",
   "celsiusUnit": "°C",
+  "controlBoardAlreadyUpToDate": "Control board firmware {version} is up to date.",
+  "@controlBoardAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "controlBoardCheckFailed": "Could not check control board firmware. Verify Modbus connection.",
+  "controlBoardCheckUnavailable": "Control board firmware check is not available right now.",
+  "controlBoardNewVersionHeadline": "New firmware {version}",
+  "@controlBoardNewVersionHeadline": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "controlBoardUpgradeIdleHint": "Check for newer control board firmware bundled with this App.",
+  "controlBoardUpgradeTitle": "Control Board Upgrade",
   "checkUpdate": "Check for Updates",
   "checkingStatus": "Checking…",
   "clearAlarmLogs": "Clear",

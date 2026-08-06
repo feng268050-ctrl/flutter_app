@@ -14,6 +14,7 @@ abstract final class AppRoutes {
   static const processVideoDetail = '/monitor/process-video';
   static const aiVisionChoose = '/monitor/ai-vision/choose';
   static const systemUpgrade = '/system-upgrade';
+  static const controlBoardUpgrade = '/control-board-upgrade';
   /// Product disclaimer (lws-ui `UseSafetyTipsActivity`) — pushed from Safety Tips.
   static const productDisclaimer = '/product-disclaimer';
 }

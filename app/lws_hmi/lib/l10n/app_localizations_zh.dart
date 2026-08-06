@@ -396,11 +396,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String autoOtaUpdateDialogMessage(String version) {
-    return '新版本 $version 可用，请前往设置下载并安装。';
+    return '新版本 $version 可用，请前往设置查看并更新。';
   }
 
   @override
   String get autoOtaUpdateDialogTitle => '新版本可用';
+
+  @override
+  String autoControlBoardUpdateDialogMessage(String version) {
+    return '控制板固件 $version 可用，请前往设置查看并更新。';
+  }
+
+  @override
+  String get autoControlBoardUpdateDialogTitle => '控制板固件更新可用';
+
+  @override
+  String get goToSettings => '前往设置';
 
   @override
   String get autoWireFeed => '自动送丝';
@@ -554,6 +565,28 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get celsiusUnit => '℃';
+
+  @override
+  String controlBoardAlreadyUpToDate(String version) {
+    return '控制板固件 $version 已是最新。';
+  }
+
+  @override
+  String get controlBoardCheckFailed => '无法检查控制板固件，请确认通信正常。';
+
+  @override
+  String get controlBoardCheckUnavailable => '当前无法检查控制板固件。';
+
+  @override
+  String controlBoardNewVersionHeadline(String version) {
+    return '新固件版本 $version';
+  }
+
+  @override
+  String get controlBoardUpgradeIdleHint => '检查本机 App 内是否有更新的控制板固件。';
+
+  @override
+  String get controlBoardUpgradeTitle => '控制板升级';
 
   @override
   String get checkUpdate => '检查更新';
@@ -3270,6 +3303,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String autoControlBoardUpdateDialogMessage(String version) {
+    return '控制板固件 $version 可用，請前往設置查看並更新。';
+  }
+
+  @override
+  String get goToSettings => '前往設置';
+
+  @override
   String get autoWireFeed => '自動送絲';
 
   @override
@@ -3395,6 +3436,18 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get cellularNetworkText => '蜂窩網絡';
+
+  @override
+  String get controlBoardCheckFailed => '無法檢查控制板固件，請確認通信正常。';
+
+  @override
+  String get controlBoardCheckUnavailable => '當前無法檢查控制板固件。';
+
+  @override
+  String get controlBoardUpgradeIdleHint => '檢查本機 App 內是否有更新的控制板固件。';
+
+  @override
+  String get controlBoardUpgradeTitle => '控制板升級';
 
   @override
   String get checkUpdate => '檢查更新';

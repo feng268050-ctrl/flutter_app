@@ -67,7 +67,9 @@ import 'package:lws_hmi/features/statistics/application/job_runtime_statistics_r
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/sync_firmware_command_watcher.dart';
+import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/upgrade_process_library_command_watcher.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
 import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
@@ -331,6 +333,10 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
             _cloudLocalRuntime.emitOtaProgress(progress.toJson()),
           );
         },
+      );
+      ControlBoardUpgradeCoordinator.instance.configure(
+        navigatorKey: _navKey,
+        services: _services,
       );
       _syncFirmwareCommandWatcher.start();
       _upgradeProcessLibraryCommandWatcher.start();
@@ -727,11 +733,22 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                       final Widget page;
                                       switch (settings.name) {
                                         case AppRoutes.settings:
+                                          final settingsArgs =
+                                              settings.arguments;
                                           page = SettingsPage(
-                                            openKeyboardOnLaunch: settings
-                                                    .arguments ==
-                                                HmiRouteRestore
-                                                    .settingsKeyboard,
+                                            openKeyboardOnLaunch:
+                                                settingsArgs ==
+                                                    HmiRouteRestore
+                                                        .settingsKeyboard ||
+                                                (settingsArgs
+                                                        is SettingsRouteArgs &&
+                                                    settingsArgs
+                                                        .openKeyboardOnLaunch),
+                                            initialNestedPage: settingsArgs
+                                                    is SettingsRouteArgs
+                                                ? settingsArgs
+                                                    .initialNestedPage
+                                                : null,
                                             cameraDeviceInfoCache:
                                                 _cameraDeviceInfoCache,
                                           );
@@ -759,6 +776,10 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                           page = _demoPage();
                                         case AppRoutes.systemUpgrade:
                                           page = const SystemUpgradePage(
+                                            progressOnly: true,
+                                          );
+                                        case AppRoutes.controlBoardUpgrade:
+                                          page = const ControlBoardUpgradePage(
                                             progressOnly: true,
                                           );
                                         case AppRoutes.home:

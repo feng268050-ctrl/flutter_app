@@ -1,0 +1,100 @@
+## MODIFIED Requirements
+
+### Requirement: Bundled firmware upgrade always requires user confirmation via dialog
+
+When an upgrade candidate is detected on Product Home, the system SHALL present a CyberUI dialog **composed with `cyber_upgrade_ui` check/confirm dialog primitives** that explains a control-board firmware update is available and warns to keep power connected and avoid operation during upgrade, using the existing `bundledFirmware*` localization keys.
+
+The system SHALL start Modbus firmware transfer only after the operator explicitly confirms that dialog.
+
+The Product Home bundled-firmware flow SHALL NOT provide automatic or silent in-app upgrade paths, including engineer-mode bypasses or build-time flags that skip the dialog. A separate explicit host operator helper MAY invoke the same control-board transfer without dialog, provided it is clearly named as a control-board-only upgrade path and does not reuse Product Home auto-prompt semantics.
+
+If the operator dismisses the dialog (Later) or opens Settings from it, the system SHALL NOT start Modbus firmware upgrade for that dismissal. Home auto-detect SHALL run **at most once per HMI process** (typically once per boot): after a check completes (no candidate, or tip shown), returning to Product Home MUST NOT show the tip again until the next process start.
+
+#### Scenario: User confirms starts Modbus transfer
+
+- **WHEN** the operator confirms the bundled firmware dialog on Product Home
+- **THEN** the system SHALL load the bundled `.bin` and start the Modbus control-board upgrade entrypoint
+
+#### Scenario: User dismisses does not upgrade and does not re-prompt this boot
+
+- **WHEN** the operator dismisses the bundled firmware dialog (Later)
+- **THEN** the system SHALL NOT start Modbus firmware transfer as a result of that dismissal
+- **AND** the system SHALL NOT show the same Home auto-detect tip again until the next HMI process start
+
+#### Scenario: No silent upgrade path exists
+
+- **WHEN** bundled firmware is newer than the control card and the Product Home check runs
+- **THEN** the system SHALL NOT start Modbus firmware transfer without showing the confirmation dialog first
+
+#### Scenario: Confirm dialog uses cyber_upgrade_ui primitives
+
+- **WHEN** the Product Home bundled-firmware confirm dialog is shown after migration
+- **THEN** its confirm/cancel content is built from `cyber_upgrade_ui` dialog primitives (mounted via the App tip/dialog host)
+- **AND** copy remains App `bundledFirmware*` l10n
+
+### Requirement: Host helper can trigger control-board-only upgrade without version gate
+
+The repository SHALL provide a host helper named `make upgrade-control-board` that selects the newest (or explicitly overridden) control-board `.bin` under `assets/firmware/control-board/`, uploads it to the running device over SSH, and triggers the in-app control-board Modbus transfer without Home confirmation or same-version gate.
+
+The helper SHALL communicate via a device tmpfs command file under `/run/hmi/` (watched by the HMI). It SHALL remain a strict subset of the broader host `make upgrade` naming family: it MUST target only control-board firmware and MUST NOT stream or modify rootfs, boot, OEM, GPT, or factory images.
+
+The App SHALL map this host entry to **`cyber_upgrade_ui` update policy with version check skipped** (and confirmation skipped) while still showing progress UI during Modbus transfer.
+
+#### Scenario: Host helper upgrades control board directly
+
+- **WHEN** the operator runs `make upgrade-control-board`
+- **THEN** the host SHALL upload one selected `LSW01H####S####.bin` to the running device
+- **AND** the App SHALL start the control-board Modbus firmware transfer without waiting for a Product Home confirm dialog
+- **AND** the helper SHALL ignore same-version gate
+- **AND** the App SHALL treat the session as skip-version policy for `cyber_upgrade_ui`
+
+### Requirement: Bundled firmware reuses Modbus upgrade register protocol
+
+The bundled firmware path SHALL transfer the `.bin` over Modbus using contiguous holding-register FC16 writes aligned with lws-ui `ControllerUpgradeHandler` semantics: write firmware info, send sequential ≤128-byte data packets, then write end. Success SHALL be declared when all data packets succeed and FIRMWARE_END is accepted **or** END yields no ACK after retries following a complete data transfer (MCU may reset on END without Modbus ACK). Do **not** poll `device.ota_request_command` / `0x1212` / `0x0202` after end. Info or mid-transfer data write failures SHALL fail the session.
+
+During transfer the system SHALL write contiguous Modbus holding FC16 frames matching lws-ui lengths (info ≈10 words, data = header+CRC+reserved+payload words only, end ≈14 words), not a full catalog-group rewrite of unused registers. The platform/App SHALL expose a contiguous holding-register write entrypoint for these frames. The system SHALL isolate competing continuous Modbus poll/watch sufficiently that chunk writes remain reliable, and SHALL resume normal live Modbus afterward.
+
+On success, the system SHALL refresh the operator-visible Firmware Version (control-card software) to reflect the upgraded software version when live attributes are available.
+
+On emulator / virt or environments without a real control card, the system SHALL skip or degrade without a blocking error that prevents normal Product Home use.
+
+Progress and result dialogs SHALL use **`cyber_upgrade_ui` single-phase progress and completion tip primitives** (App mounts via tip/dialog host; `bundledFirmware*` strings).
+
+#### Scenario: Offline device upgrades from App assets on Home
+
+- **WHEN** the device has no network, the operator is on Product Home, the App bundle contains `assets/firmware/control-board/*.bin`, Modbus is available, and the operator confirms the dialog
+- **THEN** the system SHALL upgrade control-board firmware without downloading an OTA zip
+
+#### Scenario: Progress dialog during transfer
+
+- **WHEN** bundled firmware upgrade is in progress after operator confirmation
+- **THEN** the system SHALL show a blocking CyberUI progress dialog with determinate percent using `bundledFirmware*` strings and `cyber_upgrade_ui` progress primitives
+- **AND** progress updates SHALL remain functional until success or failure
+- **AND** the dialog content SHALL be width-bounded (not full-bleed stretch across the panel)
+
+#### Scenario: Success result dialog
+
+- **WHEN** Modbus control-board upgrade reports success
+- **THEN** the system SHALL show the bundled firmware success title/message via `cyber_upgrade_ui` completion presentation and refresh Firmware Version display data when available
+
+#### Scenario: Failure result dialog
+
+- **WHEN** Modbus control-board upgrade fails or times out (other than same-version skip)
+- **THEN** the system SHALL show the bundled firmware failed title/message via `cyber_upgrade_ui` completion presentation and SHALL NOT claim success
+
+#### Scenario: Successful end write counts as success
+
+- **WHEN** all firmware data packets succeed and FIRMWARE_END is ACKed (or END has no Modbus ACK after retries following a complete data transfer)
+- **THEN** the system SHALL treat the upgrade as success without waiting for an `otaUpgradeCmd` latch
+
+## ADDED Requirements
+
+### Requirement: Control-board offline check adapts into cyber_upgrade_ui
+
+The App SHALL implement the control-board offline version gate (filename HW match + SW newer) as a `cyber_upgrade_ui` check strategy / adapter for the control-board channel. Modbus transfer and asset discovery remain App-owned. After migration, Product Home MUST NOT keep a parallel confirm/progress/result dialog implementation that bypasses `cyber_upgrade_ui` primitives.
+
+#### Scenario: Offline checker feeds confirm dialog
+
+- **WHEN** Product Home evaluates bundled firmware and finds a newer matching-HW candidate
+- **THEN** the offer presented in the confirm dialog is produced through the control-board `cyber_upgrade_ui` check path
+- **AND** Modbus transfer still runs only after confirm (operator policy)

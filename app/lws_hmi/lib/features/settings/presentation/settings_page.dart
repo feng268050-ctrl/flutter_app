@@ -13,6 +13,19 @@ import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
+/// Optional [AppRoutes.settings] arguments (keyboard restore / deep-link nested page).
+final class SettingsRouteArgs {
+  const SettingsRouteArgs({
+    this.openKeyboardOnLaunch = false,
+    this.initialNestedPage,
+  });
+
+  final bool openKeyboardOnLaunch;
+
+  /// Pushed once after Settings mounts (e.g. System / Control-board Upgrade).
+  final Widget? initialNestedPage;
+}
+
 /// Product Settings shell — four tabs; Custom Home body is blank for now.
 ///
 /// Tab changes animate L/R on tap (finger swipe disabled — anti-mis-touch).
@@ -22,11 +35,16 @@ class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
     this.openKeyboardOnLaunch = false,
+    this.initialNestedPage,
     this.cameraDeviceInfoCache,
   });
 
   /// When true (post–XKB restart restore), open Common → Keyboard once.
   final bool openKeyboardOnLaunch;
+
+  /// When set (e.g. Home “Go to Settings” for an update), push this sub-page
+  /// once after Settings mounts.
+  final Widget? initialNestedPage;
 
   /// Shared camera version cache (cloud WS + Camera settings).
   final CameraDeviceInfoCache? cameraDeviceInfoCache;
@@ -77,7 +95,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late int _currentTabIndex;
-  bool _keyboardPushed = false;
+  bool _nestedLaunched = false;
 
   @override
   void initState() {
@@ -85,15 +103,20 @@ class _SettingsPageState extends State<SettingsPage> {
     _currentTabIndex = widget.openKeyboardOnLaunch ? 1 : 0;
     // Route-level ensure (not only Device Information tab).
     scheduleEnsureModbusLive(context);
-    if (widget.openKeyboardOnLaunch) {
+    if (widget.openKeyboardOnLaunch || widget.initialNestedPage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _keyboardPushed) return;
-        _keyboardPushed = true;
-        final services = AppScope.of(context);
-        pushSettingsPage(
-          context,
-          KeyboardSettingsPage(services: services),
-        );
+        if (!mounted || _nestedLaunched) {
+          return;
+        }
+        _nestedLaunched = true;
+        final nested = widget.initialNestedPage ??
+            (widget.openKeyboardOnLaunch
+                ? KeyboardSettingsPage(services: AppScope.of(context))
+                : null);
+        if (nested == null) {
+          return;
+        }
+        pushSettingsPage(context, nested);
       });
     }
   }

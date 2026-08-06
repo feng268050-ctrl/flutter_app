@@ -10,11 +10,8 @@ import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
-import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
-import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
-import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
+import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
 import 'package:lws_hmi/features/system_ota/presentation/system_upgrade_page.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
@@ -54,11 +51,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   StreamSubscription<SysInfoUpdate>? _sysSub;
   StreamSubscription<List<ModbusAttributeChange>>? _modbusSub;
-  Timer? _autoCheckTimer;
-  MiscSettingsStore? _misc;
-  bool _autoCheckInFlight = false;
-
-  static const _autoCheckInterval = Duration(hours: 6);
 
   @override
   void initState() {
@@ -66,78 +58,20 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_start());
       _refreshProcessLib();
-      _bindMiscAutoCheck();
     });
-  }
-
-  void _bindMiscAutoCheck() {
-    final misc = MiscSettingsScope.maybeOf(context);
-    if (identical(_misc, misc)) {
-      _armAutoCheckTimer();
-      return;
-    }
-    _misc?.removeListener(_armAutoCheckTimer);
-    _misc = misc;
-    _misc?.addListener(_armAutoCheckTimer);
-    _armAutoCheckTimer();
-  }
-
-  void _armAutoCheckTimer() {
-    _autoCheckTimer?.cancel();
-    _autoCheckTimer = null;
-    final misc = _misc ?? MiscSettingsScope.maybeOf(context);
-    if (misc == null || !misc.autoCheckOtaUpdate) {
-      return;
-    }
-    unawaited(_runAutoCheck());
-    _autoCheckTimer = Timer.periodic(_autoCheckInterval, (_) {
-      unawaited(_runAutoCheck());
-    });
-  }
-
-  String? _resolveManifestUrl() {
-    final cloudStore = CloudSettingsScope.maybeOf(context);
-    if (cloudStore == null) {
-      return null;
-    }
-    final runtime = CloudLocalRuntimeScope.maybeOf(context);
-    return OtaManifestUrl.resolve(
-      cloudSettings: cloudStore,
-      pinnedApiBase: runtime?.pinnedApiBase,
-    );
-  }
-
-  Future<void> _runAutoCheck() async {
-    if (_autoCheckInFlight || SystemOtaCoordinator.instance.isSessionActive) {
-      return;
-    }
-    final manifestUrl = _resolveManifestUrl();
-    if (manifestUrl == null) {
-      return;
-    }
-    _autoCheckInFlight = true;
-    try {
-      final result = await SystemOtaCoordinator.instance.checkForUpdate(
-        manifestUrl: manifestUrl,
-      );
-      if (!result.hasUpdate || result.manifest == null || !mounted) {
-        return;
-      }
-      await pushSettingsPage(
-        context,
-        SystemUpgradePage(initialManifest: result.manifest),
-      );
-    } catch (e) {
-      debugPrint('DeviceInformationTab: auto-check failed: $e');
-    } finally {
-      _autoCheckInFlight = false;
-    }
   }
 
   Future<void> _openSystemUpgrade() async {
     await pushSettingsPage(
       context,
       const SystemUpgradePage(),
+    );
+  }
+
+  Future<void> _openControlBoardUpgrade() async {
+    await pushSettingsPage(
+      context,
+      const ControlBoardUpgradePage(),
     );
   }
 
@@ -264,8 +198,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   @override
   void dispose() {
-    _autoCheckTimer?.cancel();
-    _misc?.removeListener(_armAutoCheckTimer);
     unawaited(_sysSub?.cancel() ?? Future<void>.value());
     unawaited(_modbusSub?.cancel() ?? Future<void>.value());
     super.dispose();
@@ -338,9 +270,10 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               title: l10n.processLibVersion,
               value: _processLibVersion,
             ),
-            SettingsValueRow(
+            SettingsNavRow(
               title: l10n.firmwareVersion,
               value: _controlCardVersion,
+              onTap: () => unawaited(_openControlBoardUpgrade()),
             ),
             SettingsValueRow(
               title: l10n.laserVersion,

@@ -445,7 +445,7 @@
   "laserEnableBlockKeySwitchOff": "请打开钥匙开关",
   "laserEnableBlockManualGasOn": "请先关闭手动吹气",
   "laserEnableBlockStatusUnavailable": "请检查设备状态",
-  "laserEnableBlockWriteFailed": "激光使能写入失败",
+  "laserEnableBlockWriteFailed": "激光使能不生效",
   "laserEnableReminderConfirm": "是的 — 我已完成以上安全检查",
   "laserEnableReminderFocus": "请将枪头对焦刻度调整至指定参考值。",
   "laserEnableReminderNozzleClean": "请确认您已移除激光管及铜喷嘴。",
@@ -540,16 +540,11 @@
   "okText": "OK",
   "onLabel": "开启",
   "otaCheckUnavailable": "当前版本暂不支持软件更新检查。",
-  "otaCheckFailed": "无法检查更新，请确认网络和云服务设置。",
+  "otaCheckFailed": "无法获取版本信息，请稍后重试。",
+  "otaCheckFailedTitle": "检查更新失败",
+  "otaCheckUpToDateTitle": "已是最新版本",
   "otaSessionActive": "系统升级正在进行中。",
-  "otaAlreadyUpToDate": "系统版本 {version} 已是最新。",
-  "@otaAlreadyUpToDate": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
+  "otaAlreadyUpToDate": "当前已安装最新版本。",
   "otaUpdateAvailableTitle": "发现新版本",
   "otaUpdateAvailableMessage": "版本 {current} → {available}，是否立即安装？",
   "@otaUpdateAvailableMessage": {

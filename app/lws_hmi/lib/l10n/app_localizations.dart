@@ -2624,7 +2624,7 @@ abstract class AppLocalizations {
   /// No description provided for @laserEnableBlockWriteFailed.
   ///
   /// In en, this message translates to:
-  /// **'Laser Enable Write Failed'**
+  /// **'Laser Enable Did Not Take Effect'**
   String get laserEnableBlockWriteFailed;
 
   /// No description provided for @laserEnableReminderConfirm.
@@ -3170,8 +3170,20 @@ abstract class AppLocalizations {
   /// No description provided for @otaCheckFailed.
   ///
   /// In en, this message translates to:
-  /// **'Could not check for updates. Verify network and cloud settings.'**
+  /// **'Couldn\'t fetch version info. Try again later.'**
   String get otaCheckFailed;
+
+  /// No description provided for @otaCheckFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Check Failed'**
+  String get otaCheckFailedTitle;
+
+  /// No description provided for @otaCheckUpToDateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to Date'**
+  String get otaCheckUpToDateTitle;
 
   /// No description provided for @otaSessionActive.
   ///
@@ -3182,8 +3194,8 @@ abstract class AppLocalizations {
   /// No description provided for @otaAlreadyUpToDate.
   ///
   /// In en, this message translates to:
-  /// **'System version {version} is up to date.'**
-  String otaAlreadyUpToDate(String version);
+  /// **'You\'re already on the latest version.'**
+  String get otaAlreadyUpToDate;
 
   /// No description provided for @otaUpdateAvailableTitle.
   ///

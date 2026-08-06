@@ -1399,7 +1399,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laserEnableBlockStatusUnavailable => 'Check Equipment Status';
 
   @override
-  String get laserEnableBlockWriteFailed => 'Laser Enable Write Failed';
+  String get laserEnableBlockWriteFailed => 'Laser Enable Did Not Take Effect';
 
   @override
   String get laserEnableReminderConfirm =>
@@ -1690,16 +1690,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Software update check is not available on this build.';
 
   @override
-  String get otaCheckFailed =>
-      'Could not check for updates. Verify network and cloud settings.';
+  String get otaCheckFailed => 'Couldn\'t fetch version info. Try again later.';
+
+  @override
+  String get otaCheckFailedTitle => 'Update Check Failed';
+
+  @override
+  String get otaCheckUpToDateTitle => 'Up to Date';
 
   @override
   String get otaSessionActive => 'A system upgrade is already in progress.';
 
   @override
-  String otaAlreadyUpToDate(String version) {
-    return 'System version $version is up to date.';
-  }
+  String get otaAlreadyUpToDate => 'You\'re already on the latest version.';
 
   @override
   String get otaUpdateAvailableTitle => 'Update Available';

@@ -8,6 +8,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// Eight-card Custom Home editor.
 ///
@@ -27,9 +28,10 @@ class CustomHomeTab extends StatefulWidget {
   static const panelBorderWidth = 1.25;
   static const panelBorderColor = Color(0xCEACACAC);
 
-  static const cardHeight = 112.0;
+  static const cardHeight = 128.0;
+  static const cardIconSize = 44.0;
   static const gridTopInset = 26.0;
-  static const gridHeight = 462.0;
+  static const gridHeight = 494.0;
   static const animationDuration = Duration(milliseconds: 400);
   static const animationCurve = Curves.fastOutSlowIn;
 
@@ -415,27 +417,26 @@ class _MetricSelectionCard extends StatelessWidget {
       children: [
         Center(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(30, 18, 30, 10),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   _icon(metric),
                   color: selected
                       ? const Color(0xFFC6D6F4)
                       : const Color(0xFFE8EEF9),
-                  size: 32,
+                  size: CustomHomeTab.cardIconSize,
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  _label(l10n, metric),
+                WordBoundaryLabel(
+                  text: _label(l10n, metric),
                   textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.hmiTypography.body.copyWith(
+                  style: context.hmiTypography.metricLabel.copyWith(
                     color: selected ? Colors.white : const Color(0xFFF1F4FB),
                     fontWeight: FontWeight.w500,
-                    height: 1.1,
+                    height: 1.15,
                   ),
                 ),
               ],

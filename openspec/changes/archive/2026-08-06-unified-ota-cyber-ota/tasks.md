@@ -71,4 +71,4 @@
 - [ ] 9.4 Lab: WS check_update / update_system / update_progress smoke
 - [x] 9.5 Confirm `make push-app` remains hot-swap outside whole-device gate
 - [x] 9.6 Confirm `make ota-package` is prerequisite for `make publish` (with `.sig`)
-- [ ] 9.7 Archive change when acceptance complete
+- [x] 9.7 Archive change when acceptance complete

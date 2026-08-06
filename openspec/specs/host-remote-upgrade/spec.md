@@ -1,10 +1,9 @@
 # host-remote-upgrade Specification
 
 ## Purpose
-Developer full-system A/B upgrade (`make upgrade`): SSH stream-to-partition when Linux is up, or RockUSB Loader/Maskrom partition-download (`di`) of OTA-equivalent loose images — not `factory.img` / product OTA.
+Developer full-system A/B upgrade (`make upgrade`): SSH host-HTTP + device staged Ed25519 verify-apply when Linux is up, or RockUSB Loader/Maskrom `di` of OTA-equivalent loose images — not `factory.img` / unsigned product cloud OTA.
 
 ## Requirements
-
 ### Requirement: make upgrade flashes OTA-equivalent images over RockUSB Loader/Maskrom
 
 When `make upgrade` selects a **RockUSB Loader or Maskrom** target (auto-dispatch or forced transport), the host SHALL flash the OTA-equivalent loose images with Rockchip `upgrade_tool` **partition download** (`di` or the documented equivalent), and MUST NOT invoke `upgrade_tool uf` on `factory.img` / `update.img` for this path. Required images for full-system RockUSB upgrade: shared `output/firmware/boot.img` and `boot_b.img`, and `output/firmware/<APP>/rootfs.img` (default `APP=lws_hmi`). Optional oem SHALL follow the same `FACTORY_SKU` / `OEM_ID` / `OEM_IMG` / `OEM_ONLY` rules as the SSH upgrade path. The RockUSB path MUST NOT write U-Boot, MiniLoader **into the storage OTA set**, `misc.img`, or GPT/`parameter` (Maskrom may still `ul` MiniLoader into RAM solely to enable downloads, matching `make flash` bring-up).
@@ -31,14 +30,14 @@ The host SHALL download `boot.img` → partition `boot`, `boot_b.img` → `boot_
 - **WHEN** RockUSB full-system upgrade is selected and `boot.img`, `boot_b.img`, or `output/firmware/<APP>/rootfs.img` is missing
 - **THEN** the command exits non-zero without writing those partitions
 
-### Requirement: make upgrade dispatches SSH stream vs RockUSB by device mode
+### Requirement: make upgrade dispatches SSH staged OTA vs RockUSB by device mode
 
-`make upgrade` SHALL keep the existing **SSH stream-to-partition** path when a deployable Linux USB-SSH or registered SSH target is selected. When no such SSH target is selected but a RockUSB Loader/Maskrom device is, it SHALL use the RockUSB OTA-images path. When neither is available, it MUST fail with guidance to use `make devices`, SSH connectivity, `make reboot-loader`, or Maskrom. An optional env override (e.g. `UPGRADE_TRANSPORT=ssh|rockusb`) MAY force one transport; default is auto. Multi-device selection (`SN=` / `CHIP_ID=`) SHALL apply to RockUSB as it does for `make flash`.
+`make upgrade` SHALL use the **SSH host-HTTP + device staged verify-apply** path when a deployable Linux USB-SSH or registered SSH target is selected. When no such SSH target is selected but a RockUSB Loader/Maskrom device is, it SHALL use the RockUSB OTA-images `di` path. When neither is available, it MUST fail with guidance to use `make devices`, SSH connectivity, `make reboot-loader`, or Maskrom. An optional env override (e.g. `UPGRADE_TRANSPORT=ssh|rockusb`) MAY force one transport; default is auto. Multi-device selection (`SN=` / `IP=`) SHALL apply to RockUSB as it does for `make flash`.
 
-#### Scenario: SSH board still streams
+#### Scenario: SSH board uses staged host HTTP pull
 
 - **WHEN** exactly one USB-SSH Linux board is available and no RockUSB force is set
-- **THEN** `make upgrade` uses stream-to-partition over SSH and does not RockUSB-download partitions
+- **THEN** `make upgrade` serves `tar.gz`+`.sig` over host HTTP for device download/verify-apply and does not RockUSB-download partitions
 
 #### Scenario: Only RockUSB present
 
@@ -52,90 +51,109 @@ The host SHALL download `boot.img` → partition `boot`, `boot_b.img` → `boot_
 
 ### Requirement: make upgrade performs remote full-system firmware upgrade over SSH
 
-The repository SHALL provide **`make upgrade`** that upgrades Linux HMI firmware using one of two host transports:
+The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SN=` / `IP=`), **first ensures an OTA `tar.gz` and sibling `.sig` via `make ota-package`** (unless an alternate package input is documented elsewhere), starts an **ephemeral host HTTP server** that serves the archive and `.sig`, triggers the on-device HMI to **HTTP download** those files into **`/userdata/ota/`**, runs the **staged verify-extract-apply** pipeline shared with product OTA (**MUST** Ed25519-verify before write), and returns successfully as soon as board reboot-after-arm is requested. It SHALL NOT wait for SSH disconnect, post-reboot SSH, or claim that boot health was verified.
 
-1. **SSH stream (default when a Linux SSH target is selected):** select a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SN=` / `IP=`), perform a **stream-to-partition** full-system upgrade over SSH, and return successfully as soon as board `arm-reboot` is started (reboot requested). It SHALL NOT wait for SSH disconnect, post-reboot SSH, or claim that boot health was verified. For the stream path, the host SHALL: preflight the active/inactive letter and refuse unsafe slot state; stream **`rootfs.img`** from `output/firmware/<APP>/rootfs.img` (default `APP=lws_hmi`) into the inactive `rootfs_*` partition while transferring; stream **only the inactive letter’s FIT** (`boot.img` for letter A, `boot_b.img` for letter B) from shared `output/firmware/` into the try-boot FIT path on `boot` after the running FIT is backed up to `boot_b`; optionally stream **oem** when packaged; then arm try-boot and reboot. Default full-system SSH mode MUST update the inactive **boot and rootfs** letter pair (kernel + rootfs). The SSH stream path **MUST NOT** stage full firmware images under `/userdata/ota/` before writing (status/logs/tiny helpers may use that directory). The SSH stream path **MUST NOT** enter RockUSB solely to perform the upgrade and **MUST NOT** invoke Rockchip `upgrade_tool uf` / flash a `factory.img`.
+For the SSH path, the host SHALL: obtain the `tar.gz` and `.sig`; preflight the active/inactive letter and refuse unsafe slot state; bind HTTP on an address the device can reach (USB-SSH default `192.168.55.2`, LAN: local source IP toward the board, overridable via `OTA_HTTP_HOST=` / `OTA_HTTP_PORT=`); trigger the on-device HMI to enter the dedicated upgrade page and download; report **HTTP send** progress on the host console until archive + `.sig` are fully served (`TRANSFER_COMPLETE`); then exit successfully without waiting for on-device apply. On-device **`cyber_ota`** SHALL verify, extract, and burn via Dart-orchestrated `openssl`/`tar`/`dd`. Default full-system mode MUST update the inactive **boot and rootfs** letter pair. SSH SHALL be used as a **control plane** (trigger + transfer complete), not as the bulk transfer path for the OTA archive.
 
-2. **RockUSB OTA-images (when Loader/Maskrom is selected):** flash the OTA-equivalent loose images via partition download as specified in the RockUSB requirements of this capability — **not** product/unified OTA `tar.gz`+Ed25519 staged apply, and **not** `make flash` factory packaging.
+**`make upgrade` MUST** stage the OTA package under `/userdata/ota/` (unlike the retired stream-to-partition default). **`make upgrade` MUST NOT** enter RockUSB loader mode or invoke Rockchip `upgrade_tool uf` / `flash-usb.sh` upgrade for the SSH path. For USB-SSH/SSH, **`make upgrade` MUST** require device verification of the Ed25519 `.sig`.
 
-Online / product OTA download-then-write remains out of scope for this command’s trust model and SHALL use the separate staged apply path when that product feature exists.
+#### Scenario: Upgrade over USB-SSH updates kernel and rootfs via staged apply with verify
 
-#### Scenario: Upgrade over USB-SSH updates kernel and rootfs
-
-- **WHEN** exactly one USB-SSH device is available and the host runs `make upgrade` after successful kernel/rootfs builds that produced the dual FITs and `output/firmware/<APP>/rootfs.img`
-- **THEN** bytes are written to the inactive rootfs and try-boot FIT path during transfer (not via a post-transfer full-image userdata stage), the board requests reboot without using RockUSB, and the command returns as soon as `arm-reboot` is started without waiting for SSH disconnect or for SSH to become reachable again
+- **WHEN** exactly one USB-SSH device is available and the host runs `make upgrade` after packaging with a signature
+- **THEN** the device HTTP-downloads `tar.gz` and `.sig` from the host into `/userdata/ota/`, on-device verify-extract-apply writes the inactive rootfs and try-boot FIT path after successful Ed25519 verification, the board requests reboot without using RockUSB, and the command returns as soon as reboot-after-arm is started
 
 #### Scenario: Upgrade over registered LAN SSH
 
 - **WHEN** a board is registered with `make connect` and the user runs `IP=<ip> make upgrade`
-- **THEN** the stream-to-partition full-system upgrade is performed against that registered IP over SSH without RockUSB
+- **THEN** the packaged host-HTTP + device-pull (archive + `.sig`) + staged verify-apply full-system upgrade is performed against that registered IP without RockUSB
 
 #### Scenario: Multi-device requires selection
 
 - **WHEN** more than one deployable Linux target is present and neither `SN=` nor `IP=` is set
 - **THEN** `make upgrade` fails with guidance to run `make devices` and set `SN` or `IP`
 
-### Requirement: Host refuses upgrade when required bundle images are missing
+### Requirement: make upgrade depends on ota-package
 
-Before streaming or RockUSB download, the host upgrade command SHALL verify that required artifacts exist: **`output/firmware/<APP>/rootfs.img`** (default `APP=lws_hmi`) for full-system mode, both FITs under shared `output/firmware/` when RockUSB full-system is selected (or the inactive letter’s FIT after SSH preflight), and that image sizes fit GPT slot capacities. It SHALL fail fast with a clear error if they are missing (e.g. instruct to run `make build-kernel` / `APP=<APP> make build-rootfs`).
+`make upgrade` SHALL automatically invoke **`make ota-package`** (as a Make prerequisite or equivalent first step) before serving anything to the device when no alternate package path is set. Future **`make publish`** SHALL require the same `ota-package` artifact (and its `.sig`). The package SHALL be one compressed `tar.gz` plus sibling `.sig` to reduce transfer size relative to shipping loose images while preserving authenticity.
+
+#### Scenario: upgrade runs packaging first
+
+- **WHEN** the operator runs `make upgrade` and required images exist with signing configured
+- **THEN** an OTA `tar.gz` and `.sig` are produced (or refreshed) via `ota-package` before the host HTTP server starts
+
+#### Scenario: publish prerequisite is the same package
+
+- **WHEN** a developer reads Make/docs for future cloud publish
+- **THEN** `make ota-package` (output `tar.gz` + `.sig`) is documented as the required prerequisite artifact for `make publish`
+
+### Requirement: Host refuses upgrade when required bundle images or signature are missing
+
+Before packaging/serving, the host upgrade command SHALL verify that required **image** artifacts exist for the inactive letter: **`output/firmware/<APP>/rootfs.img`** (default `APP=lws_hmi`), the inactive letter’s FIT under shared `output/firmware/`, and that image sizes fit GPT slot capacities. After packaging (or when resolving `UPGRADE_PACKAGE=`), for **USB-SSH/SSH** it SHALL require the documented **`tar.gz` and sibling `.sig`**. It SHALL fail fast if images, the archive, or the signature are missing on the SSH path.
 
 #### Scenario: Missing boot.img
 
-- **WHEN** the host runs full-system `make upgrade`, preflight selects inactive letter A, and `boot.img` is absent from the expected firmware output path
+- **WHEN** the host runs full-system `make upgrade`, preflight selects inactive letter A, and `boot.img` is absent
 - **THEN** the command exits non-zero without writing any boot or rootfs slot on the device
 
 #### Scenario: Missing rootfs.img
 
 - **WHEN** the host runs full-system `make upgrade` and `output/firmware/<APP>/rootfs.img` is absent
-- **THEN** the command exits non-zero without writing any boot or rootfs slot on the device and MUST mention `build-rootfs`
+- **THEN** the command exits non-zero without writing any boot or rootfs slot and MUST mention `build-rootfs`
+
+#### Scenario: Missing signature blocks SSH make upgrade
+
+- **WHEN** packaging produced a `tar.gz` but no `.sig` is present (or `UPGRADE_PACKAGE` has no sibling `.sig`) and transport is USB-SSH/SSH
+- **THEN** `make upgrade` MUST exit non-zero without starting a download/apply session that skips Ed25519
 
 ### Requirement: Host reports apply failure without claiming success
 
-If preflight refuses the slot state, a stream is truncated/fails, or arming fails, the host command SHALL exit non-zero and MUST NOT report a successful letter switch. Try-boot MUST NOT be armed after a failed or incomplete stream.
+If preflight refuses the slot state, packaging fails, HTTP serve/download fails, verify/write/arm fails, or the trigger cannot start apply, the host command SHALL exit non-zero and MUST NOT report a successful letter switch. Try-boot MUST NOT be armed after a failed or incomplete apply.
 
-#### Scenario: Board rejects bad package
+#### Scenario: Board rejects unsafe slot state
 
-- **WHEN** the host stream fails mid-transfer or the board refuses unsafe slot state before write
+- **WHEN** on-device apply refuses unsafe slot state
 - **THEN** `make upgrade` exits non-zero, try-boot is not armed, and the board remains on its previous active letter
 
 ### Requirement: Documentation contrasts upgrade vs flash
 
-Host/docs SHALL state that:
+Host/docs SHALL state that full-system `make upgrade` over SSH **packages an OTA `tar.gz` and `.sig`**, serves them over an ephemeral host HTTP server for **device download** into `/userdata/ota/`, and runs staged **verify**-extract-apply shared with online/cloud OTA, while **RockUSB `di`** and **`make flash`** remain unsigned paths for Loader/factory. Device UI transfer progress is download progress for both host HTTP pull and cloud download; both then show verify.
 
-- **SSH** `make upgrade` **streams** boot + rootfs (and optional oem when packaged) into the inactive letter;
-- **RockUSB** `make upgrade` (Loader/Maskrom) partition-downloads the **OTA-equivalent** image set (`boot`, `boot_b`, both rootfs letters, optional oem) and does **not** rewrite U-Boot / MiniLoader storage / GPT / misc;
-- **`make flash`** remains required for GPT changes, U-Boot/MiniLoader, misc/factory packaging via `factory.img`;
-- **online / product OTA** (when present) uses download-to-`/userdata/ota/` then staged signed apply, which is distinct from both `make upgrade` transports.
-
-#### Scenario: Help or README mentions kernel in upgrade
+#### Scenario: Help or README mentions unified staged upgrade with verify
 
 - **WHEN** a developer reads Makefile `help` or README Make-commands for `upgrade`
-- **THEN** the text indicates full-system upgrade includes the kernel FIT(s), describes SSH stream and RockUSB Loader/Maskrom OTA-image modes, and is not the online OTA staged path nor `make flash` factory `uf`
+- **THEN** the text indicates full-system SSH upgrade runs `ota-package`, serves a `tar.gz` and `.sig` over host HTTP for device download, uses staged verify-apply shared with OTA shape, and is not an unsigned stream-to-partition path
 
-### Requirement: make upgrade presents a single operator wait for stream write
+### Requirement: make upgrade presents transfer progress unified with device download UX
 
-`make upgrade` SHALL present transfer/write progress for the streamed payload such that the operator experiences **one primary wait** ending at reboot request — not a completed full-image upload to userdata followed by a long silent partition `dd`.
+`make upgrade` SHALL present **host HTTP send** progress on the console (chunked serve of archive + `.sig`) and exit after `TRANSFER_COMPLETE`. Concurrently, the on-device HMI SHALL already be on the **dedicated upgrade page** and SHALL show **download/transferring** progress from its HTTP client; after the package arrives, the same page SHALL show **verify**, **extract** (archive-byte progress), and **burn** progress from `cyber_ota` (per-image chunked `dd` stdin callbacks on `OtaSession.progress`).
 
-#### Scenario: Progress covers partition write
+#### Scenario: Progress covers download on host console and device UI
 
-- **WHEN** the operator runs `make upgrade` and watches the console
-- **THEN** progress advances while rootfs/FIT bytes are written to the inactive devices, and the command does not idle for a separate post-upload full-image apply phase of comparable duration
+- **WHEN** the operator runs `make upgrade` and watches the console and the device UI
+- **THEN** host console reflects HTTP send progress until transfer complete
+- **AND** the device upgrade page shows download/transfer progress from the HTTP pull
+
+#### Scenario: Safe upgrade page during and after download
+
+- **WHEN** package download is in progress or has completed and apply continues on device
+- **THEN** the device HMI is on the dedicated upgrade page and shows verify then burn progress for the write phase after extract
+- **AND** laser/work sessions are not left running across the apply
 
 ### Requirement: make upgrade streams OEM when available
 
-After resolving `FACTORY_SKU` / `OEM_ID` (same resolver as `build-oem`), `make upgrade` SHALL update `oem.img` into the device `oem` partition when the resolved image exists, unless the operator explicitly disables OEM update via environment variable `OEM_IMG` set empty (e.g. `OEM_IMG= make upgrade`). OEM upgrade controls SHALL be environment variables (`OEM_IMG`, `OEM_ONLY`), loadable from repo-root `.env` via `WITH_DOTENV`, with command-line env overriding `.env`. When `OEM_ONLY=1`, the command SHALL update only `oem.img` (requiring it to exist), SHALL NOT write boot/rootfs, and on the **SSH** path SHALL plain-reboot without arming an A/B letter switch. When the resolved oem image is missing and `OEM_ONLY` is not `1`, full-system boot/rootfs upgrade MAY still proceed with a clear warning that OEM was skipped. The **SSH stream** path MUST NOT use `factory.img` / `upgrade_tool uf` for OEM or OS updates. The **RockUSB** path MAY use `upgrade_tool` partition download for oem/OS images as specified elsewhere in this capability, and still MUST NOT `uf factory.img` for this command.
+After resolving `FACTORY_SKU` / `OEM_ID` (same resolver as `build-oem`), `make ota-package` / `make upgrade` SHALL include `oem.img` in the OTA `tar.gz` and staged apply to the device `oem` partition when the resolved image exists, unless the operator explicitly disables OEM update via `OEM_IMG` set empty. OEM controls SHALL be environment variables (`OEM_IMG`, `OEM_ONLY`), loadable from `.env` via `WITH_DOTENV`, with command-line overriding `.env`. When `OEM_ONLY=1`, the package/command SHALL include/apply only `oem.img`, SHALL NOT write boot/rootfs, and SHALL plain-reboot without arming an A/B letter switch. When the resolved oem image is missing and `OEM_ONLY` is not `1`, full-system boot/rootfs upgrade MAY still proceed with a clear warning that OEM was skipped. `make upgrade` MUST NOT use `factory.img` / RockUSB for the A/B staged SSH path.
 
 #### Scenario: Default upgrade writes oem
 
 - **WHEN** `oem/out/<oem_id>/oem.img` exists for the resolved sku and the operator runs `make upgrade` without disabling OEM
-- **THEN** the host updates that oem image to `PARTLABEL=oem` (SSH stream or RockUSB download per selected transport) in addition to boot/rootfs when not `OEM_ONLY`
+- **THEN** the OTA package includes that oem image and apply writes `PARTLABEL=oem` in addition to inactive boot/rootfs
 
 #### Scenario: OEM-only upgrade
 
-- **WHEN** the operator runs `OEM_ONLY=1 make upgrade` (or has `OEM_ONLY=1` in `.env`) after `make build-oem`
-- **THEN** the host updates only `oem.img` to oem and, on SSH transport, requests a plain reboot without changing the A/B active letter
+- **WHEN** the operator runs `OEM_ONLY=1 make upgrade` after `make build-oem`
+- **THEN** the host packages/serves/applies only `oem.img` to `PARTLABEL=oem` (after SSH-path verify) and requests a plain reboot without changing the A/B active letter
 
-#### Scenario: Missing oem warns but upgrades OS
+#### Scenario: Missing oem warns but continues full-system
 
 - **WHEN** resolved `oem.img` is absent, `OEM_ONLY` is not `1`, and the operator runs `make upgrade`
-- **THEN** the command MAY complete boot/rootfs upgrade after warning that OEM was not updated
+- **THEN** the command MAY proceed with boot/rootfs only and MUST warn that OEM was skipped

@@ -1,7 +1,7 @@
 # ab-firmware-slots Specification
 
 ## Purpose
-Paired A/B boot+rootfs slots, misc try-boot marker, staged (OTA) and stream (dev) full-system apply, and boot confirm/rollback.
+Paired A/B boot+rootfs slots, misc try-boot marker, unified staged full-system apply (cloud + SSH host HTTP), and boot confirm/rollback.
 ## Requirements
 ### Requirement: GPT provides paired boot and rootfs A/B slots
 
@@ -33,36 +33,29 @@ The platform SHALL persist the **active** slot letter, **try-boot** letter, and 
 
 ### Requirement: Full-system apply updates boot and rootfs on the inactive letter
 
-The platform SHALL support two full-system apply modes that share the same A/B safety invariants (inactive letter only; derive running letter from the block device mounted as `/`; require misc `active` agreement; reject pending try-boot; compare resolved block devices before writing; MUST NOT format userdata; MUST NOT delete subsystem userdata trees under `/userdata/{wpa_supplicant,network,bluetooth,hmi}`; MUST NOT overwrite the mounted root; MUST NOT rewrite U-Boot or MiniLoader).
+The platform SHALL support a **single** full-system **staged** apply mode for both product/cloud OTA and developer USB-SSH/SSH `make upgrade`: stage an **OTA `tar.gz` and detached `.sig`** under **`/userdata/ota/`**, **Ed25519-verify** the archive (**required for cloud/product download and for host HTTP pull**), extract, then write in this order: inactive `rootfs_*` ← `rootfs.img`; backup running FIT `boot`→`boot_b`; place the inactive letter’s FIT in `boot`; optionally apply **oem**; arm try-boot; reboot. Apply SHALL share the same A/B safety invariants (inactive letter only; derive running letter from the block device mounted as `/`; require misc `active` agreement; reject pending try-boot; compare resolved block devices before writing; MUST NOT format userdata; MUST NOT delete subsystem userdata trees under `/userdata/{wpa_supplicant,network,bluetooth,hmi}`; MUST NOT overwrite the mounted root; MUST NOT rewrite U-Boot or MiniLoader).
 
-**Staged apply** (online / product OTA): Board helpers SHALL accept a firmware bundle under **`/userdata/ota/`**, require slot FITs **`boot.img` / `boot_b.img`** and **`rootfs.img`** each accompanied by a detached **Ed25519** signature (`*.img.sig`) that verifies against the device-embedded pubkey over the complete image bytes (hash-then-sign), write rootfs only to the inactive `rootfs_*`, back up the running FIT from `boot` to `boot_b`, place the inactive letter’s FIT in `boot`, optionally apply **oem** (also Ed25519-signed when present), arm try-boot, and reboot. Product OTA SHALL use Ed25519 verify as the sole pre-write authenticity/integrity gate and SHALL NOT require a separate `.sha256` / digest check (or unsigned digest/manifest) as authorization to write.
-
-**Stream apply** (developer `make upgrade` over SSH): The board SHALL accept host-orchestrated streams of **`rootfs.img`** and **only the inactive letter’s FIT** (plus optional oem) directly into the inactive rootfs device and the try-boot FIT path on `boot` (after backing up the running FIT to `boot_b`), then arm try-boot and reboot. Stream apply MUST NOT require full firmware images to be staged under `/userdata/ota/` before writing. Incomplete or failed streams MUST NOT arm try-boot.
+Product/cloud and host SSH full-system upgrades SHALL use whole-archive Ed25519 verify as the authenticity gate before write. **Stream-to-partition without staging SHALL NOT** be the default full-system upgrade path. RockUSB `di` / `make flash` remain outside this staged verify gate (Loader `di` writes **both** letters and does not use try-boot arm).
 
 #### Scenario: Successful staged full-system apply includes kernel
 
-- **WHEN** a valid Ed25519-signed bundle with `boot.img` / `boot_b.img` and `rootfs.img` (and matching `*.sig`) is staged under `/userdata/ota/` and staged apply succeeds
-- **THEN** both inactive boot and inactive rootfs are written, try-boot is armed, and the device reboots toward that letter
+- **WHEN** a staged OTA `tar.gz` containing the inactive letter’s FIT and `rootfs.img` (optionally `oem.img`) is applied successfully after Ed25519 verify
+- **THEN** inactive rootfs is written, boot is backed up to boot_b, the try FIT is written to boot, try-boot is armed, and the device reboots toward that letter
 
-#### Scenario: Bad or missing image signature refuses write
+#### Scenario: Bad package signature refuses write
 
-- **WHEN** any required staged image fails Ed25519 verification against the embedded pubkey (corrupt bytes, or wrong/missing `*.sig`)
-- **THEN** the active letter and slot marker remain unchanged, no partition write for that apply proceeds past the gate, and apply exits non-zero
+- **WHEN** a staged archive (cloud or host HTTP) fails Ed25519 verification against the embedded pubkey
+- **THEN** the active letter remains unchanged, no partition write proceeds past the gate, and apply exits non-zero
 
-#### Scenario: Successful stream apply writes during transfer
+#### Scenario: Host package without signature refuses write
 
-- **WHEN** stream apply receives a complete rootfs stream and the matching inactive FIT stream over SSH
-- **THEN** the inactive rootfs and try-boot FIT on `boot` are written without a prior full-image stage under `/userdata/ota/`, try-boot is armed, and the device reboots toward that letter
+- **WHEN** `make upgrade` over SSH triggers a host HTTP pull of an OTA `tar.gz` under `/userdata/ota/` without a valid `.sig`
+- **THEN** apply MUST refuse to write and exit non-zero
 
-#### Scenario: Bad staged package leaves active letter intact
+#### Scenario: Bad staged write leaves active letter intact
 
-- **WHEN** any required staged image fails Ed25519 verification or write verification
+- **WHEN** write verification fails after extract
 - **THEN** the active letter and slot marker remain unchanged and apply exits non-zero
-
-#### Scenario: Incomplete stream does not arm try-boot
-
-- **WHEN** a stream apply transfer is truncated or fails before all required images are written
-- **THEN** try-boot is not armed, the active letter remains bootable, and apply/host exit non-zero
 
 #### Scenario: Stale metadata cannot overwrite the mounted root
 
@@ -71,17 +64,18 @@ The platform SHALL support two full-system apply modes that share the same A/B s
 
 #### Scenario: Upgrade does not touch bootloader images
 
-- **WHEN** a full-system staged or stream apply runs
+- **WHEN** a full-system staged apply runs
 - **THEN** the uboot partition content is not overwritten by the upgrade helpers
 
-### Requirement: Storage layout documents stream upgrade vs staged OTA
+### Requirement: Storage layout documents unified tar.gz staged OTA
 
-`docs/storage-layout.md` (and related upgrade docs) SHALL document that developer **`make upgrade`** uses **stream-to-partition** over SSH, while **online OTA** uses **download / stage under `/userdata/ota/` then Ed25519-signed image verified apply** (detached `*.sig` per full img; single-level full firmware, HMI with rootfs), and that userdata prefs must not be wiped by either path.
+`docs/storage-layout.md` (and related upgrade docs) SHALL document that **both** developer USB-SSH/SSH **`make upgrade`** and **online/cloud OTA** use **an OTA `tar.gz` (+ `.sig`) staged under `/userdata/ota/` → Ed25519 verify → extract → apply**. Both show transfer as download progress on the upgrade page, then verify. Userdata prefs must not be wiped. Docs SHALL NOT describe unsigned SSH stream-to-partition as the supported full-system upgrade contract. RockUSB `di` / `make flash` MAY remain documented as unsigned.
 
-#### Scenario: Storage layout distinguishes the two paths
+#### Scenario: Storage layout describes unified staged path with verify
 
 - **WHEN** a developer reads `docs/storage-layout.md` after this change
-- **THEN** the doc states stream-to-partition for `make upgrade` and download-then-Ed25519-verify staging for online OTA, both preserving userdata
+- **THEN** the doc states that cloud OTA and SSH `make upgrade` share `tar.gz`+`.sig` staging under `/userdata/ota/`, both verify Ed25519, and that userdata is preserved
+
 
 ### Requirement: Boot confirm commits or rolls back the letter pair
 

@@ -513,7 +513,7 @@ Common Settings SHALL present **Camera** in the same untitled card as **RGB LED*
 - **WHEN** Language is `en-US`
 - **THEN** the Camera row title is `Camera`
 
-### Requirement: Device Information row set matches lws-ui without Camera Type or Camera Version
+### Requirement: Device Information card set (model QR, versions, focus; no camera type)
 
 Device Information SHALL show CyberUI untitled cards with at least:
 
@@ -521,7 +521,7 @@ Device Information SHALL show CyberUI untitled cards with at least:
 2. Versions: System Version, Process Library Version (when available), Firmware Version (existing control-card / firmware Modbus value), Laser Version, Wire Feeder Version — and MAY retain HMI-only Kernel Version / Display Stack  
 3. Focus: Focus Scale Reference  
 
-Device Information MUST NOT show Camera Type or Camera Version. OTA footer controls (**Check for Updates**, **Automatically check for updates**) SHALL be present; when no OTA client is available they SHALL report an unavailable/deferred status rather than a false success. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
+Device Information MUST NOT show Camera Type or Camera Version. OTA footer controls (**Check for Updates**, **Automatically check for updates**) SHALL be present and SHALL call `cyber_ota` for update checks and (after operator confirmation when an update exists) for the unified download/verify/apply flow via **safe shutdown directly to the dedicated upgrade page** (download + burn progress). They MUST NOT report a false success, and MUST NOT remain permanently deferred/unavailable once whole-device OTA is implemented on the device image. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
 
 #### Scenario: No Camera Type on Device Information
 
@@ -539,10 +539,16 @@ Device Information MUST NOT show Camera Type or Camera Version. OTA footer contr
 - **WHEN** the operator opens Device Information
 - **THEN** a Check for Updates action is visible
 
+#### Scenario: Check for Updates invokes cyber_ota
+
+- **WHEN** the operator activates Check for Updates and OTA networking is available
+- **THEN** the UI uses `cyber_ota` version compare rather than a hard-coded unavailable stub
+
 #### Scenario: No permanent cloud environment row
 
 - **WHEN** the operator opens Device Information
 - **THEN** there is no always-visible Cloud Environment settings row
+
 
 ### Requirement: RGB LED Settings forces Off on enter
 
@@ -561,7 +567,7 @@ When the operator opens the Common Settings RGB LED page, the App SHALL suppress
 
 ### Requirement: Device Information changes cloud environment tier via Device SN 5×-tap
 
-Device Information SHALL NOT show a permanent Cloud Environment row. The operator SHALL open the app environment tier picker by tapping the **Device SN** value five times within five seconds (lws-ui `SecretTapTracker` parity). The picker SHALL offer at least Test and Prod, and MAY offer Dev. Choosing a tier MUST persist the selection and trigger a fresh API-origin probe / WebSocket reconnect when cloud runtime is active. OTA footer controls remain as today (unavailable/deferred) and are unchanged by this cloud/LAN change.
+Device Information SHALL NOT show a permanent Cloud Environment row. The operator SHALL open the app environment tier picker by tapping the **Device SN** value five times within five seconds (lws-ui `SecretTapTracker` parity). The picker SHALL offer at least Test and Prod, and MAY offer Dev. Choosing a tier MUST persist the selection and trigger a fresh API-origin probe / WebSocket reconnect when cloud runtime is active. OTA footer controls call `cyber_ota` (see Device Information card-set requirement) and are unchanged by this cloud/LAN change.
 
 #### Scenario: Five taps on Device SN opens tier picker
 

@@ -209,7 +209,6 @@ class WarnDialogBody extends StatelessWidget {
     final inset = WarnDialogMetrics.contentInset * scale;
     final icon = WarnDialogMetrics.iconSize * scale;
     final scrollMax = WarnDialogMetrics.bodyScrollMaxHeight * scale;
-    final bodyFont = WarnDialogMetrics.bodySize * scale;
     final titleMax = WarnDialogMetrics.titleMaxWidth(cardW, scale);
     final titleFont = WarnDialogMetrics.resolveTitleFontSize(
       context: context,
@@ -218,6 +217,8 @@ class WarnDialogBody extends StatelessWidget {
       infoStyle: infoStyle,
       layoutScale: scale,
     );
+    // Body must never read larger than the (possibly fitted) title.
+    final bodyFont = math.min(WarnDialogMetrics.bodySize * scale, titleFont);
     final confirmW = (WarnDialogMetrics.confirmMinWidth * scale).clamp(
       200.0,
       cardW - inset * 2,
@@ -264,8 +265,11 @@ class WarnDialogBody extends StatelessWidget {
             ),
           ),
           SizedBox(height: inset),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: scrollMax),
+          // Reserve the design body scroll band so fitted (smaller) body fonts
+          // do not shrink the card — keeps warn dialogs height-unified.
+          SizedBox(
+            height: scrollMax,
+            width: double.infinity,
             child: SingleChildScrollView(
               child: Text(
                 body,

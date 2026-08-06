@@ -31,6 +31,7 @@ import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
+import 'package:lws_hmi/features/home/presentation/home_webp_coverage_gate.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/ai_vision_video_choose_page.dart';
@@ -678,6 +679,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                     navigatorKey: _navKey,
                                     navigatorObservers: [
                                       appRouteObserver,
+                                      homeWebpCoverageGate,
                                       _promptQueue.navigatorObserver,
                                     ],
                                     initialRoute: AppRoutes.home,

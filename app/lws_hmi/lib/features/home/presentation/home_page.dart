@@ -17,6 +17,8 @@ import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
 import 'package:lws_hmi/features/home/presentation/custom_home_statistics_panel.dart';
+import 'package:lws_hmi/features/home/presentation/paced_home_webp.dart';
+import 'package:lws_hmi/features/home/presentation/home_webp_coverage_gate.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
@@ -62,6 +64,24 @@ class _HomePageState extends State<HomePage> with RouteAware {
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
   final _customHomeStatisticsKey = GlobalKey<CustomHomeStatisticsPanelState>();
 
+  /// Shared 33 ms tick for left/right decorative WebP (caps UI dirty rate ~30 Hz).
+  /// Stays live under dialogs (frost blur); pauses under opaque full-page routes
+  /// via [homeWebpCoverageGate]. Set [playMotion] false later for 均衡 mode.
+  late final PacedHomeWebpController _homeWebp = PacedHomeWebpController(
+    layers: const [
+      PacedHomeWebpSpec(
+        asset: HomeAssets.leftAnimated,
+        fallback: HomeAssets.leftStatic,
+      ),
+      PacedHomeWebpSpec(
+        asset: HomeAssets.rightAnimated,
+        fallback: HomeAssets.rightStatic,
+      ),
+    ],
+  );
+
+  Route<dynamic>? _homeRoute;
+
   Future<void> _openQuickMode() async {
     await DeviceRegistrationDialogs.pushNamedIfUnlocked(
       context,
@@ -94,6 +114,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
   @override
   void initState() {
     super.initState();
+    homeWebpCoverageGate.addListener(_syncHomeWebpToCoverage);
+    unawaited(_homeWebp.start());
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrapHome());
   }
 
@@ -104,14 +126,39 @@ class _HomePageState extends State<HomePage> with RouteAware {
     final route = ModalRoute.of(context);
     if (route is PageRoute) {
       appRouteObserver.subscribe(this, route);
+      if (!identical(_homeRoute, route)) {
+        if (_homeRoute != null) {
+          homeWebpCoverageGate.detachHome(_homeRoute!);
+        }
+        _homeRoute = route;
+        homeWebpCoverageGate.attachHome(route);
+        _syncHomeWebpToCoverage();
+      }
     }
   }
 
   @override
   void dispose() {
+    homeWebpCoverageGate.removeListener(_syncHomeWebpToCoverage);
+    if (_homeRoute != null) {
+      homeWebpCoverageGate.detachHome(_homeRoute!);
+      _homeRoute = null;
+    }
     appRouteObserver.unsubscribe(this);
     unawaited(_cameraSub?.cancel());
+    _homeWebp.dispose();
     super.dispose();
+  }
+
+  void _syncHomeWebpToCoverage() {
+    if (!mounted) {
+      return;
+    }
+    if (homeWebpCoverageGate.pauseWebp) {
+      _homeWebp.pause();
+    } else {
+      _homeWebp.resume();
+    }
   }
 
   @override
@@ -348,17 +395,17 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       fit: StackFit.expand,
                       children: [
                         const _HomeBackdrop(),
-                        _HomeAnimatedPlate(
-                          asset: HomeAssets.leftAnimated,
-                          fallback: HomeAssets.leftStatic,
+                        PacedHomeWebpPlate(
+                          controller: _homeWebp,
+                          layerIndex: 0,
                           left: -60 * sx,
                           top: -90 * sy,
                           width: 600 * sx,
                           height: 600 * sy,
                         ),
-                        _HomeAnimatedPlate(
-                          asset: HomeAssets.rightAnimated,
-                          fallback: HomeAssets.rightStatic,
+                        PacedHomeWebpPlate(
+                          controller: _homeWebp,
+                          layerIndex: 1,
                           left: 740 * sx,
                           top: -90 * sy,
                           width: 600 * sx,
@@ -547,57 +594,6 @@ class _HomeBackdrop extends StatelessWidget {
       cacheWidth: cacheW,
       cacheHeight: cacheH,
       errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1A1A1A)),
-    );
-  }
-}
-
-class _HomeAnimatedPlate extends StatelessWidget {
-  const _HomeAnimatedPlate({
-    required this.asset,
-    required this.fallback,
-    required this.left,
-    required this.top,
-    required this.width,
-    required this.height,
-  });
-
-  final String asset;
-  final String fallback;
-  final double left;
-  final double top;
-  final double width;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    // Both animated WebP assets have a 200×200 source canvas. Requesting
-    // their larger on-screen dimensions makes every 30fps frame upsample on
-    // the UI/raster path before it is composited.
-    const animationDecodeSize = 200;
-    return Positioned(
-      left: left,
-      top: top,
-      width: width,
-      height: height,
-      child: RepaintBoundary(
-        child: Image.asset(
-          asset,
-          fit: BoxFit.contain,
-          // Mipmaps add work but no detail because the source is already
-          // smaller than its display region.
-          filterQuality: FilterQuality.low,
-          gaplessPlayback: true,
-          cacheWidth: animationDecodeSize,
-          cacheHeight: animationDecodeSize,
-          errorBuilder: (_, __, ___) => Image.asset(
-            fallback,
-            fit: BoxFit.contain,
-            cacheWidth: animationDecodeSize,
-            cacheHeight: animationDecodeSize,
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-          ),
-        ),
-      ),
     );
   }
 }

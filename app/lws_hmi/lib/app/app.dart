@@ -676,7 +676,10 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                     ],
                                     builder: _appBuilder,
                                     navigatorKey: _navKey,
-                                    navigatorObservers: [appRouteObserver],
+                                    navigatorObservers: [
+                                      appRouteObserver,
+                                      _promptQueue.navigatorObserver,
+                                    ],
                                     initialRoute: AppRoutes.home,
                                     onGenerateRoute: (settings) {
                                       // In-module nested routes: L/R slide.

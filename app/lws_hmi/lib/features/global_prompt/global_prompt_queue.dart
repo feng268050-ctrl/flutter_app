@@ -32,6 +32,11 @@ final class GlobalPromptHost {
 /// At most one prompt is visible. [enqueue] completes when **that** entry has
 /// been presented and closed. [dismiss] drops a pending entry or closes the
 /// visible modal when [id] matches.
+///
+/// Register [navigatorObserver] on the same [Navigator] as [navigatorKey] so
+/// the queue can await each prompt's exit animation before pumping the next
+/// entry (`showDialog` / `showGeneralDialog` complete on [Route.popped], which
+/// resolves before the reverse fade finishes).
 final class GlobalPromptQueue {
   GlobalPromptQueue({
     required GlobalKey<NavigatorState> navigatorKey,
@@ -56,6 +61,15 @@ final class GlobalPromptQueue {
   bool _modalRouteActive = false;
   Completer<void>? _showingCompleter;
   Future<void> _pumpTail = Future<void>.value();
+
+  /// Latest [PopupRoute] pushed while a prompt [present] is running.
+  ///
+  /// Page pushes (e.g. Settings after a tip) are ignored so awaiting exit does
+  /// not latch onto a full-screen route.
+  Route<dynamic>? _presentedPopupRoute;
+
+  late final NavigatorObserver navigatorObserver =
+      _GlobalPromptNavigatorObserver(this);
 
   String? get showingId => _showingId;
 
@@ -159,6 +173,7 @@ final class GlobalPromptQueue {
     _showingId = pending.id;
     _dialogOpen = true;
     _modalRouteActive = true;
+    _presentedPopupRoute = null;
     _showingCompleter = showingCompleter;
 
     final host = GlobalPromptHost(
@@ -175,6 +190,12 @@ final class GlobalPromptQueue {
     } catch (e, st) {
       debugPrint('global-prompt: present failed id=${pending.id}: $e\n$st');
     } finally {
+      await _awaitPresentedPopupExit();
+      // Brief gap after exit settles before the next prompt fades in, so two
+      // dialogs never visually overlap on the last frames of the reverse fade.
+      if (_queue.isNotEmpty) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
       _modalRouteActive = false;
       _dialogOpen = false;
       _showingId = null;
@@ -186,6 +207,27 @@ final class GlobalPromptQueue {
         pending.completer.complete();
       }
       unawaited(_pump());
+    }
+  }
+
+  /// Waits until the prompt modal's reverse transition has finished.
+  ///
+  /// [Navigator.push] (and thus [showDialog] / [showGeneralDialog]) returns
+  /// [Route.popped], which completes as soon as the route is popped — typically
+  /// before the fade-out animation starts. Pumping the next prompt then would
+  /// stack two visible dialogs during the exit fade.
+  Future<void> _awaitPresentedPopupExit() async {
+    final route = _presentedPopupRoute;
+    _presentedPopupRoute = null;
+    // Use untyped `TransitionRoute` — `TransitionRoute<dynamic>` fails for
+    // `RawDialogRoute<void>` / `DialogRoute<T>` under sound null safety.
+    if (route is! TransitionRoute) {
+      return;
+    }
+    try {
+      await route.completed;
+    } catch (e, st) {
+      debugPrint('global-prompt: exit wait failed: $e\n$st');
     }
   }
 
@@ -214,4 +256,18 @@ final class _PendingPrompt {
   final String id;
   final Future<void> Function(GlobalPromptHost host) present;
   final Completer<void> completer;
+}
+
+final class _GlobalPromptNavigatorObserver extends NavigatorObserver {
+  _GlobalPromptNavigatorObserver(this._queue);
+
+  final GlobalPromptQueue _queue;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    // Untyped `PopupRoute` — `PopupRoute<dynamic>` fails for `PopupRoute<void>`.
+    if (_queue._dialogOpen && route is PopupRoute) {
+      _queue._presentedPopupRoute = route;
+    }
+  }
 }

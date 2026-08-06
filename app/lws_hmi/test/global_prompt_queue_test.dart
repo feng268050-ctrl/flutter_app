@@ -12,17 +12,23 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navKey,
+        navigatorObservers: [queue.navigatorObserver],
         home: const Scaffold(body: Text('home')),
       ),
     );
     await tester.pump();
   }
 
-  Future<void> presentLabel(GlobalPromptHost host, String label) async {
+  Future<void> presentLabel(
+    GlobalPromptHost host,
+    String label, {
+    Duration transitionDuration = const Duration(milliseconds: 200),
+  }) async {
     await showGeneralDialog<void>(
       context: host.context,
       barrierDismissible: false,
       barrierLabel: label,
+      transitionDuration: transitionDuration,
       pageBuilder: (ctx, a, b) {
         return AlertDialog(
           title: Text(label),
@@ -40,6 +46,57 @@ void main() {
   setUp(() {
     navKey = GlobalKey<NavigatorState>();
     suppressed = false;
+  });
+
+  testWidgets(
+      'next prompt waits for previous dialog exit animation',
+      (tester) async {
+    final queue = GlobalPromptQueue(
+      navigatorKey: navKey,
+      isPumpSuppressed: () => suppressed,
+    );
+    await pumpApp(tester, queue);
+
+    const exitDuration = Duration(milliseconds: 400);
+    unawaited(
+      queue.enqueue(
+        id: 'a',
+        present: (host) => presentLabel(
+          host,
+          'prompt-a',
+          transitionDuration: exitDuration,
+        ),
+      ),
+    );
+    unawaited(
+      queue.enqueue(
+        id: 'b',
+        present: (host) => presentLabel(host, 'prompt-b'),
+      ),
+    );
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('prompt-a'), findsOneWidget);
+    expect(find.text('prompt-b'), findsNothing);
+
+    // Prefer dismiss over tap: WidgetTester.tap advances press-timeout time
+    // that can finish a short reverse animation before assertions run.
+    await queue.dismiss('a');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('prompt-a'), findsOneWidget);
+    expect(find.text('prompt-b'), findsNothing);
+
+    // Exit animation (400ms) + post-completed settle gap (50ms).
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('prompt-b'), findsNothing);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpAndSettle();
+    expect(find.text('prompt-a'), findsNothing);
+    expect(find.text('prompt-b'), findsOneWidget);
+
+    await tester.tap(find.text('ok'));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('FIFO order across two prompts', (tester) async {
@@ -205,6 +262,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navKey,
+        navigatorObservers: [queue.navigatorObserver],
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(

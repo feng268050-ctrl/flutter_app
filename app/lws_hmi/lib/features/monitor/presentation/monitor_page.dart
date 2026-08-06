@@ -153,7 +153,9 @@ class _MonitorPageState extends State<MonitorPage> {
           child: ProductTabSlideBody(
             index: _currentTabIndex,
             children: [
-              const WorkInformationTab(),
+              WorkInformationTab(
+                visible: _currentTabIndex == MonitorPage.tabWorkInformation,
+              ),
               const MachineStatusTab(),
               const AlarmInformationTab(),
               const VideosTab(),

@@ -6,6 +6,9 @@ import 'package:lws_hmi/features/settings/application/common_settings_store.dart
 abstract final class LengthUnitConvert {
   static const double mmPerInch = 25;
 
+  /// lws-ui `WireConsumptionDisplayUtil` foot factor: 12 in/ft × 25 mm/in.
+  static const double mmPerFoot = mmPerInch * 12;
+
   static bool isMetric(String? unitWire) =>
       unitWire == null || unitWire == CommonSettingsStore.unitMetric;
 
@@ -17,6 +20,26 @@ abstract final class LengthUnitConvert {
       return _trimZeros(valueMm);
     }
     return _trimZeros(_mmToIn(valueMm));
+  }
+
+  /// Cumulative wire consumption for Home / Monitor Work Info.
+  ///
+  /// Matches lws-ui `WireConsumptionDisplayUtil`, with metric detail under 1 m:
+  /// - Metric: `< 1000 mm` → integer `mm`; `≥ 1000 mm` → `mm ~/ 1000` + `m`
+  ///   (e.g. 1298 mm → `1` + `m`, 12980 mm → `12` + `m`).
+  /// - Imperial: whole feet (`round(mm / 300)`).
+  static ({String number, String unit}) formatWireConsumption(
+    int lengthMm, {
+    String? unitWire,
+  }) {
+    final safe = lengthMm < 0 ? 0 : lengthMm;
+    if (!isMetric(unitWire)) {
+      return (number: (safe / mmPerFoot).round().toString(), unit: 'ft');
+    }
+    if (safe < 1000) {
+      return (number: safe.toString(), unit: 'mm');
+    }
+    return (number: (safe ~/ 1000).toString(), unit: 'm');
   }
 
   static double _mmToIn(double mm) {

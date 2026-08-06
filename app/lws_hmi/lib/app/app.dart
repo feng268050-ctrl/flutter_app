@@ -672,105 +672,14 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                     navigatorKey: _navKey,
                                     navigatorObservers: [appRouteObserver],
                                     initialRoute: SafetyTipsGate.initialRoute,
-                                    onGenerateRoute: (settings) {
-                                      // In-module nested routes: L/R slide.
-                                      // Home → five modules: fade (below).
-                                      switch (settings.name) {
-                                        case AppRoutes.processVideoDetail:
-                                          final videoArgs = settings.arguments;
-                                          return buildAppSlideRoute<void>(
-                                            settings: settings,
-                                            builder: (_) => videoArgs
-                                                    is ProcessVideoDetailArgs
-                                                ? ProcessVideoDetailPage(
-                                                    args: videoArgs)
-                                                : const MonitorPage(),
-                                          );
-                                        case AppRoutes.aiVisionChoose:
-                                          return buildAppSlideRoute<void>(
-                                            settings: settings,
-                                            builder: (_) =>
-                                                const AiVisionVideoChoosePage(),
-                                          );
-                                        case AppRoutes.productDisclaimer:
-                                          // lws-ui UseSafetyTipsActivity — L/R
-                                          // slide over Safety Tips.
-                                          return buildAppSlideRoute<void>(
-                                            settings: settings,
-                                            builder: (_) =>
-                                                const ProductDisclaimerPage(),
-                                          );
-                                        case AppRoutes.engineerMode:
-                                          final engineerArgs =
-                                              settings.arguments;
-                                          // Quick → Engineer handoff: slide.
-                                          // Home → Engineer: fade (fall through).
-                                          if (engineerArgs
-                                              is EngineerModeRouteArgs) {
-                                            return buildAppSlideRoute<void>(
-                                              settings: settings,
-                                              builder: (_) => _LockedModeGate(
-                                                lockStore: _remoteLockStore,
-                                                child: EngineerModePage(
-                                                  initialProcessType:
-                                                      engineerArgs.processType,
-                                                  initialPresetUuid:
-                                                      engineerArgs.presetUuid,
-                                                  fromQuickHandoff: true,
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                      }
-
-                                      final Widget page;
-                                      switch (settings.name) {
-                                        case AppRoutes.safetyTips:
-                                          page = const SafetyTipsPage();
-                                        case AppRoutes.settings:
-                                          page = SettingsPage(
-                                            openKeyboardOnLaunch: settings
-                                                    .arguments ==
-                                                HmiRouteRestore
-                                                    .settingsKeyboard,
-                                            cameraDeviceInfoCache:
-                                                _cameraDeviceInfoCache,
-                                          );
-                                        case AppRoutes.monitor:
-                                          final monitorArgs =
-                                              settings.arguments;
-                                          page = MonitorPage(
-                                            initialTabIndex: monitorArgs
-                                                    is MonitorRouteArgs
-                                                ? monitorArgs.initialTabIndex
-                                                : MonitorPage
-                                                    .tabWorkInformation,
-                                          );
-                                        case AppRoutes.quickMode:
-                                          page = _LockedModeGate(
-                                            lockStore: _remoteLockStore,
-                                            child: const QuickModePage(),
-                                          );
-                                        case AppRoutes.engineerMode:
-                                          page = _LockedModeGate(
-                                            lockStore: _remoteLockStore,
-                                            child: const EngineerModePage(),
-                                          );
-                                        case AppRoutes.demo:
-                                          page = _demoPage();
-                                        case AppRoutes.systemUpgrade:
-                                          page = const SystemUpgradePage(
-                                            progressOnly: true,
-                                          );
-                                        case AppRoutes.home:
-                                        default:
-                                          page = const HomePage();
-                                      }
-                                      return buildAppPageRoute(
-                                        settings: settings,
-                                        child: page,
-                                      );
-                                    },
+                                    // One route only — do not let default
+                                    // initialRoutes push `/` under `/safety-tips`.
+                                    onGenerateInitialRoutes: (initialRoute) =>
+                                        generateAppInitialRoutes(
+                                      initialRoute,
+                                      _onGenerateRoute,
+                                    ),
+                                    onGenerateRoute: _onGenerateRoute,
                                   );
                                 },
                               ),
@@ -786,6 +695,91 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
           ),
         ),
       ),
+    );
+  }
+
+  Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    // In-module nested routes: L/R slide.
+    // Home → five modules: fade (below).
+    switch (settings.name) {
+      case AppRoutes.processVideoDetail:
+        final videoArgs = settings.arguments;
+        return buildAppSlideRoute<void>(
+          settings: settings,
+          builder: (_) => videoArgs is ProcessVideoDetailArgs
+              ? ProcessVideoDetailPage(args: videoArgs)
+              : const MonitorPage(),
+        );
+      case AppRoutes.aiVisionChoose:
+        return buildAppSlideRoute<void>(
+          settings: settings,
+          builder: (_) => const AiVisionVideoChoosePage(),
+        );
+      case AppRoutes.productDisclaimer:
+        // lws-ui UseSafetyTipsActivity — L/R slide over Safety Tips.
+        return buildAppSlideRoute<void>(
+          settings: settings,
+          builder: (_) => const ProductDisclaimerPage(),
+        );
+      case AppRoutes.engineerMode:
+        final engineerArgs = settings.arguments;
+        // Quick → Engineer handoff: slide.
+        // Home → Engineer: fade (fall through).
+        if (engineerArgs is EngineerModeRouteArgs) {
+          return buildAppSlideRoute<void>(
+            settings: settings,
+            builder: (_) => _LockedModeGate(
+              lockStore: _remoteLockStore,
+              child: EngineerModePage(
+                initialProcessType: engineerArgs.processType,
+                initialPresetUuid: engineerArgs.presetUuid,
+                fromQuickHandoff: true,
+              ),
+            ),
+          );
+        }
+    }
+
+    final Widget page;
+    switch (settings.name) {
+      case AppRoutes.safetyTips:
+        page = const SafetyTipsPage();
+      case AppRoutes.settings:
+        page = SettingsPage(
+          openKeyboardOnLaunch:
+              settings.arguments == HmiRouteRestore.settingsKeyboard,
+          cameraDeviceInfoCache: _cameraDeviceInfoCache,
+        );
+      case AppRoutes.monitor:
+        final monitorArgs = settings.arguments;
+        page = MonitorPage(
+          initialTabIndex: monitorArgs is MonitorRouteArgs
+              ? monitorArgs.initialTabIndex
+              : MonitorPage.tabWorkInformation,
+        );
+      case AppRoutes.quickMode:
+        page = _LockedModeGate(
+          lockStore: _remoteLockStore,
+          child: const QuickModePage(),
+        );
+      case AppRoutes.engineerMode:
+        page = _LockedModeGate(
+          lockStore: _remoteLockStore,
+          child: const EngineerModePage(),
+        );
+      case AppRoutes.demo:
+        page = _demoPage();
+      case AppRoutes.systemUpgrade:
+        page = const SystemUpgradePage(
+          progressOnly: true,
+        );
+      case AppRoutes.home:
+      default:
+        page = const HomePage();
+    }
+    return buildAppPageRoute(
+      settings: settings,
+      child: page,
     );
   }
 }

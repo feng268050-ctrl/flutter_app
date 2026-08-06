@@ -77,6 +77,32 @@ Route<dynamic> buildAppPageRoute({
   );
 }
 
+/// Emit exactly one initial route for [MaterialApp.onGenerateInitialRoutes].
+///
+/// Flutter's [Navigator.defaultGenerateInitialRoutes] always pushes `/` before
+/// any `/foo` path. With [AppRoutes.home] == `/` and startup
+/// [AppRoutes.safetyTips] == `/safety-tips`, that mounts Home under Safety Tips
+/// and starts Boot Self-Check over the tips screen. Product startup must be a
+/// single route only.
+List<Route<dynamic>> generateAppInitialRoutes(
+  String initialRouteName,
+  RouteFactory onGenerateRoute,
+) {
+  final name =
+      initialRouteName.isEmpty ? Navigator.defaultRouteName : initialRouteName;
+  final route = onGenerateRoute(RouteSettings(name: name));
+  if (route != null) {
+    return <Route<dynamic>>[route];
+  }
+  final fallback = onGenerateRoute(
+    const RouteSettings(name: Navigator.defaultRouteName),
+  );
+  if (fallback != null) {
+    return <Route<dynamic>>[fallback];
+  }
+  return const <Route<dynamic>>[];
+}
+
 /// Horizontal slide (enter from the right) for in-module navigation.
 ///
 /// Used for Settings sub-pages, Monitor detail/choose flows, Quick→Engineer

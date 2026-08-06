@@ -10,34 +10,38 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 Widget _safetyTipsTestApp({String initialRoute = AppRoutes.safetyTips}) {
+  Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case AppRoutes.safetyTips:
+        return buildAppPageRoute(
+          settings: settings,
+          child: const SafetyTipsPage(),
+        );
+      case AppRoutes.productDisclaimer:
+        return buildAppSlideRoute<void>(
+          settings: settings,
+          builder: (_) => const ProductDisclaimerPage(),
+        );
+      case AppRoutes.home:
+        return buildAppPageRoute(
+          settings: settings,
+          child: const Scaffold(
+            body: Center(child: Text('Home')),
+          ),
+        );
+    }
+    return null;
+  }
+
   return MaterialApp(
     theme: buildAppTheme(),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     locale: const Locale('en', 'US'),
     initialRoute: initialRoute,
-    onGenerateRoute: (settings) {
-      switch (settings.name) {
-        case AppRoutes.safetyTips:
-          return buildAppPageRoute(
-            settings: settings,
-            child: const SafetyTipsPage(),
-          );
-        case AppRoutes.productDisclaimer:
-          return buildAppSlideRoute<void>(
-            settings: settings,
-            builder: (_) => const ProductDisclaimerPage(),
-          );
-        case AppRoutes.home:
-          return buildAppPageRoute(
-            settings: settings,
-            child: const Scaffold(
-              body: Center(child: Text('Home')),
-            ),
-          );
-      }
-      return null;
-    },
+    onGenerateInitialRoutes: (name) =>
+        generateAppInitialRoutes(name, onGenerateRoute),
+    onGenerateRoute: onGenerateRoute,
   );
 }
 

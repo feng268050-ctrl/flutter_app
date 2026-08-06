@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_ses
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/boot_self_check/domain/boot_self_check_item.dart';
 import 'package:lws_hmi/features/boot_self_check/presentation/boot_self_check_dialog.dart';
+import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
 
 /// Orchestrates once-per-process self-check when Home is entered.
 ///
@@ -39,6 +40,22 @@ abstract final class BootSelfCheckCoordinator {
       debugPrint('boot-self-check: skip (already completed this process)');
       onComplete?.call();
       return;
+    }
+    // Defensive: never overlay Self-Check on Safety Tips (also fixed by
+    // generateAppInitialRoutes — Home must not mount under /safety-tips).
+    if (SafetyTipsGate.isActive) {
+      debugPrint('boot-self-check: defer until Safety Tips accepted');
+      while (SafetyTipsGate.isActive && context.mounted) {
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+      }
+      if (!context.mounted) {
+        onComplete?.call();
+        return;
+      }
+      if (BootSelfCheckGate.shouldSkip) {
+        onComplete?.call();
+        return;
+      }
     }
     if (!settings.warmRead()) {
       debugPrint('boot-self-check: skip (disabled in settings)');

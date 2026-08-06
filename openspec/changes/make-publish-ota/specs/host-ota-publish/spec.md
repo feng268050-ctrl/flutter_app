@@ -2,14 +2,26 @@
 
 ### Requirement: make publish uploads OTA tar.gz and channel manifest to R2
 
-The repository SHALL provide **`make publish`** that (1) ensures a signed OTA `tar.gz` exists via **`make ota-package`** (or Make prerequisite equivalent) for the selected `APP`, and (2) uploads that archive (and its detached `.sig`) to the application R2 bucket under the publish artifact prefix derived from `APP`, updating the channel manifest (**`staging.json`** or **`release.json`**) so devices can discover the package the same way `lws-ui` discovers `lws-app` builds. The repository SHALL also provide **`make publish-only`** that performs only the upload/manifest step against an already-built OTA `tar.gz` (+ `.sig`) and MUST fail if that archive or signature is missing.
+The repository SHALL provide **`make publish`** that (1) ensures a signed OTA `tar.gz` exists via **`make ota-package`** (or Make prerequisite equivalent) for the selected `APP`, and (2) uploads that archive, its detached `.sig`, and the channel manifest to the application R2 bucket under the publish artifact prefix derived from `APP`, updating the channel manifest (**`staging.json`** or **`release.json`**) so devices can discover the package the same way `lws-ui` discovers `lws-app` builds (R2 layout + channel JSON). The repository SHALL also provide **`make publish-only`** that performs only the upload/manifest step against an already-built OTA `tar.gz` (+ `.sig`) and MUST fail if that archive or signature is missing.
 
-Upload authentication SHALL resolve a Bearer token in this order: (1) **`PUBLISH_API_TOKEN`** when set (Worker **`STATIC_API_TOKENS`** member — preferred for `PUT /upload`), (2) **`CLOUD_ACCESS_TOKEN`** when set, (3) **`access_token`** from the **`make login`** credentials file (`output/cloud/credentials.json`, see **`make-login-register-device`** / `cloud_resolve_publish_token`). Values are loadable from repo-root **`.env`** via the same dotenv pattern as other Make targets, with a non-empty command-line/env value overriding `.env`. Tokens MUST NOT be committed to git. API base URL SHALL use **`CLOUD_API_BASE`** (same default as login).
+Upload authentication SHALL resolve a Bearer token in this order: (1) **`PUBLISH_API_TOKEN`** when set (Worker **`STATIC_API_TOKENS`** member — preferred for presign), (2) **`CLOUD_ACCESS_TOKEN`** when set, (3) **`access_token`** from the **`make login`** credentials file (`output/cloud/credentials.json`, see **`make-login-register-device`** / `cloud_resolve_publish_token`). Values are loadable from repo-root **`.env`** via the same dotenv pattern as other Make targets, with a non-empty command-line/env value overriding `.env`. Tokens MUST NOT be committed to git.
+
+API base URL SHALL be resolved via the same helper as **`make login`** / **`make register-device`**: **`cloud_api_base()`** in `scripts/cloud-credentials.sh`. The default when **`CLOUD_API_BASE`** is unset SHALL be the production cloud service **`https://api-prod.lasercyber.workers.dev`**. Operators MAY override with **`CLOUD_API_BASE`** (e.g. `https://api-test.lasercyber.workers.dev`) for non-production testing. Publish MUST NOT introduce a separate default host (e.g. a distinct `PUBLISH_BASE_URL` that defaults elsewhere).
 
 #### Scenario: Default publish builds package then uploads staging
 
 - **WHEN** the operator runs `make publish` with default `APP` after images required by `ota-package` exist and signing is configured, and a publish token is available (`PUBLISH_API_TOKEN` or login credentials)
-- **THEN** a signed OTA `tar.gz` is produced or refreshed via `ota-package`, uploaded under the `lws-hmi/` R2 prefix (with `.sig` per documented convention), and `lws-hmi/staging.json` is updated (default channel) with fields suitable for client download (`version`, `filename`, `published_at`, `sha512`, `url`)
+- **THEN** a signed OTA `tar.gz` is produced or refreshed via `ota-package`, uploaded under the `lws-hmi/` R2 prefix (with `.sig` per documented convention), and `lws-hmi/staging.json` is updated (default channel) with fields suitable for client download (`version`, `filename`, `published_at`, `url`)
+
+#### Scenario: Default API base is production (same as login)
+
+- **WHEN** the operator runs `make publish` or `make publish-only` without setting `CLOUD_API_BASE`
+- **THEN** the host requests the R2 presigned URL from `https://api-prod.lasercyber.workers.dev` (same default as `make login` / `make register-device`)
+
+#### Scenario: Explicit CLOUD_API_BASE override
+
+- **WHEN** the operator sets `CLOUD_API_BASE=https://api-test.lasercyber.workers.dev` and runs `make publish-only`
+- **THEN** the host requests the R2 presigned URL from that base instead of api-prod
 
 #### Scenario: publish-only refuses missing archive
 
@@ -52,7 +64,7 @@ Default publish (no `RELEASE=1`) SHALL treat the package as prerelease: the HMI 
 
 ### Requirement: R2 artifact prefix derives from APP
 
-The R2 directory (static-upload **artifact** segment) SHALL be derived from Make/env **`APP`**: replace underscores with hyphens (default `APP=lws_hmi` → artifact **`lws-hmi`**). Objects SHALL live under **`{artifact}/`** in the app bucket (`tar.gz`, `.sig`, + `staging.json` / `release.json`). Archive basename SHALL match the api-server basename rules for that artifact (documented as `{artifact}_v{semver}[-beta].tar.gz` or equivalent agreed normalization).
+The R2 directory (publish **artifact** segment) SHALL be derived from Make/env **`APP`**: replace underscores with hyphens (default `APP=lws_hmi` → artifact **`lws-hmi`**). Objects SHALL live under **`{artifact}/`** in the app bucket (`tar.gz`, `.sig`, + `staging.json` / `release.json`). Archive basename SHALL follow the agreed naming habit for that artifact (documented as `{artifact}_v{semver}[-beta].tar.gz` or equivalent agreed normalization).
 
 `make publish` / `make publish-only` SHALL target HMI product apps (`APP` ending in `_hmi`). Publishing a non-HMI `APP` (e.g. `factory_test`) SHALL fail fast unless an explicitly documented override is used.
 
@@ -66,29 +78,40 @@ The R2 directory (static-upload **artifact** segment) SHALL be derived from Make
 - **WHEN** the operator runs `APP=cnc_hmi make publish` and `app/cnc_hmi` is a valid app
 - **THEN** upload paths use the `cnc-hmi` artifact prefix
 
-### Requirement: Cloud manifest schema matches static library OTA descriptors
+### Requirement: Cloud manifest schema omits sha512; trust is detached sig
 
-The channel manifest written for publish (by the upload API or an equivalent client write approved in design) SHALL be a JSON object including at least **`version`** (string), **`filename`** (string), **`published_at`** (UTC ISO 8601 with `Z`), **`sha512`** (hex), and **`url`** (HTTPS URL of the uploaded OTA `tar.gz`). This cloud manifest describes the downloadable archive; **trust to write partitions remains the whole-archive Ed25519 signature** (detached `.sig`) per `unified-ota-cyber-ota` / `ota-package-signing`. Channel `sha512` MUST NOT alone authorize partition writes.
+The channel manifest written by the host publish client SHALL be a JSON object including at least **`version`** (string), **`filename`** (string), **`published_at`** (UTC ISO 8601 with `Z`), and **`url`** (HTTPS URL of the uploaded OTA `tar.gz`). The manifest MUST NOT include **`sha512`**. This cloud manifest describes the downloadable archive location and channel version; **integrity, authenticity, and anti-tamper for write authorization SHALL be the whole-archive Ed25519 detached `.sig`** per `unified-ota-cyber-ota` / `ota-package-signing`. Devices MUST verify the `.sig` against the downloaded `tar.gz` before applying; a matching channel `url` alone MUST NOT authorize partition writes.
 
-#### Scenario: Manifest points at archive URL
+#### Scenario: Manifest points at archive URL without sha512
 
 - **WHEN** publish completes successfully
 - **THEN** the channel manifest `url` equals the public HTTPS URL of the uploaded OTA `tar.gz` under `{artifact}/`
+- **AND** the manifest JSON does not contain a `sha512` field
+
+#### Scenario: Signature object is published with the archive
+
+- **WHEN** publish uploads the OTA `tar.gz`
+- **THEN** the detached `.sig` is also uploaded under the documented key convention for that artifact so devices can fetch and verify it
 
 ### Requirement: Host documents publish Make surface
 
-Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table as needed) SHALL document `make publish` / `publish-only`, `APP=`, `RELEASE=1`, and auth env (`PUBLISH_API_TOKEN`, `CLOUD_API_BASE`, and `make login` fallback). Docs SHALL point to sibling api-server OpenSpec **`hmi-ota-static-upload`** for Worker artifact / basename / view rules, and MUST NOT duplicate that Worker design in this repository.
+Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table as needed) SHALL document `make publish` / `publish-only`, `APP=`, `RELEASE=1`, and auth/env (`PUBLISH_API_TOKEN`, **`CLOUD_API_BASE`** defaulting to production api-prod like login/register-device, and `make login` fallback). Docs SHALL describe the **presigned-url + direct R2 PUT** flow (aligned with `lws-ui`), MUST NOT prescribe `PUT /upload/{artifact}/…` as the HMI publish path, and MUST state that channel manifests omit `sha512` because `.sig` covers integrity.
 
 #### Scenario: Operator finds publish in help
 
 - **WHEN** a developer runs `make help` or reads README Make-commands
 - **THEN** `publish` / `publish-only` and channel/`APP` behavior are described without requiring reading script source
 
-### Requirement: Preferred upload path is static library PUT
+### Requirement: Preferred upload path is R2 presigned PUT via Python on production cloud API
 
-The intended production upload path SHALL be **`PUT /upload/{artifact}/{archive-basename}`** with **`Authorization: Bearer <STATIC_API_TOKENS member>`**, expecting **ApiResult** success data with **`artifact_url`** and **`manifest_url`**, per api-server **`hmi-ota-static-upload`** / `static-library-manifest`. A temporary presigned PUT of the archive + client-written manifest MAY be used only as a bridge while that Worker change lands, and MUST still produce the same R2 key layout and manifest field set.
+The intended production upload path SHALL match **`lws-ui`** and SHALL use the **same cloud API origin** as **`make login`** / **`make register-device`**: for each object key, the host client SHALL call **`GET {cloud_api_base()}/v1/storage/r2/presigned-url`** with query parameters **`key`** and **`content_type`**, using **`Authorization: Bearer <token>`**, then **HTTP PUT** the object bytes to the returned **`upload_url`** with the matching Content-Type. When `CLOUD_API_BASE` is unset, that origin SHALL be **`https://api-prod.lasercyber.workers.dev`**. The client SHALL use the returned **`public_url`** when composing the channel manifest `url` (and when printing success URLs). The host SHALL implement this in a **Python** publish program (same shape as `lws-ui/scripts/publish_lws_app.py`). The path MUST NOT use **`PUT /upload/{artifact}/{archive-basename}`** as the production HMI publish mechanism.
 
-#### Scenario: Successful PUT-shaped publish
+#### Scenario: Successful presigned publish against production default
 
-- **WHEN** api-server accepts the artifact and the host publish client uploads a correctly named `tar.gz` with a valid static token
-- **THEN** R2 contains the archive under `{artifact}/` and the appropriate `staging.json` or `release.json`, and the client prints or logs `artifact_url` and `manifest_url`
+- **WHEN** `CLOUD_API_BASE` is unset, the production API issues presigned URLs for the archive, `.sig`, and channel manifest keys, and the host client PUTs each object successfully
+- **THEN** R2 contains the archive and `.sig` under `{artifact}/` and the appropriate `staging.json` or `release.json`, and the client prints or logs the archive and manifest public URLs
+
+#### Scenario: Presign request targets cloud_api_base
+
+- **WHEN** the publish client requests upload credentials
+- **THEN** the HTTP request URL host/path prefix is `{cloud_api_base()}/v1/storage/r2/presigned-url` (not a hardcoded alternate publish-only host)

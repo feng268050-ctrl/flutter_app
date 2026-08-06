@@ -12,9 +12,9 @@ import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// Eight-card Custom Home editor.
 ///
-/// The top pool holds unselected metrics and the lower halo holds up to four
-/// Home slots. Changes remain local until Save Changes writes the combined
-/// selected + candidate order to [CustomHomeLayoutStore].
+/// Candidates sit above the four Home slots. Drag a card onto another to
+/// reorder (lws-ui slide swap); Save writes the combined order to
+/// [CustomHomeLayoutStore]. Card chrome matches the frosted selection UI.
 class CustomHomeTab extends StatefulWidget {
   const CustomHomeTab({super.key, this.store});
 
@@ -42,100 +42,39 @@ class CustomHomeTab extends StatefulWidget {
 class _CustomHomeTabState extends State<CustomHomeTab> {
   late final CustomHomeLayoutStore _store =
       widget.store ?? CustomHomeLayoutStore();
-  late List<CustomHomeMetric> _selected;
-  late List<CustomHomeMetric> _candidates;
-
-  CustomHomeMetric? _replacementCandidate;
-  bool _inputLocked = false;
-  bool _motionScaleDown = false;
+  late List<CustomHomeMetric> _metrics;
 
   @override
   void initState() {
     super.initState();
     _store.warmRead();
-    final order = List<CustomHomeMetric>.of(_store.metrics);
-    _selected = order.take(4).toList();
-    _candidates = order.skip(4).toList();
+    _metrics = List<CustomHomeMetric>.of(_store.metrics);
   }
 
-  Future<void> _runMotion(VoidCallback update) async {
-    if (_inputLocked) return;
+  List<CustomHomeMetric> get _selected => _metrics.take(4).toList();
+  List<CustomHomeMetric> get _candidates => _metrics.skip(4).toList();
+
+  void _move(CustomHomeMetric source, CustomHomeMetric target) {
+    final from = _metrics.indexOf(source);
+    final to = _metrics.indexOf(target);
+    if (from < 0 || to < 0 || from == to) return;
     setState(() {
-      _inputLocked = true;
-      _motionScaleDown = true;
-      update();
-    });
-    // Cards begin a touch smaller, then recover while their positions travel.
-    await Future<void>.delayed(const Duration(milliseconds: 70));
-    if (mounted) {
-      setState(() => _motionScaleDown = false);
-    }
-    await Future<void>.delayed(
-      CustomHomeTab.animationDuration - const Duration(milliseconds: 70),
-    );
-    if (mounted) {
-      setState(() => _inputLocked = false);
-    }
-  }
-
-  Future<void> _addCandidate(CustomHomeMetric metric) async {
-    if (_inputLocked || !_candidates.contains(metric)) return;
-    if (_selected.length < 4) {
-      await _runMotion(() {
-        _candidates.remove(metric);
-        _selected.add(metric);
-      });
-      return;
-    }
-    // Full selection: picking a candidate enters replace mode only. Nothing is
-    // persisted or swapped until the operator chooses a lower target card.
-    if (_replacementCandidate == metric) {
-      setState(() => _replacementCandidate = null);
-      return;
-    }
-    setState(() => _replacementCandidate = metric);
-    _showToast(
-      AppLocalizations.of(context)?.customHomeSelectReplaceCard ??
-          'Please select a card to replace',
-    );
-  }
-
-  Future<void> _replaceAt(int selectedIndex) async {
-    final incoming = _replacementCandidate;
-    if (_inputLocked || incoming == null || selectedIndex < 0) return;
-    final candidateIndex = _candidates.indexOf(incoming);
-    if (candidateIndex < 0 || selectedIndex >= _selected.length) return;
-    await _runMotion(() {
-      final outgoing = _selected[selectedIndex];
-      _selected[selectedIndex] = incoming;
-      // Put the outgoing card into the incoming card's old slot. Stable keys
-      // make both full-size cards travel at the same time rather than flash.
-      _candidates[candidateIndex] = outgoing;
-      _replacementCandidate = null;
-    });
-  }
-
-  Future<void> _removeSelected(CustomHomeMetric metric) async {
-    final index = _selected.indexOf(metric);
-    if (_inputLocked || index < 0) return;
-    await _runMotion(() {
-      _selected.removeAt(index);
-      _candidates.add(metric);
-      _replacementCandidate = null;
+      _metrics.removeAt(from);
+      _metrics.insert(to, source);
     });
   }
 
   Future<void> _save() async {
-    if (_inputLocked) return;
     if (_selected.length < 4) {
-      _showToast(
+      ProcessModeToast.show(
+        context,
         AppLocalizations.of(context)?.customHomeSelectFourCards ??
             'Please select 4 cards',
       );
       return;
     }
     try {
-      await _store.saveOrder([..._selected, ..._candidates]);
+      await _store.saveOrder(_metrics);
     } catch (_) {
       if (mounted) {
         await showCustomHomeSaveFailureDialog(context);
@@ -146,8 +85,6 @@ class _CustomHomeTabState extends State<CustomHomeTab> {
       await showCustomHomeSaveSuccessDialog(context);
     }
   }
-
-  void _showToast(String message) => ProcessModeToast.show(context, message);
 
   @override
   Widget build(BuildContext context) {
@@ -181,12 +118,7 @@ class _CustomHomeTabState extends State<CustomHomeTab> {
           child: _SelectionGrid(
             selected: _selected,
             candidates: _candidates,
-            replacementCandidate: _replacementCandidate,
-            inputLocked: _inputLocked,
-            motionScaleDown: _motionScaleDown,
-            onAdd: _addCandidate,
-            onReplaceAt: _replaceAt,
-            onRemove: _removeSelected,
+            onReorder: _move,
           ),
         ),
         Positioned(
@@ -194,36 +126,31 @@ class _CustomHomeTabState extends State<CustomHomeTab> {
           right: 0,
           bottom: CustomHomeTab.containerBottomInset +
               CustomHomeTab.saveToContainerBottom,
-          child: Center(
-            child: _SaveButton(onPressed: _inputLocked ? null : _save),
-          ),
+          child: Center(child: _SaveButton(onPressed: _save)),
         ),
       ],
     );
   }
 }
 
-class _SelectionGrid extends StatelessWidget {
+/// Candidates above / selected below. Pointer drag swaps order like lws-ui.
+class _SelectionGrid extends StatefulWidget {
   const _SelectionGrid({
     required this.selected,
     required this.candidates,
-    required this.replacementCandidate,
-    required this.inputLocked,
-    required this.motionScaleDown,
-    required this.onAdd,
-    required this.onReplaceAt,
-    required this.onRemove,
+    required this.onReorder,
   });
 
   final List<CustomHomeMetric> selected;
   final List<CustomHomeMetric> candidates;
-  final CustomHomeMetric? replacementCandidate;
-  final bool inputLocked;
-  final bool motionScaleDown;
-  final ValueChanged<CustomHomeMetric> onAdd;
-  final ValueChanged<int> onReplaceAt;
-  final ValueChanged<CustomHomeMetric> onRemove;
+  final void Function(CustomHomeMetric source, CustomHomeMetric target)
+      onReorder;
 
+  @override
+  State<_SelectionGrid> createState() => _SelectionGridState();
+}
+
+class _SelectionGridState extends State<_SelectionGrid> {
   static const _columns = 4;
   static const _columnGap = 14.0;
   static const _candidateCardTop = 34.0;
@@ -232,7 +159,13 @@ class _SelectionGrid extends StatelessWidget {
   static const _selectedLabelGap = 38.0;
   static const _selectedCardGap = 10.0;
 
-  int get _candidateRows => (candidates.length + _columns - 1) ~/ _columns;
+  final _gridKey = GlobalKey();
+  CustomHomeMetric? _draggingMetric;
+  Offset _dragPosition = Offset.zero;
+  Size _dragSize = Size.zero;
+
+  int get _candidateRows =>
+      (widget.candidates.length + _columns - 1) ~/ _columns;
 
   double get _candidateRowPitch => CustomHomeTab.cardHeight + _candidateRowGap;
 
@@ -244,12 +177,71 @@ class _SelectionGrid extends StatelessWidget {
   double get _selectedCardTop =>
       _selectedLabelTop + _sectionLabelHeight + _selectedCardGap;
 
+  void _startDrag(CustomHomeMetric metric, PointerDownEvent event, Size size) {
+    final box = _gridKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    setState(() {
+      _draggingMetric = metric;
+      _dragPosition = box.globalToLocal(event.position);
+      _dragSize = size;
+    });
+  }
+
+  void _updateDrag(PointerMoveEvent event, double cardWidth) {
+    final metric = _draggingMetric;
+    final box = _gridKey.currentContext?.findRenderObject() as RenderBox?;
+    if (metric == null || box == null) return;
+    final position = box.globalToLocal(event.position);
+    final target = _metricAt(position, cardWidth);
+    if (target != null && target != metric) {
+      widget.onReorder(metric, target);
+    }
+    setState(() => _dragPosition = position);
+  }
+
+  void _endDrag(PointerEvent _) {
+    if (_draggingMetric != null) {
+      setState(() => _draggingMetric = null);
+    }
+  }
+
+  CustomHomeMetric? _metricAt(Offset position, double cardWidth) {
+    final col = (position.dx / (cardWidth + _columnGap)).floor();
+    if (col < 0 || col >= _columns) return null;
+
+    for (var row = 0; row < _candidateRows; row++) {
+      final top = _candidateCardTop + row * _candidateRowPitch;
+      if (position.dy >= top &&
+          position.dy <= top + CustomHomeTab.cardHeight) {
+        final index = row * _columns + col;
+        if (index >= 0 && index < widget.candidates.length) {
+          return widget.candidates[index];
+        }
+        return null;
+      }
+    }
+
+    if (position.dy >= _selectedCardTop &&
+        position.dy <= _selectedCardTop + CustomHomeTab.cardHeight) {
+      if (col < widget.selected.length) {
+        return widget.selected[col];
+      }
+    }
+    return null;
+  }
+
+  Offset _candidatePosition(int index, double cardWidth) => Offset(
+        (index % _columns) * (cardWidth + _columnGap),
+        _candidateCardTop + (index ~/ _columns) * _candidateRowPitch,
+      );
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
+      key: _gridKey,
       builder: (context, constraints) {
         final cardWidth = (constraints.maxWidth - _columnGap * 3) / _columns;
-        final selectedPulse = replacementCandidate != null;
+        final dragging = _draggingMetric;
         return Stack(
           clipBehavior: Clip.none,
           children: [
@@ -282,9 +274,9 @@ class _SelectionGrid extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'Selected ${selected.length}/4',
+                    'Selected ${widget.selected.length}/4',
                     style: context.hmiTypography.supporting.copyWith(
-                      color: selected.length == 4
+                      color: widget.selected.length == 4
                           ? const Color(0xFFBBD1FF)
                           : const Color(0xFFD4D9E5),
                       fontWeight: FontWeight.w600,
@@ -293,26 +285,50 @@ class _SelectionGrid extends StatelessWidget {
                 ],
               ),
             ),
-            for (var index = 0; index < candidates.length; index++)
+            for (var index = 0; index < widget.candidates.length; index++)
               _positionedCard(
-                metric: candidates[index],
+                metric: widget.candidates[index],
                 selected: false,
                 position: _candidatePosition(index, cardWidth),
                 width: cardWidth,
-                index: index,
-                pulse: false,
+                slot: null,
+                dimmed: widget.candidates[index] == dragging,
+                cardWidth: cardWidth,
               ),
-            for (var index = 0; index < selected.length; index++)
+            for (var index = 0; index < widget.selected.length; index++)
               _positionedCard(
-                metric: selected[index],
+                metric: widget.selected[index],
                 selected: true,
                 position: Offset(
                   index * (cardWidth + _columnGap),
                   _selectedCardTop,
                 ),
                 width: cardWidth,
-                index: index,
-                pulse: selectedPulse,
+                slot: index + 1,
+                dimmed: widget.selected[index] == dragging,
+                cardWidth: cardWidth,
+              ),
+            if (dragging != null)
+              Positioned(
+                left: _dragPosition.dx - _dragSize.width / 2,
+                top: _dragPosition.dy - _dragSize.height / 2,
+                width: _dragSize.width,
+                height: _dragSize.height,
+                child: IgnorePointer(
+                  child: Transform.scale(
+                    scale: 1.05,
+                    child: Opacity(
+                      opacity: 0.88,
+                      child: _MetricSelectionCard(
+                        metric: dragging,
+                        selected: widget.selected.contains(dragging),
+                        slot: widget.selected.contains(dragging)
+                            ? widget.selected.indexOf(dragging) + 1
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
               ),
           ],
         );
@@ -320,18 +336,14 @@ class _SelectionGrid extends StatelessWidget {
     );
   }
 
-  Offset _candidatePosition(int index, double cardWidth) => Offset(
-        (index % _columns) * (cardWidth + _columnGap),
-        _candidateCardTop + (index ~/ _columns) * _candidateRowPitch,
-      );
-
   Widget _positionedCard({
     required CustomHomeMetric metric,
     required bool selected,
     required Offset position,
     required double width,
-    required int index,
-    required bool pulse,
+    required int? slot,
+    required bool dimmed,
+    required double cardWidth,
   }) {
     return AnimatedPositioned(
       key: ValueKey('custom-home-motion-${metric.name}'),
@@ -341,20 +353,52 @@ class _SelectionGrid extends StatelessWidget {
       top: position.dy,
       width: width,
       height: CustomHomeTab.cardHeight,
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOutCubic,
-        scale: motionScaleDown ? 0.96 : 1,
+      child: _MetricDragShell(
+        dimmed: dimmed,
+        onPointerDown: (event, size) => _startDrag(metric, event, size),
+        onPointerMove: (event) => _updateDrag(event, cardWidth),
+        onPointerEnd: _endDrag,
         child: _MetricSelectionCard(
           metric: metric,
           selected: selected,
-          slot: selected ? index + 1 : null,
-          replacementActive: selected && pulse,
-          replacementCandidate: replacementCandidate == metric,
-          inputLocked: inputLocked,
-          onAdd: selected ? null : () => onAdd(metric),
-          onSelectReplacement: selected ? () => onReplaceAt(index) : null,
-          onRemove: selected ? () => onRemove(metric) : null,
+          slot: slot,
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricDragShell extends StatelessWidget {
+  const _MetricDragShell({
+    required this.child,
+    required this.dimmed,
+    required this.onPointerDown,
+    required this.onPointerMove,
+    required this.onPointerEnd,
+  });
+
+  final Widget child;
+  final bool dimmed;
+  final void Function(PointerDownEvent event, Size size) onPointerDown;
+  final ValueChanged<PointerMoveEvent> onPointerMove;
+  final ValueChanged<PointerEvent> onPointerEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (event) => onPointerDown(
+          event,
+          Size(constraints.maxWidth, constraints.maxHeight),
+        ),
+        onPointerMove: onPointerMove,
+        onPointerUp: onPointerEnd,
+        onPointerCancel: onPointerEnd,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 100),
+          opacity: dimmed ? 0.28 : 1,
+          child: child,
         ),
       ),
     );
@@ -386,33 +430,17 @@ class _MetricSelectionCard extends StatelessWidget {
     required this.metric,
     required this.selected,
     required this.slot,
-    required this.replacementActive,
-    required this.replacementCandidate,
-    required this.inputLocked,
-    required this.onAdd,
-    required this.onSelectReplacement,
-    required this.onRemove,
   });
 
   final CustomHomeMetric metric;
   final bool selected;
   final int? slot;
-  final bool replacementActive;
-  final bool replacementCandidate;
-  final bool inputLocked;
-  final VoidCallback? onAdd;
-  final VoidCallback? onSelectReplacement;
-  final VoidCallback? onRemove;
 
   static const _radius = 16.0;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final enabled = !inputLocked;
-    final candidateDisabled =
-        (!selected && onAdd == null) || (selected && replacementActive);
-    final pendingReplacement = !selected && replacementCandidate;
     final cardContent = Stack(
       children: [
         Center(
@@ -443,40 +471,23 @@ class _MetricSelectionCard extends StatelessWidget {
             ),
           ),
         ),
-        if (selected)
+        if (selected && slot != null)
           Positioned(
             top: 10,
             left: 10,
             child: _SlotBadge(slot: slot!),
-          ),
-        if (pendingReplacement)
-          Positioned(
-            top: 13,
-            left: 14,
-            child: Text(
-              AppLocalizations.of(context)?.customHomeReplacementSelected ??
-                  'Selected',
-              style: context.hmiTypography.technicalMeta.copyWith(
-                color: const Color(0xFFFFD7B9),
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.4,
-              ),
-            ),
           ),
         Positioned(
           top: 8,
           right: 8,
           child: _CardCornerButton(
             selected: selected,
-            pendingReplacement: pendingReplacement,
-            enabled: enabled && !candidateDisabled,
             metric: metric,
-            onPressed: selected ? onRemove : onAdd,
           ),
         ),
       ],
     );
-    final body = AnimatedContainer(
+    return AnimatedContainer(
       key: ValueKey('custom-home-card-${metric.name}'),
       duration: CustomHomeTab.animationDuration,
       curve: CustomHomeTab.animationCurve,
@@ -485,39 +496,15 @@ class _MetricSelectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(_radius),
         gradient: selected
             ? null
-            : pendingReplacement
-                ? const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xF05C331F), Color(0xED211512)],
-                  )
-                : const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0x5CFFFFFF), Color(0x3EFFF8F6)],
-                  ),
+            : const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x5CFFFFFF), Color(0x3EFFF8F6)],
+              ),
         border: Border.all(
-          color: selected
-              ? Colors.transparent
-              : pendingReplacement
-                  ? const Color(0xFFFFA15F)
-                  : const Color(0x99FFFFFF),
-          width: selected
-              ? 0
-              : pendingReplacement
-                  ? 1.4
-                  : 1,
+          color: selected ? Colors.transparent : const Color(0x99FFFFFF),
+          width: selected ? 0 : 1,
         ),
-        boxShadow: pendingReplacement
-            ? const [
-                BoxShadow(
-                  color: Color(0x9CFF7A35),
-                  blurRadius: 13,
-                  spreadRadius: -2,
-                  offset: Offset(2, 4),
-                ),
-              ]
-            : const [],
       ),
       child: selected
           ? CyberCard(
@@ -531,18 +518,6 @@ class _MetricSelectionCard extends StatelessWidget {
             )
           : cardContent,
     );
-
-    final onCardTap =
-        selected ? (replacementActive ? onSelectReplacement : null) : onAdd;
-    final interactive = onCardTap != null
-        ? InkWell(
-            borderRadius: BorderRadius.circular(_radius),
-            onTap: enabled ? onCardTap : null,
-            child: body,
-          )
-        : body;
-    return _ReplacementPulse(
-        active: selected && replacementActive, child: interactive);
   }
 
   static IconData _icon(CustomHomeMetric metric) => switch (metric) {
@@ -573,49 +548,37 @@ class _MetricSelectionCard extends StatelessWidget {
 class _CardCornerButton extends StatelessWidget {
   const _CardCornerButton({
     required this.selected,
-    required this.pendingReplacement,
-    required this.enabled,
     required this.metric,
-    required this.onPressed,
   });
 
   final bool selected;
-  final bool pendingReplacement;
-  final bool enabled;
   final CustomHomeMetric metric;
-  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final checked = selected || pendingReplacement;
     return Semantics(
-      button: true,
-      label: checked ? 'Selected ${metric.name}' : 'Add ${metric.name}',
-      child: InkResponse(
+      label: selected ? 'Selected ${metric.name}' : 'Candidate ${metric.name}',
+      child: Container(
         key: ValueKey(
           selected
-              ? 'custom-home-remove-${metric.name}'
-              : 'custom-home-add-${metric.name}',
+              ? 'custom-home-selected-${metric.name}'
+              : 'custom-home-candidate-${metric.name}',
         ),
-        radius: 22,
-        onTap: enabled ? onPressed : null,
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: checked
-                ? CyberColors.buttonPrimaryAccent
-                : const Color(0x1AFFFFFF),
-            border: Border.all(
-              color: checked ? const Color(0xFFFFB07B) : Colors.white70,
-            ),
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: selected
+              ? CyberColors.buttonPrimaryAccent
+              : const Color(0x1AFFFFFF),
+          border: Border.all(
+            color: selected ? const Color(0xFFFFB07B) : Colors.white70,
           ),
-          child: Icon(
-            checked ? Icons.check_rounded : Icons.add_rounded,
-            color: Colors.white,
-            size: 23,
-          ),
+        ),
+        child: Icon(
+          selected ? Icons.check_rounded : Icons.add_rounded,
+          color: Colors.white,
+          size: 23,
         ),
       ),
     );
@@ -644,75 +607,6 @@ class _SlotBadge extends StatelessWidget {
           color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
-      ),
-    );
-  }
-}
-
-class _ReplacementPulse extends StatefulWidget {
-  const _ReplacementPulse({required this.active, required this.child});
-
-  final bool active;
-  final Widget child;
-
-  @override
-  State<_ReplacementPulse> createState() => _ReplacementPulseState();
-}
-
-class _ReplacementPulseState extends State<_ReplacementPulse>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 850),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.active) _controller.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(covariant _ReplacementPulse oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.active == oldWidget.active) return;
-    if (widget.active) {
-      _controller.repeat(reverse: true);
-    } else {
-      _controller.stop();
-      _controller.value = 0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      child: widget.child,
-      builder: (context, child) => DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(_MetricSelectionCard._radius),
-          boxShadow: widget.active
-              ? [
-                  BoxShadow(
-                    color: Color.lerp(
-                      const Color(0x30FF8A4D),
-                      const Color(0xA8FF8A4D),
-                      _controller.value,
-                    )!,
-                    blurRadius: 8 + _controller.value * 8,
-                    spreadRadius: -1 + _controller.value,
-                  ),
-                ]
-              : const [],
-        ),
-        child: child,
       ),
     );
   }

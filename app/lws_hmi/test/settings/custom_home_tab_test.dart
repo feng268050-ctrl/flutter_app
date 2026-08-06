@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
-import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
 
 void main() {
-  testWidgets('cancel then add moves a card between Custom Home zones',
+  testWidgets('dragging a candidate onto a selected slot swaps the cards',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -19,7 +18,7 @@ void main() {
         home: Scaffold(
           body: CustomHomeTab(
             store: CustomHomeLayoutStore(
-              preferencePath: '/tmp/custom-home-layout-test.json',
+              preferencePath: '/tmp/custom-home-layout-drag-test.json',
             ),
           ),
         ),
@@ -28,28 +27,43 @@ void main() {
     await tester.pump();
 
     expect(find.text('Selected 4/4'), findsOneWidget);
-    await tester.tap(
-      find.byKey(const ValueKey('custom-home-remove-wireConsumption')),
+    expect(
+      find.byKey(const ValueKey('custom-home-selected-wireConsumption')),
+      findsOneWidget,
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Selected 3/4'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('custom-home-save')));
-    await tester.pump();
-    expect(find.text('Please Select 4 Cards'), findsOneWidget);
-    ProcessModeToast.resetForTest();
+    expect(
+      find.byKey(const ValueKey('custom-home-candidate-cutRatio')),
+      findsOneWidget,
+    );
 
-    await tester.tap(
+    final from = tester.getCenter(
+      find.byKey(const ValueKey('custom-home-card-cutRatio')),
+    );
+    final to = tester.getCenter(
       find.byKey(const ValueKey('custom-home-card-wireConsumption')),
     );
+    await tester.drag(
+      find.byKey(const ValueKey('custom-home-card-cutRatio')),
+      to - from,
+    );
     await tester.pumpAndSettle();
+
+    // Insert-reorder: candidate enters the Home row; one prior Home card drops
+    // into the candidate pool.
+    expect(
+      find.byKey(const ValueKey('custom-home-selected-cutRatio')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('custom-home-candidate-cutRatio')),
+      findsNothing,
+    );
     expect(find.text('Selected 4/4'), findsOneWidget);
   });
 
-  testWidgets('full Custom Home selection enters replace mode then swaps',
-      (tester) async {
+  testWidgets('dragging reorders within the selected row', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    addTearDown(ProcessModeToast.resetForTest);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -58,7 +72,7 @@ void main() {
         home: Scaffold(
           body: CustomHomeTab(
             store: CustomHomeLayoutStore(
-              preferencePath: '/tmp/custom-home-layout-replace-test.json',
+              preferencePath: '/tmp/custom-home-layout-reorder-test.json',
             ),
           ),
         ),
@@ -66,47 +80,30 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(
-      find.byKey(const ValueKey('custom-home-card-cutRatio')),
-    );
-    await tester.pump();
-    expect(find.text('Please Select A Card To Replace'), findsOneWidget);
-    expect(find.text('Selected'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('custom-home-card-cutRatio')),
-        matching: find.byIcon(Icons.check_rounded),
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(
-      find.byKey(const ValueKey('custom-home-card-cleanRatio')),
-    );
-    await tester.pump();
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('custom-home-card-cutRatio')),
-        matching: find.byIcon(Icons.add_rounded),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('custom-home-card-cleanRatio')),
-        matching: find.byIcon(Icons.check_rounded),
-      ),
-      findsOneWidget,
-    );
-    await tester.pump(const Duration(milliseconds: 120));
-    await tester.tap(
+    final from = tester.getCenter(
       find.byKey(const ValueKey('custom-home-card-wireConsumption')),
+    );
+    final to = tester.getCenter(
+      find.byKey(const ValueKey('custom-home-card-laserOnDuration')),
+    );
+    await tester.drag(
+      find.byKey(const ValueKey('custom-home-card-wireConsumption')),
+      to - from,
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Selected 4/4'), findsOneWidget);
-    expect(find.byKey(const ValueKey('custom-home-remove-cleanRatio')),
-        findsOneWidget);
-    ProcessModeToast.resetForTest();
+    // Slot badges follow selected order; wireConsumption should leave slot 1.
+    final wireCard = find.byKey(
+      const ValueKey('custom-home-card-wireConsumption'),
+    );
+    expect(
+      find.descendant(of: wireCard, matching: find.text('1')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: wireCard, matching: find.text('2')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Custom Home success tip auto-dismisses after 1.5 seconds',

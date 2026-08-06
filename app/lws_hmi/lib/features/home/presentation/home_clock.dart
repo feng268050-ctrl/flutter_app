@@ -20,8 +20,9 @@ abstract final class HomeClockTokens {
   /// Date/weekday line relative to [HomeClock.fontSize].
   static const dateFontScale = 0.30;
 
-  /// Gap between time and date lines (× time fontSize).
-  static const dateGapScale = 0.06;
+  /// Gap between date and time lines (× time fontSize).
+  /// Date stays at the top of the column; larger gap only moves time down.
+  static const dateGapScale = 0.18;
 }
 
 /// Home hero clock — stand-in for lws-ui `FrostHomeClockView`.
@@ -296,6 +297,10 @@ class _HomeClockState extends State<HomeClock> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        if (showDate) ...[
+          _dateLine(),
+          SizedBox(height: gap),
+        ],
         _glyphLine(
           text: _text,
           fontSize: widget.fontSize,
@@ -303,16 +308,12 @@ class _HomeClockState extends State<HomeClock> {
           semanticsKey: const ValueKey('home-clock-text'),
           widthOverride: timeW,
         ),
-        if (showDate) ...[
-          SizedBox(height: gap),
-          _dateLine(),
-        ],
       ],
     );
 
     return Semantics(
       label: 'Home clock',
-      value: showDate ? '$_text  $_dateText' : _text,
+      value: showDate ? '$_dateText  $_text' : _text,
       child: Padding(
         // No top pad — Home places this block at Quick/Engineer top (55).
         padding: EdgeInsets.fromLTRB(pad, 0, pad, pad),

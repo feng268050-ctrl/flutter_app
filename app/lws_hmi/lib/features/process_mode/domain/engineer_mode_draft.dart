@@ -1,10 +1,12 @@
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_library/domain/process_parameter_defaults.dart';
 
 /// In-memory engineer workspace draft.
 ///
 /// Matches lws-ui: field edits live in a per-process-type session (not Room).
-/// [Save as Favorite] is the intentional DB write; Reset restores baseline /
-/// built-in default for the active type.
+/// [EngineerModeSessionStore] keeps the session across leave/re-enter
+/// (`engineer_data_cache:{type}`). [Save as Favorite] is the intentional DB
+/// write; Reset restores baseline / built-in default for the active type.
 final class EngineerModeDraft {
   const EngineerModeDraft({
     required this.preset,
@@ -55,9 +57,10 @@ final class EngineerModeDraft {
 
   /// Load a library row into the workspace (built-in stays read-only).
   static EngineerModeDraft fromLibrary(ProcessPreset source) {
+    final resolved = ProcessParameterDefaults.resolve(source);
     return EngineerModeDraft(
-      preset: source,
-      baseline: source,
+      preset: resolved,
+      baseline: resolved,
       unsaved: false,
       fromQuickHandoff: false,
     );
@@ -65,19 +68,20 @@ final class EngineerModeDraft {
 
   /// Quick → Engineer handoff: in-memory user draft, no DB write yet.
   static EngineerModeDraft fromQuickSource(ProcessPreset source) {
+    final resolved = ProcessParameterDefaults.resolve(source);
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
     final draft = ProcessPreset(
-      uuid: 'draft-${source.uuid}',
-      name: source.name.isEmpty ? _defaultName(source) : source.name,
+      uuid: 'draft-${resolved.uuid}',
+      name: resolved.name.isEmpty ? _defaultName(resolved) : resolved.name,
       kind: ProcessPresetKind.user,
       source: 'user',
       isBuiltin: false,
-      processType: source.processType,
-      materialType: source.materialType,
-      materialName: source.materialName,
-      thickness: source.thickness,
-      gear: source.gear,
-      parameters: source.parameters,
+      processType: resolved.processType,
+      materialType: resolved.materialType,
+      materialName: resolved.materialName,
+      thickness: resolved.thickness,
+      gear: resolved.gear,
+      parameters: resolved.parameters,
       createdAtMs: now,
       updatedAtMs: now,
     );

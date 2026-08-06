@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:lws_hmi/app/app_routes.dart';
+
 /// Process-scoped gate for startup Safety Tips (lws-ui `SafetyTipsActivity`).
 ///
 /// Shown once per HMI process start — no disk persistence, matching lws-ui.
@@ -12,8 +15,12 @@ abstract final class SafetyTipsGate {
 
   static bool get hasAcceptedThisProcess => _acceptedThisProcess;
 
-  /// When true, [SafetyTipsCoordinator] skips the overlay (widget tests).
+  /// When true, [MaterialApp] starts on Home (widget tests / already accepted).
   static bool get shouldSkip => _skipForTest || _acceptedThisProcess;
+
+  /// Initial named route for this process.
+  static String get initialRoute =>
+      shouldSkip ? AppRoutes.home : AppRoutes.safetyTips;
 
   static void setActive(bool active) {
     _active = active;
@@ -24,6 +31,7 @@ abstract final class SafetyTipsGate {
     _active = false;
   }
 
+  @visibleForTesting
   static void resetForTest({bool skip = false}) {
     _active = false;
     _acceptedThisProcess = false;

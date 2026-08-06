@@ -131,6 +131,27 @@ void main() {
       expect(painter.width, lessThanOrEqualTo(titleMax + 0.5));
     });
 
+    testWidgets('body font size does not exceed fitted title', (tester) async {
+      const title = 'Camera Communication Alarm';
+      const body =
+          'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+      await tester.pumpWidget(
+        harness(
+          WarnDialogBody(
+            title: title,
+            body: body,
+            onConfirm: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final titleSize = tester.widget<Text>(find.text(title)).style!.fontSize!;
+      final bodySize = tester.widget<Text>(find.text(body)).style!.fontSize!;
+      expect(titleSize, lessThan(WarnDialogMetrics.titleSize));
+      expect(bodySize, lessThanOrEqualTo(titleSize));
+    });
+
     testWidgets('INFO chrome uses black title', (tester) async {
       await tester.pumpWidget(
         harness(

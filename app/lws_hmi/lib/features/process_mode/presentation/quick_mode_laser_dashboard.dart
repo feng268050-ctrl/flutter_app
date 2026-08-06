@@ -270,7 +270,7 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                           label: AppLocalizations.of(context)
                                   ?.moreStatusLabel ??
                               'More Status',
-                          size: HmiButtonSize.small,
+                          size: HmiButtonSize.medium,
                           widthPolicy: HmiButtonWidthPolicy.fill,
                           variant: CyberButtonVariant.standard,
                           shape: CyberButtonShape.rounded,

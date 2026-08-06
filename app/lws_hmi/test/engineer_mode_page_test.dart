@@ -5,6 +5,8 @@ import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/app/app_navigation.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_importer.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -12,15 +14,21 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_a
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/sqlite_process_library_repository.dart';
 import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
+import 'package:lws_hmi/features/process_mode/application/engineer_mode_session_store.dart';
+import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  tearDown(ProcessModeToast.resetForTest);
+  tearDown(() {
+    ProcessModeToast.resetForTest();
+    EngineerModeSessionStore.instance.clearForTest();
+  });
 
   AppServices testServices() => AppServices(
         boardProfile: BoardProfile.fromJsonString('''
@@ -44,6 +52,7 @@ void main() {
 
   Future<ProcessLibraryController> seedController({
     List<ProcessPreset>? extras,
+    ProcessParameterApplier? applier,
   }) async {
     final database = sqlite3.openInMemory();
     addTearDown(database.dispose);
@@ -87,10 +96,11 @@ void main() {
         manifestAsset: 'missing.json',
         bundle: _EmptyBundle(),
       ),
-      applier: ProcessParameterApplier(
-        modbus: _UnusedModbus(),
-        interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
-      ),
+      applier: applier ??
+          ProcessParameterApplier(
+            modbus: _UnusedModbus(),
+            interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
+          ),
     );
     addTearDown(controller.close);
     await controller.initialize();
@@ -151,7 +161,7 @@ void main() {
     );
     await tester.pump();
 
-    final resetButton = tester.widget<CyberButton>(
+    final resetButton = tester.widget<HmiButton>(
       find.byKey(const ValueKey('engineer-action-reset-default')),
     );
     expect(resetButton.shape, CyberButtonShape.rounded);
@@ -268,7 +278,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Reset complete'), findsOneWidget);
+    expect(find.text('Reset Complete'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('engineer-operation-success')),
       findsNothing,
@@ -290,26 +300,220 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 80));
 
-    expect(find.text('Quick handoff'), findsOneWidget);
-    expect(find.textContaining('42'), findsWidgets);
+    expect(
+      EngineerModeSessionStore.instance
+          .get(ProcessType.continuousWelding)
+          ?.preset
+          .name,
+      'Quick handoff',
+    );
+    expect(
+      EngineerModeSessionStore.instance
+          .get(ProcessType.continuousWelding)
+          ?.preset
+          .parameters
+          .values['process.laser_power'],
+      42,
+    );
 
     await tester.tap(
       find.byKey(const ValueKey('engineer-tab-spotWelding')),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pump(kAppPageEnterDuration);
+    await tester.pump();
 
     await tester.tap(
       find.byKey(const ValueKey('engineer-tab-continuousWelding')),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pump(kAppPageEnterDuration);
+    await tester.pump();
 
-    expect(find.text('Quick handoff'), findsOneWidget);
-    expect(find.textContaining('42'), findsWidgets);
+    // Process-lifetime cache must still hold the Quick handoff edits.
+    expect(
+      EngineerModeSessionStore.instance
+          .get(ProcessType.continuousWelding)
+          ?.preset
+          .name,
+      'Quick handoff',
+    );
+    expect(
+      EngineerModeSessionStore.instance
+          .get(ProcessType.continuousWelding)
+          ?.preset
+          .parameters
+          .values['process.laser_power'],
+      42,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('engineer-mode-name')),
+        matching: find.text('Quick handoff'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Stainless Steel-2mm'), findsNothing);
 
     // Tab switch kicks off unawaited Modbus sync; dispose waits while busy.
+    // Also cancel any pending apply debounce from session restore.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 600));
+  });
+
+  testWidgets('leave and re-enter restores process-lifetime session',
+      (tester) async {
+    await setDesignSurface(tester);
+    final controller = await seedController();
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.continuousWelding,
+        initialPresetUuid: 'quick-hand',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('engineer-mode-name')),
+        matching: find.text('Quick handoff'),
+      ),
+      findsOneWidget,
+    );
+
+    // Leave Engineer Mode (route dispose) without clearing the session store.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(
+      EngineerModeSessionStore.instance
+          .get(ProcessType.continuousWelding)
+          ?.preset
+          .name,
+      'Quick handoff',
+    );
+
+    // Re-enter without Quick handoff — must restore MemoryCache, not builtin.
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.continuousWelding,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('engineer-mode-name')),
+        matching: find.text('Quick handoff'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Stainless Steel-2mm'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 600));
+  });
+
+  testWidgets(
+      'first entry on continuous weld applies process group (default swing)',
+      (tester) async {
+    await setDesignSurface(tester);
+    final modbus = _RecordingModbus();
+    final controller = await seedController(
+      applier: ProcessParameterApplier(
+        modbus: modbus,
+        interlockFailure: () async => null,
+      ),
+    );
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.continuousWelding,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    // Debounce 300ms from first-entry continuous-weld apply.
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(modbus.processGroupWrites, greaterThanOrEqualTo(1));
+    expect(modbus.attributes['process.swing_width'], 2);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 600));
+  });
+
+  testWidgets(
+      'CW session cache restore does not auto-apply (lws-ui isInit)',
+      (tester) async {
+    await setDesignSurface(tester);
+    final modbus = _RecordingModbus();
+    final controller = await seedController(
+      applier: ProcessParameterApplier(
+        modbus: modbus,
+        interlockFailure: () async => null,
+      ),
+    );
+    EngineerModeSessionStore.instance.put(
+      EngineerModeDraft.fromLibrary(
+        controller
+            .engineerPresets(processType: ProcessType.continuousWelding)
+            .first
+            .copyWith(
+              parameters: ProcessParameters({
+                'process.laser_power': 55,
+                'process.swing_width': 5,
+              }),
+            ),
+      ),
+    );
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.continuousWelding,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(modbus.processGroupWrites, 0);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 600));
+  });
+
+  testWidgets(
+      'first entry on non-continuous weld does not auto-apply (lws-ui isInit)',
+      (tester) async {
+    await setDesignSurface(tester);
+    final modbus = _RecordingModbus();
+    final controller = await seedController(
+      extras: [
+        _engineer(
+          uuid: 'eng-cut',
+          name: 'Cut Default',
+          builtin: true,
+        ).copyWith(processType: ProcessType.handCutting),
+      ],
+      applier: ProcessParameterApplier(
+        modbus: modbus,
+        interlockFailure: () async => null,
+      ),
+    );
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.handCutting,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(modbus.processGroupWrites, 0);
+
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 600));
   });
@@ -390,6 +594,47 @@ final class _EmptyBundle extends CachingAssetBundle {
 }
 
 final class _UnusedModbus extends ModbusRtuClient {}
+
+/// Counts successful process-group applies for first-entry policy tests.
+final class _RecordingModbus extends ModbusRtuClient {
+  _RecordingModbus() {
+    for (final spec in ProcessParameterCatalog.specs) {
+      attributes[spec.key] = 0.0;
+    }
+    attributes['control.process_type'] = 0;
+  }
+
+  final Map<String, Object?> attributes = {};
+  int processGroupWrites = 0;
+
+  @override
+  Future<T> exclusiveSession<T>(Future<T> Function() body) => body();
+
+  @override
+  Future<bool> writeGroup(
+    String groupId,
+    Map<String, Object?> values,
+  ) async {
+    if (groupId == 'process') {
+      processGroupWrites += 1;
+    }
+    attributes.addAll(values);
+    return true;
+  }
+
+  @override
+  Future<Map<String, Object?>> readGroup(String groupId) async =>
+      Map<String, Object?>.from(attributes);
+
+  @override
+  Future<bool> writeAttribute(String id, Object? value) async {
+    attributes[id] = value;
+    return true;
+  }
+
+  @override
+  Future<Object?> readAttribute(String id) async => attributes[id];
+}
 
 /// Owns [AppServices] so [OsWallClock] is disposed when the harness is removed.
 final class _AppServicesHost extends StatefulWidget {

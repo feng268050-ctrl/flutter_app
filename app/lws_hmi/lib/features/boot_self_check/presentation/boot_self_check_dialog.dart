@@ -94,8 +94,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                       children: [
                         CyberCheckbox(
                           value: session.dontShowAgain,
-                          // Larger than CyberDimens.checkboxLargeSize (28).
-                          size: 38,
+                          size: CyberDimens.checkboxLargeSize,
                           onChanged: (v) {
                             onUserInteracted?.call();
                             session.setDontShowAgain(v ?? false);

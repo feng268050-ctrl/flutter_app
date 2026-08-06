@@ -716,9 +716,8 @@ final class _EngineerWireActionButtonState
                       color: actionOrange,
                     ),
                   if (latched) const FeedContinuousRipple(),
-                  // Continuous Feed: label only. Else [gap][icon][gap][text][gap]
-                  // so left inset equals icon↔label spacing; icon+text H-aligned.
-                  // Text is never ellipsized — shrink icon/gaps first if needed.
+                  // Label centered on the button; icon inset on the left
+                  // (same chrome as Quick [ProcessModeOutlineButton]).
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final style = TextStyle(
@@ -739,60 +738,38 @@ final class _EngineerWireActionButtonState
                           ),
                         );
                       }
-                      final painter = TextPainter(
-                        text: TextSpan(text: label, style: style),
-                        maxLines: 1,
-                        textDirection: TextDirection.ltr,
-                      )..layout();
-                      final textW = painter.width;
-                      var drawIcon = iconSize;
-                      var gap = (constraints.maxWidth - drawIcon - textW) / 3;
-                      if (gap < 0) {
-                        // Keep full label; shrink icon, then gaps to zero.
-                        drawIcon = (constraints.maxWidth - textW)
-                            .clamp(0.0, iconSize);
-                        gap = (constraints.maxWidth - drawIcon - textW) / 3;
-                        if (gap < 0) {
-                          gap = 0;
-                          drawIcon = (constraints.maxWidth - textW)
-                              .clamp(0.0, iconSize);
-                        }
-                      }
-                      final row = Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                      final edgeInset =
+                          ((constraints.maxHeight - iconSize) / 2)
+                              .clamp(0.0, constraints.maxHeight);
+                      return Stack(
+                        fit: StackFit.expand,
                         children: [
-                          SizedBox(width: gap),
-                          if (drawIcon > 0)
-                            SizedBox(
-                              width: drawIcon,
-                              height: drawIcon,
-                              child: Transform.flip(
-                                flipX: widget.retract,
-                                child: Icon(
-                                  widget.icon,
-                                  color: widget.enabled
-                                      ? foreground
-                                      : disabledForeground,
-                                  size: drawIcon,
-                                ),
+                          Center(
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              softWrap: false,
+                              textAlign: TextAlign.center,
+                              style: style,
+                            ),
+                          ),
+                          Positioned(
+                            left: edgeInset,
+                            top: edgeInset,
+                            width: iconSize,
+                            height: iconSize,
+                            child: Transform.flip(
+                              flipX: widget.retract,
+                              child: Icon(
+                                widget.icon,
+                                color: widget.enabled
+                                    ? foreground
+                                    : disabledForeground,
+                                size: iconSize,
                               ),
                             ),
-                          SizedBox(width: gap),
-                          Text(
-                            label,
-                            maxLines: 1,
-                            softWrap: false,
-                            style: style,
                           ),
-                          SizedBox(width: gap),
                         ],
-                      );
-                      // Scale down only if the panel is too narrow for full text.
-                      return FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.center,
-                        child: row,
                       );
                     },
                   ),

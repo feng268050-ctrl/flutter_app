@@ -103,13 +103,74 @@ void main() {
 
       expect(modbus.writes, isEmpty);
     });
+
+    test('with host: force-off on interrupt even when Modbus would fail',
+        () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final modbus = _GuardModbus(writeOk: false);
+      final dir = await Directory.systemTemp.createTemp('laser-guard-');
+      addTearDown(() => dir.delete(recursive: true));
+      final store = AdvancedSettingsStore(
+        preferencePath: '${dir.path}/advanced-settings.json',
+      );
+      store.warmRead();
+      final dangerous = DangerousOperationsSettings(store);
+      final host = _FakeLaserHost();
+      LaserWorkGuard.register(host);
+      addTearDown(() => LaserWorkGuard.unregister(host));
+
+      await LaserWorkGuard.evaluateAndInterruptIfNeeded(
+        services: servicesWith(modbus),
+        dangerous: dangerous,
+        activeCodesOverride: const {'E011'},
+      );
+
+      expect(host.forceOffCalls, 1);
+      // Host owns Modbus clear — no bare writeAttribute fallback.
+      expect(modbus.writes, isEmpty);
+    });
+
+    test('without host: still writes laser_enable false on interrupt',
+        () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final modbus = _GuardModbus(writeOk: false);
+      final dir = await Directory.systemTemp.createTemp('laser-guard-');
+      addTearDown(() => dir.delete(recursive: true));
+      final store = AdvancedSettingsStore(
+        preferencePath: '${dir.path}/advanced-settings.json',
+      );
+      store.warmRead();
+      final dangerous = DangerousOperationsSettings(store);
+      expect(LaserWorkGuard.debugHost, isNull);
+
+      await LaserWorkGuard.evaluateAndInterruptIfNeeded(
+        services: servicesWith(modbus),
+        dangerous: dangerous,
+        activeCodesOverride: const {'E011'},
+      );
+
+      expect(modbus.writes, [(LaserWorkGuard.laserEnableAttribute, false)]);
+    });
   });
 }
 
+final class _FakeLaserHost implements LaserWorkGuardHost {
+  int forceOffCalls = 0;
+
+  @override
+  bool get isLaserEnableActive => true;
+
+  @override
+  Future<void> forceLaserOffForGuardedAlarm() async {
+    forceOffCalls++;
+  }
+}
+
 final class _GuardModbus extends ModbusRtuClient {
-  _GuardModbus({this.throwOnRead = false});
+  _GuardModbus({this.throwOnRead = false, this.writeOk = true});
 
   final bool throwOnRead;
+  final bool writeOk;
   final Map<String, Object?> control = {};
   final Map<String, Object?> status = {};
   final List<(String, Object?)> writes = [];
@@ -141,6 +202,6 @@ final class _GuardModbus extends ModbusRtuClient {
   @override
   Future<bool> writeAttribute(String id, Object? value) async {
     writes.add((id, value));
-    return true;
+    return writeOk;
   }
 }

@@ -2,6 +2,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_library/domain/process_parameter_defaults.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
@@ -26,7 +27,9 @@ final class QuickModeParameterPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final value = preset;
+    final value = preset == null
+        ? null
+        : ProcessParameterDefaults.resolve(preset!);
     if (value == null) {
       return SizedBox(
         key: const ValueKey('quick-mode-parameter-preview-empty'),

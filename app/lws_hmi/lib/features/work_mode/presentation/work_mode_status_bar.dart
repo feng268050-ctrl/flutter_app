@@ -18,10 +18,10 @@ enum WorkMode { quick, engineer }
 
 /// App-local status bar for Quick / Engineer (lws-ui `EquipmentStatusBar` parity).
 ///
-/// Home and camera+clock size to their content; the equipment cluster sits in
-/// an [Expanded] and is centered there so Home↔cluster and cluster↔trailing
-/// visual gaps stay equal. Inter-group gaps are capped at
-/// [WorkModeStatusBarDimens.equipmentItemGap] (smaller than the side gaps).
+/// Home and camera+clock size to their content. Fixed
+/// [WorkModeStatusBarDimens.clusterSideGap] separates Home↔cluster and
+/// cluster↔trailing; the equipment strip [Expanded] absorbs leftover width in
+/// its inter-group gaps so both side gaps stay equal and tight.
 final class WorkModeStatusBar extends StatelessWidget
     implements PreferredSizeWidget {
   const WorkModeStatusBar({
@@ -92,12 +92,14 @@ final class WorkModeStatusBar extends StatelessWidget
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                 ),
               ),
-              // Cluster centered in leftover → equal gaps to Home and trailing.
+              const SizedBox(width: WorkModeStatusBarDimens.clusterSideGap),
+              // Strip fills leftover; inter-group gaps absorb free width.
               Expanded(
                 child: _WorkModeEquipmentStrip(
                   status: equipmentStatus,
                 ),
               ),
+              const SizedBox(width: WorkModeStatusBarDimens.clusterSideGap),
               Padding(
                 padding: const EdgeInsets.only(
                   right: WorkModeStatusBarDimens.screenEdgeInset,
@@ -135,8 +137,11 @@ abstract final class WorkModeStatusBarDimens {
   /// Outer inset from screen edge to Home / camera+clock.
   static const double screenEdgeInset = 12;
 
-  /// Max inter-group spacing (kept smaller than Home / trailing side gaps).
-  /// Leftover width in the center [Expanded] becomes equal side breathing room.
+  /// Home ↔ equipment cluster and cluster ↔ camera+clock (equal, fixed).
+  static const double clusterSideGap = 25;
+
+  /// Fallback / min inter-group spacing when the strip is not stretched.
+  /// When the strip has free width, gaps grow evenly to fill it.
   static const double equipmentItemGap = 10;
 
   /// Equipment on/off icons (not scaled by the status-strip layout).
@@ -144,7 +149,7 @@ abstract final class WorkModeStatusBarDimens {
 
   /// Text ↔ icon gap within one equipment status group.
   /// Negative pulls the icon toward the label (mipmaps have transparent padding).
-  static const double statusIconGap = -8;
+  static const double statusIconGap = -4;
 
   /// Design size for camera (same as HomeStatusBar `iconSize: 32` on 1280×800).
   static const double trailingIconSize = 32;
@@ -312,38 +317,32 @@ final class _WorkModeEquipmentStripState
             WorkModeStatusBarDimens.primaryIconSize + iconOverlap;
         final contentWidth = labelWidths.fold<double>(0, (a, b) => a + b) +
             iconLayoutWidth * specs.length;
-        final gapCount = specs.length - 1;
         final free = constraints.maxWidth - contentWidth;
-        // Cap inter-group gap; leftover free width → side inset via [Center].
-        // Prefer full labels: shrink gaps first. Ellipsize only if still tight.
-        final gap = free >= 0
-            ? (free / gapCount)
-                .clamp(0.0, WorkModeStatusBarDimens.equipmentItemGap)
-            : 0.0;
+        // Prefer full labels; ellipsize only when the strip cannot fit at
+        // zero inter-group gaps.
         final maxLabelWidth = free >= 0
             ? double.infinity
             : ((constraints.maxWidth - iconLayoutWidth * specs.length) /
                     specs.length)
                 .clamp(16.0, 400.0);
 
-        return Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              for (var i = 0; i < specs.length; i++) ...[
-                if (i > 0) SizedBox(width: gap),
-                _EquipmentStatusItem(
-                  key: ValueKey(specs[i].key),
-                  label: specs[i].label,
-                  onAsset: specs[i].on,
-                  offAsset: specs[i].off,
-                  active: active[i],
-                  maxLabelWidth: maxLabelWidth,
-                ),
-              ],
+        // Spacers pin first/last to the Expanded edges so the outer
+        // [clusterSideGap] stays exact; free width is split evenly.
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            for (var i = 0; i < specs.length; i++) ...[
+              if (i > 0) const Spacer(),
+              _EquipmentStatusItem(
+                key: ValueKey(specs[i].key),
+                label: specs[i].label,
+                onAsset: specs[i].on,
+                offAsset: specs[i].off,
+                active: active[i],
+                maxLabelWidth: maxLabelWidth,
+              ),
             ],
-          ),
+          ],
         );
       },
     );

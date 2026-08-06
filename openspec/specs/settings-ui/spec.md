@@ -238,7 +238,7 @@ Settings surfaces that collect free text, passwords, or numeric parameters throu
 
 ### Requirement: Prefer Cyber controls when available
 
-As CyberUI gains switch, checkbox, slider, segmented, stepper, and dialog-host widgets, Settings screens that currently use Material stand-ins for the same role SHALL migrate to the Cyber counterparts in the adoption phase (Phase G), unless a documented exception applies (e.g. platform picker that has no Cyber equivalent yet). **Text / password / numeric keyboard entry SHALL use CyberIME** rather than relying on the system soft keyboard once `cyber_ime` is integrated.
+As CyberUI gains switch, checkbox, slider, segmented, stepper, and dialog-host widgets, Settings screens that currently use Material stand-ins for the same role SHALL migrate to the Cyber counterparts in the adoption phase (Phase G), unless a documented exception applies (e.g. platform picker that has no Cyber equivalent yet). **Text / password / numeric keyboard entry SHALL use CyberIME** rather than relying on the system soft keyboard once `cyber_ime` is integrated. Settings boolean rows and checkboxes that are already on Cyber MUST remain on `CyberSwitch` / `CyberCheckbox` (large tier 28 for checkbox faces) and MUST NOT regress to Material `Switch` / `Checkbox`.
 
 #### Scenario: Volume and sound-effect already on Cyber path
 
@@ -254,6 +254,11 @@ As CyberUI gains switch, checkbox, slider, segmented, stepper, and dialog-host w
 
 - **WHEN** the operator focuses a Settings password field after CyberIME adoption
 - **THEN** input is committed through CyberIME rather than the system soft keyboard alone
+
+#### Scenario: Settings checkbox stays Cyber large
+
+- **WHEN** a Settings row presents a checkbox control
+- **THEN** it uses `CyberCheckbox` at `CyberDimens.checkboxLargeSize` (28)
 
 ### Requirement: Misc Show Startup Self-Check is persisted
 

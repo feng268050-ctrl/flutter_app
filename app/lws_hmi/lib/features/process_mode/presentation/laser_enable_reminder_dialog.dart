@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -68,7 +69,6 @@ final class _LaserEnableReminderBodyState
 
   static const _titleDark = Color(0xFF1A1A1A);
   static const _labelMuted = Color(0x80222222);
-  static const _checkboxGreen = Color(0xFF34C759);
 
   @override
   Widget build(BuildContext context) {
@@ -148,36 +148,24 @@ final class _LaserEnableReminderBodyState
         ),
         const SizedBox(height: 14),
         Center(
-          child: InkWell(
+          child: Row(
             key: const ValueKey('laser-enable-reminder-dont-show-again'),
-            borderRadius: BorderRadius.circular(8),
-            onTap: () {
-              CyberClickSoundRegistry.playClick();
-              setState(() => _dontShowAgain = !_dontShowAgain);
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IgnorePointer(
-                  child: SizedBox(
-                    width: CyberDimens.checkboxLargeSize,
-                    height: CyberDimens.checkboxLargeSize,
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: Checkbox(
-                        value: _dontShowAgain,
-                        activeColor: _checkboxGreen,
-                        checkColor: Colors.white,
-                        side: const BorderSide(color: _labelMuted, width: 1.5),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                        onChanged: (_) {},
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CyberCheckbox(
+                value: _dontShowAgain,
+                size: CyberDimens.checkboxLargeSize,
+                onChanged: (v) {
+                  setState(() => _dontShowAgain = v ?? false);
+                },
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () {
+                  CyberClickSoundRegistry.playClick();
+                  setState(() => _dontShowAgain = !_dontShowAgain);
+                },
+                child: Text(
                   l10n.dontShowAgainThisSession,
                   style: context.hmiTypography.sectionTitle.copyWith(
                     color: _labelMuted,
@@ -185,8 +173,8 @@ final class _LaserEnableReminderBodyState
                     decoration: TextDecoration.none,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
@@ -206,10 +194,14 @@ final class _ReminderCard extends StatelessWidget {
   static const _cardFill = Color(0xFFF8F0E8);
   static const _tipDark = Color(0xFF1A1A1A);
   static const _illustrationSize = 200.0;
-  static const _tipFontSize = 26.0;
 
   @override
   Widget build(BuildContext context) {
+    // Title uses [HmiTypography.navigation]; tip copy is one ladder step below.
+    final tipSize = AppTypography.tipBodySizeForTitle(
+      context.hmiTypography.navigation.fontSize ??
+          AppTypography.navigationSize,
+    );
     return Column(
       children: [
         SizedBox(
@@ -232,14 +224,14 @@ final class _ReminderCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // No fixed height — allow full tip lines (was 60dp, clipped at 26sp).
+        // No fixed height — allow full tip lines.
         tip == null
             ? const SizedBox.shrink()
             : Text(
                 tip!,
                 textAlign: TextAlign.center,
                 style: context.hmiTypography.caption.copyWith(
-                  fontSize: _tipFontSize,
+                  fontSize: tipSize,
                   color: _tipDark,
                   height: 1.25,
                   fontWeight: FontWeight.w500,

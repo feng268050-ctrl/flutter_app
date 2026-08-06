@@ -1,5 +1,8 @@
+import 'package:cyber_ime/cyber_ime.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
@@ -7,6 +10,9 @@ import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dar
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/hmi_dialog_actions.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 enum ProcessLibraryPageMode { quick, engineer }
 
@@ -61,9 +67,11 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                       '${controller.lastError}',
                     ),
                     actions: [
-                      TextButton(
+                      HmiButton(
+                        label: l10n.retryText,
+                        size: HmiButtonSize.medium,
+                        variant: CyberButtonVariant.standard,
                         onPressed: controller.initialize,
-                        child: Text(l10n.retryText),
                       ),
                     ],
                   ),
@@ -244,10 +252,12 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                 ),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: FilledButton.icon(
+                  child: HmiButton(
+                    label: l10n.newUserProcess,
+                    size: HmiButtonSize.medium,
+                    variant: CyberButtonVariant.primary,
+                    icon: Icons.add,
                     onPressed: () => _editUser(controller),
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n.newUserProcess),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -286,7 +296,11 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
               actions: selectedPreset == null
                   ? const []
                   : [
-                      OutlinedButton.icon(
+                      HmiButton(
+                        label: l10n.copyAsUserProcess,
+                        size: HmiButtonSize.medium,
+                        variant: CyberButtonVariant.secondary,
+                        icon: Icons.copy,
                         onPressed: () async {
                           final copy =
                               await controller.copyAsUser(selectedPreset);
@@ -294,23 +308,25 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                             setState(() => _selected = copy);
                           }
                         },
-                        icon: const Icon(Icons.copy),
-                        label: Text(l10n.copyAsUserProcess),
                       ),
                       if (!selectedPreset.isBuiltin) ...[
-                        OutlinedButton.icon(
+                        HmiButton(
+                          label: l10n.editText,
+                          size: HmiButtonSize.medium,
+                          variant: CyberButtonVariant.secondary,
+                          icon: Icons.edit,
                           onPressed: () => _editUser(
                             controller,
                             existing: selectedPreset,
                           ),
-                          icon: const Icon(Icons.edit),
-                          label: Text(l10n.editText),
                         ),
-                        OutlinedButton.icon(
+                        HmiButton(
+                          label: l10n.deleteText,
+                          size: HmiButtonSize.medium,
+                          variant: CyberButtonVariant.secondary,
+                          icon: Icons.delete_outline,
                           onPressed: () =>
                               _deleteUser(controller, selectedPreset),
-                          icon: const Icon(Icons.delete_outline),
-                          label: Text(l10n.deleteText),
                         ),
                       ],
                     ],
@@ -388,8 +404,14 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
           createdAtMs: now,
           updatedAtMs: now,
         );
-    final edited = await showDialog<ProcessPreset>(
+    final edited = await TipDialogHost.showDarkPrompt<ProcessPreset>(
       context: context,
+      barrierDismissible: true,
+      constraints: const BoxConstraints(
+        minWidth: 560,
+        maxWidth: 720,
+        maxHeight: 640,
+      ),
       builder: (_) => _ProcessPresetEditor(initial: initial),
     );
     if (edited == null) {
@@ -471,10 +493,12 @@ final class _PresetDetails extends StatelessWidget {
         ),
         Wrap(spacing: 12, runSpacing: 8, children: actions),
         const SizedBox(height: 12),
-        FilledButton.icon(
+        HmiButton(
+          label: l10n.applyToDevice,
+          size: HmiButtonSize.medium,
+          variant: CyberButtonVariant.primary,
+          icon: Icons.send,
           onPressed: onApply,
-          icon: const Icon(Icons.send),
-          label: Text(l10n.applyToDevice),
         ),
       ],
     );
@@ -497,6 +521,7 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
   late final TextEditingController _thickness;
   late final TextEditingController _gear;
   late final Map<String, TextEditingController> _values;
+  final CyberImeSession _ime = CyberImeSession.shared;
 
   @override
   void initState() {
@@ -529,109 +554,157 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
     super.dispose();
   }
 
+  InputDecoration _imeDecoration(String label, {String? helperText}) {
+    return InputDecoration(
+      labelText: label,
+      helperText: helperText,
+      labelStyle: const TextStyle(color: CyberColors.textSecondary),
+      helperStyle: const TextStyle(color: CyberColors.textSecondary),
+      enabledBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: CyberColors.textSecondary),
+      ),
+      focusedBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: CyberColors.textPrimary),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(
-        widget.initial.name.isEmpty ? l10n.newUserProcess : l10n.editProcess,
-      ),
-      content: SizedBox(
-        width: 720,
-        height: 540,
-        child: ListView(
-          children: [
-            TextField(
-              controller: _name,
-              decoration: InputDecoration(labelText: l10n.processNameFieldLabel),
+    const fieldStyle = TextStyle(color: CyberColors.textPrimary);
+    return SizedBox(
+      width: 720,
+      height: 540,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            widget.initial.name.isEmpty
+                ? l10n.newUserProcess
+                : l10n.editProcess,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: CyberColors.textPrimary,
+              fontSize: 37,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+              decoration: TextDecoration.none,
             ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<ProcessType>(
-              initialValue: _processType,
-              decoration: InputDecoration(labelText: l10n.processTypeLabel),
-              items: [
-                for (final value in ProcessType.values)
-                  DropdownMenuItem(
-                    value: value,
-                    child: Text(value.localizedLabel(l10n)),
-                  ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _processType = value);
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<MaterialType>(
-              initialValue: _materialType,
-              decoration: InputDecoration(labelText: l10n.materialLabel),
-              items: [
-                for (final value in MaterialType.values)
-                  DropdownMenuItem(
-                    value: value,
-                    child: Text(value.localizedLabel(l10n)),
-                  ),
-              ],
-              onChanged: (value) => setState(() => _materialType = value),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _materialName,
-              decoration: InputDecoration(
-                labelText: l10n.customMaterialName,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _thickness,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration:
-                        InputDecoration(labelText: l10n.thicknessMmLabel),
-                  ),
+                CyberImeTextField(
+                  fieldType: CyberImeFieldType.text,
+                  controller: _name,
+                  session: _ime,
+                  style: fieldStyle,
+                  decoration:
+                      _imeDecoration(l10n.processNameFieldLabel),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _gear,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: l10n.gearLabel),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<ProcessType>(
+                  initialValue: _processType,
+                  decoration: InputDecoration(
+                    labelText: l10n.processTypeLabel,
+                    labelStyle:
+                        const TextStyle(color: CyberColors.textSecondary),
                   ),
+                  dropdownColor: CyberColors.fillSolidMid,
+                  style: fieldStyle,
+                  items: [
+                    for (final value in ProcessType.values)
+                      DropdownMenuItem(
+                        value: value,
+                        child: Text(value.localizedLabel(l10n)),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _processType = value);
+                    }
+                  },
                 ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<MaterialType>(
+                  initialValue: _materialType,
+                  decoration: InputDecoration(
+                    labelText: l10n.materialLabel,
+                    labelStyle:
+                        const TextStyle(color: CyberColors.textSecondary),
+                  ),
+                  dropdownColor: CyberColors.fillSolidMid,
+                  style: fieldStyle,
+                  items: [
+                    for (final value in MaterialType.values)
+                      DropdownMenuItem(
+                        value: value,
+                        child: Text(value.localizedLabel(l10n)),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _materialType = value),
+                ),
+                const SizedBox(height: 12),
+                CyberImeTextField(
+                  fieldType: CyberImeFieldType.text,
+                  controller: _materialName,
+                  session: _ime,
+                  style: fieldStyle,
+                  decoration: _imeDecoration(l10n.customMaterialName),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CyberImeTextField(
+                        fieldType: CyberImeFieldType.signedDecimal,
+                        controller: _thickness,
+                        session: _ime,
+                        style: fieldStyle,
+                        decoration: _imeDecoration(l10n.thicknessMmLabel),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: CyberImeTextField(
+                        fieldType: CyberImeFieldType.number,
+                        controller: _gear,
+                        session: _ime,
+                        style: fieldStyle,
+                        decoration: _imeDecoration(l10n.gearLabel),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                for (final spec in ProcessParameterCatalog.specs)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: CyberImeTextField(
+                      fieldType: CyberImeFieldType.signedDecimal,
+                      controller: _values[spec.key]!,
+                      session: _ime,
+                      style: fieldStyle,
+                      decoration: _imeDecoration(
+                        '${localizedProcessParameterLabel(l10n, spec.key)} (${spec.unit})',
+                        helperText: '${spec.min} – ${spec.max}',
+                      ),
+                    ),
+                  ),
               ],
             ),
-            const SizedBox(height: 12),
-            for (final spec in ProcessParameterCatalog.specs)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: TextField(
-                  controller: _values[spec.key],
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText:
-                        '${localizedProcessParameterLabel(l10n, spec.key)} (${spec.unit})',
-                    helperText: '${spec.min} – ${spec.max}',
-                  ),
-                ),
-              ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          HmiDialogActions(
+            cancelLabel: l10n.cancelText,
+            confirmLabel: l10n.httpProxySave,
+            onCancel: () => Navigator.of(context).pop(),
+            onConfirm: _save,
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.cancelText),
-        ),
-        FilledButton(
-          onPressed: _save,
-          child: Text(l10n.httpProxySave),
-        ),
-      ],
     );
   }
 

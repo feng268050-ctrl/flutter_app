@@ -1,3 +1,4 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_tips_dialog.dart';
@@ -33,10 +34,11 @@ void main() {
     );
     // Full title — not ellipsized ("Engineer Mode No…").
     expect(find.text('Engineer Mode Notice'), findsOneWidget);
-    expect(
-      find.textContaining('before making fine adjustments.'),
-      findsOneWidget,
-    );
+    // Body is word-boundary wrapped (one Text per English token).
+    expect(find.text('adjustments.'), findsOneWidget);
+    expect(find.byType(CyberCheckbox), findsOneWidget);
+    final checkbox = tester.widget<CyberCheckbox>(find.byType(CyberCheckbox));
+    expect(checkbox.size, CyberDimens.checkboxLargeSize);
 
     final card = tester.getSize(
       find

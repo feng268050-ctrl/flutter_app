@@ -34,13 +34,28 @@ Or set FLUTTER_SDK to the SDK root with bin/flutter (must match engine $ENGINE_V
 		return 0
 	fi
 
+	# Cache JSON is written by Flutter itself; more reliable than parsing
+	# `flutter --version` (upgrade banners can precede the version line).
+	if [[ -f "$FLUTTER_INSTALL/bin/cache/flutter.version.json" ]] &&
+		grep -q "\"flutterVersion\": \"$PINNED_VER\"" \
+			"$FLUTTER_INSTALL/bin/cache/flutter.version.json" 2>/dev/null; then
+		# Repair missing/stale stamp so later checks stay fast.
+		printf '%s\n' "$PINNED_VER" >"$FLUTTER_INSTALL/version"
+		return 0
+	fi
+
 	flutter_version_err="$(mktemp "${TMPDIR:-/tmp}/flutter-version.XXXXXX")"
 	"$FLUTTER" --version >"$flutter_version_err" 2>&1 || true
-	flutter_version_line="$(head -1 "$flutter_version_err" 2>/dev/null || true)"
-	if [[ "$flutter_version_line" == *"$PINNED_VER"* ]]; then
+	# Match anywhere — first line may be an upgrade-notice box, not "Flutter x.y.z".
+	flutter_version_line="$(
+		grep -E -m1 "Flutter[[:space:]]+$PINNED_VER" "$flutter_version_err" 2>/dev/null || true
+	)"
+	if [[ -n "$flutter_version_line" ]]; then
+		printf '%s\n' "$PINNED_VER" >"$FLUTTER_INSTALL/version"
 		rm -f "$flutter_version_err"
 		return 0
 	fi
+	flutter_version_line="$(head -1 "$flutter_version_err" 2>/dev/null || true)"
 
 	path_flutter="$(command -v flutter 2>/dev/null || true)"
 	detail="$(tr '\n' ' ' <"$flutter_version_err" | head -c 400)"

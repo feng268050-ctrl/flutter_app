@@ -10,10 +10,16 @@ import 'package:lws_hmi/features/settings/application/temperature_unit_convert.d
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
 abstract final class MonitorDimens {
+  /// Page-edge inset for Work Info / Machine Status (and shared Monitor pad).
   static const pad = 24.0;
+
+  /// Face-to-face gap between sibling containers — equals [pad] so card rhythm
+  /// matches top / bottom / left / right screen insets.
+  static const gap = pad;
 
   /// Matches [SettingsDimens.outerAmbientExtent] — layout gutter so panel
   /// outer glow can paint without being clipped by scroll/flex ancestors.
@@ -626,8 +632,9 @@ class MonitorAlarmLogRow extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '$code $label',
+                  child: WordBoundaryLabel(
+                    text: '$code $label',
+                    maxLines: 3,
                     style: context.hmiTypography.sectionTitle.copyWith(
                       color: titleRed,
                       fontWeight: FontWeight.w600,

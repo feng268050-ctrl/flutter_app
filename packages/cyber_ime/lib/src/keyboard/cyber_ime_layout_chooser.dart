@@ -15,10 +15,11 @@ class CyberImeLayoutChooser extends StatelessWidget {
     required this.onSelected,
     this.enabled = true,
     this.profiles = CyberImeRegionalProfile.values,
-    this.previewCaption = '软件键盘布局预览',
+    this.previewCaption = 'Software Keyboard Layout Preview',
     this.showDisplayName = true,
     this.showPreview = true,
     this.showFootnote = true,
+    this.segmentPadding = const EdgeInsets.fromLTRB(16, 16, 16, 8),
   });
 
   /// Currently highlighted regional profile.
@@ -45,6 +46,9 @@ class CyberImeLayoutChooser extends StatelessWidget {
   /// Show accent / romaji helper under the preview.
   final bool showFootnote;
 
+  /// Insets around the Segment control.
+  final EdgeInsetsGeometry segmentPadding;
+
   String get _footnote {
     return switch (selected) {
       CyberImeRegionalProfile.qwertz ||
@@ -61,7 +65,7 @@ class CyberImeLayoutChooser extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: segmentPadding,
           child: CyberSegmentedControl<CyberImeRegionalProfile>(
             segments: [
               for (final p in profiles)
@@ -124,11 +128,13 @@ class CyberImeLayoutPreviewCard extends StatelessWidget {
   const CyberImeLayoutPreviewCard({
     super.key,
     required this.profile,
-    this.previewCaption = '软件键盘布局预览',
+    this.previewCaption = 'Software Keyboard Layout Preview',
+    this.captionStyle,
   });
 
   final CyberImeRegionalProfile profile;
   final String previewCaption;
+  final TextStyle? captionStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -147,10 +153,11 @@ class CyberImeLayoutPreviewCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Text(
                 previewCaption,
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 13,
-                ),
+                style: captionStyle ??
+                    const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 16,
+                    ),
               ),
             ),
             CyberImeLayoutPreview(profile: profile),

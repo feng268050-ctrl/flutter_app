@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// Shared Settings chrome (lws-ui InsetList / FrostCard → CyberUI).
 ///
@@ -332,12 +333,16 @@ class SettingsHelpFooter extends StatelessWidget {
     this.text, {
     super.key,
     this.bottomInset = SettingsDimens.inset,
+    this.style,
   });
 
   final String text;
 
   /// Space below the footnote (use `0` when a [SettingsSectionHeader] follows).
   final double bottomInset;
+
+  /// Overrides default supporting / white54 help style.
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
@@ -348,12 +353,13 @@ class SettingsHelpFooter extends StatelessWidget {
         SettingsDimens.inset,
         bottomInset,
       ),
-      child: Text(
-        text,
-        style: context.hmiTypography.supporting.copyWith(
-          color: Colors.white54,
-          height: 1.35,
-        ),
+      child: WordBoundaryBody(
+        text: text,
+        style: style ??
+            context.hmiTypography.supporting.copyWith(
+              color: Colors.white54,
+              height: 1.35,
+            ),
       ),
     );
   }
@@ -1128,7 +1134,7 @@ enum SettingsSwitchEmphasis {
   /// Device / Common / Wi‑Fi: [HmiTypography.settingsRowTitle] + supporting.
   standard,
 
-  /// Advanced AI / danger switches: navigation title + control subtitle.
+  /// Advanced AI / danger switches: section title + body subtitle (−2 vs prior).
   advanced,
 }
 
@@ -1152,11 +1158,11 @@ class SettingsSwitchRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final typography = context.hmiTypography;
     final titleStyle = (emphasis == SettingsSwitchEmphasis.advanced
-            ? typography.navigation
+            ? typography.sectionTitle
             : typography.settingsRowTitle)
         .copyWith(color: CyberColors.textPrimary);
     final subtitleStyle = (emphasis == SettingsSwitchEmphasis.advanced
-            ? typography.settingsRowTitle
+            ? typography.body
             : typography.supporting)
         .copyWith(
       color: CyberColors.textSecondary,
@@ -1174,8 +1180,9 @@ class SettingsSwitchRow extends StatelessWidget {
         ),
         subtitle: subtitle == null
             ? null
-            : Text(
-                subtitle!,
+            : WordBoundaryLabel(
+                text: subtitle!,
+                maxLines: 8,
                 style: subtitleStyle,
               ),
         trailing: CyberSwitch(

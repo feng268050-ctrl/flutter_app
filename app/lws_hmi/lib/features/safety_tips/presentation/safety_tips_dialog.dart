@@ -5,9 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
+import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// Blue link color from lws-ui `activity_safety_tips.xml` (`#324BF3`).
 const Color _kDisclaimerLink = Color(0xFF324BF3);
@@ -23,31 +26,34 @@ const double _kCardPadH = 50;
 const double _kCardPadTop = 50;
 const double _kCardPadBottom = 32;
 
-/// Shows Safety Tips; Product Disclaimer opens via [AppRoutes.productDisclaimer].
+enum _SafetyTipsMode { tips, disclaimer }
+
+/// Startup Safety Tips page (lws-ui `SafetyTipsActivity`).
 ///
-/// Returns when the user taps Agree on Safety Tips (lws-ui `toHome`).
-Future<void> showSafetyTipsDialog({required BuildContext context}) {
-  return showGeneralDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    barrierLabel: 'Safety Tips',
-    // Shell paints home wallpaper; keep route barrier clear.
-    barrierColor: Colors.transparent,
-    transitionDuration: const Duration(milliseconds: 180),
-    pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      return FadeTransition(
-        opacity: animation,
-        child: const _SafetyTipsShell(mode: _SafetyTipsMode.tips),
-      );
-    },
-  );
+/// First-screen named route [AppRoutes.safetyTips] — not a dialog over Home.
+class SafetyTipsPage extends StatefulWidget {
+  const SafetyTipsPage({super.key});
+
+  @override
+  State<SafetyTipsPage> createState() => _SafetyTipsPageState();
 }
 
-enum _SafetyTipsMode { tips, disclaimer }
+class _SafetyTipsPageState extends State<SafetyTipsPage> {
+  @override
+  void initState() {
+    super.initState();
+    SafetyTipsGate.setActive(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const _SafetyTipsShell(mode: _SafetyTipsMode.tips);
+  }
+}
 
 /// Full-screen Product Disclaimer page (lws-ui `UseSafetyTipsActivity`).
 ///
-/// Pushed as [AppRoutes.productDisclaimer] — not a nested dialog over Home.
+/// Pushed as [AppRoutes.productDisclaimer] over [SafetyTipsPage].
 class ProductDisclaimerPage extends StatelessWidget {
   const ProductDisclaimerPage({super.key});
 
@@ -135,8 +141,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
 
   Future<void> _openDisclaimer() async {
     CyberClickSoundRegistry.playClick();
-    // Separate named route (lws-ui startActivity UseSafetyTipsActivity), not
-    // another transparent dialog stacked on Home / Safety Tips.
+    // Separate named route (lws-ui startActivity UseSafetyTipsActivity).
     await Navigator.of(context).pushNamed(AppRoutes.productDisclaimer);
   }
 
@@ -145,7 +150,11 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
       return;
     }
     CyberClickSoundRegistry.playClick();
-    Navigator.of(context).pop();
+    if (widget.mode == _SafetyTipsMode.tips) {
+      SafetyTipsCoordinator.goHomeAfterAccept(context);
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -178,18 +187,24 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
         const SizedBox(height: 40),
         Expanded(
           // Scrollbar tracks the full card width (flush to the frost edge);
-          // body text keeps the 50dp horizontal inset.
+          // body text keeps the 50dp inset + a little right clearance so the
+          // thumb never clips glyphs mid-word.
           child: Scrollbar(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: _kCardPadH),
-              // Split ARB blocks on blank lines so "1. / 2. / …" keep clear
-              // vertical gaps (plain Text collapses visual rhythm on device).
-              child: _NumberedBodyText(
-                content: content,
+              padding: const EdgeInsets.fromLTRB(
+                _kCardPadH,
+                0,
+                _kCardPadH + 12,
+                0,
+              ),
+              // Whole-word wrap (EN); CJK falls back to ordinary soft wrap.
+              child: WordBoundaryBody(
+                text: content,
+                sectionGap: 20,
                 style: context.hmiTypography.pageTitle.copyWith(
                   color: CyberColors.textPrimary,
-                  height: 1.35,
+                  height: 1.4,
                   fontWeight: FontWeight.w400,
                   decoration: TextDecoration.none,
                 ),
@@ -219,17 +234,22 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                         setState(() => _agreed = v ?? false);
                       },
                     ),
-                    const SizedBox(width: 12),
+                    // lws-ui info_use marginStart 16dp.
+                    const SizedBox(width: 16),
                     Expanded(
                       child: isTips
                           ? Wrap(
                               crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 0,
+                              runSpacing: 2,
                               children: [
-                                Text(
-                                  checkboxLabel,
-                                  style: context.hmiTypography.pageTitle.copyWith(
+                                WordBoundaryLabel(
+                                  text: checkboxLabel,
+                                  maxLines: 3,
+                                  style: context.hmiTypography.pageTitle
+                                      .copyWith(
                                     color: CyberColors.textPrimary,
-                                    height: 1.25,
+                                    height: 1.3,
                                     decoration: TextDecoration.none,
                                   ),
                                 ),
@@ -239,11 +259,13 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                     'safety-tips-disclaimer-link',
                                   ),
                                   onTap: _openDisclaimer,
-                                  child: Text(
-                                    ' “${l10n.safetyTipsInfoUse}”',
-                                    style: context.hmiTypography.pageTitle.copyWith(
+                                  child: WordBoundaryLabel(
+                                    text: '“${l10n.safetyTipsInfoUse}”',
+                                    maxLines: 2,
+                                    style: context.hmiTypography.pageTitle
+                                        .copyWith(
                                       color: _kDisclaimerLink,
-                                      height: 1.25,
+                                      height: 1.3,
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.none,
                                     ),
@@ -251,11 +273,12 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                 ),
                               ],
                             )
-                          : Text(
-                              checkboxLabel,
+                          : WordBoundaryLabel(
+                              text: checkboxLabel,
+                              maxLines: 3,
                               style: context.hmiTypography.pageTitle.copyWith(
                                 color: CyberColors.textPrimary,
-                                height: 1.25,
+                                height: 1.3,
                                 decoration: TextDecoration.none,
                               ),
                             ),
@@ -271,7 +294,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                       : 'product-disclaimer-agree-btn',
                 ),
                 label: l10n.safetyTipsAgree,
-                // 100% small CTA; fixed width matches lws-ui Agree (163).
+                // FrostUI 100% ladder: small (44h); width matches lws-ui (163).
                 size: HmiButtonSize.small,
                 widthPolicy: HmiButtonWidthPolicy.fixed,
                 width: 163,
@@ -282,44 +305,6 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
             ],
           ),
         ),
-      ],
-    );
-  }
-}
-
-/// Renders Safety Tips / Disclaimer body as numbered blocks with fixed gaps.
-///
-/// ARB strings already use `\n\n` between `1.` / `2.` / … items; splitting here
-/// makes inter-item spacing independent of line-height.
-final class _NumberedBodyText extends StatelessWidget {
-  const _NumberedBodyText({
-    required this.content,
-    required this.style,
-  });
-
-  final String content;
-  final TextStyle style;
-
-  /// Gap between numbered sections (and between intro + first section).
-  static const _sectionGap = 20.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final blocks = content
-        .split(RegExp(r'\n\s*\n'))
-        .map((b) => b.trim())
-        .where((b) => b.isNotEmpty)
-        .toList(growable: false);
-    if (blocks.isEmpty) {
-      return Text(content, style: style);
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < blocks.length; i++) ...[
-          if (i > 0) const SizedBox(height: _sectionGap),
-          Text(blocks[i], style: style),
-        ],
       ],
     );
   }

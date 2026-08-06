@@ -17,6 +17,7 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart'
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/ip_camera_settings_page.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 class _FakePreviewPlayer extends ChangeNotifier implements IpCameraPreviewPlayer {
   @override
@@ -227,7 +228,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 50));
         if (find.byKey(const Key('ip-camera-record-button')).evaluate().isNotEmpty &&
             tester
-                    .widget<FilledButton>(
+                    .widget<HmiButton>(
                       find.byKey(const Key('ip-camera-record-button')),
                     )
                     .onPressed !=
@@ -249,7 +250,7 @@ void main() {
       }
 
       expect(recorder.currentStatus.phase, IpCameraRecordingPhase.preparing);
-      expect(find.text('Waiting for RTSP stream…'), findsOneWidget);
+      expect(find.text('Waiting For RTSP Stream…'), findsOneWidget);
       expect(find.text('Recording…'), findsNothing);
 
       recorder.markReady();
@@ -278,6 +279,10 @@ void main() {
           .data!;
       expect(saved.startsWith('Saved: /tmp/Videos/movie/'), isTrue);
       expect(saved.endsWith('.mp4'), isTrue);
+
+      // Cancel OsWallClock before Flutter's post-test timer invariant.
+      services.wallClock.dispose();
+      await tester.pump(const Duration(milliseconds: 1));
     },
   );
 }

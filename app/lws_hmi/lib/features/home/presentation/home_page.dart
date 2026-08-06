@@ -7,7 +7,6 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
-import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
 import 'package:lws_hmi/features/global_prompt/wifi_connect_tip_prompt.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/bundled_firmware_bootstrap.dart';
@@ -307,34 +306,25 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
     final settings = BootSelfCheckScope.maybeOf(context)?.settings;
 
-    void continueAfterSafetyTips() {
+    // Safety Tips is the MaterialApp initial route; Home only runs BootSelfCheck
+    // (lws-ui: MainActivity → BootSelfCheck → home prompts).
+    unawaited(() async {
       if (!mounted) {
         return;
       }
-      // lws-ui: MainActivity home resume → BootSelfCheck before home prompts.
       if (settings == null) {
         BootSelfCheckGate.markCompletedInProcess();
         GlobalPromptScope.maybeOf(context)?.notifyGateChanged();
         startModbusLive();
         return;
       }
-      unawaited(
-        BootSelfCheckCoordinator.startWhenHomeEntered(
-          context: context,
-          services: services,
-          settings: settings,
-          onComplete: startModbusLive,
-        ),
-      );
-    }
-
-    // lws-ui: Splash → SafetyTips → Main → BootSelfCheck → home prompts.
-    unawaited(
-      SafetyTipsCoordinator.showWhenHomeEntered(
+      await BootSelfCheckCoordinator.startWhenHomeEntered(
         context: context,
-        onComplete: continueAfterSafetyTips,
-      ),
-    );
+        services: services,
+        settings: settings,
+        onComplete: startModbusLive,
+      );
+    }());
   }
 
   Future<void> _startIpCamera(AppServices services) async {

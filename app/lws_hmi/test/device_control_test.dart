@@ -1,6 +1,7 @@
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:cyber_hal/stub.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_services.dart';
@@ -8,6 +9,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/device_control_bar.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 void main() {
@@ -46,17 +48,14 @@ void main() {
     final controller = DeviceControlController(servicesWith(modbus));
     controller.laserEnable = true;
     controller.keySwitchOn = true;
+    controller.autoWireFeed = true;
 
     final err = await controller.setManualGas(true);
     expect(err, isNull);
-    expect(modbus.writes.map((e) => e.$1).toList(), [
-      DeviceControlIds.wireWork,
-      DeviceControlIds.laserEnable,
-      DeviceControlIds.manualGas,
+    // Single CONTROL_FIELD_1 word: gas | autoWireFeed (laser/wire cleared).
+    expect(modbus.writes, [
+      (DeviceControlIds.controlField1, (1 << 1) | (1 << 4)),
     ]);
-    expect(modbus.writes[0].$2, false);
-    expect(modbus.writes[1].$2, false);
-    expect(modbus.writes[2].$2, true);
     expect(controller.laserEnable, isFalse);
     expect(controller.manualGas, isTrue);
   });
@@ -72,51 +71,68 @@ void main() {
     expect(modbus.writes, isEmpty);
   });
 
-  test('enable and disable laser clear wire work before control write',
-      () async {
+  test('enable and disable laser use single CONTROL_FIELD_1 writes', () async {
     final modbus = _RecordingModbus();
     final controller = DeviceControlController(servicesWith(modbus));
     controller.keySwitchOn = true;
+    controller.autoWireFeed = true;
 
     expect(await controller.enableLaser(), isNull);
     expect(await controller.disableLaser(), isNull);
+    // enable: RMW set laser (read may yield 0 → write 0x1)
+    // disable: RMW clear laser|wire (read 0x1 → write 0)
     expect(modbus.writes, [
-      (DeviceControlIds.wireWork, false),
-      (DeviceControlIds.laserEnable, true),
+      (DeviceControlIds.controlField1, 0x1),
       (DeviceControlIds.controlField1, 0),
     ]);
+    expect(controller.laserEnable, isFalse);
+    expect(controller.wireWork, isFalse);
   });
 
-  test('shutdownForExit clears wire direction, work, and laser enable',
+  test('shutdownForExit clears laser, manual gas, and wire via CONTROL_FIELD_1',
       () async {
     final modbus = _RecordingModbus();
     final controller = DeviceControlController(servicesWith(modbus));
     controller.laserEnable = true;
+    controller.manualGas = true;
+    controller.autoWireFeed = true;
     controller.wireWork = true;
     controller.wireRetracting = true;
+    modbus.control[DeviceControlIds.laserEnable] = true;
+    modbus.control[DeviceControlIds.manualGas] = true;
+    modbus.control[DeviceControlIds.wireManualMode] = true;
+    modbus.control[DeviceControlIds.wireWork] = true;
+    modbus.control[DeviceControlIds.wireDirection] = true;
 
     await controller.shutdownForExit();
 
     expect(controller.laserEnable, isFalse);
+    expect(controller.manualGas, isFalse);
+    expect(controller.autoWireFeed, isFalse);
     expect(controller.wireWork, isFalse);
     expect(controller.wireRetracting, isFalse);
-    expect(modbus.writes, [
-      (DeviceControlIds.wireDirection, false),
-      (DeviceControlIds.wireWork, false),
-      (DeviceControlIds.laserEnable, false),
-    ]);
+    expect(modbus.control[DeviceControlIds.manualGas], isFalse);
+    final fieldWrites = modbus.writes
+        .where((e) => e.$1 == DeviceControlIds.controlField1)
+        .toList();
+    expect(fieldWrites, isNotEmpty);
+    final lastWord = fieldWrites.last.$2;
+    expect(lastWord, isA<num>());
+    expect(
+      (lastWord as num).toInt() & DeviceControlIds.controlField1JobBitsMask,
+      0,
+    );
   });
 
   test('dispose requests laser disarm via shutdownForExit', () async {
     final modbus = _RecordingModbus();
     final controller = DeviceControlController(servicesWith(modbus))
       ..laserEnable = true;
+    modbus.control[DeviceControlIds.laserEnable] = true;
     controller.dispose();
     await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(
-      modbus.writes.any(
-        (e) => e.$1 == DeviceControlIds.laserEnable && e.$2 == false,
-      ),
+      modbus.writes.any((e) => e.$1 == DeviceControlIds.controlField1),
       isTrue,
     );
   });
@@ -337,9 +353,12 @@ void main() {
     expect(await controller.setAutoWireFeed(false), isNull);
     expect(await controller.startWire(retract: true), isNull);
     expect(await controller.stopWire(), isNull);
+    // Allow async process-speed restore after stopWire releases busy.
+    await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(modbus.writes, [
-      (DeviceControlIds.wireWork, false),
-      (DeviceControlIds.wireManualMode, false),
+      // setAutoWireFeed(false): single field_1 clear
+      (DeviceControlIds.controlField1, 0),
+      // startWire: soft speeds then packed retract (wire|dir)
       (
         DeviceControlIds.manualWireFeedSpeed,
         DeviceControlIds.manualWireFeedSpeedMmPerS,
@@ -354,7 +373,7 @@ void main() {
       ),
       // wire=1 dir=1 auto=0 → 0b1100
       (DeviceControlIds.controlField1, 0x0C),
-      // stop: wire off, auto still off
+      // stop: wire off
       (DeviceControlIds.controlField1, 0x00),
       (DeviceControlIds.processWireFeedingSpeed, 10),
     ]);
@@ -385,11 +404,14 @@ void main() {
       await tester.binding.setSurfaceSize(null);
     });
 
-    final controller =
-        DeviceControlController(servicesWith(_RecordingModbus()));
+    final services = servicesWith(_RecordingModbus());
+    final controller = DeviceControlController(services);
     controller.keySwitchOn = true;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: DeviceControlBar(
             controller: controller,
@@ -403,11 +425,15 @@ void main() {
     expect(find.byKey(const ValueKey('device-control-bar')), findsOneWidget);
     expect(find.byKey(const ValueKey('device-control-manual-gas')),
         findsOneWidget);
+    expect(find.byType(CyberSwitch), findsOneWidget);
     expect(find.byKey(const ValueKey('device-control-laser')), findsOneWidget);
     expect(
       find.byKey(const ValueKey('device-control-wire-stub')),
       findsOneWidget,
     );
+    // Cancel OsWallClock before Flutter's post-test timer invariant.
+    services.wallClock.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
   });
 
   testWidgets('DeviceControlBar hides wire stub for cleaning', (tester) async {
@@ -416,10 +442,13 @@ void main() {
       await tester.binding.setSurfaceSize(null);
     });
 
-    final controller =
-        DeviceControlController(servicesWith(_RecordingModbus()));
+    final services = servicesWith(_RecordingModbus());
+    final controller = DeviceControlController(services);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: DeviceControlBar(
             controller: controller,
@@ -434,6 +463,9 @@ void main() {
       find.byKey(const ValueKey('device-control-wire-stub')),
       findsNothing,
     );
+    // Cancel OsWallClock before Flutter's post-test timer invariant.
+    services.wallClock.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
   });
 }
 

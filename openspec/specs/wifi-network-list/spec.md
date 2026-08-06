@@ -48,3 +48,12 @@ Tapping a My Networks or Other Networks row SHALL use the same connect / passwor
 - **WHEN** Wi‑Fi is associated to SSID `Office`
 - **AND** the operator taps that SSID from the top connected row or from My Networks
 - **THEN** the Wi‑Fi Details page opens titled `Office`
+
+### Requirement: Network list actions use HmiButton
+
+Connect / cancel-style actions in the shared Wi‑Fi network list presentation SHALL use `HmiButton` rather than Material `FilledButton` or `TextButton` for those roles.
+
+#### Scenario: Connect action chrome
+
+- **WHEN** the Wi‑Fi network list presents a primary connect action to the operator
+- **THEN** that action is an `HmiButton`

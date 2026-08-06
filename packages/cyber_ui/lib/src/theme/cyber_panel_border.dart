@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:cyber_ui/src/theme/cyber_colors.dart';
 import 'package:cyber_ui/src/theme/cyber_dimens.dart';
+import 'package:cyber_ui/src/theme/cyber_panel_outline.dart';
 import 'package:cyber_ui/src/theme/cyber_tone.dart';
 
 /// Panel border + optional vertical fill (lws-ui border painter stand-in).
@@ -46,6 +47,21 @@ class CyberPanelBorder {
 
   /// Simple uniform border color (cards that don't need gradient stroke).
   Color get flatBorderColor => borderGradientColors.first;
+
+  /// Tip/dialog rim — 1px white highlight at 50% opacity.
+  ///
+  /// Prefer [tipRimOutline] + [CyberFrostPanelOutlinePainter] over a
+  /// [BoxDecoration] border inside [ClipRRect] (stroke gets clipped away).
+  Color get tipRimColor => CyberColors.tipRimHighlight;
+
+  /// Uniform 1px orange outline for tip / Operation Failed overlays.
+  CyberPanelOutline get tipRimOutline => CyberPanelOutline(
+        style: CyberPanelOutlineStyle.uniform,
+        tone: tone,
+        width: width,
+        cornerRadius: cornerRadius,
+        uniformColor: tipRimColor,
+      );
 
   BoxDecoration fillDecoration({bool includeBorder = true}) {
     return BoxDecoration(

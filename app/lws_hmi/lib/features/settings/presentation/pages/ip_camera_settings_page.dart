@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:cyber_hal/ip_camera.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
@@ -15,6 +17,7 @@ import 'package:lws_hmi/features/ip_camera/presentation/camera_overlay_dialog.da
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Common Settings → Camera: Status / Type / Version + live preview + demo record.
 class IpCameraSettingsPage extends StatefulWidget {
@@ -346,18 +349,22 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Row(
               children: [
-                FilledButton(
+                HmiButton(
                   key: const Key('ip-camera-change-overlay'),
+                  label: l10n.cameraChangeOverlay,
+                  size: HmiButtonSize.medium,
+                  variant: CyberButtonVariant.primary,
                   onPressed: () => unawaited(_openOverlayDialog()),
-                  child: Text(l10n.cameraChangeOverlay),
                 ),
                 const SizedBox(width: 12),
-                FilledButton(
+                HmiButton(
                   key: const Key('ip-camera-record-button'),
+                  label: _recordButtonLabel(l10n),
+                  size: HmiButtonSize.medium,
+                  variant: CyberButtonVariant.primary,
                   onPressed: session == null || _recordBusy
                       ? null
                       : () => unawaited(_toggleRecord()),
-                  child: Text(_recordButtonLabel(l10n)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

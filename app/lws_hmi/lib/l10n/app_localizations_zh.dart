@@ -1286,6 +1286,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyboardLayoutHelp => '请连接与所选规格匹配的实体键盘。规格不匹配可能导致部分按键输出异常字符。';
 
   @override
+  String get keyboardSoftLayoutPreview => '软件键盘布局预览';
+
+  @override
   String get keyboardLongPressAccentHint => '长按可输入重音字符';
 
   @override
@@ -1374,7 +1377,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserEnableBlockStatusUnavailable => '请检查设备状态';
 
   @override
-  String get laserEnableBlockWriteFailed => '激光使能写入失败';
+  String get laserEnableBlockWriteFailed => '激光使能不生效';
 
   @override
   String get laserEnableReminderConfirm => '是的 — 我已完成以上安全检查';
@@ -1653,15 +1656,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
 
   @override
-  String get otaCheckFailed => '无法检查更新，请确认网络和云服务设置。';
+  String get otaCheckFailed => '无法获取版本信息，请稍后重试。';
+
+  @override
+  String get otaCheckFailedTitle => '检查更新失败';
+
+  @override
+  String get otaCheckUpToDateTitle => '已是最新版本';
 
   @override
   String get otaSessionActive => '系统升级正在进行中。';
 
   @override
-  String otaAlreadyUpToDate(String version) {
-    return '系统版本 $version 已是最新。';
-  }
+  String get otaAlreadyUpToDate => '当前已安装最新版本。';
 
   @override
   String get otaUpdateAvailableTitle => '发现新版本';
@@ -4050,6 +4057,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get keyboardLayoutHelp => '請連接與所選規格匹配的實體鍵盤。規格不匹配可能導致部分按鍵輸出異常字符。';
 
   @override
+  String get keyboardSoftLayoutPreview => '軟件鍵盤佈局預覽';
+
+  @override
   String get keyboardLongPressAccentHint => '長按可輸入重音字符';
 
   @override
@@ -4118,9 +4128,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get laserEnableBlockStatusUnavailable => '請檢查設備狀態';
-
-  @override
-  String get laserEnableBlockWriteFailed => '激光使能寫入失敗';
 
   @override
   String get laserEnableReminderConfirm => '是的 — 我已完成以上安全檢查';
@@ -4357,15 +4364,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
 
   @override
-  String get otaCheckFailed => '無法檢查更新，請確認網絡和雲服務設置。';
+  String get otaCheckFailed => '無法獲取版本信息，請稍後重試。';
+
+  @override
+  String get otaCheckFailedTitle => '檢查更新失敗';
 
   @override
   String get otaSessionActive => '系統升級正在進行中。';
 
   @override
-  String otaAlreadyUpToDate(String version) {
-    return '系統版本 $version 已是最新。';
-  }
+  String get otaAlreadyUpToDate => '當前已安裝最新版本。';
 
   @override
   String get otaUpdateAvailableTitle => '發現新版本';

@@ -45,7 +45,10 @@ final class EngineerParameterForm extends StatelessWidget {
         _MaterialRow(
           material: preset.materialType,
           label: preset.displayMaterialLabel(l10n),
-          onTap: () => _guarded(context, (w) => _editMaterial(context, w)),
+          onTap: (pillContext) => _guarded(
+            context,
+            (w) => _editMaterial(context, w, pillContext: pillContext),
+          ),
         ),
       if (EngineerParameterVisibility.showsThickness(preset.processType))
         _ValueRow(
@@ -144,10 +147,10 @@ final class EngineerParameterForm extends StatelessWidget {
 
   Future<void> _editMaterial(
     BuildContext context,
-    ProcessPreset working,
-  ) async {
-    final pill =
-        _materialPillKey.currentContext?.findRenderObject() as RenderBox?;
+    ProcessPreset working, {
+    required BuildContext pillContext,
+  }) async {
+    final pill = pillContext.findRenderObject() as RenderBox?;
     if (pill == null || !pill.hasSize) {
       return;
     }
@@ -232,9 +235,8 @@ final class EngineerParameterForm extends StatelessWidget {
   }
 }
 
-/// Shared with [_MaterialRow] so the popup anchors to the value pill.
-final GlobalKey _materialPillKey = GlobalKey();
-
+/// Anchors the material popup via [Builder] (no shared [GlobalKey] — Engineer
+/// tab slide can briefly mount two forms).
 final class _MaterialRow extends StatelessWidget {
   const _MaterialRow({
     required this.material,
@@ -244,7 +246,7 @@ final class _MaterialRow extends StatelessWidget {
 
   final MaterialType? material;
   final String label;
-  final VoidCallback onTap;
+  final ValueChanged<BuildContext> onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -265,59 +267,63 @@ final class _MaterialRow extends StatelessWidget {
               ),
             ),
             SizedBox(
-              key: _materialPillKey,
               width: 300,
               height: 72,
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(36),
-                clipBehavior: Clip.antiAlias,
-                child: Ink.image(
-                  image: const AssetImage(
-                    ProcessModeAssets.engineerDataValueBackground,
-                  ),
-                  fit: BoxFit.fill,
-                  child: InkWell(
-                    onTap: () {
-                      CyberClickSoundRegistry.playClick();
-                      onTap();
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          if (material != null)
-                            Image.asset(
-                              ProcessModeAssets.materialIcon(material!),
-                              width: 40,
-                              height: 20,
-                              fit: BoxFit.contain,
-                            )
-                          else
-                            const SizedBox(width: 40, height: 20),
-                          Expanded(
-                            child: Text(
-                              label,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.hmiTypography.sectionTitle.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
+              child: Builder(
+                builder: (pillContext) {
+                  return Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(36),
+                    clipBehavior: Clip.antiAlias,
+                    child: Ink.image(
+                      image: const AssetImage(
+                        ProcessModeAssets.engineerDataValueBackground,
+                      ),
+                      fit: BoxFit.fill,
+                      child: InkWell(
+                        onTap: () {
+                          CyberClickSoundRegistry.playClick();
+                          onTap(pillContext);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              if (material != null)
+                                Image.asset(
+                                  ProcessModeAssets.materialIcon(material!),
+                                  width: 40,
+                                  height: 20,
+                                  fit: BoxFit.contain,
+                                )
+                              else
+                                const SizedBox(width: 40, height: 20),
+                              Expanded(
+                                child: Text(
+                                  label,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: context.hmiTypography.sectionTitle
+                                      .copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                            ),
+                              Image.asset(
+                                ProcessModeAssets.selectDownWhiteArrow,
+                                width: 18,
+                                height: 10,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
                           ),
-                          Image.asset(
-                            ProcessModeAssets.selectDownWhiteArrow,
-                            width: 18,
-                            height: 10,
-                            fit: BoxFit.contain,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ],

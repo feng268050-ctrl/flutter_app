@@ -6,10 +6,10 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_pill_dropdown.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
-/// Sound settings — volume slider + sound-effect dropdown.
+/// Sound settings — volume slider + sound-effect pill dropdown.
 class SoundSettingsPage extends StatefulWidget {
   const SoundSettingsPage({super.key, required this.services});
 
@@ -52,7 +52,6 @@ class _SoundSettingsPageState extends State<SoundSettingsPage> {
   Future<void> _setEffect(int index) async {
     final next = SoundEffectStore.clampIndex(index);
     setState(() => _effectIndex = next);
-    CyberClickSoundRegistry.playClick();
     final scope = SoundEffectScope.maybeOf(context);
     if (scope != null) {
       await scope.clickSound.openEffect(next);
@@ -85,27 +84,17 @@ class _SoundSettingsPageState extends State<SoundSettingsPage> {
               ),
               SettingsControlRow(
                 title: l10n.soundEffectCheck,
-                control: DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: _effectIndex,
-                    isDense: true,
-                    dropdownColor: CyberColors.fillSolidMid,
-                    style: context.hmiTypography.body.copyWith(
-                      color: CyberColors.textPrimary,
-                    ),
-                    iconEnabledColor: CyberColors.textSecondary,
-                    items: [
-                      for (var i = 0; i < SoundEffectStore.effectCount; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          child: Text(_effectLabel(l10n, i)),
-                        ),
-                    ],
-                    onChanged: (v) {
-                      if (v == null) return;
-                      unawaited(_setEffect(v));
-                    },
-                  ),
+                control: SettingsPillDropdown<int>(
+                  value: _effectIndex,
+                  label: _effectLabel(l10n, _effectIndex),
+                  options: [
+                    for (var i = 0; i < SoundEffectStore.effectCount; i++)
+                      SettingsPillOption(
+                        value: i,
+                        label: _effectLabel(l10n, i),
+                      ),
+                  ],
+                  onChanged: (v) => unawaited(_setEffect(v)),
                 ),
               ),
             ],

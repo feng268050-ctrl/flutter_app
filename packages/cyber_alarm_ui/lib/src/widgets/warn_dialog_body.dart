@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cyber_alarm_ui/src/domain/warn_chrome_style.dart';
 import 'package:cyber_alarm_ui/src/widgets/warn_dialog_metrics.dart';
@@ -72,7 +73,6 @@ class WarnDialogBody extends StatelessWidget {
     final inset = WarnDialogMetrics.contentInset * scale;
     final icon = WarnDialogMetrics.iconSize * scale;
     final scrollMax = WarnDialogMetrics.bodyScrollMaxHeight * scale;
-    final bodyFont = WarnDialogMetrics.bodySize * scale;
     final titleMax = WarnDialogMetrics.titleMaxWidth(cardW, scale);
     final titleFont = WarnDialogMetrics.resolveTitleFontSize(
       context: context,
@@ -81,6 +81,8 @@ class WarnDialogBody extends StatelessWidget {
       infoStyle: useInfo,
       layoutScale: scale,
     );
+    // Body must never read larger than the (possibly fitted) title.
+    final bodyFont = math.min(WarnDialogMetrics.bodySize * scale, titleFont);
     final confirmH = WarnDialogMetrics.confirmHeight * scale;
     final confirmFont = WarnDialogMetrics.confirmLabelSize * scale;
     final confirmW = (WarnDialogMetrics.confirmMinWidth * scale).clamp(
@@ -130,8 +132,11 @@ class WarnDialogBody extends StatelessWidget {
             ),
           ),
           SizedBox(height: inset),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: scrollMax),
+          // Reserve the design body scroll band so fitted (smaller) body fonts
+          // do not shrink the card — keeps warn dialogs height-unified.
+          SizedBox(
+            height: scrollMax,
+            width: double.infinity,
             child: SingleChildScrollView(
               child: Text(
                 body,

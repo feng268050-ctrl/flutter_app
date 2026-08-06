@@ -9,65 +9,62 @@ import 'package:lws_hmi/features/safety_tips/presentation/safety_tips_dialog.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
-Widget _safetyTipsTestApp({required Widget home}) {
+Widget _safetyTipsTestApp({String initialRoute = AppRoutes.safetyTips}) {
+  Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case AppRoutes.safetyTips:
+        return buildAppPageRoute(
+          settings: settings,
+          child: const SafetyTipsPage(),
+        );
+      case AppRoutes.productDisclaimer:
+        return buildAppSlideRoute<void>(
+          settings: settings,
+          builder: (_) => const ProductDisclaimerPage(),
+        );
+      case AppRoutes.home:
+        return buildAppPageRoute(
+          settings: settings,
+          child: const Scaffold(
+            body: Center(child: Text('Home')),
+          ),
+        );
+    }
+    return null;
+  }
+
   return MaterialApp(
     theme: buildAppTheme(),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     locale: const Locale('en', 'US'),
-    home: home,
-    onGenerateRoute: (settings) {
-      if (settings.name == AppRoutes.productDisclaimer) {
-        return buildAppSlideRoute<void>(
-          settings: settings,
-          builder: (_) => const ProductDisclaimerPage(),
-        );
-      }
-      return null;
-    },
+    initialRoute: initialRoute,
+    onGenerateInitialRoutes: (name) =>
+        generateAppInitialRoutes(name, onGenerateRoute),
+    onGenerateRoute: onGenerateRoute,
   );
 }
 
 void main() {
   tearDown(SafetyTipsCoordinator.resetForTest);
 
-  testWidgets('Safety Tips Agree dismisses; link opens Product Disclaimer route',
+  testWidgets('Safety Tips Agree replaces with Home; link opens Disclaimer',
       (tester) async {
-    await tester.pumpWidget(
-      _safetyTipsTestApp(
-        home: Builder(
-          builder: (context) {
-            return Scaffold(
-              body: Center(
-                child: TextButton(
-                  key: const ValueKey('open-safety-tips'),
-                  onPressed: () {
-                    showSafetyTipsDialog(context: context);
-                  },
-                  child: const Text('Open'),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-
-    await tester.tap(find.byKey(const ValueKey('open-safety-tips')));
+    await tester.pumpWidget(_safetyTipsTestApp());
     await tester.pumpAndSettle();
 
+    expect(find.byType(SafetyTipsPage), findsOneWidget);
     expect(find.text('Safety Tips'), findsOneWidget);
-    expect(find.textContaining('Keep bystanders'), findsOneWidget);
+    // Body is word-boundary wrapped (one Text per English token).
+    expect(find.text('bystanders,'), findsOneWidget);
+    expect(SafetyTipsGate.isActive, isTrue);
 
     // Product Disclaimer is a named route (slide), not a nested dialog.
     await tester.tap(find.byKey(const ValueKey('safety-tips-disclaimer-link')));
     await tester.pumpAndSettle();
     expect(find.text('Product Disclaimer'), findsOneWidget);
-    expect(find.textContaining('Dear User:'), findsOneWidget);
-    expect(
-      find.byType(ProductDisclaimerPage),
-      findsOneWidget,
-    );
+    expect(find.text('Dear'), findsWidgets);
+    expect(find.byType(ProductDisclaimerPage), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('product-disclaimer-agree-btn')));
     await tester.pumpAndSettle();
@@ -77,28 +74,14 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('safety-tips-agree-btn')));
     await tester.pumpAndSettle();
-    expect(find.text('Safety Tips'), findsNothing);
+    expect(find.byType(SafetyTipsPage), findsNothing);
+    expect(find.text('Home'), findsOneWidget);
+    expect(SafetyTipsGate.hasAcceptedThisProcess, isTrue);
+    expect(SafetyTipsGate.isActive, isFalse);
   });
 
   testWidgets('Agree stays disabled while unchecked', (tester) async {
-    await tester.pumpWidget(
-      _safetyTipsTestApp(
-        home: Builder(
-          builder: (context) {
-            return Scaffold(
-              body: Center(
-                child: TextButton(
-                  onPressed: () => showSafetyTipsDialog(context: context),
-                  child: const Text('Open'),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
+    await tester.pumpWidget(_safetyTipsTestApp());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('safety-tips-agree-cb')));
@@ -114,6 +97,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('safety-tips-agree-btn')));
     await tester.pumpAndSettle();
     expect(find.text('Safety Tips'), findsNothing);
+    expect(find.text('Home'), findsOneWidget);
   });
 
   testWidgets('EN Safety Tips Agree uses HmiButton small; no overflow at panel size',
@@ -121,24 +105,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(
-      _safetyTipsTestApp(
-        home: Builder(
-          builder: (context) {
-            return Scaffold(
-              body: Center(
-                child: TextButton(
-                  onPressed: () => showSafetyTipsDialog(context: context),
-                  child: const Text('Open'),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
+    await tester.pumpWidget(_safetyTipsTestApp());
     await tester.pumpAndSettle();
 
     final agree = find.byKey(const ValueKey('safety-tips-agree-btn'));
@@ -149,32 +116,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('coordinator skip gate completes without dialog', (tester) async {
+  testWidgets('gate skip uses Home as initial route', (tester) async {
     SafetyTipsCoordinator.resetForTest(skipGate: true);
-    var completed = false;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) {
-            return Scaffold(
-              body: TextButton(
-                onPressed: () {
-                  SafetyTipsCoordinator.showWhenHomeEntered(
-                    context: context,
-                    onComplete: () => completed = true,
-                  );
-                },
-                child: const Text('Go'),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-    await tester.tap(find.text('Go'));
-    await tester.pump();
-    expect(completed, isTrue);
-    expect(find.text('Safety Tips'), findsNothing);
+    expect(SafetyTipsGate.initialRoute, AppRoutes.home);
+
+    await tester.pumpWidget(_safetyTipsTestApp(initialRoute: AppRoutes.home));
+    await tester.pumpAndSettle();
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.byType(SafetyTipsPage), findsNothing);
     expect(SafetyTipsGate.hasAcceptedThisProcess, isFalse);
+  });
+
+  testWidgets('production initialRoute is Safety Tips before accept', (tester) async {
+    SafetyTipsCoordinator.resetForTest();
+    expect(SafetyTipsGate.initialRoute, AppRoutes.safetyTips);
+    expect(find.byType(SafetyTipsPage), findsNothing);
+
+    await tester.pumpWidget(_safetyTipsTestApp());
+    await tester.pumpAndSettle();
+    expect(find.byType(SafetyTipsPage), findsOneWidget);
+    expect(find.text('Home'), findsNothing);
   });
 }

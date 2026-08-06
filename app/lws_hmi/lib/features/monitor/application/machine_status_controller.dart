@@ -74,6 +74,18 @@ final class MachineStatusController extends ChangeNotifier {
     }
   }
 
+  /// Pause live watches while the Machine Status tab is hidden.
+  void stop() {
+    if (!_started) {
+      return;
+    }
+    _started = false;
+    unawaited(_modbusSub?.cancel() ?? Future<void>.value());
+    unawaited(_cameraSub?.cancel() ?? Future<void>.value());
+    _modbusSub = null;
+    _cameraSub = null;
+  }
+
   @visibleForTesting
   void applyChanges(List<ModbusAttributeChange> changes) {
     if (changes.isEmpty) {

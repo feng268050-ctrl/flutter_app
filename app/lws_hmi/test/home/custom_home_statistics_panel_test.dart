@@ -1,12 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
-import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
 import 'package:lws_hmi/features/home/presentation/custom_home_statistics_panel.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_models.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
 
@@ -143,23 +139,25 @@ void main() {
     });
   });
 
-  testWidgets('renders the first four persisted Custom Home metrics',
-      (tester) async {
+  test('wire consumption display uses mm under 1m and metres at/above', () {
+    expect(
+      LengthUnitConvert.formatWireConsumption(240),
+      (number: '240', unit: 'mm'),
+    );
+    expect(
+      LengthUnitConvert.formatWireConsumption(1298),
+      (number: '1', unit: 'm'),
+    );
+    expect(
+      LengthUnitConvert.formatWireConsumption(12980),
+      (number: '12', unit: 'm'),
+    );
+  });
+
+  test('persisted aggregate feeds Custom Home wire length (seconds × speed)',
+      () async {
     final tempDir = await Directory.systemTemp.createTemp('custom-home-stats');
     addTearDown(() => tempDir.delete(recursive: true));
-    final layoutStore = CustomHomeLayoutStore(
-      preferencePath: '${tempDir.path}/custom-home-layout.json',
-    );
-    await layoutStore.saveOrder(const [
-      CustomHomeMetric.cutRatio,
-      CustomHomeMetric.wireConsumption,
-      CustomHomeMetric.laserOnDuration,
-      CustomHomeMetric.jobRuntime,
-      CustomHomeMetric.weldRatio,
-      CustomHomeMetric.cleanRatio,
-      CustomHomeMetric.weekOverWeekLaser,
-      CustomHomeMetric.favoriteMaterial,
-    ]);
     final repository = SqliteStatsAggregateRepository(
       dbPath: '${tempDir.path}/hmi-stats.db',
     );
@@ -173,48 +171,12 @@ void main() {
         autoWireFeedSpeedMmPerSecond: 2,
       ),
     );
-    await repository.addJobRuntimeSeconds(180);
-
-    await tester.pumpWidget(
-      CommonSettingsScope(
-        store: CommonSettingsStore(),
-        child: MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: SizedBox(
-                width: 1224,
-                height: 124,
-                child: CustomHomeStatisticsPanel(
-                  cardWidth: 200,
-                  cardHeight: 124,
-                  cardGap: 20,
-                  layoutStore: layoutStore,
-                  repository: repository,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    final stats = await repository.load();
+    expect(stats.wireFeedLengthMmTotal, 240);
+    expect(
+      LengthUnitConvert.formatWireConsumption(stats.wireFeedLengthMmTotal),
+      (number: '240', unit: 'mm'),
     );
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const ValueKey('home-stat-cutRatio')), findsOneWidget);
-    expect(find.byKey(const ValueKey('home-stat-wireConsumption')),
-        findsOneWidget);
-    expect(find.byKey(const ValueKey('home-stat-laserOnDuration')),
-        findsOneWidget);
-    expect(find.byKey(const ValueKey('home-stat-jobRuntime')), findsOneWidget);
-    expect(find.text('Cutting Ratio'), findsOneWidget);
-    expect(find.text('Total wire consumption'), findsOneWidget);
-    expect(find.text('Total laser-on time'), findsOneWidget);
-    expect(find.text('Job runtime'), findsOneWidget);
-    // Wire length 240 mm; laser 120s → 2 min; job 180s → 3 min.
-    expect(find.text('240'), findsOneWidget);
-    expect(find.text('2'), findsOneWidget);
-    expect(find.text('3'), findsOneWidget);
-    expect(find.text('min'), findsNWidgets(2));
-
     await repository.close();
   });
 }

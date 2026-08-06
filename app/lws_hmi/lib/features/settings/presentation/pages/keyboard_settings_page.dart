@@ -12,6 +12,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// Keyboard settings: soft layout Segment + preview + physical keyboard status.
 class KeyboardSettingsPage extends StatefulWidget {
@@ -100,8 +101,8 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              l10n.keyboardApplyConfirmBody,
+            WordBoundaryBody(
+              text: l10n.keyboardApplyConfirmBody,
               style: const TextStyle(color: CyberColors.textSecondary),
             ),
             const SizedBox(height: 20),
@@ -158,45 +159,60 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       body: SettingsScrollView(
         children: [
           SettingsGroup(
-            bottomInset: SettingsDimens.helpGap,
+            // Match [SettingsScrollView] top inset so card↔preview == status↔card.
+            bottomInset: SettingsDimens.inset,
             borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: CyberImeLayoutChooser(
-                  selected: _selected.imeProfile,
-                  enabled: !_busy,
-                  showPreview: false,
-                  showFootnote: false,
-                  onSelected: (p) {
-                    CyberClickSoundRegistry.playClick();
-                    setState(() {
-                      _selected = ProductKeyboardProfile.fromConfProfile(
-                        p.confId,
-                      );
-                    });
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: HmiButton(
-                    label: l10n.wifiApply,
-                    size: HmiButtonSize.small,
-                    variant: CyberButtonVariant.primary,
-                    onPressed:
-                        (_busy || !dirty) ? null : () => unawaited(_apply()),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  CyberImeLayoutChooser(
+                    selected: _selected.imeProfile,
+                    enabled: !_busy,
+                    showDisplayName: false,
+                    showPreview: false,
+                    showFootnote: false,
+                    // Top 16 matches container→Segment; bottom 0 so Apply
+                    // padding alone sets Segment→Apply to the same 16.
+                    segmentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    onSelected: (p) {
+                      CyberClickSoundRegistry.playClick();
+                      setState(() {
+                        _selected = ProductKeyboardProfile.fromConfProfile(
+                          p.confId,
+                        );
+                      });
+                    },
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: HmiButton(
+                        label: l10n.wifiApply,
+                        size: HmiButtonSize.small,
+                        variant: CyberButtonVariant.primary,
+                        onPressed: (_busy || !dirty)
+                            ? null
+                            : () => unawaited(_apply()),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          _KeyboardLayoutPreviewSection(profile: _selected.imeProfile),
+          _KeyboardLayoutPreviewSection(
+            profile: _selected.imeProfile,
+            previewCaption: l10n.keyboardSoftLayoutPreview,
+          ),
           SettingsHelpFooter(
             l10n.keyboardLayoutHelp,
             bottomInset: 0,
+            style: context.hmiTypography.body.copyWith(
+              color: Colors.white54,
+              height: 1.35,
+            ),
           ),
           SettingsSectionHeader(l10n.keyboardPhysicalSection),
           SettingsGroup(
@@ -217,9 +233,11 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
 class _KeyboardLayoutPreviewSection extends StatelessWidget {
   const _KeyboardLayoutPreviewSection({
     required this.profile,
+    required this.previewCaption,
   });
 
   final CyberImeRegionalProfile profile;
+  final String previewCaption;
 
   String _footnote(AppLocalizations l10n) {
     return switch (profile) {
@@ -244,14 +262,21 @@ class _KeyboardLayoutPreviewSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CyberImeLayoutPreviewCard(profile: profile),
+          CyberImeLayoutPreviewCard(
+            profile: profile,
+            previewCaption: previewCaption,
+            captionStyle: context.hmiTypography.supporting.copyWith(
+              color: Colors.white54,
+            ),
+          ),
           if (footnote.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
               child: Text(
                 footnote,
-                style: context.hmiTypography.technicalMeta.copyWith(
-                  color: const Color(0x8CFFFFFF),
+                style: context.hmiTypography.body.copyWith(
+                  color: Colors.white54,
+                  height: 1.35,
                 ),
               ),
             ),

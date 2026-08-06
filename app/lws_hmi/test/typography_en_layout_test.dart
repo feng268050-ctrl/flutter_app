@@ -2,6 +2,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_theme.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
@@ -35,7 +36,7 @@ void main() {
     await tester.pump();
 
     final title = tester.widget<Text>(find.text('Lens Contamination Detection'));
-    expect(title.style?.fontSize, 24);
+    expect(title.style?.fontSize, 22);
     expect(tester.takeException(), isNull);
   });
 
@@ -164,5 +165,14 @@ void main() {
     expect(WarnDialogMetrics.bodySize, 36);
     expect(WarnDialogMetrics.confirmLabelSize, 24);
     expect(WarnDialogMetrics.minTitleSize, 18);
+  });
+
+  test('tipBodySizeForTitle is one ladder step below the title', () {
+    expect(AppTypography.tipBodySizeForTitle(52), 44);
+    expect(AppTypography.tipBodySizeForTitle(37), 32);
+    expect(AppTypography.tipBodySizeForTitle(36), 32);
+    expect(AppTypography.tipBodySizeForTitle(32), 28);
+    expect(AppTypography.tipBodySizeForTitle(24), 22);
+    expect(AppTypography.tipBodySizeForTitle(22), lessThan(22));
   });
 }

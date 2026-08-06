@@ -24,6 +24,11 @@ abstract final class CyberColors {
   /// Readable uniform stroke on dark HMI when gradient outline is not used.
   static const borderUniform = Color(0xB3FFFFFF);
 
+  /// Tip dialog rim — 1px white highlight at 50% opacity (`0x80`).
+  ///
+  /// Not solid action orange (`#F46E01`).
+  static const tipRimHighlight = Color(0x80FFFFFF);
+
   // Panel border — light
   static const lightBorderHighlight = Color(0xD9FFFFFF);
   static const lightBorderMid = Color(0x80E0E0E0);

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
@@ -92,8 +93,10 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
       letterSpacing: 0.02 * (context.hmiTypography.dialogTitle.fontSize ?? 0),
       decoration: TextDecoration.none,
     );
+    final titleSize = titleStyle.fontSize ?? AppTypography.dialogTitleSize;
     final messageStyle = context.hmiTypography.body.copyWith(
       color: bodyColor,
+      fontSize: AppTypography.tipBodySizeForTitle(titleSize),
       fontWeight: FontWeight.w400,
       height: 1.2,
       decoration: TextDecoration.none,

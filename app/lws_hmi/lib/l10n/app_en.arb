@@ -556,6 +556,7 @@
   "keyboardApplyConfirmBody": "Saves the selected layout and restarts HMI so soft CyberIME and physical keyboard both take effect. This page will reopen after relaunch.",
   "keyboardApplyConfirmTitle": "Apply Keyboard Layout?",
   "keyboardLayoutHelp": "Attach a physical keyboard that matches the selected specification. A mismatch may make some keys produce unexpected characters.",
+  "keyboardSoftLayoutPreview": "Software Keyboard Layout Preview",
   "keyboardLongPressAccentHint": "Long-Press For Accented Characters",
   "keyboardNotDetected": "Not Detected",
   "keyboardPhysicalSection": "Physical Keyboard",
@@ -584,7 +585,7 @@
   "laserEnableBlockKeySwitchOff": "Turn Key Switch On",
   "laserEnableBlockManualGasOn": "Turn Off Manual Gas First",
   "laserEnableBlockStatusUnavailable": "Check Equipment Status",
-  "laserEnableBlockWriteFailed": "Laser Enable Write Failed",
+  "laserEnableBlockWriteFailed": "Laser Enable Did Not Take Effect",
   "laserEnableReminderConfirm": "Yes — I've Completed The Safety Checks Above",
   "laserEnableReminderFocus": "Set the welding gun focus scale to the indicated value.",
   "laserEnableReminderNozzleClean": "Confirm the laser tube and copper nozzle have been removed.",
@@ -675,16 +676,11 @@
   "okText": "OK",
   "onLabel": "On",
   "otaCheckUnavailable": "Software update check is not available on this build.",
-  "otaCheckFailed": "Could not check for updates. Verify network and cloud settings.",
+  "otaCheckFailed": "Couldn't fetch version info. Try again later.",
+  "otaCheckFailedTitle": "Update Check Failed",
+  "otaCheckUpToDateTitle": "Up to Date",
   "otaSessionActive": "A system upgrade is already in progress.",
-  "otaAlreadyUpToDate": "System version {version} is up to date.",
-  "@otaAlreadyUpToDate": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
+  "otaAlreadyUpToDate": "You're already on the latest version.",
   "otaUpdateAvailableTitle": "Update Available",
   "otaUpdateAvailableMessage": "Version {current} → {available}. Install now?",
   "@otaUpdateAvailableMessage": {

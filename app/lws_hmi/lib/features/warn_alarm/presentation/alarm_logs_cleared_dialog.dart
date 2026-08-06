@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
@@ -50,8 +51,10 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
       height: 1.15,
       decoration: TextDecoration.none,
     );
+    final titleSize = titleStyle.fontSize ?? AppTypography.dialogTitleSize;
     final bodyStyle = context.hmiTypography.settingsRowTitle.copyWith(
       color: CyberColors.textSecondary,
+      fontSize: AppTypography.tipBodySizeForTitle(titleSize),
       fontWeight: FontWeight.w400,
       height: 1.35,
       decoration: TextDecoration.none,

@@ -10,8 +10,9 @@ import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
 import 'package:lws_hmi/features/warn_alarm/presentation/alarm_logs_cleared_dialog.dart';
-import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// lws-ui `fragment_warn_info` — left status/temps + right history + live actives.
 ///
@@ -207,8 +208,9 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            l10n.alarmLogsTitle,
+                          WordBoundaryLabel(
+                            text: l10n.alarmLogsTitle,
+                            maxLines: 2,
                             style: context.hmiTypography.pageTitle.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w400,
@@ -242,8 +244,10 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                             child: ClipRect(
                               child: _history.isEmpty
                                   ? Center(
-                                      child: Text(
-                                        l10n.noActiveAlarms,
+                                      child: WordBoundaryLabel(
+                                        text: l10n.noActiveAlarms,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 3,
                                         style: context
                                             .hmiTypography.settingsRowTitle
                                             .copyWith(

@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/process_library/application/process_library_imp
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_repository.dart';
+import 'package:lws_hmi/features/process_library/domain/process_parameter_defaults.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_snapshot_modbus_mapper.dart';
 import 'package:lws_hmi/platform/cloud/process_parameters_snapshot_store.dart';
 
@@ -148,12 +149,13 @@ final class ProcessLibraryController extends ChangeNotifier {
     _applying = true;
     _notify();
     try {
-      final result = await applier.apply(preset);
+      final resolved = ProcessParameterDefaults.resolve(preset);
+      final result = await applier.apply(resolved);
       if (result.isSuccess) {
         ProcessParametersSnapshotStore.instance.updateFromPreset(
-          preset,
+          resolved,
           DeviceRemoteSnapshotModbusMapper.processParametersFromGroup(
-            Map<String, Object?>.from(preset.parameters.values),
+            Map<String, Object?>.from(resolved.parameters.values),
           ),
         );
       }

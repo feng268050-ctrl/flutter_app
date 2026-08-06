@@ -208,13 +208,17 @@ FROM $kTable WHERE id = 1
       final durationSeconds =
           ((endedAtMs - startedAtMs) ~/ 1000).clamp(0, 1 << 31);
       final modeType = row['active_session_mode_type'] as int? ?? 0;
-      final autoWireFeed =
-          (row['active_session_auto_wire_feed_enabled'] as int? ?? 0) != 0;
       final speed =
           (row['active_session_auto_wire_feed_speed_mm_s'] as num? ?? 0)
               .toDouble();
       final materialType = row['active_session_material_type'] as int?;
-      final wireLengthMm = autoWireFeed ? (durationSeconds * speed).round() : 0;
+      // lws-ui `StaticDataViewModel.weldStop` weld case:
+      //   consumableTimeLength += sessionSeconds * wireFeedSpeedMmPerS
+      // (laser-enable→disable duration × process auto wire-feed speed).
+      // Cut / clean never add wire. Manual jog is excluded by not using this
+      // session path for Feed/Retract.
+      final wireLengthMm =
+          modeType == 1 ? (durationSeconds * speed).round() : 0;
       final lastSettled = db
           .select(
             'SELECT last_settled_session_id FROM $kTable WHERE id = 1',

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
@@ -8,10 +9,12 @@ import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dar
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
+import 'package:lws_hmi/features/statistics/application/stats_metric_format.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_models.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_repository.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// The four persisted Custom Home slots rendered on the product Home page.
 ///
@@ -126,14 +129,17 @@ _HomeStatisticDisplay _displayValue(
 
   return switch (metric) {
     // Titles match lws-ui `HomeLayoutUtils.typeToTitle`.
-    CustomHomeMetric.wireConsumption => _HomeStatisticDisplay(
-        title: l10n.warnInfoWeldingConsumables,
-        number: LengthUnitConvert.formatMm(
-          (aggregate?.wireFeedLengthMmTotal ?? 0).toDouble(),
+    CustomHomeMetric.wireConsumption => () {
+        final wire = LengthUnitConvert.formatWireConsumption(
+          aggregate?.wireFeedLengthMmTotal ?? 0,
           unitWire: unitWire,
-        ),
-        unit: LengthUnitConvert.suffix(unitWire),
-      ),
+        );
+        return _HomeStatisticDisplay(
+          title: l10n.warnInfoWeldingConsumables,
+          number: wire.number,
+          unit: wire.unit,
+        );
+      }(),
     CustomHomeMetric.laserOnDuration => _durationDisplay(
         title: l10n.warnInfoLightTime,
         seconds: totalLaserSeconds,
@@ -187,13 +193,8 @@ _HomeStatisticDisplay _durationDisplay({
 /// Custom Home time metrics: under 1h → minutes; 1h and above → whole hours
 /// (e.g. 75 min → `1` + `h`).
 @visibleForTesting
-({String number, String unit}) formatCustomHomeDurationSeconds(int seconds) {
-  final safe = seconds < 0 ? 0 : seconds;
-  if (safe >= 3600) {
-    return (number: (safe ~/ 3600).toString(), unit: 'h');
-  }
-  return (number: (safe ~/ 60).toString(), unit: 'min');
-}
+({String number, String unit}) formatCustomHomeDurationSeconds(int seconds) =>
+    formatStatsDurationSeconds(seconds);
 
 int _ratioPercent(int portionSeconds, int totalSeconds) {
   if (totalSeconds <= 0 || portionSeconds <= 0) {
@@ -276,6 +277,7 @@ final class _HomeStatisticCard extends StatelessWidget {
         (height * 0.52).clamp(28.0, 52.0); // pageTitle → criticalTitle
     final unitSize =
         (height * 0.27).clamp(16.0, 28.0); // supporting → pageTitle
+    final ratio = value.isRatio;
     return SizedBox(
       width: width,
       height: height,
@@ -289,24 +291,26 @@ final class _HomeStatisticCard extends StatelessWidget {
         borderColor: const Color(0x99CBD3F3),
         borderWidth: 1.2,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            width * 0.09,
-            height * 0.10,
-            width * 0.07,
-            height * 0.05,
-          ),
+          // Equal inset on all four sides so arc-to-edge gaps match.
+          padding: EdgeInsets.all(height * 0.1),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                ratio ? CrossAxisAlignment.center : CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: value.isRatio
-                      ? _RatioValue(
-                          value: value.number,
-                          numberSize: numberSize,
-                        )
-                      : FittedBox(
+                child: ratio
+                    ? Align(
+                        alignment: Alignment.topCenter,
+                        child: _RatioArcGauge(
+                          percent: double.tryParse(value.number) ?? 0,
+                          color: _ratioProgressColor(metric),
+                          cardWidth: width,
+                          cardHeight: height,
+                        ),
+                      )
+                    : Align(
+                        alignment: Alignment.centerLeft,
+                        child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: RichText(
@@ -336,12 +340,12 @@ final class _HomeStatisticCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                ),
+                      ),
               ),
-              Text(
-                value.title,
+              WordBoundaryLabel(
+                text: value.title,
+                textAlign: ratio ? TextAlign.center : TextAlign.start,
                 maxLines: compact ? 1 : 2,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: titleSize,
@@ -357,38 +361,144 @@ final class _HomeStatisticCard extends StatelessWidget {
   }
 }
 
-final class _RatioValue extends StatelessWidget {
-  const _RatioValue({required this.value, required this.numberSize});
+/// 180° upper semicircle (∩). Radius = longest card side / 4.
+class _RatioArcGauge extends StatelessWidget {
+  const _RatioArcGauge({
+    required this.percent,
+    required this.color,
+    required this.cardWidth,
+    required this.cardHeight,
+  });
 
-  final String value;
-  final double numberSize;
+  final double percent;
+  final Color color;
+  final double cardWidth;
+  final double cardHeight;
+
+  /// Longest card edge ÷ 4 — card outer size stays unchanged.
+  double get _radius => math.max(cardWidth, cardHeight) / 4;
 
   @override
   Widget build(BuildContext context) {
-    return RichText(
-      maxLines: 1,
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: value,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: numberSize,
-              height: 1,
-              fontWeight: FontWeight.w700,
+    final radius = _radius;
+    // Thicker ∩ band than the initial 0.14×radius (was clamped ≤8).
+    final stroke = (radius * 0.26).clamp(8.0, 16.0);
+    // Full stroke clearance above the peak so CyberCard clip does not crop it.
+    final gaugeW = radius * 2 + stroke;
+    final gaugeH = radius + stroke;
+    final value = percent.clamp(0.0, 100.0);
+    final labelSize = (radius * 0.44).clamp(16.0, 28.0);
+    return SizedBox(
+        width: gaugeW,
+        height: gaugeH,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            CustomPaint(
+              size: Size(gaugeW, gaugeH),
+              painter: _HomeRatioArcPainter(
+                percent: value,
+                radius: radius,
+                strokeWidth: stroke,
+                progressColor: color,
+                trackColor: const Color(0x66FFFFFF),
+              ),
             ),
-          ),
-          TextSpan(
-            text: ' %',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: numberSize * 0.5,
-              height: 1,
-              fontWeight: FontWeight.w600,
+            // Sit under the ∩ arc, above the chord.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: stroke * 0.15,
+              child: Text(
+                '${value.round()}%',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: labelSize,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
     );
   }
 }
+
+/// Flutter arc: 0 = +X, clockwise. Left → top → right (∩).
+class _HomeRatioArcPainter extends CustomPainter {
+  _HomeRatioArcPainter({
+    required this.percent,
+    required this.radius,
+    required this.strokeWidth,
+    required this.progressColor,
+    required this.trackColor,
+  });
+
+  final double percent;
+  final double radius;
+  final double strokeWidth;
+  final Color progressColor;
+  final Color trackColor;
+
+  static const _startAngle = math.pi;
+  static const _sweepAngle = math.pi;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Chord on the bottom; peak stays inside the paint bounds.
+    final center = Offset(size.width / 2, size.height - strokeWidth / 2);
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final t = (percent / 100).clamp(0.0, 1.0);
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true;
+    canvas.drawArc(rect, _startAngle, _sweepAngle, false, trackPaint);
+
+    if (t > 0) {
+      final progressPaint = Paint()
+        ..color = progressColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..isAntiAlias = true;
+      canvas.drawArc(rect, _startAngle, _sweepAngle * t, false, progressPaint);
+    }
+
+    final tipAngle = _startAngle + _sweepAngle * t;
+    final tip = Offset(
+      center.dx + radius * math.cos(tipAngle),
+      center.dy + radius * math.sin(tipAngle),
+    );
+    canvas.drawCircle(
+      tip,
+      strokeWidth * 0.55,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _HomeRatioArcPainter oldDelegate) {
+    return oldDelegate.percent != percent ||
+        oldDelegate.radius != radius ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.progressColor != progressColor ||
+        oldDelegate.trackColor != trackColor;
+  }
+}
+
+Color _ratioProgressColor(CustomHomeMetric metric) => switch (metric) {
+      // Match Work Info / lws-ui weld·cut·clean accent colors.
+      CustomHomeMetric.weldRatio => const Color(0xFFFF0000),
+      CustomHomeMetric.cutRatio => const Color(0xFF00A4F2),
+      CustomHomeMetric.cleanRatio => const Color(0xFFFF8000),
+      _ => const Color(0xFF00A4F2),
+    };

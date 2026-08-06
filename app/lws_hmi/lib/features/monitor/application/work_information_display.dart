@@ -1,43 +1,50 @@
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
+import 'package:lws_hmi/features/statistics/application/stats_metric_format.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_models.dart';
 
 /// Derived Monitor Work Info values from [StatsAggregate].
 ///
-/// Mirrors lws-ui `WorkInfoFragment` ← `Home.build` / `WireConsumptionDisplayUtil`
-/// (ratios over weld+cut+clean; laser-on hours; wire m/ft; job runtime minutes).
+/// Aligns with Custom Home: duration min→h at 1h; wire mm→m at 1 m
+/// ([LengthUnitConvert.formatWireConsumption]).
 final class WorkInformationDisplay {
   const WorkInformationDisplay({
     required this.weldRatioPercent,
     required this.cutRatioPercent,
     required this.cleanRatioPercent,
-    required this.laserOnHours,
+    required this.laserOnNumber,
+    required this.laserOnUnit,
     required this.wireNumber,
     required this.wireUnit,
-    required this.jobRuntimeMinutes,
+    required this.jobRuntimeNumber,
+    required this.jobRuntimeUnit,
   });
 
   final int weldRatioPercent;
   final int cutRatioPercent;
   final int cleanRatioPercent;
 
-  /// Integer hours (`laserOnSecondsTotal ~/ 3600`).
-  final String laserOnHours;
+  /// Laser-on duration number (`min` under 1h, `h` at/above).
+  final String laserOnNumber;
+  final String laserOnUnit;
 
   /// Wire length number (metric mm/m or imperial feet).
   final String wireNumber;
   final String wireUnit;
 
-  /// Integer minutes (`jobRuntimeSecondsTotal ~/ 60`).
-  final String jobRuntimeMinutes;
+  /// Last job runtime number (`min` under 1h, `h` at/above).
+  final String jobRuntimeNumber;
+  final String jobRuntimeUnit;
 
   static const empty = WorkInformationDisplay(
     weldRatioPercent: 0,
     cutRatioPercent: 0,
     cleanRatioPercent: 0,
-    laserOnHours: '0',
+    laserOnNumber: '0',
+    laserOnUnit: 'min',
     wireNumber: '0',
     wireUnit: 'mm',
-    jobRuntimeMinutes: '0',
+    jobRuntimeNumber: '0',
+    jobRuntimeUnit: 'min',
   );
 
   factory WorkInformationDisplay.fromAggregate(
@@ -51,10 +58,12 @@ final class WorkInformationDisplay {
         weldRatioPercent: 0,
         cutRatioPercent: 0,
         cleanRatioPercent: 0,
-        laserOnHours: '0',
+        laserOnNumber: '0',
+        laserOnUnit: 'min',
         wireNumber: '0',
         wireUnit: wire.unit,
-        jobRuntimeMinutes: '0',
+        jobRuntimeNumber: '0',
+        jobRuntimeUnit: 'min',
       );
     }
     final weld = aggregate.weldSecondsTotal;
@@ -70,17 +79,18 @@ final class WorkInformationDisplay {
       aggregate.wireFeedLengthMmTotal,
       unitWire: unitWire,
     );
+    final laser = formatStatsDurationSeconds(laserOn);
+    final job = formatStatsDurationSeconds(aggregate.jobRuntimeSecondsTotal);
     return WorkInformationDisplay(
       weldRatioPercent: ratioPercent(weld, sum),
       cutRatioPercent: ratioPercent(cut, sum),
       cleanRatioPercent: ratioPercent(clean, sum),
-      laserOnHours: (laserOn < 0 ? 0 : laserOn ~/ 3600).toString(),
+      laserOnNumber: laser.number,
+      laserOnUnit: laser.unit,
       wireNumber: wire.number,
       wireUnit: wire.unit,
-      jobRuntimeMinutes: (aggregate.jobRuntimeSecondsTotal < 0
-              ? 0
-              : aggregate.jobRuntimeSecondsTotal ~/ 60)
-          .toString(),
+      jobRuntimeNumber: job.number,
+      jobRuntimeUnit: job.unit,
     );
   }
 }

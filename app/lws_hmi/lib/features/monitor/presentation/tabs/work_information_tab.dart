@@ -228,8 +228,8 @@ class _WorkInfoBody extends StatelessWidget {
                 Expanded(
                   child: MonitorWorkDataCard(
                     title: l10n.warnInfoLightTime,
-                    value: display.laserOnHours,
-                    suffix: 'h',
+                    value: display.laserOnNumber,
+                    suffix: display.laserOnUnit,
                     borderGradientCenter:
                         CyberBorderGradientCenter.topLeftBottomRight,
                   ),
@@ -247,8 +247,8 @@ class _WorkInfoBody extends StatelessWidget {
                 Expanded(
                   child: MonitorWorkDataCard(
                     title: l10n.warnInfoLastWork,
-                    value: display.jobRuntimeMinutes,
-                    suffix: 'min',
+                    value: display.jobRuntimeNumber,
+                    suffix: display.jobRuntimeUnit,
                     borderGradientCenter:
                         CyberBorderGradientCenter.topRightBottomLeft,
                   ),

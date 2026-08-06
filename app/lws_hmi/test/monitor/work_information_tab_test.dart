@@ -45,25 +45,37 @@ void main() {
       expect(d.wireUnit, 'ft');
     });
 
-    test('laser-on hours and job minutes follow lws-ui integer divide', () {
-      final d = WorkInformationDisplay.fromAggregate(
+    test('laser-on and job runtime switch min→h at 1 hour like Home', () {
+      final underHour = WorkInformationDisplay.fromAggregate(
+        _agg(laserOn: 1800, jobRuntime: 125),
+      );
+      expect(underHour.laserOnNumber, '30');
+      expect(underHour.laserOnUnit, 'min');
+      expect(underHour.jobRuntimeNumber, '2');
+      expect(underHour.jobRuntimeUnit, 'min');
+
+      final overHour = WorkInformationDisplay.fromAggregate(
         _agg(
           laserOn: 7200,
-          jobRuntime: 125,
+          jobRuntime: 75 * 60,
           wireMm: 2500,
         ),
       );
-      expect(d.laserOnHours, '2');
-      expect(d.jobRuntimeMinutes, '2');
-      expect(d.wireNumber, '2');
-      expect(d.wireUnit, 'm');
+      expect(overHour.laserOnNumber, '2');
+      expect(overHour.laserOnUnit, 'h');
+      expect(overHour.jobRuntimeNumber, '1');
+      expect(overHour.jobRuntimeUnit, 'h');
+      expect(overHour.wireNumber, '2');
+      expect(overHour.wireUnit, 'm');
     });
 
     test('zero totals stay at 0%', () {
       final d = WorkInformationDisplay.fromAggregate(_agg());
       expect(d.weldRatioPercent, 0);
-      expect(d.laserOnHours, '0');
-      expect(d.jobRuntimeMinutes, '0');
+      expect(d.laserOnNumber, '0');
+      expect(d.laserOnUnit, 'min');
+      expect(d.jobRuntimeNumber, '0');
+      expect(d.jobRuntimeUnit, 'min');
       expect(d.wireNumber, '0');
       expect(d.wireUnit, 'mm');
     });

@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dar
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
+import 'package:lws_hmi/features/statistics/application/stats_metric_format.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_models.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_repository.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
@@ -192,13 +193,8 @@ _HomeStatisticDisplay _durationDisplay({
 /// Custom Home time metrics: under 1h → minutes; 1h and above → whole hours
 /// (e.g. 75 min → `1` + `h`).
 @visibleForTesting
-({String number, String unit}) formatCustomHomeDurationSeconds(int seconds) {
-  final safe = seconds < 0 ? 0 : seconds;
-  if (safe >= 3600) {
-    return (number: (safe ~/ 3600).toString(), unit: 'h');
-  }
-  return (number: (safe ~/ 60).toString(), unit: 'min');
-}
+({String number, String unit}) formatCustomHomeDurationSeconds(int seconds) =>
+    formatStatsDurationSeconds(seconds);
 
 int _ratioPercent(int portionSeconds, int totalSeconds) {
   if (totalSeconds <= 0 || portionSeconds <= 0) {
@@ -385,7 +381,8 @@ class _RatioArcGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = _radius;
-    final stroke = (radius * 0.14).clamp(4.0, 8.0);
+    // Thicker ∩ band than the initial 0.14×radius (was clamped ≤8).
+    final stroke = (radius * 0.26).clamp(8.0, 16.0);
     // Full stroke clearance above the peak so CyberCard clip does not crop it.
     final gaugeW = radius * 2 + stroke;
     final gaugeH = radius + stroke;

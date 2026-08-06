@@ -500,10 +500,14 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   }
 
   void _configureWorkSessionStatistics(ProcessPreset preset) {
+    final isWeld = _processType == ProcessType.continuousWelding ||
+        _processType == ProcessType.spotWelding;
     _workSessionStatistics?.configureNextSession(
       modeType: _statisticsModeType(_processType),
-      autoWireFeedEnabled: _processType == ProcessType.continuousWelding &&
-          (_deviceControl?.autoWireFeed ?? false),
+      // Stored for audit; settle uses modeType==weld × process wire speed
+      // (lws-ui weldStop: sessionSeconds * wireFeedSpeed), not this flag.
+      autoWireFeedEnabled:
+          isWeld && (_deviceControl?.autoWireFeed ?? false),
       autoWireFeedSpeedMmPerSecond:
           preset.parameters.values['process.wire_feeding_speed'] ?? 0,
       materialType: preset.materialType?.storageValue,

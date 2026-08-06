@@ -649,11 +649,13 @@ final class _QuickModePageState extends State<QuickModePage> {
     required ProcessPreset preset,
     required bool autoWireFeedEnabled,
   }) {
+    final isWeld = _processType == ProcessType.continuousWelding ||
+        _processType == ProcessType.spotWelding;
     _workSessionStatistics?.configureNextSession(
       modeType: _statisticsModeType(_processType),
-      // Only continuous-weld automatic process feed is consumable usage.
-      autoWireFeedEnabled:
-          _processType == ProcessType.continuousWelding && autoWireFeedEnabled,
+      // Stored for audit; settle uses modeType==weld × process wire speed
+      // (lws-ui weldStop: sessionSeconds * wireFeedSpeed), not this flag.
+      autoWireFeedEnabled: isWeld && autoWireFeedEnabled,
       autoWireFeedSpeedMmPerSecond:
           preset.parameters.values['process.wire_feeding_speed'] ?? 0,
       materialType: preset.materialType?.storageValue,

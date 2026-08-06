@@ -49,13 +49,14 @@ void main() {
     expect((await repository.load()).wireFeedLengthMmTotal, 0);
   });
 
-  test('settles persisted process session using only automatic process feed',
+  test('settles weld wire as sessionSeconds × wireFeedSpeed (lws-ui weldStop)',
       () async {
     final started = DateTime.utc(2026, 7, 30, 8);
     await repository.startWorkSession(WorkSessionStartEvent(
       sessionId: 'session-2',
       modeType: 1,
-      autoWireFeedEnabled: true,
+      // Flag is audit-only; weld modes always accumulate duration × speed.
+      autoWireFeedEnabled: false,
       autoWireFeedSpeedMmPerSecond: 12.5,
       materialType: 2,
       startedAtMs: started.millisecondsSinceEpoch,
@@ -74,6 +75,21 @@ void main() {
     expect(stats.weldSecondsTotal, 4);
     expect(stats.wireFeedLengthMmTotal, 50);
     expect(stats.lastSessionMaterialType, 2);
+  });
+
+  test('cut sessions do not add wire consumption', () async {
+    final started = DateTime.utc(2026, 7, 30, 9);
+    await repository.startWorkSession(WorkSessionStartEvent(
+      sessionId: 'session-cut',
+      modeType: 2,
+      autoWireFeedEnabled: true,
+      autoWireFeedSpeedMmPerSecond: 12.5,
+      startedAtMs: started.millisecondsSinceEpoch,
+    ));
+    await repository.settleActiveWorkSession(
+      endedAt: started.add(const Duration(seconds: 10)),
+    );
+    expect((await repository.load()).wireFeedLengthMmTotal, 0);
   });
 
   test('derives favorite material from settled session counts', () async {

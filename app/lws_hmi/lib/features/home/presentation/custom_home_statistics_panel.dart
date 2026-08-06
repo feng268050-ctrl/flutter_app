@@ -126,14 +126,17 @@ _HomeStatisticDisplay _displayValue(
 
   return switch (metric) {
     // Titles match lws-ui `HomeLayoutUtils.typeToTitle`.
-    CustomHomeMetric.wireConsumption => _HomeStatisticDisplay(
-        title: l10n.warnInfoWeldingConsumables,
-        number: LengthUnitConvert.formatMm(
-          (aggregate?.wireFeedLengthMmTotal ?? 0).toDouble(),
+    CustomHomeMetric.wireConsumption => () {
+        final wire = LengthUnitConvert.formatWireConsumption(
+          aggregate?.wireFeedLengthMmTotal ?? 0,
           unitWire: unitWire,
-        ),
-        unit: LengthUnitConvert.suffix(unitWire),
-      ),
+        );
+        return _HomeStatisticDisplay(
+          title: l10n.warnInfoWeldingConsumables,
+          number: wire.number,
+          unit: wire.unit,
+        );
+      }(),
     CustomHomeMetric.laserOnDuration => _durationDisplay(
         title: l10n.warnInfoLightTime,
         seconds: totalLaserSeconds,

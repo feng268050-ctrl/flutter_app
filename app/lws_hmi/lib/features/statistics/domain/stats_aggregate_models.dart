@@ -1,7 +1,11 @@
 /// One settled work session used to update the single-row statistics aggregate.
 ///
-/// [autoWireFeedSeconds] deliberately excludes manual jog/feed operations. It
-/// is the duration of automatic wire feed belonging to this work session.
+  /// [autoWireFeedSeconds] deliberately excludes manual jog/feed operations. It
+  /// is the duration of automatic wire feed belonging to this work session.
+  ///
+  /// Production settle uses laser-enable session duration × process wire speed
+  /// (lws-ui `weldStop`); this event path keeps an explicit feed-seconds field
+  /// for tests / importers (`wireFeedLengthMm = seconds × speed`).
 final class WorkStopEvent {
   const WorkStopEvent({
     required this.sessionId,

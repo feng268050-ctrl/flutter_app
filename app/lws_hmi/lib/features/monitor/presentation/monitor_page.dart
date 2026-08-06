@@ -156,7 +156,9 @@ class _MonitorPageState extends State<MonitorPage> {
               WorkInformationTab(
                 visible: _currentTabIndex == MonitorPage.tabWorkInformation,
               ),
-              const MachineStatusTab(),
+              MachineStatusTab(
+                visible: _currentTabIndex == MonitorPage.tabMachineStatus,
+              ),
               const AlarmInformationTab(),
               const VideosTab(),
               AiVisionTab(

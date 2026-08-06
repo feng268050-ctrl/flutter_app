@@ -8,7 +8,13 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// lws-ui `fragment_machine_status` — dual gauges + 7 status tiles (4+3).
 class MachineStatusTab extends StatefulWidget {
-  const MachineStatusTab({super.key});
+  const MachineStatusTab({
+    super.key,
+    this.visible = true,
+  });
+
+  /// When false, Modbus polling is paused (hidden Monitor tab).
+  final bool visible;
 
   @override
   State<MachineStatusTab> createState() => _MachineStatusTabState();
@@ -28,12 +34,31 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
       final ctrl = MachineStatusController(services);
       ctrl.addListener(_onUpdate);
       setState(() => _ctrl = ctrl);
-      ctrl.start();
+      if (widget.visible) {
+        ctrl.start();
+      }
     });
   }
 
+  @override
+  void didUpdateWidget(covariant MachineStatusTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.visible == widget.visible) {
+      return;
+    }
+    final ctrl = _ctrl;
+    if (ctrl == null) {
+      return;
+    }
+    if (widget.visible) {
+      ctrl.start();
+    } else {
+      ctrl.stop();
+    }
+  }
+
   void _onUpdate() {
-    if (mounted) {
+    if (mounted && widget.visible) {
       setState(() {});
     }
   }

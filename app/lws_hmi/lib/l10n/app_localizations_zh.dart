@@ -1639,6 +1639,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get otaUpdateNow => '立即升级';
+
+  @override
+  String get otaUpdateLater => '稍后';
+
+  @override
   String get systemUpgradeTitle => '系统升级';
 
   @override
@@ -4307,6 +4313,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String otaUpdateAvailableMessage(String current, String available) {
     return '版本 $current → $available，是否立即安裝？';
   }
+
+  @override
+  String get otaUpdateNow => '立即升級';
+
+  @override
+  String get otaUpdateLater => '稍後';
 
   @override
   String get systemUpgradeTitle => '系統升級';

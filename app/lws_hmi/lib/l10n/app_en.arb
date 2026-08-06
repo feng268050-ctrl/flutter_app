@@ -667,6 +667,8 @@
       }
     }
   },
+  "otaUpdateNow": "Update Now",
+  "otaUpdateLater": "Later",
   "systemUpgradeTitle": "System Upgrade",
   "otaUpgradeStatusVerifying": "Verifying package…",
   "otaUpgradeStatusExtracting": "Extracting package…",

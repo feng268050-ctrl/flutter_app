@@ -26,5 +26,55 @@ void main() {
 
       expect(manifest.sigUrlResolved, 'https://cdn.example/pkg.tar.gz.sig');
     });
+
+    test('parses publish-shaped channel JSON with url', () {
+      final manifest = OtaManifest.fromJson(<String, dynamic>{
+        'version': 'v1.0.41-beta',
+        'filename': 'v1.0.41-beta.tar.gz',
+        'published_at': '2026-08-06T08:00:00Z',
+        'url': 'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+      });
+
+      expect(manifest.version, 'v1.0.41-beta');
+      expect(
+        manifest.packageUrl,
+        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+      );
+      expect(
+        manifest.sigUrlResolved,
+        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz.sig',
+      );
+      expect(manifest.sha512, isNull);
+    });
+
+    test('package_url takes precedence over url', () {
+      final manifest = OtaManifest.fromJson(<String, dynamic>{
+        'version': '1.2.0',
+        'package_url': 'https://cdn.example/from-package.tar.gz',
+        'url': 'https://cdn.example/from-url.tar.gz',
+      });
+
+      expect(manifest.packageUrl, 'https://cdn.example/from-package.tar.gz');
+    });
+
+    test('missing both url and package_url throws', () {
+      expect(
+        () => OtaManifest.fromJson(<String, dynamic>{
+          'version': '1.0.0',
+          'filename': 'v1.0.0.tar.gz',
+        }),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('empty package_url falls back to url', () {
+      final manifest = OtaManifest.fromJson(<String, dynamic>{
+        'version': '1.0.0',
+        'package_url': '  ',
+        'url': 'https://cdn.example/via-url.tar.gz',
+      });
+
+      expect(manifest.packageUrl, 'https://cdn.example/via-url.tar.gz');
+    });
   });
 }

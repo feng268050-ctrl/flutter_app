@@ -168,6 +168,7 @@ final class SystemOtaCoordinator {
     try {
       final OtaManifest manifest;
       if (payload is Map) {
+        // Accepts publish-shaped `{url,…}` or internal `{package_url,…}`.
         manifest = OtaManifest.fromJson(
           Map<String, dynamic>.from(payload),
         );

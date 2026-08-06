@@ -17,19 +17,29 @@ final class OtaManifest {
 
   factory OtaManifest.fromJson(Map<String, dynamic> json) {
     final version = json['version'];
-    final packageUrl = json['package_url'];
     if (version is! String || version.isEmpty) {
       throw FormatException('manifest missing version', json);
     }
-    if (packageUrl is! String || packageUrl.isEmpty) {
-      throw FormatException('manifest missing package_url', json);
+    // Host publish channel JSON uses `url`; internal/WS may use `package_url`.
+    final packageUrl = _nonEmptyString(json['package_url']) ??
+        _nonEmptyString(json['url']);
+    if (packageUrl == null) {
+      throw FormatException('manifest missing package_url or url', json);
     }
     return OtaManifest(
       version: version,
       packageUrl: packageUrl,
-      sigUrl: json['sig_url'] as String?,
-      sha512: json['sha512'] as String?,
+      sigUrl: _nonEmptyString(json['sig_url']),
+      sha512: _nonEmptyString(json['sha512']),
     );
+  }
+
+  static String? _nonEmptyString(Object? value) {
+    if (value is! String) {
+      return null;
+    }
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{

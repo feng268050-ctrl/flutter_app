@@ -459,6 +459,8 @@
   "otaSessionActive": "系統升級正在進行中。",
   "otaUpdateAvailableMessage": "版本 {current} → {available}，是否立即安裝？",
   "otaUpdateAvailableTitle": "發現新版本",
+  "otaUpdateLater": "稍後",
+  "otaUpdateNow": "立即升級",
   "otaUpgradeRebootHint": "設備即將重啓以完成升級。",
   "otaUpgradeStatusApk": "正在安裝應用",
   "otaUpgradeStatusArming": "正在準備重啓…",

@@ -1,29 +1,25 @@
 import 'dart:async';
 
 import 'package:cyber_hal/sys_info.dart';
-import 'package:cyber_ota/cyber_ota.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/app_version.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
-import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
-import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/features/system_ota/presentation/system_ota_settings_page.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/platform/cloud/secret_tap_tracker.dart';
-import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
-import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
-import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:lws_hmi/app/theme/hmi_typography.dart';
-import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 /// Device Information — CyberUI untitled cards (lws-ui Frost parity).
 class DeviceInformationTab extends StatefulWidget {
@@ -54,10 +50,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   StreamSubscription<SysInfoUpdate>? _sysSub;
   StreamSubscription<List<ModbusAttributeChange>>? _modbusSub;
-  Timer? _autoCheckTimer;
-  bool _autoCheckInFlight = false;
-
-  static const _autoCheckInterval = Duration(hours: 6);
 
   @override
   void initState() {
@@ -65,58 +57,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_start());
       _refreshProcessLib();
-      _armAutoCheckTimer();
     });
-  }
-
-  void _armAutoCheckTimer() {
-    _autoCheckTimer?.cancel();
-    final misc = MiscSettingsScope.maybeOf(context);
-    if (misc == null || !misc.autoCheckOtaUpdate) {
-      return;
-    }
-    _autoCheckTimer = Timer.periodic(_autoCheckInterval, (_) {
-      unawaited(_runAutoCheck(silent: true));
-    });
-  }
-
-  String? _resolveManifestUrl() {
-    final cloudStore = CloudSettingsScope.maybeOf(context);
-    if (cloudStore == null) {
-      return null;
-    }
-    final runtime = CloudLocalRuntimeScope.maybeOf(context);
-    return OtaManifestUrl.resolve(
-      cloudSettings: cloudStore,
-      pinnedApiBase: runtime?.pinnedApiBase,
-    );
-  }
-
-  Future<void> _runAutoCheck({required bool silent}) async {
-    if (_autoCheckInFlight || SystemOtaCoordinator.instance.isSessionActive) {
-      return;
-    }
-    final manifestUrl = _resolveManifestUrl();
-    if (manifestUrl == null) {
-      return;
-    }
-    _autoCheckInFlight = true;
-    try {
-      final result = await SystemOtaCoordinator.instance.checkForUpdate(
-        manifestUrl: manifestUrl,
-      );
-      if (!result.hasUpdate || result.manifest == null || !mounted) {
-        return;
-      }
-      if (silent) {
-        final l10n = AppLocalizations.of(context)!;
-        await _promptUpdateAvailable(l10n, result.manifest!);
-      }
-    } catch (_) {
-      // Auto-check is best-effort; never auto-apply.
-    } finally {
-      _autoCheckInFlight = false;
-    }
   }
 
   Future<void> _start() async {
@@ -240,202 +181,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     );
   }
 
-  Future<void> _checkForUpdates(AppLocalizations l10n) async {
-    CyberClickSoundRegistry.playClick();
-    final manifestUrl = _resolveManifestUrl();
-    if (manifestUrl == null) {
-      await showCyberDialog<void>(
-        context: context,
-        builder: (ctx) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.checkUpdate,
-                style: context.hmiTypography.settingsRowTitle.copyWith(
-                  color: CyberColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.otaCheckUnavailable,
-                style: const TextStyle(color: CyberColors.textSecondary),
-              ),
-              const SizedBox(height: 20),
-              HmiButton(
-                label: l10n.closeText,
-                size: HmiButtonSize.small,
-                shape: CyberButtonShape.rounded,
-                onPressed: () => Navigator.of(ctx).pop(),
-              ),
-            ],
-          );
-        },
-      );
-      return;
-    }
-
-    if (SystemOtaCoordinator.instance.isSessionActive) {
-      await showCyberDialog<void>(
-        context: context,
-        builder: (ctx) => _simpleMessageDialog(
-          ctx,
-          l10n,
-          title: l10n.checkUpdate,
-          body: l10n.otaSessionActive,
-        ),
-      );
-      return;
-    }
-
-    CheckUpdateResult? result;
-    try {
-      result = await SystemOtaCoordinator.instance.checkForUpdate(
-        manifestUrl: manifestUrl,
-      );
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      await showCyberDialog<void>(
-        context: context,
-        builder: (ctx) => _simpleMessageDialog(
-          ctx,
-          l10n,
-          title: l10n.checkUpdate,
-          body: l10n.otaCheckFailed,
-        ),
-      );
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    if (!result.hasUpdate || result.manifest == null) {
-      await showCyberDialog<void>(
-        context: context,
-        builder: (ctx) => _simpleMessageDialog(
-          ctx,
-          l10n,
-          title: l10n.checkUpdate,
-          body: l10n.otaAlreadyUpToDate(kSystemVersion),
-        ),
-      );
-      return;
-    }
-
-    await _promptUpdateAvailable(l10n, result.manifest!);
-  }
-
-  Future<void> _promptUpdateAvailable(
-    AppLocalizations l10n,
-    OtaManifest manifest,
-  ) async {
-    final confirmed = await showCyberDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.otaUpdateAvailableTitle,
-              style: context.hmiTypography.settingsRowTitle.copyWith(
-                color: CyberColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.otaUpdateAvailableMessage(
-                kSystemVersion,
-                manifest.version,
-              ),
-              style: const TextStyle(color: CyberColors.textSecondary),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                HmiButton(
-                  label: l10n.cancelText,
-                  size: HmiButtonSize.small,
-                  shape: CyberButtonShape.rounded,
-                  variant: CyberButtonVariant.secondary,
-                  onPressed: () => Navigator.of(ctx).pop(false),
-                ),
-                const SizedBox(width: 12),
-                HmiButton(
-                  label: l10n.okText,
-                  size: HmiButtonSize.small,
-                  shape: CyberButtonShape.rounded,
-                  variant: CyberButtonVariant.primary,
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-    if (confirmed != true || !mounted) {
-      return;
-    }
-    try {
-      await SystemOtaCoordinator.instance.startCloudUpdateFlow(manifest);
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      await showCyberDialog<void>(
-        context: context,
-        builder: (ctx) => _simpleMessageDialog(
-          ctx,
-          l10n,
-          title: l10n.systemUpgradeTitle,
-          body: l10n.otaUpgradeStatusFailed,
-        ),
-      );
-    }
-  }
-
-  Widget _simpleMessageDialog(
-    BuildContext ctx,
-    AppLocalizations l10n, {
-    required String title,
-    required String body,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          title,
-          style: context.hmiTypography.settingsRowTitle.copyWith(
-            color: CyberColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          body,
-          style: const TextStyle(color: CyberColors.textSecondary),
-        ),
-        const SizedBox(height: 20),
-        HmiButton(
-          label: l10n.closeText,
-          size: HmiButtonSize.small,
-          shape: CyberButtonShape.rounded,
-          onPressed: () => Navigator.of(ctx).pop(),
-        ),
-      ],
-    );
-  }
-
   @override
   void dispose() {
-    _autoCheckTimer?.cancel();
     unawaited(_sysSub?.cancel() ?? Future<void>.value());
     unawaited(_modbusSub?.cancel() ?? Future<void>.value());
     super.dispose();
@@ -534,62 +281,24 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             ),
           ],
         ),
-        // Update CTA — scroll to reveal (not pinned / frozen).
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            SettingsDimens.inset,
-            16,
-            SettingsDimens.inset,
-            0,
-          ),
-          child: Center(
-            child: HmiButton(
-              label: l10n.checkUpdate,
-              size: HmiButtonSize.large,
-              widthPolicy: HmiButtonWidthPolicy.fixed,
-              width: 340,
-              variant: CyberButtonVariant.primary,
-              shape: CyberButtonShape.rounded,
-              borderGradientCenter:
-                  CyberBorderGradientCenter.topLeftBottomRight,
-              onPressed: () => unawaited(_checkForUpdates(l10n)),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            SettingsDimens.inset,
-            14,
-            SettingsDimens.inset,
-            SettingsDimens.inset,
-          ),
-          child: Center(
-            child: Builder(
-              builder: (context) {
-                final misc = MiscSettingsScope.maybeOf(context);
-                if (misc == null) {
-                  return SettingsCheckboxRow(
-                    title: l10n.autoCheckOtaUpdate,
-                    value: false,
-                    onChanged: null,
-                  );
-                }
-                return ListenableBuilder(
-                  listenable: misc,
-                  builder: (context, _) {
-                    return SettingsCheckboxRow(
-                      title: l10n.autoCheckOtaUpdate,
-                      value: misc.autoCheckOtaUpdate,
-                      onChanged: (v) {
-                        unawaited(misc.setAutoCheckOtaUpdate(v ?? false));
-                        _armAutoCheckTimer();
-                      },
-                    );
-                  },
+        // System upgrade → dedicated Settings OTA sub-page
+        SettingsGroup(
+          borderGradientCenter:
+              CyberBorderGradientCenter.topLeftBottomRight,
+          children: [
+            SettingsNavRow(
+              title: l10n.systemUpgradeTitle,
+              value: _systemVersion,
+              onTap: () {
+                unawaited(
+                  pushSettingsPage(
+                    context,
+                    const SystemOtaSettingsPage(),
+                  ),
                 );
               },
             ),
-          ),
+          ],
         ),
       ],
     );
@@ -619,30 +328,36 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             children: [
               Text(
                 l10n.cloudEnvironmentTier,
-                textAlign: TextAlign.center,
-                style: context.hmiTypography.sectionTitle.copyWith(
-                  fontWeight: FontWeight.w600,
+                style: context.hmiTypography.settingsRowTitle.copyWith(
                   color: CyberColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 16),
-              for (var i = 0; i < CloudEnvironmentTier.values.length; i++) ...[
-                if (i > 0)
-                  const Divider(
-                    height: SettingsDimens.sectionDividerHeight,
-                    thickness: SettingsDimens.sectionDividerHeight,
-                    indent: 8,
-                    endIndent: 8,
-                    color: SettingsDimens.sectionDividerColor,
+              const SizedBox(height: 8),
+              for (final tier in CloudEnvironmentTier.values)
+                ListTile(
+                  title: Text(
+                    labelFor(tier),
+                    style: TextStyle(
+                      color: tier == current
+                          ? CyberColors.textPrimary
+                          : CyberColors.textSecondary,
+                    ),
                   ),
-                SettingsOptionTile(
-                  title: labelFor(CloudEnvironmentTier.values[i]),
-                  selected: CloudEnvironmentTier.values[i] == current,
-                  onTap: () {
-                    Navigator.of(ctx).pop(CloudEnvironmentTier.values[i]);
-                  },
+                  trailing: tier == current
+                      ? const Icon(
+                          Icons.check,
+                          color: CyberColors.textPrimary,
+                        )
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(tier),
                 ),
-              ],
+              const SizedBox(height: 8),
+              HmiButton(
+                label: l10n.closeText,
+                size: HmiButtonSize.small,
+                shape: CyberButtonShape.rounded,
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
             ],
           ),
         );
@@ -651,14 +366,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     if (chosen == null || !mounted) {
       return;
     }
-    if (chosen == current) {
-      return;
-    }
     await store.setEnvironmentTier(chosen);
-    if (!mounted) {
-      return;
-    }
     final runtime = CloudLocalRuntimeScope.maybeOf(context);
-    await runtime?.reprobeAndReconnect();
+    unawaited(runtime?.reprobeAndReconnect());
   }
 }

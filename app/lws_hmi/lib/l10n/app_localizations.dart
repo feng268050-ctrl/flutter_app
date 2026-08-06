@@ -3191,6 +3191,18 @@ abstract class AppLocalizations {
   /// **'Version {current} → {available}. Install now?'**
   String otaUpdateAvailableMessage(String current, String available);
 
+  /// No description provided for @otaUpdateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Now'**
+  String get otaUpdateNow;
+
+  /// No description provided for @otaUpdateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get otaUpdateLater;
+
   /// No description provided for @systemUpgradeTitle.
   ///
   /// In en, this message translates to:

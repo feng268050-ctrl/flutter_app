@@ -469,7 +469,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新渠道 manifest，供设备云端拉取。
 - **上传路径：** 与 `lws-ui` / `make login` 同源——默认 **`CLOUD_API_BASE=https://api-prod.lasercyber.workers.dev`**，`GET /v1/storage/r2/presigned-url` 取凭证后 Python **直传 R2**（不走 `PUT /upload/…`）。
 - **渠道：** 默认 `staging.json`，版本 `{pubspec-semver}-beta`；`RELEASE=1` → `release.json`，无 `-beta`。版本取自 `app/<APP>/pubspec.yaml`（去 `+build`）。
-- **Manifest 字段：** `version`、`filename`、`published_at`、`url`（**无 `sha512`**；完整性靠旁路 `.sig`，设备侧 `url + ".sig"`）。
+- **设备比较：** Settings / 云检查用运行中 HMI 版本与 channel `version` 做 semver 比较；**同数字基线的 `-beta` 视为低于正式版**（设备已是 `1.0.40` 时，`1.0.40-beta` **不会**提示更新——请发布更高基线如 `1.0.41-beta`，或降低设备版本后再测）。
+- **Manifest 字段：** `version`、`filename`、`published_at`、`url`（**无 `sha512`**；完整性靠旁路 `.sig`，设备侧 `url`/`package_url` + `".sig"`）。
 - **鉴权：** `PUBLISH_API_TOKEN`（优先）→ `CLOUD_ACCESS_TOKEN` → `make login` 的 `output/cloud/credentials.json`。
 - **产出对象（默认 APP）：** `lws-hmi/v{ver}[-beta].tar.gz`、同名 `.sig`、`lws-hmi/staging.json|release.json`。
 - **参数：** `APP`、`RELEASE`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）

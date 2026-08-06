@@ -165,6 +165,31 @@ void main() {
       expect(events.map((e) => e.phase), contains(OtaPhase.checking));
     });
 
+    test('checkForUpdate accepts publish-shaped url channel JSON', () async {
+      http.manifestJson = <String, dynamic>{
+        'version': 'v1.0.41-beta',
+        'filename': 'v1.0.41-beta.tar.gz',
+        'published_at': '2026-08-06T08:00:00Z',
+        'url': 'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+      };
+
+      final result = await session.checkForUpdate(
+        manifestUrl: 'https://api.example/view/lws-hmi/staging.json',
+        currentVersion: '1.0.40',
+      );
+
+      expect(result.hasUpdate, isTrue);
+      expect(result.manifest?.version, 'v1.0.41-beta');
+      expect(
+        result.manifest?.packageUrl,
+        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+      );
+      expect(
+        result.manifest?.sigUrlResolved,
+        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz.sig',
+      );
+    });
+
     test('cloud path walks transferring → verifying → extracting → writing → ok',
         () async {
       await session.runCloudUpdate(

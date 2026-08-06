@@ -561,6 +561,8 @@
       }
     }
   },
+  "otaUpdateNow": "立即升级",
+  "otaUpdateLater": "稍后",
   "systemUpgradeTitle": "系统升级",
   "otaUpgradeStatusVerifying": "正在验证升级包…",
   "otaUpgradeStatusExtracting": "正在解压升级包…",

@@ -1707,6 +1707,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get otaUpdateNow => 'Update Now';
+
+  @override
+  String get otaUpdateLater => 'Later';
+
+  @override
   String get systemUpgradeTitle => 'System Upgrade';
 
   @override

@@ -563,6 +563,15 @@
   },
   "otaUpdateNow": "立即升级",
   "otaUpdateLater": "稍后",
+  "otaNewVersionHeadline": "新版本升级 {version}",
+  "@otaNewVersionHeadline": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "otaUpgradeIdleHint": "从云端检查是否有新的系统升级包。",
   "systemUpgradeTitle": "系统升级",
   "otaUpgradeStatusVerifying": "正在验证升级包…",
   "otaUpgradeStatusExtracting": "正在解压升级包…",

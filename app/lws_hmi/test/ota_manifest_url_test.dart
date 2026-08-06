@@ -53,14 +53,14 @@ void main() {
     );
   });
 
-  test('test/dev tier uses staging.json under /view/lws-hmi/', () {
+  test('test/dev tier uses staging.json under /r2/lws-hmi/', () {
     final store = storeWith(enabled: true, tier: CloudEnvironmentTier.test);
     expect(
       OtaManifestUrl.resolve(
         cloudSettings: store,
         pinnedApiBase: Uri.parse('https://api-test.lasercyber.workers.dev'),
       ),
-      'https://api-test.lasercyber.workers.dev/view/lws-hmi/staging.json',
+      'https://api-test.lasercyber.workers.dev/r2/lws-hmi/staging.json',
     );
 
     final dev = storeWith(enabled: true, tier: CloudEnvironmentTier.dev);
@@ -69,18 +69,29 @@ void main() {
         cloudSettings: dev,
         pinnedApiBase: Uri.parse('http://10.0.2.2:8787'),
       ),
-      'http://10.0.2.2:8787/view/lws-hmi/staging.json',
+      'http://10.0.2.2:8787/r2/lws-hmi/staging.json',
     );
   });
 
-  test('prod tier uses release.json', () {
+  test('prod tier uses release.json under /r2/', () {
     final store = storeWith(enabled: true, tier: CloudEnvironmentTier.prod);
     expect(
       OtaManifestUrl.resolve(
         cloudSettings: store,
         pinnedApiBase: Uri.parse('https://api-prod.lasercyber.workers.dev'),
       ),
-      'https://api-prod.lasercyber.workers.dev/view/lws-hmi/release.json',
+      'https://api-prod.lasercyber.workers.dev/r2/lws-hmi/release.json',
+    );
+  });
+
+  test('resolveView keeps /view/ path for when Worker allowlists HMI', () {
+    final store = storeWith(enabled: true, tier: CloudEnvironmentTier.test);
+    expect(
+      OtaManifestUrl.resolveView(
+        cloudSettings: store,
+        pinnedApiBase: Uri.parse('https://api-prod.lasercyber.workers.dev'),
+      ),
+      'https://api-prod.lasercyber.workers.dev/view/lws-hmi/staging.json',
     );
   });
 
@@ -91,7 +102,7 @@ void main() {
         cloudSettings: store,
         pinnedApiBase: Uri.parse('https://lasercyber.hyurl.com/test'),
       ),
-      'https://lasercyber.hyurl.com/test/view/lws-hmi/staging.json',
+      'https://lasercyber.hyurl.com/test/r2/lws-hmi/staging.json',
     );
   });
 }

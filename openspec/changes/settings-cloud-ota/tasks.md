@@ -24,11 +24,11 @@
 - [ ] 4.4 Board smoke against a real `make publish` staging object; record `/view/` GET result (open question)
 - [x] 4.5 Update `smoke.md` for Device Information → OTA sub-page → Update Now → CyberUI progress page
 
-## 5. Settings OTA sub-page + upgrade progress redesign (lws-ui / CyberUI)
+## 5. Device Information → System Upgrade (full-height card)
 
-- [x] 5.1 Add Settings OTA sub-page (`SettingsScaffold` + CyberUI cards): current version, Check for Updates, auto-check, update-available + Update Now / Later
-- [x] 5.2 Device Information: navigation entry to OTA sub-page; remove inline OTA footer controls
-- [x] 5.3 Move check / auto-check / Update Now logic from Device Information tab into the OTA sub-page (reuse coordinator)
-- [x] 5.4 Redesign `SystemUpgradePage` with CyberUI / HMI design elements (tokens, buttons, progress, panel/card chrome); keep phase labels and non-cancelable write rules
-- [x] 5.5 l10n for sub-page title / Update Now / Later as needed (`make l10n`)
-- [x] 5.6 Host flutter analyze / focused tests for OTA sub-page navigation + upgrade page smoke widgets if practical
+- [x] 5.1 System Upgrade: one `SettingsPanel` fills remaining height; version + in-card check / Update Now; apply progress on same card
+- [x] 5.2 Device Information: System Version nav row opens System Upgrade; Check + auto-check checkbox on upgrade page
+- [x] 5.3 Coordinator: `alreadyOnUpgradePage` for Update Now; named route `progressOnly` for `make upgrade` / cleared-stack
+- [x] 5.4 Check outcomes in content card (no dialogs); progress-only hides check footer
+- [x] 5.5 l10n for System Upgrade idle hint / Update Now / Later as needed (`make l10n`)
+- [x] 5.6 Host flutter analyze + update smoke.md

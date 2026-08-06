@@ -1645,6 +1645,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get otaUpdateLater => '稍后';
 
   @override
+  String otaNewVersionHeadline(String version) {
+    return '新版本升级 $version';
+  }
+
+  @override
+  String get otaUpgradeIdleHint => '从云端检查是否有新的系统升级包。';
+
+  @override
   String get systemUpgradeTitle => '系统升级';
 
   @override
@@ -4319,6 +4327,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get otaUpdateLater => '稍後';
+
+  @override
+  String otaNewVersionHeadline(String version) {
+    return '新版本升級 $version';
+  }
+
+  @override
+  String get otaUpgradeIdleHint => '從雲端檢查是否有新的系統升級包。';
 
   @override
   String get systemUpgradeTitle => '系統升級';

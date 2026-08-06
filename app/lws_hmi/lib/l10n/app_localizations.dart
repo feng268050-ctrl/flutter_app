@@ -3203,6 +3203,18 @@ abstract class AppLocalizations {
   /// **'Later'**
   String get otaUpdateLater;
 
+  /// No description provided for @otaNewVersionHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'New version upgrade {version}'**
+  String otaNewVersionHeadline(String version);
+
+  /// No description provided for @otaUpgradeIdleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for a newer system package from the cloud.'**
+  String get otaUpgradeIdleHint;
+
   /// No description provided for @systemUpgradeTitle.
   ///
   /// In en, this message translates to:

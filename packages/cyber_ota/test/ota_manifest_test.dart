@@ -67,14 +67,16 @@ void main() {
       );
     });
 
-    test('empty package_url falls back to url', () {
+    test('parses optional title and content', () {
       final manifest = OtaManifest.fromJson(<String, dynamic>{
-        'version': '1.0.0',
-        'package_url': '  ',
-        'url': 'https://cdn.example/via-url.tar.gz',
+        'version': 'v1.2.0',
+        'url': 'https://cdn.example/pkg.tar.gz',
+        'title': 'Big release',
+        'content': 'Notes here',
       });
-
-      expect(manifest.packageUrl, 'https://cdn.example/via-url.tar.gz');
+      expect(manifest.displayTitle, 'Big release');
+      expect(manifest.content, 'Notes here');
+      expect(OtaManifest.coreVersion('v1.0.40-beta'), '1.0.40');
     });
   });
 }

@@ -27,10 +27,10 @@ final class HttpOtaClient implements OtaHttpClient {
       throw HttpException('GET $url failed: HTTP ${response.statusCode}');
     }
     final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic>) {
+    if (decoded is! Map) {
       throw FormatException('manifest response is not a JSON object', decoded);
     }
-    return decoded;
+    return Map<String, dynamic>.from(decoded);
   }
 
   @override

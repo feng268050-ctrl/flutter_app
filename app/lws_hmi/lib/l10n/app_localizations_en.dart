@@ -1713,6 +1713,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otaUpdateLater => 'Later';
 
   @override
+  String otaNewVersionHeadline(String version) {
+    return 'New version upgrade $version';
+  }
+
+  @override
+  String get otaUpgradeIdleHint =>
+      'Check for a newer system package from the cloud.';
+
+  @override
   String get systemUpgradeTitle => 'System Upgrade';
 
   @override

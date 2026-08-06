@@ -101,13 +101,21 @@ final class SystemOtaCoordinator {
   }
 
   /// Cloud OTA after safe shutdown + upgrade page (Settings / WS).
-  Future<void> startCloudUpdateFlow(OtaManifest manifest) async {
+  ///
+  /// When [alreadyOnUpgradePage] is true (operator already on System Upgrade),
+  /// skip nav clear — progress renders on the current page.
+  Future<void> startCloudUpdateFlow(
+    OtaManifest manifest, {
+    bool alreadyOnUpgradePage = false,
+  }) async {
     await safeShutdown();
     _ensureSession();
     _wireProgress();
-    await navigateToUpgradePage();
-    await WidgetsBinding.instance.endOfFrame;
-    await WidgetsBinding.instance.endOfFrame;
+    if (!alreadyOnUpgradePage) {
+      await navigateToUpgradePage();
+      await WidgetsBinding.instance.endOfFrame;
+      await WidgetsBinding.instance.endOfFrame;
+    }
     await _beginRun(() => _session!.runCloudUpdate(manifest: manifest));
   }
 

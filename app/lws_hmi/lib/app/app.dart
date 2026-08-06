@@ -758,7 +758,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                         case AppRoutes.demo:
                                           page = _demoPage();
                                         case AppRoutes.systemUpgrade:
-                                          page = const SystemUpgradePage();
+                                          page = const SystemUpgradePage(
+                                            progressOnly: true,
+                                          );
                                         case AppRoutes.home:
                                         default:
                                           page = const HomePage();

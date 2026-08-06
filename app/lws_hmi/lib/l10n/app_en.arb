@@ -669,6 +669,15 @@
   },
   "otaUpdateNow": "Update Now",
   "otaUpdateLater": "Later",
+  "otaNewVersionHeadline": "New version upgrade {version}",
+  "@otaNewVersionHeadline": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "otaUpgradeIdleHint": "Check for a newer system package from the cloud.",
   "systemUpgradeTitle": "System Upgrade",
   "otaUpgradeStatusVerifying": "Verifying package…",
   "otaUpgradeStatusExtracting": "Extracting package…",

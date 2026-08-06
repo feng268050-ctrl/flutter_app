@@ -1,8 +1,8 @@
 # Settings cloud OTA — board smoke
 
-End-to-end: published channel → Device Information → **OTA Settings sub-page** → Check / **Update Now** → CyberUI **upgrade progress page** → verify/apply.
+End-to-end: published channel → Device Information → **System Version** → **System Upgrade** (full-height Settings card) → Check / Update Now → progress on the **same** page → verify/apply.
 
-> UI path: dedicated OTA sub-page + redesigned progress page (change proposal / tasks §5).
+> UI: Device Information opens System Upgrade via System Version; Check + auto-check live on System Upgrade; results/progress in-card (no dialogs); `make upgrade` uses progress-only.
 
 ## Prerequisites
 
@@ -27,22 +27,22 @@ Device compares channel `version` to running HMI `kSystemVersion` / pubspec. A s
 
 2. On device (or from host via curl through the same API base the board pinned), GET the channel URL Settings will use:
 
-   - Test/dev: `{pinnedApiBase}/view/lws-hmi/staging.json`
-   - Prod: `{pinnedApiBase}/view/lws-hmi/release.json`
+   - Test/dev: `{pinnedApiBase}/r2/lws-hmi/staging.json`
+   - Prod: `{pinnedApiBase}/r2/lws-hmi/release.json`
 
    **Record result:** HTTP status and whether JSON has `version` + `url` (no `package_url` required).
 
-   Open question from design: if `/view/` is 404/auth-gated on the pinned Worker, note it here and fall back investigation (public R2 manifest URL vs Worker route).
+   Prefer `/r2/lws-hmi/…` until Worker allowlists `lws-hmi` on `GET /view/…`
+   (`/view/lws-hmi/staging.json` is currently `ROUTE_NOT_FOUND`; `/r2/…` returns published JSON).
 
-3. Settings → Device Information → **OTA / system-update entry** → OTA sub-page:
+3. Settings → Device Information:
 
-   - Cloud off → **Check for Updates** shows unavailable (not “up to date”).
-   - Cloud on + pinned origin → Check for Updates:
-     - up to date, or
-     - update available → **Update Now** (version / notes; Later dismisses).
-   - After Update Now: laser/work stops, **CyberUI upgrade progress page** (not Home), download → verify → extract → burn → reboot hint.
-   - Enable **Automatically check for updates**: should prompt / surface available state (no auto-apply).
-   - Device Information MUST NOT still show the old inline OTA footer once the sub-page ships.
+   - **System Version** row navigates to **System Upgrade** (chevron).
+   - System Upgrade: one content card fills remaining height; hosts **Check for Updates** + **Automatically check for updates**.
+   - Check **result stays in the content card** (no dialog): unavailable / failed / up to date / available + Update Now / Later.
+   - After Update Now: progress on the **same** full-height card (download → verify → extract → burn → reboot hint).
+   - Auto-check: when a newer package exists, opens System Upgrade with the available state (no auto-apply).
+   - Host `make upgrade`: navigates to System Upgrade **progress-only** (no check footer).
 
 4. Optional WS: `command.check_update` / `command.update_system` against the same channel; progress frames during transfer/write.
 
@@ -50,7 +50,8 @@ Device compares channel `version` to running HMI `kSystemVersion` / pubspec. A s
 
 ## Pass criteria
 
-- [ ] `/view/…/staging.json` (or release) GET succeeds with publish-shaped JSON
-- [ ] Device Information opens OTA sub-page; check reflects newer channel without false “up to date” when URL missing
-- [ ] Update Now → CyberUI progress page → verify with `.sig` → apply or clean failure
-- [ ] Auto-check prompts only (no auto-apply)
+- [ ] `/r2/…/staging.json` (or release) GET succeeds with publish-shaped JSON
+- [ ] Device Information System Version → System Upgrade; Check + checkbox on upgrade page
+- [ ] Content card fills remaining height; check result in-card (no dialog)
+- [ ] `make upgrade` progress-only (no check footer)
+- [ ] Auto-check surfaces available only (no auto-apply)

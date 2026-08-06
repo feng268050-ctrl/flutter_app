@@ -37,25 +37,19 @@ This change finishes cloud discovery **and** aligns operator UI: OTA Settings su
 - **Decision:** `package_url` if non-empty, else `url`; `.sig` defaults to archive URL + `.sig`.
 - **Why:** Matches `host-ota-publish` / lws-ui channel shape.
 
-### 2. Keep `/view/{artifact}/{channel}.json` as check URL
+### 2. Manifest check URL uses `/r2/` until `/view/` allowlists HMI
 
-- **Decision:** Unchanged (`staging.json` / `release.json` by tier; artifact `lws-hmi`).
+- **Decision:** Resolve as `{pinnedApiBase}/r2/lws-hmi/{staging|release}.json` (tier selects file). Keep `OtaManifestUrl.resolveView()` for the lws-ui `/view/…` shape once api-server includes `lws-hmi` in `STATIC_LIBRARY_ARTIFACTS`.
+- **Why:** api-prod `/view/lws-hmi/staging.json` → `ROUTE_NOT_FOUND`; `/r2/lws-hmi/staging.json` returns the published manifest (presign PUT already wrote APP_BUCKET).
 
 ### 3. Version compare uses running HMI app version
 
 - **Decision:** Unchanged; same-base `-beta` is older than release at that base.
 
-### 4. Separate Settings OTA sub-page (lws-ui flow, HMI chrome)
+### 4. Separate OTA page matches lws-ui UpgradeActivity chrome
 
-- **Decision:** Add `SystemOtaSettingsPage` (name TBD) pushed via `pushSettingsPage` from Device Information (navigation row / primary entry — e.g. “System update” / Check for Updates). Page uses **`SettingsScaffold`** (CyberUI page status bar) + untitled **`SettingsGroup` / Cyber cards**:
-  - Current system version readout
-  - **Check for Updates** (`HmiButton` / primary CTA)
-  - **Automatically check for updates** (`SettingsCheckboxRow`)
-  - When newer: version headline + optional `title`/`content` (or l10n template from versions) + **Update Now** / Later — lws-ui `UpgradeActivity` idle phase
-- Remove inline OTA footer from Device Information (keep identity / versions / focus cards).
-- **Update Now** → `startCloudUpdateFlow` (safe shutdown → upgrade **progress** route). Auto-check prompts into this sub-page or shows the available state / dialog that leads to Update Now — never starts apply alone.
-- **Why:** Matches HMI sub-page pattern and lws-ui separation of “decide to update” vs “run progress.”
-- **Alternatives:** Keep footer on Device Information — rejected (user request + crowded tab). Full duplicate of Android layout assets — rejected (use CyberUI).
+- **Decision:** OTA sub-page uses `ProductPageStatusBar` + large frost panel (not Settings card groups): idle = version + Check / auto-check; available = headline + notes scroll + full-width **Update Now** / **Later** (lws-ui `activity_upgrade.xml` flow). Progress remains on `SystemUpgradePage` after Update Now. Device Information only navigates here (no inline OTA footer).
+- **Why:** Matches lws-ui “decide to update” vs “run progress,” with CyberUI tokens instead of Android mipmaps.
 
 ### 5. Redesign upgrade progress page with system design elements
 
@@ -79,7 +73,7 @@ This change finishes cloud discovery **and** aligns operator UI: OTA Settings su
 
 ## Risks / Trade-offs
 
-- **[Risk] `/view/` broken on some Workers** → smoke GET; fix URL if needed.
+- **[Risk] `/view/` still 404 for `lws-hmi`** → Device uses `/r2/` until Worker allowlists HMI; smoke against `/r2/…`.
 - **[Risk] Operators miss OTA entry after moving off Device Information footer** → clear nav row label + l10n; smoke covers path.
 - **[Risk] Same-version `-beta`** → document in smoke / make-commands.
 - **[Trade-off] Optional notes without publish `content`** → version-based message is enough for Update Now gate.
@@ -93,5 +87,5 @@ This change finishes cloud discovery **and** aligns operator UI: OTA Settings su
 
 ## Open Questions
 
-1. Worker public `GET /view/lws-hmi/staging.json` — confirm on board smoke.
-2. Exact Device Information row title (l10n): prefer existing `checkUpdate` / `systemUpgradeTitle` vs new “System update” key — resolve at implement time to match lws-ui / ARB habits.
+1. Closed for now: use `/r2/lws-hmi/…`; switch back to `/view/` when api-server allowlists HMI artifacts.
+2. Device Information row title uses `systemUpgradeTitle`.

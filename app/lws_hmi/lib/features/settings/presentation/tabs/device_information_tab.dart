@@ -10,8 +10,12 @@ import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
-import 'package:lws_hmi/features/system_ota/presentation/system_ota_settings_page.dart';
+import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
+import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
+import 'package:lws_hmi/features/system_ota/presentation/system_upgrade_page.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
@@ -50,6 +54,11 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   StreamSubscription<SysInfoUpdate>? _sysSub;
   StreamSubscription<List<ModbusAttributeChange>>? _modbusSub;
+  Timer? _autoCheckTimer;
+  MiscSettingsStore? _misc;
+  bool _autoCheckInFlight = false;
+
+  static const _autoCheckInterval = Duration(hours: 6);
 
   @override
   void initState() {
@@ -57,7 +66,79 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_start());
       _refreshProcessLib();
+      _bindMiscAutoCheck();
     });
+  }
+
+  void _bindMiscAutoCheck() {
+    final misc = MiscSettingsScope.maybeOf(context);
+    if (identical(_misc, misc)) {
+      _armAutoCheckTimer();
+      return;
+    }
+    _misc?.removeListener(_armAutoCheckTimer);
+    _misc = misc;
+    _misc?.addListener(_armAutoCheckTimer);
+    _armAutoCheckTimer();
+  }
+
+  void _armAutoCheckTimer() {
+    _autoCheckTimer?.cancel();
+    _autoCheckTimer = null;
+    final misc = _misc ?? MiscSettingsScope.maybeOf(context);
+    if (misc == null || !misc.autoCheckOtaUpdate) {
+      return;
+    }
+    unawaited(_runAutoCheck());
+    _autoCheckTimer = Timer.periodic(_autoCheckInterval, (_) {
+      unawaited(_runAutoCheck());
+    });
+  }
+
+  String? _resolveManifestUrl() {
+    final cloudStore = CloudSettingsScope.maybeOf(context);
+    if (cloudStore == null) {
+      return null;
+    }
+    final runtime = CloudLocalRuntimeScope.maybeOf(context);
+    return OtaManifestUrl.resolve(
+      cloudSettings: cloudStore,
+      pinnedApiBase: runtime?.pinnedApiBase,
+    );
+  }
+
+  Future<void> _runAutoCheck() async {
+    if (_autoCheckInFlight || SystemOtaCoordinator.instance.isSessionActive) {
+      return;
+    }
+    final manifestUrl = _resolveManifestUrl();
+    if (manifestUrl == null) {
+      return;
+    }
+    _autoCheckInFlight = true;
+    try {
+      final result = await SystemOtaCoordinator.instance.checkForUpdate(
+        manifestUrl: manifestUrl,
+      );
+      if (!result.hasUpdate || result.manifest == null || !mounted) {
+        return;
+      }
+      await pushSettingsPage(
+        context,
+        SystemUpgradePage(initialManifest: result.manifest),
+      );
+    } catch (e) {
+      debugPrint('DeviceInformationTab: auto-check failed: $e');
+    } finally {
+      _autoCheckInFlight = false;
+    }
+  }
+
+  Future<void> _openSystemUpgrade() async {
+    await pushSettingsPage(
+      context,
+      const SystemUpgradePage(),
+    );
   }
 
   Future<void> _start() async {
@@ -183,6 +264,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   @override
   void dispose() {
+    _autoCheckTimer?.cancel();
+    _misc?.removeListener(_armAutoCheckTimer);
     unawaited(_sysSub?.cancel() ?? Future<void>.value());
     unawaited(_modbusSub?.cancel() ?? Future<void>.value());
     super.dispose();
@@ -191,7 +274,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    // Refresh process-lib label when scope notifies.
     try {
       final lib = ProcessLibraryScope.of(context);
       final v = lib.presets
@@ -210,7 +292,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
     return SettingsScrollView(
       children: [
-        // Identity — lws-ui `top-left-bottom-right`
         SettingsGroup(
           borderGradientCenter:
               CyberBorderGradientCenter.topLeftBottomRight,
@@ -240,14 +321,14 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             SettingsValueRow(title: l10n.gunSn, value: _gunheadSn),
           ],
         ),
-        // Versions — lws-ui `bottom-left-top-right`
         SettingsGroup(
           borderGradientCenter:
               CyberBorderGradientCenter.bottomLeftTopRight,
           children: [
-            SettingsValueRow(
+            SettingsNavRow(
               title: l10n.systemVersion,
               value: _systemVersion,
+              onTap: () => unawaited(_openSystemUpgrade()),
             ),
             SettingsValueRow(
               title: l10n.kernelVersion,
@@ -271,32 +352,12 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             ),
           ],
         ),
-        // Focus — lws-ui `top-bottom`
         SettingsGroup(
           borderGradientCenter: CyberBorderGradientCenter.topBottom,
           children: [
             SettingsValueRow(
               title: l10n.focusScaleReference,
               value: _focusScaleRef,
-            ),
-          ],
-        ),
-        // System upgrade → dedicated Settings OTA sub-page
-        SettingsGroup(
-          borderGradientCenter:
-              CyberBorderGradientCenter.topLeftBottomRight,
-          children: [
-            SettingsNavRow(
-              title: l10n.systemUpgradeTitle,
-              value: _systemVersion,
-              onTap: () {
-                unawaited(
-                  pushSettingsPage(
-                    context,
-                    const SystemOtaSettingsPage(),
-                  ),
-                );
-              },
             ),
           ],
         ),
@@ -319,7 +380,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     final chosen = await showCyberDialog<CloudEnvironmentTier>(
       context: context,
       builder: (ctx) {
-        // ListTiles stretch to max width; cap like other compact Cyber dialogs.
         return ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: Column(

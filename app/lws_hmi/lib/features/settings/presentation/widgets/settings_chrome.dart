@@ -332,12 +332,16 @@ class SettingsHelpFooter extends StatelessWidget {
     this.text, {
     super.key,
     this.bottomInset = SettingsDimens.inset,
+    this.style,
   });
 
   final String text;
 
   /// Space below the footnote (use `0` when a [SettingsSectionHeader] follows).
   final double bottomInset;
+
+  /// Overrides default supporting / white54 help style.
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
@@ -350,10 +354,11 @@ class SettingsHelpFooter extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: context.hmiTypography.supporting.copyWith(
-          color: Colors.white54,
-          height: 1.35,
-        ),
+        style: style ??
+            context.hmiTypography.supporting.copyWith(
+              color: Colors.white54,
+              height: 1.35,
+            ),
       ),
     );
   }

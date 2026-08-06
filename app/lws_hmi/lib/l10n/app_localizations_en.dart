@@ -1303,6 +1303,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Attach a physical keyboard that matches the selected specification. A mismatch may make some keys produce unexpected characters.';
 
   @override
+  String get keyboardSoftLayoutPreview => 'Software Keyboard Layout Preview';
+
+  @override
   String get keyboardLongPressAccentHint =>
       'Long-Press For Accented Characters';
 

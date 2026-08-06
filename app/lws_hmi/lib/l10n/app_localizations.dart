@@ -2447,6 +2447,12 @@ abstract class AppLocalizations {
   /// **'Attach a physical keyboard that matches the selected specification. A mismatch may make some keys produce unexpected characters.'**
   String get keyboardLayoutHelp;
 
+  /// No description provided for @keyboardSoftLayoutPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Software Keyboard Layout Preview'**
+  String get keyboardSoftLayoutPreview;
+
   /// No description provided for @keyboardLongPressAccentHint.
   ///
   /// In en, this message translates to:

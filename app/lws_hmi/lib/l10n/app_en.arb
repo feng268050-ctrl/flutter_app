@@ -526,6 +526,7 @@
   "keyboardApplyConfirmBody": "Saves the selected layout and restarts HMI so soft CyberIME and physical keyboard both take effect. This page will reopen after relaunch.",
   "keyboardApplyConfirmTitle": "Apply Keyboard Layout?",
   "keyboardLayoutHelp": "Attach a physical keyboard that matches the selected specification. A mismatch may make some keys produce unexpected characters.",
+  "keyboardSoftLayoutPreview": "Software Keyboard Layout Preview",
   "keyboardLongPressAccentHint": "Long-Press For Accented Characters",
   "keyboardNotDetected": "Not Detected",
   "keyboardPhysicalSection": "Physical Keyboard",

@@ -534,7 +534,7 @@ void main() {
     );
 
     expect(find.text('Default'), findsNothing);
-    expect(find.text('软件键盘布局预览'), findsOneWidget);
+    expect(find.text('Software Keyboard Layout Preview'), findsOneWidget);
     expect(find.text('q'), findsWidgets);
     await tester.tap(find.text('QWERTZ'));
     await tester.pumpAndSettle();
@@ -553,14 +553,16 @@ void main() {
             selected: CyberImeRegionalProfile.qwerty,
             showPreview: false,
             showFootnote: false,
+            showDisplayName: false,
             onSelected: (_) {},
           ),
         ),
       ),
     );
 
-    expect(find.text('QWERTY'), findsWidgets);
-    expect(find.text('软件键盘布局预览'), findsNothing);
+    // Segment labels remain; display-name under Segment is hidden.
+    expect(find.text('QWERTY'), findsOneWidget);
+    expect(find.text('Software Keyboard Layout Preview'), findsNothing);
     expect(find.byType(CyberImeLayoutPreview), findsNothing);
   });
 

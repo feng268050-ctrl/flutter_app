@@ -1253,6 +1253,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyboardLayoutHelp => '请连接与所选规格匹配的实体键盘。规格不匹配可能导致部分按键输出异常字符。';
 
   @override
+  String get keyboardSoftLayoutPreview => '软件键盘布局预览';
+
+  @override
   String get keyboardLongPressAccentHint => '长按可输入重音字符';
 
   @override
@@ -3995,6 +3998,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get keyboardLayoutHelp => '請連接與所選規格匹配的實體鍵盤。規格不匹配可能導致部分按鍵輸出異常字符。';
+
+  @override
+  String get keyboardSoftLayoutPreview => '軟件鍵盤佈局預覽';
 
   @override
   String get keyboardLongPressAccentHint => '長按可輸入重音字符';

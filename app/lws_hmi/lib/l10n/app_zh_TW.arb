@@ -354,6 +354,7 @@
   "keyboardLongPressAccentHint": "長按可輸入重音字符",
   "keyboardNotDetected": "未檢測到",
   "keyboardPhysicalSection": "實體鍵盤",
+  "keyboardSoftLayoutPreview": "軟件鍵盤佈局預覽",
   "keyboardText": "鍵盤",
   "lanEnhancementFooter": "開啓局域網增強後，本機提供本地 HTTP（端口 5580）與 mDNS 發現，便於同一局域網內的手機與工具連接管理。",
   "lanEnhancementText": "局域網增強",

@@ -416,6 +416,7 @@
   "keyboardApplyConfirmBody": "将保存所选布局并重启 HMI，使软键盘 CyberIME 与实体键盘同时生效。重启后会重新打开本页。",
   "keyboardApplyConfirmTitle": "应用键盘布局？",
   "keyboardLayoutHelp": "请连接与所选规格匹配的实体键盘。规格不匹配可能导致部分按键输出异常字符。",
+  "keyboardSoftLayoutPreview": "软件键盘布局预览",
   "keyboardLongPressAccentHint": "长按可输入重音字符",
   "keyboardNotDetected": "未检测到",
   "keyboardPhysicalSection": "实体键盘",

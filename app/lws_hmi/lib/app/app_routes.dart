@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 /// Named routes for product Home, Settings, Monitor, and hidden Demo.
 ///
-/// Boot self-check is a Home overlay (not a route). Each top-level route calls
-/// [scheduleEnsureModbusLive] so live Modbus works even if entry is not Home.
+/// Startup: [safetyTips] → (optional [productDisclaimer]) → [home].
+/// Boot self-check remains a Home overlay (not a route). Each top-level route
+/// calls [scheduleEnsureModbusLive] so live Modbus works even if entry is not
+/// Home.
 abstract final class AppRoutes {
   static const home = '/';
+  /// Startup Safety Tips (lws-ui `SafetyTipsActivity`) — first screen.
+  static const safetyTips = '/safety-tips';
   static const settings = '/settings';
   static const monitor = '/monitor';
   static const quickMode = '/process-library/quick';

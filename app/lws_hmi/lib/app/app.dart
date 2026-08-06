@@ -671,7 +671,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                     builder: _appBuilder,
                                     navigatorKey: _navKey,
                                     navigatorObservers: [appRouteObserver],
-                                    initialRoute: AppRoutes.home,
+                                    initialRoute: SafetyTipsGate.initialRoute,
                                     onGenerateRoute: (settings) {
                                       // In-module nested routes: L/R slide.
                                       // Home → five modules: fade (below).
@@ -694,8 +694,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                           );
                                         case AppRoutes.productDisclaimer:
                                           // lws-ui UseSafetyTipsActivity — L/R
-                                          // slide over Safety Tips, not a
-                                          // second dialog stacked on Home.
+                                          // slide over Safety Tips.
                                           return buildAppSlideRoute<void>(
                                             settings: settings,
                                             builder: (_) =>
@@ -726,6 +725,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
                                       final Widget page;
                                       switch (settings.name) {
+                                        case AppRoutes.safetyTips:
+                                          page = const SafetyTipsPage();
                                         case AppRoutes.settings:
                                           page = SettingsPage(
                                             openKeyboardOnLaunch: settings

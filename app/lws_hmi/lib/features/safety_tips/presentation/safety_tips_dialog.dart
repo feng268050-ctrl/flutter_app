@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
+import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -23,31 +25,34 @@ const double _kCardPadH = 50;
 const double _kCardPadTop = 50;
 const double _kCardPadBottom = 32;
 
-/// Shows Safety Tips; Product Disclaimer opens via [AppRoutes.productDisclaimer].
+enum _SafetyTipsMode { tips, disclaimer }
+
+/// Startup Safety Tips page (lws-ui `SafetyTipsActivity`).
 ///
-/// Returns when the user taps Agree on Safety Tips (lws-ui `toHome`).
-Future<void> showSafetyTipsDialog({required BuildContext context}) {
-  return showGeneralDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    barrierLabel: 'Safety Tips',
-    // Shell paints home wallpaper; keep route barrier clear.
-    barrierColor: Colors.transparent,
-    transitionDuration: const Duration(milliseconds: 180),
-    pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      return FadeTransition(
-        opacity: animation,
-        child: const _SafetyTipsShell(mode: _SafetyTipsMode.tips),
-      );
-    },
-  );
+/// First-screen named route [AppRoutes.safetyTips] — not a dialog over Home.
+class SafetyTipsPage extends StatefulWidget {
+  const SafetyTipsPage({super.key});
+
+  @override
+  State<SafetyTipsPage> createState() => _SafetyTipsPageState();
 }
 
-enum _SafetyTipsMode { tips, disclaimer }
+class _SafetyTipsPageState extends State<SafetyTipsPage> {
+  @override
+  void initState() {
+    super.initState();
+    SafetyTipsGate.setActive(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const _SafetyTipsShell(mode: _SafetyTipsMode.tips);
+  }
+}
 
 /// Full-screen Product Disclaimer page (lws-ui `UseSafetyTipsActivity`).
 ///
-/// Pushed as [AppRoutes.productDisclaimer] — not a nested dialog over Home.
+/// Pushed as [AppRoutes.productDisclaimer] over [SafetyTipsPage].
 class ProductDisclaimerPage extends StatelessWidget {
   const ProductDisclaimerPage({super.key});
 
@@ -135,8 +140,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
 
   Future<void> _openDisclaimer() async {
     CyberClickSoundRegistry.playClick();
-    // Separate named route (lws-ui startActivity UseSafetyTipsActivity), not
-    // another transparent dialog stacked on Home / Safety Tips.
+    // Separate named route (lws-ui startActivity UseSafetyTipsActivity).
     await Navigator.of(context).pushNamed(AppRoutes.productDisclaimer);
   }
 
@@ -145,7 +149,11 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
       return;
     }
     CyberClickSoundRegistry.playClick();
-    Navigator.of(context).pop();
+    if (widget.mode == _SafetyTipsMode.tips) {
+      SafetyTipsCoordinator.goHomeAfterAccept(context);
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   @override

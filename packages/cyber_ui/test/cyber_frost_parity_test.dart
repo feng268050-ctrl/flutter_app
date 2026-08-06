@@ -12,7 +12,16 @@ void main() {
   test('CyberPanelBorder dark uses highlight border', () {
     const panel = CyberPanelBorder();
     expect(panel.flatBorderColor, CyberColors.borderHighlight);
+    expect(panel.tipRimColor, CyberColors.tipRimHighlight);
+    expect(panel.tipRimOutline.resolvedUniformColor, CyberColors.tipRimHighlight);
+    expect(panel.width, CyberDimens.borderWidth);
     expect(panel.borderRadius.topLeft.x, CyberDimens.cornerRadius);
+  });
+
+  test('CyberPanelBorder tip rim uses 50% white highlight', () {
+    const panel = CyberPanelBorder(tone: CyberTone.light);
+    expect(panel.tipRimColor, const Color(0x80FFFFFF));
+    expect(panel.tipRimColor.alpha, 0x80);
   });
 
   test('CyberClockNotes documents glyph-clip limit', () {

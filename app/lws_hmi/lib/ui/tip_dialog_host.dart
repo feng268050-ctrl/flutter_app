@@ -301,48 +301,54 @@ final class _TipFrostCardState extends State<_TipFrostCard> {
             minHeight: constraints.minHeight,
             maxHeight: constraints.maxHeight,
           ),
-          child: ClipRRect(
-            key: _cardKey,
-            borderRadius: radius,
-            clipBehavior: Clip.antiAlias,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
+          // Orange rim above clip (Manual Gas / Feed / Retract style).
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              ClipRRect(
+                key: _cardKey,
                 borderRadius: radius,
-                border: Border.all(
-                  color: widget.panel.flatBorderColor,
-                  width: widget.panel.width,
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  fit: StackFit.passthrough,
+                  children: [
+                    Positioned.fill(
+                      child: _capture != null
+                          ? ImageFiltered(
+                              imageFilter: ui.ImageFilter.blur(
+                                sigmaX: _TipFrostCard.blurSigma,
+                                sigmaY: _TipFrostCard.blurSigma,
+                                tileMode: TileMode.clamp,
+                              ),
+                              child: RawImage(
+                                image: _capture,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                            )
+                          : ColoredBox(color: widget.fallback),
+                    ),
+                    Positioned.fill(
+                      child: ColoredBox(color: widget.wash),
+                    ),
+                    Padding(
+                      padding: widget.padding,
+                      child: widget.child,
+                    ),
+                  ],
                 ),
               ),
-              child: Stack(
-                fit: StackFit.passthrough,
-                children: [
-                  Positioned.fill(
-                    child: _capture != null
-                        ? ImageFiltered(
-                            imageFilter: ui.ImageFilter.blur(
-                              sigmaX: _TipFrostCard.blurSigma,
-                              sigmaY: _TipFrostCard.blurSigma,
-                              tileMode: TileMode.clamp,
-                            ),
-                            child: RawImage(
-                              image: _capture,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
-                          )
-                        : ColoredBox(color: widget.fallback),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: CyberFrostPanelOutlinePainter(
+                      widget.panel.tipRimOutline,
+                    ),
                   ),
-                  Positioned.fill(
-                    child: ColoredBox(color: widget.wash),
-                  ),
-                  Padding(
-                    padding: widget.padding,
-                    child: widget.child,
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         );
       },

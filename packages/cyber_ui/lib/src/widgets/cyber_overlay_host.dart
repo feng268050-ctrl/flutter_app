@@ -8,6 +8,7 @@ import 'package:cyber_ui/src/blur/cyber_blur_tint.dart';
 import 'package:cyber_ui/src/theme/cyber_colors.dart';
 import 'package:cyber_ui/src/theme/cyber_dimens.dart';
 import 'package:cyber_ui/src/theme/cyber_panel_border.dart';
+import 'package:cyber_ui/src/theme/cyber_panel_outline.dart';
 import 'package:cyber_ui/src/theme/cyber_tone.dart';
 import 'package:cyber_ui/src/widgets/cyber_dialog.dart';
 import 'package:cyber_ui/src/widgets/cyber_keyboard_avoiding_lift.dart';
@@ -63,29 +64,32 @@ abstract final class CyberOverlayHost {
       barrierDismissible: barrierDismissible,
       barrierColor: barrierColor,
       builder: (dialogContext) {
+        // Orange rim painted above ClipRRect (Manual Gas / Feed / Retract style).
         Widget chrome = ConstrainedBox(
           constraints: panelConstraints,
-          child: ClipRRect(
-            borderRadius: panel.borderRadius,
-            child: DecoratedBox(
-              // Border only — fill would occlude backdrop sampling.
-              decoration: BoxDecoration(
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              ClipRRect(
                 borderRadius: panel.borderRadius,
-                border: Border.all(
-                  color: panel.flatBorderColor,
-                  width: panel.width,
+                child: CyberModal(
+                  sampleMode: sampleMode,
+                  intensity: intensity,
+                  blurTint: blurTint,
+                  useFakeGlass: useFakeGlass,
+                  borderRadius: panel.borderRadius,
+                  padding: const EdgeInsets.all(CyberDimens.contentPadding),
+                  child: builder(dialogContext),
                 ),
               ),
-              child: CyberModal(
-                sampleMode: sampleMode,
-                intensity: intensity,
-                blurTint: blurTint,
-                useFakeGlass: useFakeGlass,
-                borderRadius: panel.borderRadius,
-                padding: const EdgeInsets.all(CyberDimens.contentPadding),
-                child: builder(dialogContext),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: CyberFrostPanelOutlinePainter(panel.tipRimOutline),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         );
         if (keyboardHeight != null) {
@@ -135,7 +139,8 @@ class CyberPromptContent extends StatelessWidget {
   static const _titleDark = Color(0xFF1A1A1A);
   static const _bodyDark = Color(0xCC1A1A1A);
   static const _titleSize = 37.0;
-  static const _bodySize = 33.0;
+  /// One type-step below [_titleSize] (≈ largeDialog → dialogTitle).
+  static const _bodySize = 32.0;
 
   @override
   Widget build(BuildContext context) {

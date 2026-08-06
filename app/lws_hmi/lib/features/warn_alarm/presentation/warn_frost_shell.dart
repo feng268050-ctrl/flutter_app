@@ -156,54 +156,58 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
         Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxW, maxHeight: maxH),
-            child: ClipRRect(
-              key: _cardKey,
-              borderRadius: radius,
-              clipBehavior: Clip.antiAlias,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
+            // Orange rim above clip (Manual Gas / Feed / Retract style).
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                ClipRRect(
+                  key: _cardKey,
                   borderRadius: radius,
-                  border: Border.all(
-                    color: panel.flatBorderColor,
-                    width: panel.width,
+                  clipBehavior: Clip.antiAlias,
+                  // [StackFit.loose] shrink-wraps to [WarnDialogBody] — never
+                  // expand to maxH (passthrough caused the huge top gap).
+                  child: Stack(
+                    fit: StackFit.loose,
+                    children: [
+                      Positioned.fill(
+                        child: _capture != null
+                            ? ImageFiltered(
+                                imageFilter: ui.ImageFilter.blur(
+                                  sigmaX: WarnFrostShell.blurSigma,
+                                  sigmaY: WarnFrostShell.blurSigma,
+                                  tileMode: TileMode.clamp,
+                                ),
+                                child: RawImage(
+                                  image: _capture,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              )
+                            : const ColoredBox(
+                                color: WarnFrostShell.creamFallback,
+                              ),
+                      ),
+                      // Warm intensity overlay (lws-ui EXTREME + WARM).
+                      Positioned.fill(
+                        child: ColoredBox(color: WarnFrostShell.warmOverlay),
+                      ),
+                      // Cream 奶油白 wash (`#FFFCFA`) — not pure white.
+                      const Positioned.fill(
+                        child: ColoredBox(color: WarnFrostShell.creamWash),
+                      ),
+                      widget.child,
+                    ],
                   ),
                 ),
-                // [StackFit.loose] shrink-wraps to [WarnDialogBody] — never
-                // expand to maxH (passthrough caused the huge top gap).
-                child: Stack(
-                  fit: StackFit.loose,
-                  children: [
-                    Positioned.fill(
-                      child: _capture != null
-                          ? ImageFiltered(
-                              imageFilter: ui.ImageFilter.blur(
-                                sigmaX: WarnFrostShell.blurSigma,
-                                sigmaY: WarnFrostShell.blurSigma,
-                                tileMode: TileMode.clamp,
-                              ),
-                              child: RawImage(
-                                image: _capture,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            )
-                          : const ColoredBox(
-                              color: WarnFrostShell.creamFallback,
-                            ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: CyberFrostPanelOutlinePainter(panel.tipRimOutline),
                     ),
-                    // Warm intensity overlay (lws-ui EXTREME + WARM).
-                    Positioned.fill(
-                      child: ColoredBox(color: WarnFrostShell.warmOverlay),
-                    ),
-                    // Cream 奶油白 wash (`#FFFCFA`) — not pure white.
-                    const Positioned.fill(
-                      child: ColoredBox(color: WarnFrostShell.creamWash),
-                    ),
-                    widget.child,
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

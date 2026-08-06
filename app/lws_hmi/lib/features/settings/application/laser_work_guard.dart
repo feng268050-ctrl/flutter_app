@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_host.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
@@ -17,6 +18,14 @@ enum ProcessChangeBlockReason {
   wireFeeding,
 }
 
+/// Process-page host for guarded-alarm laser force-off (lws-ui `LaserWorkGuard.Host`).
+abstract interface class LaserWorkGuardHost {
+  bool get isLaserEnableActive;
+
+  /// Local Laser Enable session off + best-effort Modbus clear.
+  Future<void> forceLaserOffForGuardedAlarm();
+}
+
 /// Soft laser-work interrupt (lws-ui `LaserWorkGuard` subset).
 ///
 /// Clears `control.laser_enable` when policy says work is blocked. Full
@@ -25,6 +34,23 @@ abstract final class LaserWorkGuard {
   static const laserEnableAttribute = 'control.laser_enable';
   static const laserOnAttribute = 'machine.laser_on';
   static const wireFeedingOnAttribute = 'machine.wire_feeding_on';
+
+  static LaserWorkGuardHost? _host;
+
+  /// Register Quick/Engineer [DeviceControlController] bridge while that page
+  /// owns the Laser Enable session.
+  static void register(LaserWorkGuardHost host) {
+    _host = host;
+  }
+
+  static void unregister(LaserWorkGuardHost host) {
+    if (identical(_host, host)) {
+      _host = null;
+    }
+  }
+
+  @visibleForTesting
+  static LaserWorkGuardHost? get debugHost => _host;
 
   /// Fail-closed interlock for changing process type or process parameters.
   ///
@@ -66,19 +92,25 @@ abstract final class LaserWorkGuard {
   static bool _isOn(Object? value) => value == true || value == 1;
 
   /// Re-evaluate after a dangerous bypass is turned OFF.
+  ///
+  /// On interrupt (Modbus success or failure), always runs local
+  /// [LaserWorkGuardHost.forceLaserOffForGuardedAlarm] when a host is
+  /// registered, and always [WorkStatusDialogHost.closeDialog].
   static Future<void> evaluateAndInterruptIfNeeded({
     required AppServices services,
     required DangerousOperationsSettings dangerous,
     WarnAlarmController? warnAlarm,
+    @visibleForTesting Set<String>? activeCodesOverride,
   }) async {
     final snap = dangerous.policySnapshot;
     // Without live fault sampling of all sources, use demo/active episode
     // codes from warn controller when available.
     final episodes = warnAlarm?.coordinator.episodes ?? const {};
-    final active = <String>{
-      for (final e in episodes.values)
-        if (e.faultActive) e.code,
-    };
+    final active = activeCodesOverride ??
+        <String>{
+          for (final e in episodes.values)
+            if (e.faultActive) e.code,
+        };
     final readyBlocked = RgbLedDecision.readyIndicatorBlockedFromActive(
       activeCodes: active,
       snapshot: snap,
@@ -90,17 +122,27 @@ abstract final class LaserWorkGuard {
     if (!blocked) {
       return;
     }
+    final host = _host;
     try {
-      await services.ensureModbusLive();
-      final ok = await services.modbus.writeAttribute(
-        laserEnableAttribute,
-        false,
-      );
-      if (!ok) {
-        debugPrint('LaserWorkGuard: clear laser_enable soft-failed');
+      if (host != null) {
+        // Process page owns the session — disableLaser path (local + Modbus).
+        await host.forceLaserOffForGuardedAlarm();
+      } else {
+        await services.ensureModbusLive();
+        final ok = await services.modbus.writeAttribute(
+          laserEnableAttribute,
+          false,
+        );
+        if (!ok) {
+          debugPrint('LaserWorkGuard: clear laser_enable soft-failed');
+        }
       }
     } catch (e) {
       debugPrint('LaserWorkGuard: interrupt failed: $e');
+    } finally {
+      // Success or failure: dismiss gun Live Monitor (stuck dialog when only
+      // Modbus write failed and Enable never fell).
+      WorkStatusDialogHost.closeDialog();
     }
   }
 }

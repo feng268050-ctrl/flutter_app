@@ -12,7 +12,9 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_a
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/device_control_laser_work_guard_host.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
+import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_save_handler.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_snapshot_factory.dart';
@@ -68,6 +70,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   String? _lastAppliedUuid;
   String? _statusMessage;
   DeviceControlController? _deviceControl;
+  DeviceControlLaserWorkGuardHost? _laserWorkGuardHost;
   WorkSessionStatisticsRecorder? _workSessionStatistics;
   RecordWorkController? _recordWork;
   CncSessionController? _cncSession;
@@ -97,6 +100,9 @@ final class _QuickModePageState extends State<QuickModePage> {
           _deviceControl!.addListener(_onDeviceControlChanged);
           _deviceControl!.onSafetyEvent = _onDeviceSafetyEvent;
           unawaited(_deviceControl!.start());
+          _laserWorkGuardHost =
+              DeviceControlLaserWorkGuardHost(_deviceControl!);
+          LaserWorkGuard.register(_laserWorkGuardHost!);
           _recordWork = RecordWorkController(
             deviceControl: _deviceControl!,
             resolveL10n: () => AppLocalizations.of(context)!,
@@ -138,6 +144,11 @@ final class _QuickModePageState extends State<QuickModePage> {
   void dispose() {
     LaserEnableLedHolder.instance.clear();
     _applyDebounce?.cancel();
+    final host = _laserWorkGuardHost;
+    if (host != null) {
+      LaserWorkGuard.unregister(host);
+      _laserWorkGuardHost = null;
+    }
     _recordWork?.dispose();
     _deviceControl?.onSafetyEvent = null;
     _deviceControl?.removeListener(_onDeviceControlChanged);

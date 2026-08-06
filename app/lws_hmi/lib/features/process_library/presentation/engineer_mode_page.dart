@@ -11,9 +11,11 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_a
 import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/device_control_laser_work_guard_host.dart';
 import 'package:lws_hmi/features/process_mode/application/engineer_mode_session_store.dart';
 import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
+import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_save_handler.dart';
@@ -85,6 +87,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
 
   bool _bootstrapped = false;
   DeviceControlController? _deviceControl;
+  DeviceControlLaserWorkGuardHost? _laserWorkGuardHost;
   WorkSessionStatisticsRecorder? _workSessionStatistics;
   RecordWorkController? _recordWork;
   GunDialogCoordinator? _gunDialogs;
@@ -116,6 +119,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         );
         _deviceControl!.onSafetyEvent = _onDeviceSafetyEvent;
         unawaited(_deviceControl!.start());
+        _laserWorkGuardHost =
+            DeviceControlLaserWorkGuardHost(_deviceControl!);
+        LaserWorkGuard.register(_laserWorkGuardHost!);
         _recordWork = RecordWorkController(
           deviceControl: _deviceControl!,
           resolveL10n: () => AppLocalizations.of(context)!,
@@ -157,6 +163,11 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   void dispose() {
     _applyDebounce?.cancel();
     LaserEnableLedHolder.instance.clear();
+    final host = _laserWorkGuardHost;
+    if (host != null) {
+      LaserWorkGuard.unregister(host);
+      _laserWorkGuardHost = null;
+    }
     _gunDialogs?.dispose();
     _gunDialogs = null;
     _recordWork?.dispose();

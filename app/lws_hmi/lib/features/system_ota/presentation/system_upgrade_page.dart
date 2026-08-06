@@ -13,7 +13,6 @@ import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.d
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_upgrade_mapping.dart';
 import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
-import 'package:lws_hmi/features/system_ota/presentation/ota_check_result_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
@@ -141,17 +140,12 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     if (!shouldRunVersionCheck(_policy)) {
       return;
     }
-    final l10n = AppLocalizations.of(context)!;
     final url = _resolveManifestUrl();
     if (url == null) {
       setState(() {
         _checkUi = UpgradeCheckUiState.unavailable;
         _availableManifest = null;
       });
-      await showOtaCheckFailedDialog(
-        context,
-        message: l10n.otaCheckUnavailable,
-      );
       return;
     }
     setState(() {
@@ -175,7 +169,6 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
           _checkUi = UpgradeCheckUiState.upToDate;
           _availableManifest = null;
         });
-        await showOtaCheckUpToDateDialog(context);
       }
     } catch (e, st) {
       debugPrint('SystemUpgradePage: check failed: $e\n$st');
@@ -186,10 +179,6 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
         _checkUi = UpgradeCheckUiState.failed;
         _availableManifest = null;
       });
-      await showOtaCheckFailedDialog(
-        context,
-        message: l10n.otaCheckFailed,
-      );
     }
   }
 
@@ -211,12 +200,6 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
           _applyUi = false;
           _checkUi = UpgradeCheckUiState.available;
         });
-        final l10n = AppLocalizations.of(context)!;
-        await showOtaCheckFailedDialog(
-          context,
-          title: l10n.systemUpgradeTitle,
-          message: l10n.otaUpgradeStatusFailed,
-        );
       }
     }
   }
@@ -313,7 +296,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       state: _checkUi,
       idleHint: l10n.otaUpgradeIdleHint,
       checkingLabel: l10n.checkingStatus,
-      upToDateMessage: l10n.otaAlreadyUpToDate,
+      upToDateMessage: l10n.otaAlreadyUpToDate(kSystemVersion),
       unavailableMessage: l10n.otaCheckUnavailable,
       failedMessage: l10n.otaCheckFailed,
       availableHeadline: available == null

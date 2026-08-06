@@ -1037,7 +1037,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fiberTemperatureUpperLimitClearedTitle => '光纤温度超上限解除';
 
   @override
-  String get firmwareVersion => '固件版本';
+  String get firmwareVersion => '控制板版本';
 
   @override
   String get flashErrorAlarmContent =>
@@ -1656,19 +1656,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
 
   @override
-  String get otaCheckFailed => '无法获取版本信息，请稍后重试。';
-
-  @override
-  String get otaCheckFailedTitle => '检查更新失败';
-
-  @override
-  String get otaCheckUpToDateTitle => '已是最新版本';
+  String get otaCheckFailed => '无法检查更新，请确认网络和云服务设置。';
 
   @override
   String get otaSessionActive => '系统升级正在进行中。';
 
   @override
-  String get otaAlreadyUpToDate => '当前已安装最新版本。';
+  String otaAlreadyUpToDate(String version) {
+    return '系统版本 $version 已是最新。';
+  }
 
   @override
   String get otaUpdateAvailableTitle => '发现新版本';
@@ -4364,16 +4360,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
 
   @override
-  String get otaCheckFailed => '無法獲取版本信息，請稍後重試。';
-
-  @override
-  String get otaCheckFailedTitle => '檢查更新失敗';
+  String get otaCheckFailed => '無法檢查更新，請確認網絡和雲服務設置。';
 
   @override
   String get otaSessionActive => '系統升級正在進行中。';
 
   @override
-  String get otaAlreadyUpToDate => '當前已安裝最新版本。';
+  String otaAlreadyUpToDate(String version) {
+    return '系統版本 $version 已是最新。';
+  }
 
   @override
   String get otaUpdateAvailableTitle => '發現新版本';

@@ -2039,10 +2039,10 @@ abstract class AppLocalizations {
   /// **'Fiber Temperature High Cleared'**
   String get fiberTemperatureUpperLimitClearedTitle;
 
-  /// No description provided for @firmwareVersion.
+  /// Device Information row for control-card software version (Modbus). Product label is Control Board Version — do NOT sync back to lws-ui Firmware Version.
   ///
   /// In en, this message translates to:
-  /// **'Firmware Version'**
+  /// **'Control Board Version'**
   String get firmwareVersion;
 
   /// No description provided for @flashErrorAlarmContent.
@@ -3224,20 +3224,8 @@ abstract class AppLocalizations {
   /// No description provided for @otaCheckFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t fetch version info. Try again later.'**
+  /// **'Could not check for updates. Verify network and cloud settings.'**
   String get otaCheckFailed;
-
-  /// No description provided for @otaCheckFailedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Update Check Failed'**
-  String get otaCheckFailedTitle;
-
-  /// No description provided for @otaCheckUpToDateTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Up to Date'**
-  String get otaCheckUpToDateTitle;
 
   /// No description provided for @otaSessionActive.
   ///
@@ -3248,8 +3236,8 @@ abstract class AppLocalizations {
   /// No description provided for @otaAlreadyUpToDate.
   ///
   /// In en, this message translates to:
-  /// **'You\'re already on the latest version.'**
-  String get otaAlreadyUpToDate;
+  /// **'System version {version} is up to date.'**
+  String otaAlreadyUpToDate(String version);
 
   /// No description provided for @otaUpdateAvailableTitle.
   ///

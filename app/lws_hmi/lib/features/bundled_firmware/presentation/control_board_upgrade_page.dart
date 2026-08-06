@@ -18,7 +18,7 @@ import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Control-board firmware upgrade — Settings chrome like System Upgrade.
 ///
-/// - Device Information (Firmware Version): check + Update Now.
+/// - Device Information (Control Board Version): check + Update Now.
 /// - Home auto-detect: [initialOffer] available state.
 /// - Host `make upgrade-control-board`: [progressOnly] + [UpgradePolicy.hostForce].
 class ControlBoardUpgradePage extends StatefulWidget {

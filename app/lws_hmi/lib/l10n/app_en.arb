@@ -448,7 +448,10 @@
   "fiberTemperatureUpperLimitAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
   "fiberTemperatureUpperLimitAlarmTitle": "Fiber Temperature High",
   "fiberTemperatureUpperLimitClearedTitle": "Fiber Temperature High Cleared",
-  "firmwareVersion": "Firmware Version",
+  "firmwareVersion": "Control Board Version",
+  "@firmwareVersion": {
+    "description": "Device Information row for control-card software version (Modbus). Product label is Control Board Version — do NOT sync back to lws-ui Firmware Version."
+  },
   "flashErrorAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
   "flashErrorAlarmTitle": "FLASH Error",
   "flashUnencryptedAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
@@ -676,11 +679,16 @@
   "okText": "OK",
   "onLabel": "On",
   "otaCheckUnavailable": "Software update check is not available on this build.",
-  "otaCheckFailed": "Couldn't fetch version info. Try again later.",
-  "otaCheckFailedTitle": "Update Check Failed",
-  "otaCheckUpToDateTitle": "Up to Date",
+  "otaCheckFailed": "Could not check for updates. Verify network and cloud settings.",
   "otaSessionActive": "A system upgrade is already in progress.",
-  "otaAlreadyUpToDate": "You're already on the latest version.",
+  "otaAlreadyUpToDate": "System version {version} is up to date.",
+  "@otaAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "otaUpdateAvailableTitle": "Update Available",
   "otaUpdateAvailableMessage": "Version {current} → {available}. Install now?",
   "@otaUpdateAvailableMessage": {

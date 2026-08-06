@@ -1083,7 +1083,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Fiber Temperature High Cleared';
 
   @override
-  String get firmwareVersion => 'Firmware Version';
+  String get firmwareVersion => 'Control Board Version';
 
   @override
   String get flashErrorAlarmContent =>
@@ -1727,19 +1727,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Software update check is not available on this build.';
 
   @override
-  String get otaCheckFailed => 'Couldn\'t fetch version info. Try again later.';
-
-  @override
-  String get otaCheckFailedTitle => 'Update Check Failed';
-
-  @override
-  String get otaCheckUpToDateTitle => 'Up to Date';
+  String get otaCheckFailed =>
+      'Could not check for updates. Verify network and cloud settings.';
 
   @override
   String get otaSessionActive => 'A system upgrade is already in progress.';
 
   @override
-  String get otaAlreadyUpToDate => 'You\'re already on the latest version.';
+  String otaAlreadyUpToDate(String version) {
+    return 'System version $version is up to date.';
+  }
 
   @override
   String get otaUpdateAvailableTitle => 'Update Available';

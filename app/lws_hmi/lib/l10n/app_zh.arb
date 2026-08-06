@@ -357,7 +357,10 @@
   "fiberTemperatureUpperLimitAlarmContent": "请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。",
   "fiberTemperatureUpperLimitAlarmTitle": "光纤温度超上限告警",
   "fiberTemperatureUpperLimitClearedTitle": "光纤温度超上限解除",
-  "firmwareVersion": "固件版本",
+  "firmwareVersion": "控制板版本",
+  "@firmwareVersion": {
+    "description": "Device Information：控制板软件版本。产品文案为「控制板版本」，勿同步回 lws-ui「固件版本」。"
+  },
   "flashErrorAlarmContent": "请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。",
   "flashErrorAlarmTitle": "FLASH 错误告警",
   "flashUnencryptedAlarmContent": "请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。",
@@ -563,11 +566,16 @@
   "okText": "OK",
   "onLabel": "开启",
   "otaCheckUnavailable": "当前版本暂不支持软件更新检查。",
-  "otaCheckFailed": "无法获取版本信息，请稍后重试。",
-  "otaCheckFailedTitle": "检查更新失败",
-  "otaCheckUpToDateTitle": "已是最新版本",
+  "otaCheckFailed": "无法检查更新，请确认网络和云服务设置。",
   "otaSessionActive": "系统升级正在进行中。",
-  "otaAlreadyUpToDate": "当前已安装最新版本。",
+  "otaAlreadyUpToDate": "系统版本 {version} 已是最新。",
+  "@otaAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "otaUpdateAvailableTitle": "发现新版本",
   "otaUpdateAvailableMessage": "版本 {current} → {available}，是否立即安装？",
   "@otaUpdateAvailableMessage": {

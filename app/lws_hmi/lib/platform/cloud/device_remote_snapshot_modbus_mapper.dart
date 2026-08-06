@@ -282,7 +282,7 @@ abstract final class DeviceRemoteSnapshotModbusMapper {
   ///
   /// Modbus `info` group supplies laser/wire/gun fields (HAL already formats
   /// `u16_pair_be` as hex concat). Firmware prefers status
-  /// `device.control_card_version` (same as Settings “Firmware Version”).
+  /// `device.control_card_version` (same as Settings “Control Board Version”).
   static Map<String, Object?> deviceInfoFromSources({
     required String deviceSn,
     required String model,

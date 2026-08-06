@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:cyber_ui/cyber_ui.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
@@ -40,10 +41,11 @@ abstract final class SettingsDimens {
   /// Preceding [SettingsGroup] must use `bottomInset: 0` so this is the only gap.
   static const helpGap = 8.0;
 
-  /// Device Info / General list title & value → [HmiTypography.settingsRowTitle] (20).
-  static const titleSize = 20.0;
+/// Device Info / General list title & value → [HmiTypography.settingsRowTitle].
+/// Kept as layout token only; prefer semantic TextStyle at call sites.
+static const titleSize = 20.0;
 
-  /// Secondary / subtitle / help → [HmiTypography.supporting] (16).
+  /// Secondary / subtitle / help → [HmiTypography.supporting].
   static const subtitleSize = 16.0;
 
   /// Shared raised-panel shadow: even contact + ambient on all four sides
@@ -98,13 +100,6 @@ abstract final class SettingsDimens {
       spreadRadius: -3,
     ),
   ];
-
-  /// Advanced tab body — ladder sizes matching HmiTypography roles.
-  static const advancedTitleSize = 22.0; // sectionTitle
-  static const advancedValueSize = 22.0; // sectionTitle
-  static const advancedSwitchTitleSize = 24.0; // navigation / primaryTabLabel
-  static const advancedSwitchSubtitleSize = 20.0; // control / settingsRowTitle
-  static const advancedSectionHeaderSize = 20.0; // control
 }
 
 /// Settings page Material-style top tabs (equal width, no rounded strip chrome).
@@ -298,12 +293,10 @@ class SettingsSectionHeader extends StatelessWidget {
   const SettingsSectionHeader(
     this.title, {
     super.key,
-    this.fontSize = SettingsDimens.advancedSectionHeaderSize,
     this.topInset = SettingsDimens.inset,
   });
 
   final String title;
-  final double fontSize;
 
   /// Space above the title (card → title). First group keeps [SettingsDimens.inset].
   final double topInset;
@@ -319,11 +312,11 @@ class SettingsSectionHeader extends StatelessWidget {
       ),
       child: Text(
         title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: CyberColors.textSecondary,
-              letterSpacing: 0.6,
-              fontSize: fontSize,
-            ),
+        style: context.hmiTypography.settingsRowTitle.copyWith(
+          color: CyberColors.textSecondary,
+          letterSpacing: 0.6,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -346,12 +339,6 @@ class SettingsHelpFooter extends StatelessWidget {
   /// Space below the footnote (use `0` when a [SettingsSectionHeader] follows).
   final double bottomInset;
 
-  static const textStyle = TextStyle(
-    color: Colors.white54,
-    fontSize: SettingsDimens.subtitleSize,
-    height: 1.35,
-  );
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -365,6 +352,7 @@ class SettingsHelpFooter extends StatelessWidget {
         text,
         style: context.hmiTypography.supporting.copyWith(
           color: Colors.white54,
+          height: 1.35,
         ),
       ),
     );
@@ -1135,6 +1123,15 @@ class SettingsValueRow extends StatelessWidget {
   }
 }
 
+/// Switch row title/subtitle typography tone.
+enum SettingsSwitchEmphasis {
+  /// Device / Common / Wi‑Fi: [HmiTypography.settingsRowTitle] + supporting.
+  standard,
+
+  /// Advanced AI / danger switches: navigation title + control subtitle.
+  advanced,
+}
+
 class SettingsSwitchRow extends StatelessWidget {
   const SettingsSwitchRow({
     super.key,
@@ -1142,28 +1139,29 @@ class SettingsSwitchRow extends StatelessWidget {
     this.subtitle,
     required this.value,
     required this.onChanged,
-    this.titleFontSize = SettingsDimens.titleSize,
-    this.subtitleFontSize = SettingsDimens.subtitleSize,
+    this.emphasis = SettingsSwitchEmphasis.standard,
   });
 
   final String title;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool>? onChanged;
-  final double titleFontSize;
-  final double subtitleFontSize;
+  final SettingsSwitchEmphasis emphasis;
 
   @override
   Widget build(BuildContext context) {
     final typography = context.hmiTypography;
-    final titleStyle = typography.settingsRowTitle.copyWith(
-      fontSize: titleFontSize,
-      color: CyberColors.textPrimary,
-    );
-    final subtitleStyle = typography.supporting.copyWith(
-      fontSize: subtitleFontSize,
+    final titleStyle = (emphasis == SettingsSwitchEmphasis.advanced
+            ? typography.navigation
+            : typography.settingsRowTitle)
+        .copyWith(color: CyberColors.textPrimary);
+    final subtitleStyle = (emphasis == SettingsSwitchEmphasis.advanced
+            ? typography.settingsRowTitle
+            : typography.supporting)
+        .copyWith(
       color: CyberColors.textSecondary,
       height: 1.35,
+      fontWeight: FontWeight.w400,
     );
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
@@ -1414,11 +1412,12 @@ class SettingsScrollView extends StatelessWidget {
   }
 }
 
-/// Push a settings sub-page with a platform-like slide transition.
+/// Push a settings sub-page with industry L/R slide transitions.
+///
+/// Nested pages use a cheap backdrop via [SettingsScaffold] so exit does not
+/// stack two live page Gaussians during the animation.
 Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
-  return Navigator.of(context).push<T>(
-    CupertinoPageRoute<T>(builder: (_) => page),
-  );
+  return pushAppSlidePage<T>(context, page);
 }
 
 /// Bordered param panel — same equal-edge shadow chrome as [SettingsPanel]
@@ -1506,9 +1505,9 @@ class SettingsScaledParam extends StatelessWidget {
       child: Text(
         display,
         textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: SettingsDimens.advancedValueSize,
+        style: context.hmiTypography.sectionTitle.copyWith(
           color: Colors.white.withOpacity(0.85),
+          fontWeight: FontWeight.w400,
         ),
       ),
     );
@@ -1561,7 +1560,8 @@ class SettingsScaledParam extends StatelessWidget {
             scaleMinText: scaleMinText ?? min.round().toString(),
             scaleMaxText: scaleMaxText ?? max.round().toString(),
             // Match Advanced title size (刻度 = 对应文案字号).
-            scaleLabelFontSize: SettingsDimens.advancedTitleSize,
+            scaleLabelFontSize:
+                context.hmiTypography.sectionTitle.fontSize ?? 22,
           ),
         ],
       ),
@@ -1646,19 +1646,27 @@ class SettingsPageBackdropBlur extends InheritedWidget {
       oldWidget.sigma != sigma;
 }
 
-/// Settings / Monitor page stack: sharp wallpaper (capture) → single page
-/// [ImageFiltered] Gaussian → [child] chrome.
+/// Settings / Monitor / Engineer page stack: sharp wallpaper (capture) → page
+/// blur plate → [child] chrome.
 ///
 /// Capture for tip/IME frost stays on the sharp [CyberBlurBackdropTarget].
-/// The blurred wallpaper is the **only** Widget Gaussian between background
-/// and foreground (σ30). Panels use
-/// [SettingsPerspectiveChrome] tint/rim/shadow only — no second BackdropFilter.
+/// Panels use [SettingsPerspectiveChrome] tint/rim/shadow only — no second
+/// BackdropFilter.
+///
+/// **Default blur plate (scheme A / home firstFrame):** bake σ30 once from the
+/// sharp plate (downscaled), then blit [RawImage] every frame. Wallpaper is
+/// static, so live [ImageFiltered] is unnecessary on product pages and costly
+/// on RK3566/QEMU — especially under Cupertino L/R slides.
+///
+/// Set [livePageBlur] true only for rare cases that need per-frame Gaussian
+/// (e.g. animated wallpaper experiments).
 class SettingsBlurredPageShell extends StatelessWidget {
   const SettingsBlurredPageShell({
     super.key,
     required this.child,
     this.blurSigma = SettingsPerspectiveChrome.blurSigma,
     this.backdropBuilder,
+    this.livePageBlur = false,
   });
 
   final Widget child;
@@ -1666,9 +1674,17 @@ class SettingsBlurredPageShell extends StatelessWidget {
   /// Page wallpaper Gaussian sigma (foreground ↔ background).
   final double blurSigma;
 
-  /// Wallpaper under capture + blur layer. Called twice (sharp + blurred).
-  /// Defaults to [SettingsHomeBackdrop]. Monitor passes a dimmed stack.
+  /// Wallpaper under capture + blur layer. Called for sharp capture target and
+  /// for the live [ImageFiltered] child when [livePageBlur] is true. Defaults
+  /// to [SettingsHomeBackdrop]. Monitor passes a dimmed stack.
   final Widget Function()? backdropBuilder;
+
+  /// When false (default), bake a static σ plate once. When true, live
+  /// [ImageFiltered] every frame.
+  final bool livePageBlur;
+
+  /// Capture downscale divisor — matches home [CyberBackdropBlur] / lws-ui.
+  static const captureScaleFactor = 3.0;
 
   @override
   Widget build(BuildContext context) {
@@ -1684,23 +1700,208 @@ class SettingsBlurredPageShell extends StatelessWidget {
                 child: buildPlate(),
               ),
             ),
-            // Sole Gaussian between wallpaper and chrome (gutters / status /
-            // translucent plates). Panels add tint + rim only.
             Positioned.fill(
-              child: IgnorePointer(
-                child: ImageFiltered(
-                  imageFilter: ui.ImageFilter.blur(
-                    sigmaX: blurSigma,
-                    sigmaY: blurSigma,
-                    tileMode: ui.TileMode.clamp,
-                  ),
-                  child: buildPlate(),
-                ),
+              child: _SettingsPageBlurPlate(
+                livePageBlur: livePageBlur,
+                blurSigma: blurSigma,
+                buildPlate: buildPlate,
               ),
             ),
             child,
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Live [ImageFiltered] or firstFrame-baked [RawImage] under Settings chrome.
+class _SettingsPageBlurPlate extends StatefulWidget {
+  const _SettingsPageBlurPlate({
+    required this.livePageBlur,
+    required this.blurSigma,
+    required this.buildPlate,
+  });
+
+  final bool livePageBlur;
+  final double blurSigma;
+  final Widget Function() buildPlate;
+
+  @override
+  State<_SettingsPageBlurPlate> createState() => _SettingsPageBlurPlateState();
+}
+
+class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
+  ui.Image? _baked;
+  bool _bakePending = false;
+  int _bakeGen = 0;
+  int _bakeRetries = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.livePageBlur) {
+      _scheduleBake();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _SettingsPageBlurPlate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.livePageBlur && !oldWidget.livePageBlur) {
+      // Root became current again — drop static plate; live path owns blur.
+      _bakeGen++;
+      _baked = null;
+      _bakePending = false;
+      _bakeRetries = 0;
+      return;
+    }
+    if (!widget.livePageBlur &&
+        (oldWidget.livePageBlur ||
+            oldWidget.blurSigma != widget.blurSigma)) {
+      _baked = null;
+      _bakeRetries = 0;
+      _scheduleBake();
+    }
+  }
+
+  @override
+  void dispose() {
+    _bakeGen++;
+    // [_baked] is a handle into [CyberBlurBackdropScope] shared capture —
+    // do not dispose here.
+    _baked = null;
+    super.dispose();
+  }
+
+  void _scheduleBake({int settlePasses = 2}) {
+    if (_bakePending || !mounted || _baked != null) {
+      return;
+    }
+    final gen = ++_bakeGen;
+    _bakePending = true;
+    void pass(int remaining) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || gen != _bakeGen) {
+          if (gen == _bakeGen) {
+            _bakePending = false;
+          }
+          return;
+        }
+        if (remaining > 1) {
+          pass(remaining - 1);
+          return;
+        }
+        unawaited(_bake(gen));
+      });
+    }
+
+    pass(settlePasses.clamp(1, 4));
+  }
+
+  Future<void> _bake(int gen) async {
+    try {
+      if (!mounted || gen != _bakeGen || widget.livePageBlur) {
+        return;
+      }
+      final scope = CyberBlurBackdropScope.maybeOf(context);
+      final boundary = scope?.renderBoundary;
+      if (scope == null || boundary == null || !boundary.hasSize) {
+        if (gen == _bakeGen && _bakeRetries < 12) {
+          _bakeRetries++;
+          _bakePending = false;
+          _scheduleBake(settlePasses: 1);
+        }
+        return;
+      }
+      // Do NOT read [RenderObject.debugNeedsPaint] here: in profile/release
+      // that getter throws LateInitializationError (assert-stripped late local).
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      final scale = (dpr / SettingsBlurredPageShell.captureScaleFactor)
+          .clamp(0.25, dpr);
+      // Sigma in capture-pixel space (same as CyberBackdropBlur firstFrame).
+      final sigma = widget.blurSigma * scale;
+      ui.Image? image;
+      try {
+        image = await scope.acquireBlurredCapture(
+          pixelRatio: scale,
+          sigmaX: sigma,
+          sigmaY: sigma,
+        );
+      } catch (e) {
+        debugPrint('settings-blur-plate: bake capture failed: $e');
+        if (gen == _bakeGen && _bakeRetries < 12) {
+          _bakeRetries++;
+          _bakePending = false;
+          _scheduleBake(settlePasses: 1);
+        }
+        return;
+      }
+      if (!mounted || gen != _bakeGen || widget.livePageBlur) {
+        return;
+      }
+      if (image == null || image.width < 1 || image.height < 1) {
+        if (gen == _bakeGen && _bakeRetries < 12) {
+          _bakeRetries++;
+          _bakePending = false;
+          _scheduleBake(settlePasses: 1);
+        }
+        return;
+      }
+      debugPrint(
+        'settings-blur-plate: baked ${image.width}x${image.height} '
+        'sigma=${sigma.toStringAsFixed(1)} scale=${scale.toStringAsFixed(2)}',
+      );
+      setState(() {
+        _baked = image;
+        _bakeRetries = 0;
+      });
+    } catch (e) {
+      debugPrint('settings-blur-plate: bake aborted: $e');
+    } finally {
+      if (gen == _bakeGen) {
+        _bakePending = false;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.livePageBlur) {
+      return IgnorePointer(
+        child: ImageFiltered(
+          imageFilter: ui.ImageFilter.blur(
+            sigmaX: widget.blurSigma,
+            sigmaY: widget.blurSigma,
+            tileMode: ui.TileMode.clamp,
+          ),
+          child: widget.buildPlate(),
+        ),
+      );
+    }
+
+    final baked = _baked;
+    if (baked != null) {
+      return IgnorePointer(
+        child: RawImage(
+          image: baked,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          filterQuality: FilterQuality.medium,
+        ),
+      );
+    }
+
+    // Placeholder until bake completes — opaque enough that gutters do not
+    // flash sharp wallpaper under a sliding nested page.
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          widget.buildPlate(),
+          const ColoredBox(color: Color(0xE6101012)),
+        ],
       ),
     );
   }
@@ -1774,7 +1975,8 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final l10n = AppLocalizations.of(context)!;
-    // Page ImageFiltered (σ30) + perspective plates (tint/rim only).
+    // Nested Settings: static σ30 plate (shell default). Never live ImageFiltered
+    // under Cupertino L/R — parent root also uses a baked plate.
     return SettingsBlurredPageShell(
       child: Scaffold(
         backgroundColor: Colors.transparent,

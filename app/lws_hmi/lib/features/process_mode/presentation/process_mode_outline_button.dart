@@ -1,6 +1,5 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -16,7 +15,8 @@ abstract final class ProcessModeOutlineChrome {
   static const Color idleFill = Color(0xFF2C1923);
   static const Color disabledForeground = Color(0xFF7D3E2B);
   /// Quick side ops / Engineer action icons (unified).
-  static const double labelSize = AppTypography.sectionTitleSize;
+  /// Ladder: sectionTitle (22).
+  static const double labelSize = 22.0;
   static const double iconSize = 34.0;
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;
@@ -35,6 +35,9 @@ final class ProcessModeOutlineButton extends StatelessWidget {
     required this.enabled,
     required this.onPressed,
     this.height = ProcessModeOutlineChrome.defaultHeight,
+    /// When true (Auto Wire), icon left inset equals the gap between icon and
+    /// the button-centered label. Otherwise left inset matches top/bottom.
+    this.balanceIconLabelGap = false,
   });
 
   final String label;
@@ -43,6 +46,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onPressed;
   final double height;
+  final bool balanceIconLabelGap;
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +74,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
               enabled: enabled,
               leading: leading,
               label: label,
+              balanceIconLabelGap: balanceIconLabelGap,
             ),
           ),
         ),
@@ -276,6 +281,7 @@ final class _OutlineFace extends StatelessWidget {
     this.progressForcesReadableLabel = false,
     this.continuousRipple = false,
     this.showLeading = true,
+    this.balanceIconLabelGap = false,
   });
 
   final double height;
@@ -287,6 +293,7 @@ final class _OutlineFace extends StatelessWidget {
   final bool progressForcesReadableLabel;
   final bool continuousRipple;
   final bool showLeading;
+  final bool balanceIconLabelGap;
 
   @override
   Widget build(BuildContext context) {
@@ -302,6 +309,9 @@ final class _OutlineFace extends StatelessWidget {
       fontWeight: FontWeight.w600,
       height: 1.0,
     );
+    const iconSize = ProcessModeOutlineChrome.iconSize;
+    // Left inset matches top/bottom inset to the button edge.
+    final edgeInset = ((height - iconSize) / 2).clamp(0.0, height);
     return Container(
       height: height,
       width: double.infinity,
@@ -327,72 +337,50 @@ final class _OutlineFace extends StatelessWidget {
                 color: ProcessModeOutlineChrome.actionOrange,
               ),
             if (continuousRipple) const FeedContinuousRipple(),
-            // [gap][icon][gap][text][gap]: left inset = icon↔label spacing.
-            // Full label always — shrink icon/gaps before scaling the row.
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (!showLeading) {
-                  return Center(
-                    child: Text(
-                      label,
+            // Label centered on the full button; icon inset separately.
+            Center(
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                textAlign: TextAlign.center,
+                style: style,
+              ),
+            ),
+            if (showLeading)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  var iconLeft = edgeInset;
+                  if (balanceIconLabelGap) {
+                    final painter = TextPainter(
+                      text: TextSpan(text: label, style: style),
                       maxLines: 1,
-                      softWrap: false,
-                      textAlign: TextAlign.center,
-                      style: style,
-                    ),
-                  );
-                }
-                const iconSize = ProcessModeOutlineChrome.iconSize;
-                final painter = TextPainter(
-                  text: TextSpan(text: label, style: style),
-                  maxLines: 1,
-                  textDirection: TextDirection.ltr,
-                )..layout();
-                final textW = painter.width;
-                var drawIcon = iconSize;
-                var gap = (constraints.maxWidth - drawIcon - textW) / 3;
-                if (gap < 0) {
-                  drawIcon =
-                      (constraints.maxWidth - textW).clamp(0.0, iconSize);
-                  gap = (constraints.maxWidth - drawIcon - textW) / 3;
-                  if (gap < 0) {
-                    gap = 0;
-                    drawIcon =
-                        (constraints.maxWidth - textW).clamp(0.0, iconSize);
+                      textDirection: TextDirection.ltr,
+                    )..layout();
+                    final textLeft =
+                        (constraints.maxWidth - painter.width) / 2;
+                    // left == gap between icon right and centered label.
+                    iconLeft = ((textLeft - iconSize) / 2)
+                        .clamp(0.0, double.infinity);
                   }
-                }
-                final row = Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(width: gap),
-                    if (drawIcon > 0)
-                      SizedBox(
-                        width: drawIcon,
-                        height: drawIcon,
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Positioned(
+                        left: iconLeft,
+                        top: edgeInset,
+                        width: iconSize,
+                        height: iconSize,
                         child: ColorFiltered(
                           colorFilter:
                               ColorFilter.mode(foreground, BlendMode.srcIn),
                           child: leading,
                         ),
                       ),
-                    SizedBox(width: gap),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      softWrap: false,
-                      style: style,
-                    ),
-                    SizedBox(width: gap),
-                  ],
-                );
-                return FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.center,
-                  child: row,
-                );
-              },
-            ),
+                    ],
+                  );
+                },
+              ),
           ],
         ),
       ),

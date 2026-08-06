@@ -13,8 +13,10 @@ import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 /// Frost Operation-failed / tip triggers from runtime safety edges.
 ///
 /// Tip timing (lws-ui OperationDialogBuilder / EmergencyStopJobHaltPolicy):
-/// - E-stop tip ("Device is in E-stop"): on press.
-/// - Key switch OFF tip ("Key switch is off"): on switch-off.
+/// - E-stop tip ("Device is in E-stop"): on press; auto-dismiss on release
+///   (same as warn frost falling → dismiss).
+/// - Key switch OFF tip ("Key switch is off"): on switch-off; auto-dismiss
+///   when the key returns ON.
 /// Warn frost alarms (e.g. H029) stay deferred until reset via the warn-alarm
 /// adapter — not this enum.
 enum DeviceControlSafetyEvent {
@@ -23,6 +25,12 @@ enum DeviceControlSafetyEvent {
 
   /// Key switch turned OFF; tip dialog once per switch-off (immediate).
   keySwitchOff,
+
+  /// Machine e-stop released; dismiss open e-stop tip if still showing.
+  emergencyStopCleared,
+
+  /// Key switch returned ON; dismiss open key-off tip if still showing.
+  keySwitchRestored,
 }
 
 /// Live laser, gas, and manual wire-control writes.
@@ -360,10 +368,12 @@ final class DeviceControlController extends ChangeNotifier {
     final eStopRose = !eStopWas && emergencyStop;
     final eStopFell = eStopWas && !emergencyStop;
     final keyFell = keyWasOn && !keySwitchOn;
+    final keyRose = !keyWasOn && keySwitchOn;
 
     // E-stop press: exit Laser Enable UI + halt jobs immediately; tip once.
     if (eStopFell) {
       _eStopTipShownThisPress = false;
+      onSafetyEvent?.call(DeviceControlSafetyEvent.emergencyStopCleared);
     }
     if (emergencyStop) {
       if (eStopRose || _shouldReHaltWhileEstopHeld()) {
@@ -383,6 +393,9 @@ final class DeviceControlController extends ChangeNotifier {
     // switch is OFF, so this does not create an alarm popup/history entry.
     if (keyFell) {
       onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchOff);
+    }
+    if (keyRose) {
+      onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchRestored);
     }
 
     // Key OFF also closes an active Laser Enable session immediately.

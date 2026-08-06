@@ -2314,7 +2314,7 @@
         "count": 1
       },
       "decode": {
-        "type": "u16"
+        "type": "s16"
       },
       "meta": {
         "label": "Zero point correction"

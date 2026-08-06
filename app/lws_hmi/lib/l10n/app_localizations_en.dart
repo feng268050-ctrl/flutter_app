@@ -76,44 +76,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get advancedSettingEnterCollimatingLensTempAlarmThreshold =>
-      'Enter Collimating Lens Temperature Alarm Threshold';
+      'Enter collimating lens temperature alarm threshold';
 
   @override
   String get advancedSettingEnterDriverTempAlarmThreshold =>
-      'Enter Driver Temperature Alarm Threshold';
+      'Enter driver temperature alarm threshold';
 
   @override
   String get advancedSettingEnterInletGasPressure =>
-      'Enter Inlet Gas Pressure Threshold';
+      'Enter inlet gas pressure threshold';
 
   @override
-  String get advancedSettingEnterLaserEndPower => 'Enter Laser End Power';
+  String get advancedSettingEnterLaserEndPower => 'Enter laser end power';
 
   @override
-  String get advancedSettingEnterLaserStartPower => 'Enter Laser Start Power';
+  String get advancedSettingEnterLaserStartPower => 'Enter laser start power';
 
   @override
   String get advancedSettingEnterMinGasPressure =>
-      'Enter Minimum Gas Pressure Threshold';
+      'Enter minimum gas pressure threshold';
 
   @override
   String get advancedSettingEnterMotorTempAlarmThreshold =>
-      'Enter Motor Temperature Alarm Threshold';
+      'Enter motor temperature alarm threshold';
 
   @override
   String get advancedSettingEnterProtectiveLensTempAlarmThreshold =>
-      'Enter Protective Lens Temperature Alarm Threshold';
+      'Enter protective lens temperature alarm threshold';
 
   @override
   String get advancedSettingEnterScanWidthCorrection =>
-      'Enter Scan Width Correction';
+      'Enter scan width correction';
 
   @override
   String get advancedSettingEnterTempAlarmRecoveryHysteresis =>
-      'Enter Temperature Alarm Recovery Hysteresis';
+      'Enter temperature alarm recovery hysteresis';
 
   @override
-  String get advancedSettingEnterZeroOffset => 'Enter Zero Offset';
+  String get advancedSettingEnterZeroOffset => 'Enter zero offset';
 
   @override
   String get advancedSettingInletGasPressure => 'Inlet Gas Pressure Threshold';
@@ -429,7 +429,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoWireFeed => 'Auto Wire Feed';
 
   @override
-  String get blowOnLabel => 'Blow';
+  String get blowOnLabel => 'Gas Flow';
 
   @override
   String get blowText => 'Gas Flow';
@@ -734,7 +734,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeAutomatic => 'Automatic';
 
   @override
-  String get dateTimeModeAuto => 'Auto';
+  String get dateTimeModeAuto => 'Automatic';
 
   @override
   String get dateTimeModeManual => 'Manual';
@@ -1022,7 +1022,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failStatus => 'Fault';
 
   @override
-  String get favoriteMaterial => 'Favorite Material';
+  String get favoriteMaterial => 'Common consumables';
 
   @override
   String get feed => 'Feed';
@@ -1123,6 +1123,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gunHeadSwitchText => 'Gun Switch';
+
+  @override
+  String get gunMotorTempText => 'Motor Temperature';
 
   @override
   String get gunSn => 'Welding Gun SN';
@@ -1280,7 +1283,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ipCameraText => 'Camera';
 
   @override
-  String get jobRuntime => 'Job Runtime';
+  String get jobRuntime => 'Last Op-Time';
 
   @override
   String get kernelVersion => 'Kernel Version';
@@ -1458,7 +1461,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laserText => 'Laser';
 
   @override
-  String get laserTimeVsLastWeek => 'Laser Time Vs Last Week';
+  String get laserTimeVsLastWeek => 'vs. last week';
 
   @override
   String get laserVersion => 'Laser Version';
@@ -1567,25 +1570,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modbusCommunicationFault => 'Modbus Communication Fault';
 
   @override
-  String get monitorCleanTimeRatio => 'Clean Time Ratio';
+  String get monitorCleanTimeRatio => 'Cleaning Ratio';
 
   @override
-  String get monitorCutTimeRatio => 'Cut Time Ratio';
+  String get monitorCutTimeRatio => 'Cutting Ratio';
 
   @override
-  String get monitorLaserOnTime => 'Laser On Time';
+  String get monitorLaserOnTime => 'Total Laser-On Time';
 
   @override
-  String get monitorLastJob => 'Last Job';
+  String get monitorLastJob => 'Last Op-Time';
 
   @override
   String get monitorNavLabel => 'Monitor';
 
   @override
-  String get monitorWeldTimeRatio => 'Weld Time Ratio';
+  String get monitorWeldTimeRatio => 'Welding Ratio';
 
   @override
-  String get monitorWeldingConsumables => 'Welding Consumables';
+  String get monitorWeldingConsumables => 'Total Wire Used';
 
   @override
   String get moreFavorites => 'More Favorites';
@@ -2026,7 +2029,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processVideoAlreadyUploaded => 'Uploaded';
 
   @override
-  String get processVideoBackToVideos => 'Back To Videos';
+  String get processVideoBackToVideos => 'Back to Videos';
 
   @override
   String get processVideoDeleteConfirmMessage =>
@@ -2050,7 +2053,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String processVideoLoadedCount(int loaded, int total) {
-    return '$loaded / $total';
+    return '$loaded of $total';
   }
 
   @override
@@ -2085,10 +2088,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processVideoUploadConfirmTitle => 'Upload Recording?';
 
   @override
-  String get processVideoUploadDone => 'Upload Complete';
+  String get processVideoUploadDone => 'Upload complete';
 
   @override
-  String get processVideoUploadFailed => 'Upload Failed';
+  String get processVideoUploadFailed => 'Upload failed';
 
   @override
   String get processVideoUploadingCover => 'Uploading Cover…';
@@ -2099,7 +2102,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get processVideoWorkMode => 'Work Mode';
+  String get processVideoWorkMode => 'Process';
 
   @override
   String get processWheelCncCutting => 'CNC Cutting';
@@ -2202,7 +2205,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get redLightCurrentText => 'Red Pointer Current';
 
   @override
-  String get redLightLabel => 'Red Light';
+  String get redLightLabel => 'Red Pointer';
 
   @override
   String get redLightText => 'Red Pointer';
@@ -2237,7 +2240,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get safetyGroundLockNotConnectedTitle => 'Safety Clamp Disconnected';
 
   @override
-  String get safetyLockLabel => 'Safety Lock';
+  String get safetyLockLabel => 'Safety Clamp';
 
   @override
   String get safetyLockText => 'Safety Clamp';
@@ -2272,7 +2275,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveFailed => 'Save Failed';
 
   @override
-  String get saveSucceeded => 'Save Succeeded';
+  String get saveSucceeded => 'Saved';
 
   @override
   String get savedSuccessfully => 'Saved';
@@ -2448,7 +2451,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get totalLaserOnTime => 'Total Laser-On Time';
 
   @override
-  String get totalWireConsumption => 'Total Wire Consumption';
+  String get totalWireConsumption => 'Total Wire Used';
 
   @override
   String get turnOffCncFirst => 'Turn off CNC first.';
@@ -2499,7 +2502,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usbOtgModeMtp => 'Mtp';
 
   @override
-  String get usbOtgText => 'USB Otg';
+  String get usbOtgText => 'USB OTG';
 
   @override
   String get userPresetLabel => 'User';
@@ -2879,7 +2882,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wireFeederVersion => 'Wire Feeder Version';
 
   @override
-  String get wireFeedingLabel => 'Wire Feeding';
+  String get wireFeedingLabel => 'Wire Feeder';
 
   @override
   String get wireFeedingMachineCommunicationText => 'Feeder Comm';
@@ -2888,7 +2891,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wireFeedingText => 'Wire Feeder';
 
   @override
-  String get wirelessNetworkText => 'Wireless Network';
+  String get wirelessNetworkText => 'Wi‑Fi';
 
   @override
   String get workInfoTitle => 'Work Info';

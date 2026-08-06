@@ -8,7 +8,9 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Wi‑Fi Details — Auto Join / IPv4 / DNS / others (inline edit).
 class WifiDetailsPage extends StatefulWidget {
@@ -353,15 +355,19 @@ class _WifiDetailsPageState extends State<WifiDetailsPage> {
               style: const TextStyle(color: CyberColors.textSecondary),
             ),
             const SizedBox(height: 20),
-            CyberButton(
+            HmiButton(
+              label: l10n.wifiForgetNetwork,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.fill,
               variant: CyberButtonVariant.secondary,
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(l10n.wifiForgetNetwork),
             ),
             const SizedBox(height: 8),
-            CyberButton(
+            HmiButton(
+              label: l10n.cancelText,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.fill,
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(l10n.cancelText),
             ),
           ],
         );
@@ -602,12 +608,13 @@ class _WifiDetailsPageState extends State<WifiDetailsPage> {
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            child: CyberButton(
+            child: HmiButton(
               key: const Key('wifi-forget-network'),
-              stretch: true,
+              label: l10n.wifiForgetNetwork,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.fill,
               variant: CyberButtonVariant.secondary,
               onPressed: _busy ? null : () => unawaited(_forget(l10n)),
-              child: Text(l10n.wifiForgetNetwork),
             ),
           ),
         ],

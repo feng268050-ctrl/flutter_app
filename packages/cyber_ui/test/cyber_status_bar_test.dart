@@ -65,12 +65,14 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(
+          splashFactory: NoSplash.splashFactory,
           appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF112233)),
         ),
         home: Scaffold(
           appBar: CyberPageStatusBar(
             title: 'Settings',
             onBack: () => back++,
+            clockNow: () => DateTime(2026, 8, 5, 17, 39),
             statusItems: const [
               SizedBox(key: ValueKey('s0'), width: 8, height: 8),
               SizedBox(key: ValueKey('s1'), width: 8, height: 8),
@@ -80,15 +82,46 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
     expect(find.text('Settings'), findsOneWidget);
     expect(find.byKey(const ValueKey('cyber-status-bar-clock')), findsOneWidget);
+    // Default page chrome: weekday + date left of time (e.g. Wed Aug 5 17:39).
+    final clock = tester.widget<Text>(
+      find.byKey(const ValueKey('cyber-status-bar-clock')),
+    );
+    expect(clock.data, 'Wed Aug 5 17:39');
     expect(find.byKey(const ValueKey('s0')), findsOneWidget);
     final appBar = tester.widget<AppBar>(find.byType(AppBar));
     expect(appBar.backgroundColor, const Color(0xFF112233));
+    // Clock end inset matches Home Quick/Engineer mode entry top (55).
+    final clockRect = tester.getRect(
+      find.byKey(const ValueKey('cyber-status-bar-clock')),
+    );
+    expect(tester.getSize(find.byType(MaterialApp)).width - clockRect.right, 55);
 
     await tester.tap(find.byKey(const ValueKey('cyber-page-status-bar-back')));
     await tester.pump();
     expect(back, 1);
+  });
+
+  testWidgets('Page status bar can hide date prefix', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: CyberPageStatusBar(
+            title: 'X',
+            showClockDate: false,
+            clockNow: () => DateTime(2026, 8, 5, 17, 39),
+            statusItems: const [],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('cyber-status-bar-clock'))).data,
+      '17:39',
+    );
   });
 
   testWidgets('Page status bar explicit background override', (tester) async {

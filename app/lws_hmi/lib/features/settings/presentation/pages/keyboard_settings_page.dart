@@ -9,7 +9,9 @@ import 'package:lws_hmi/app/hmi_route_restore.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Keyboard settings: soft layout Segment + preview + physical keyboard status.
 class KeyboardSettingsPage extends StatefulWidget {
@@ -103,15 +105,19 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
               style: const TextStyle(color: CyberColors.textSecondary),
             ),
             const SizedBox(height: 20),
-            CyberButton(
+            HmiButton(
+              label: l10n.confirmText,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.fill,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.confirmText),
             ),
             const SizedBox(height: 8),
-            CyberButton(
+            HmiButton(
+              label: l10n.cancelText,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.fill,
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancelText),
             ),
           ],
         );
@@ -176,12 +182,12 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: CyberButton(
-                    size: CyberButtonSize.small,
+                  child: HmiButton(
+                    label: l10n.wifiApply,
+                    size: HmiButtonSize.small,
                     variant: CyberButtonVariant.primary,
                     onPressed:
                         (_busy || !dirty) ? null : () => unawaited(_apply()),
-                    child: Text(l10n.wifiApply),
                   ),
                 ),
               ),

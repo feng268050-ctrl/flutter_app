@@ -35,9 +35,11 @@ Future<LaserEnableReminderResult?> showLaserEnableReminderDialog({
     context: context,
     barrierDismissible: false,
     barrierLabel: 'Laser enable reminder',
+    // Tighter vertical pad + taller max so 3-line tip copy under icons fits.
+    padding: const EdgeInsets.symmetric(vertical: 12),
     constraints: BoxConstraints(
       maxWidth: (screenW * 0.9).clamp(560.0, 1200.0),
-      maxHeight: 720,
+      maxHeight: 800,
     ),
     builder: (dialogContext) => _LaserEnableReminderBody(
       processType: processType,
@@ -91,9 +93,9 @@ final class _LaserEnableReminderBodyState
             decoration: TextDecoration.none,
           ),
         ),
-        const SizedBox(height: CyberDimens.contentPadding),
+        const SizedBox(height: 16),
         const TipFrostDivider(),
-        const SizedBox(height: CyberDimens.contentPadding),
+        const SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -122,9 +124,9 @@ final class _LaserEnableReminderBodyState
             ),
           ],
         ),
-        const SizedBox(height: CyberDimens.contentPadding),
+        const SizedBox(height: 16),
         const TipFrostDivider(),
-        const SizedBox(height: CyberDimens.contentPadding),
+        const SizedBox(height: 16),
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 360, maxWidth: 560),
@@ -204,6 +206,7 @@ final class _ReminderCard extends StatelessWidget {
   static const _cardFill = Color(0xFFF8F0E8);
   static const _tipDark = Color(0xFF1A1A1A);
   static const _illustrationSize = 200.0;
+  static const _tipFontSize = 26.0;
 
   @override
   Widget build(BuildContext context) {
@@ -229,23 +232,20 @@ final class _ReminderCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 60,
-          child: tip == null
-              ? const SizedBox.shrink()
-              : Text(
-                  tip!,
-                  textAlign: TextAlign.center,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.hmiTypography.caption.copyWith(
-                    color: _tipDark,
-                    height: 1.25,
-                    fontWeight: FontWeight.w500,
-                    decoration: TextDecoration.none,
-                  ),
+        // No fixed height — allow full tip lines (was 60dp, clipped at 26sp).
+        tip == null
+            ? const SizedBox.shrink()
+            : Text(
+                tip!,
+                textAlign: TextAlign.center,
+                style: context.hmiTypography.caption.copyWith(
+                  fontSize: _tipFontSize,
+                  color: _tipDark,
+                  height: 1.25,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.none,
                 ),
-        ),
+              ),
       ],
     );
   }

@@ -327,7 +327,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 220));
 
     expect(find.text('Bluetooth'), findsOneWidget);
-    expect(find.text('Wireless Network'), findsOneWidget);
+    expect(find.text('Wi‑Fi'), findsOneWidget);
     expect(find.text('Display'), findsOneWidget);
     expect(find.text('Language'), findsOneWidget);
     expect(find.text('Debug over USB'), findsNothing);

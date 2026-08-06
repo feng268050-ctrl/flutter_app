@@ -32,7 +32,8 @@ abstract final class CyberOverlayHost {
   static Future<T?> show<T>({
     required BuildContext context,
     required WidgetBuilder builder,
-    CyberBlurSampleMode sampleMode = CyberBlurSampleMode.firstFrame,
+    /// Defaults match Startup Self-Check (realtime wallpaper frost).
+    CyberBlurSampleMode sampleMode = CyberBlurSampleMode.realtime,
     CyberBlurIntensity intensity = CyberBlurIntensity.high,
     CyberBlurTint blurTint = CyberBlurTint.dark,
     CyberTone tone = CyberTone.dark,
@@ -40,7 +41,7 @@ abstract final class CyberOverlayHost {
     bool barrierDismissible = true,
     /// Full-screen color behind the panel. Prefer transparent for realtime frost.
     Color barrierColor = Colors.transparent,
-    bool freezePageBackdrop = true,
+    bool freezePageBackdrop = false,
     CyberBackdropBlurController? pageBackdropController,
     /// Override the default 720×640 panel cap (e.g. wide Important Reminder).
     BoxConstraints? constraints,

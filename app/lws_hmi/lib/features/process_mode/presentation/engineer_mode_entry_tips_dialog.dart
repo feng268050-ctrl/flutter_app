@@ -2,9 +2,10 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Process-lifetime suppress for the engineer entry tip (not persisted).
@@ -74,11 +75,11 @@ final class _EngineerModeEntryTipsBodyState
   /// `engineer_mode_entry_icon_size` / `frost_dialog_prompt_icon_size`.
   static const _iconSize = 150.0;
 
-  /// `frost_dialog_prompt_title_text_size` → [AppTypography.criticalTitle].
-  static const _titleSize = AppTypography.criticalTitleSize;
+  /// `frost_dialog_prompt_title_text_size` → [HmiTypography.criticalTitle] (52).
+  static const _titleSize = 52.0;
 
-  /// `dialog_frost_body_prompt` content → [AppTypography.largeDialogTitle].
-  static const _bodySize = AppTypography.largeDialogTitleSize;
+  /// `dialog_frost_body_prompt` content → [HmiTypography.importantDialogTitle] (36).
+  static const _bodySize = 36.0;
 
   /// `frost_dialog_prompt_content_inset` / `engineer_mode_entry_dialog_content_padding`.
   static const _contentInset = 36.0;
@@ -193,12 +194,13 @@ final class _EngineerModeEntryTipsBodyState
               ),
               child: SizedBox(
                 width: double.infinity,
-                child: CyberButton(
+                child: HmiButton(
                   key: const ValueKey('engineer-mode-entry-confirm'),
+                  label: l10n.engineerModeEntryConfirm,
+                  size: HmiButtonSize.medium,
+                  widthPolicy: HmiButtonWidthPolicy.fill,
                   variant: CyberButtonVariant.primary,
                   shape: CyberButtonShape.rounded,
-                  stretch: true,
-                  height: CyberDimens.actionButtonHeight,
                   onPressed: () {
                     Navigator.of(context).pop(
                       EngineerModeEntryTipsResult(
@@ -206,10 +208,6 @@ final class _EngineerModeEntryTipsBodyState
                       ),
                     );
                   },
-                  child: Text(
-                    l10n.engineerModeEntryConfirm,
-                    style: AppTypography.pageTitle,
-                  ),
                 ),
               ),
             ),
@@ -249,11 +247,13 @@ final class _EngineerModeEntryTipsBodyState
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    l10n.dontShowAgainThisSession,
-                    style: context.hmiTypography.sectionTitle.copyWith(
-                      color: _labelMuted,
-                      decoration: TextDecoration.none,
+                  Flexible(
+                    child: Text(
+                      l10n.dontShowAgainThisSession,
+                      style: context.hmiTypography.sectionTitle.copyWith(
+                        color: _labelMuted,
+                        decoration: TextDecoration.none,
+                      ),
                     ),
                   ),
                 ],

@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
@@ -253,6 +252,8 @@ final class _RampChartPainter extends CustomPainter {
 
   static const _blue = Color(0xFF0F0AFF);
   static const _orange = Color(0xFFFFC266);
+  /// Ladder micro (12) — axis tick labels on CustomPainter.
+  static const _axisLabelSize = 12.0;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -294,7 +295,7 @@ final class _RampChartPainter extends CustomPainter {
           text: label.text,
           style: TextStyle(
             color: label.color,
-            fontSize: AppTypography.microSize,
+            fontSize: _axisLabelSize,
             fontWeight: FontWeight.w500,
           ),
         ),

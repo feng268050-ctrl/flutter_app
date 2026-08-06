@@ -606,6 +606,28 @@ void main() {
     expect(find.text('q'), findsWidgets);
   });
 
+  testWidgets('CyberImeTextField uses TextInputType.none', (tester) async {
+    CyberImePhysicalKeyboard.register(
+      const CyberImeFixedPhysicalKeyboardDetector(false),
+    );
+    addTearDown(() => CyberImePhysicalKeyboard.register(null));
+
+    final ctrl = TextEditingController();
+    addTearDown(ctrl.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberImeTextField(
+            fieldType: CyberImeFieldType.text,
+            controller: ctrl,
+          ),
+        ),
+      ),
+    );
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.keyboardType, TextInputType.none);
+  });
+
   testWidgets('physical keyboard inserts into CyberImeTextField',
       (tester) async {
     final ctrl = TextEditingController();

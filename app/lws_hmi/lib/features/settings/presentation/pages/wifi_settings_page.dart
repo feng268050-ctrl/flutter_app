@@ -9,7 +9,9 @@ import 'package:lws_hmi/features/settings/presentation/pages/wifi_details_page.d
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Wireless Network — switch + connected + My Networks + Other Networks.
 class WifiSettingsPage extends StatefulWidget {
@@ -83,6 +85,23 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     unawaited(_radioSub?.cancel() ?? Future<void>.value());
     unawaited(_connSub?.cancel() ?? Future<void>.value());
     super.dispose();
+  }
+
+  @override
+  void deactivate() {
+    // Pause scans while this route is covered or popping — avoids setState /
+    // HAL work during the Cupertino exit slide.
+    _scanTimer?.cancel();
+    _scanTimer = null;
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    if (mounted) {
+      _syncScanTimer();
+    }
   }
 
   bool get _radioOn =>
@@ -345,7 +364,8 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     final other = parts.otherNetworks.take(20).toList();
 
     return SettingsScaffold(
-      title: l10n.wirelessNetworkText,
+      // lws-ui `wifi_network_text` (activity_wifi title)
+      title: l10n.wifiNetworkText,
       body: RefreshIndicator(
         color: CyberColors.buttonPrimaryAccent,
         onRefresh: () async {
@@ -480,11 +500,12 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                   SettingsDimens.inset,
                 ),
                 child: Center(
-                  child: CyberButton(
+                  child: HmiButton(
+                    label: l10n.wifiHiddenNetworkConnect,
+                    size: HmiButtonSize.medium,
                     onPressed: _busy != null
                         ? null
                         : () => unawaited(_joinHidden()),
-                    child: Text(l10n.wifiHiddenNetworkConnect),
                   ),
                 ),
               ),

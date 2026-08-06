@@ -1,12 +1,15 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
+import 'package:lws_hmi/features/home/presentation/temp_trend_arrows.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
 abstract final class MonitorDimens {
@@ -192,33 +195,47 @@ class MonitorGlassCard extends StatelessWidget {
   }
 }
 
-/// Monitor action pill — frost plate + transparent-face [CyberButton].
+/// Monitor action pill — frost plate + transparent-face [HmiButton].
 ///
-/// Used by Alarms Clear and AI Vision Replace / Re-detect (same component).
-/// [CyberButton.paintFill] is off so the [SettingsPanel] blur shows through;
-/// [SettingsPanel.elevated] is off so lip/contact shadows do not read as a
-/// solid embossed chip over the preview.
+/// Used by Alarms Clear and AI Vision Detect / Replay / Re-detect (same
+/// component). [HmiButton.paintFill] is off so the [SettingsPanel] blur shows
+/// through; [SettingsPanel.elevated] is off so lip/contact shadows do not read
+/// as a solid embossed chip over the preview.
 class MonitorFrostActionButton extends StatelessWidget {
   const MonitorFrostActionButton({
     super.key,
+    required this.label,
     required this.onPressed,
-    required this.child,
+    this.leading,
+    this.icon,
+    this.size = HmiButtonSize.medium,
     this.variant = CyberButtonVariant.standard,
+    this.groupIconWithLabel = false,
     this.clickSoundEnabled = true,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
+  final String label;
   final VoidCallback? onPressed;
-  final Widget child;
+  final Widget? leading;
+  final IconData? icon;
+  final HmiButtonSize size;
   final CyberButtonVariant variant;
+
+  /// Center icon+label as one group (Alarms Clear). Default keeps label-centered
+  /// / icon left-inset layout used by other Monitor pills.
+  final bool groupIconWithLabel;
+
   final bool clickSoundEnabled;
   final CyberBorderGradientCenter borderGradientCenter;
 
-  static const height = CyberDimens.actionButtonSmallHeight;
+  /// Default pill height ([HmiButtonSize.medium]).
+  static const height = 52.0;
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(height / 2);
+    final metrics = HmiButtonMetrics.forSize(size, context.hmiTypography);
+    final radius = BorderRadius.circular(metrics.height / 2);
     return SettingsPanel(
       elevated: false,
       borderRadius: radius,
@@ -226,16 +243,18 @@ class MonitorFrostActionButton extends StatelessWidget {
       lightFromTopLeft: false,
       rimColor: MonitorDimens.panelRim,
       lightRim: MonitorDimens.panelHighlight,
-      child: CyberButton(
-        size: CyberButtonSize.small,
+      child: HmiButton(
+        label: label,
+        size: size,
         variant: variant,
         shape: CyberButtonShape.rounded,
-        height: height,
         paintFill: false,
+        icon: icon,
+        leading: leading,
+        groupIconWithLabel: groupIconWithLabel,
         clickSoundEnabled: clickSoundEnabled,
         borderGradientCenter: borderGradientCenter,
         onPressed: onPressed,
-        child: child,
       ),
     );
   }
@@ -334,7 +353,7 @@ class MonitorStatusDot extends StatelessWidget {
   }
 }
 
-/// Alarm metric card: value above label + status icon (102dp).
+/// Alarm metric card: value above label + optional trend arrows + status icon.
 class MonitorMetricCard extends StatelessWidget {
   const MonitorMetricCard({
     super.key,
@@ -342,6 +361,7 @@ class MonitorMetricCard extends StatelessWidget {
     required this.label,
     this.fault = false,
     this.hasValue = true,
+    this.trend = TempTrend.none,
   });
 
   final String value;
@@ -349,15 +369,17 @@ class MonitorMetricCard extends StatelessWidget {
   final bool fault;
   final bool hasValue;
 
+  /// Rise/fall vs previous sample (Live Machine Status parity).
+  final TempTrend trend;
+
   @override
   Widget build(BuildContext context) {
     // Missing sample → idle (empty); known fault → red; else green.
     final kind = !hasValue
         ? MonitorIndicatorKind.idle
         : (fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success);
-    // Nested inside Alarm section frost — keycap face, no second blur.
+    // Same plate chrome as Alarm Log / other MonitorGlassCards (page owns σ30).
     return MonitorGlassCard(
-      frosted: false,
       height: MonitorDimens.metricH,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
@@ -404,6 +426,12 @@ class MonitorMetricCard extends StatelessWidget {
               ],
             ),
           ),
+          // Same size/colors as Live Machine Status (“更多监测”).
+          if (hasValue && trend != TempTrend.none) ...[
+            const SizedBox(width: 6),
+            TempTrendArrows(trend: trend),
+            const SizedBox(width: 6),
+          ],
           MonitorStatusIcon(kind: kind),
           const SizedBox(width: 4),
         ],
@@ -425,7 +453,7 @@ class MonitorCommCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Nested inside Alarm section frost — keycap face, no second blur.
+    // Same plate chrome as Alarm Log (page owns σ30; no panel BackdropFilter).
     // Idle → muted label; pass → white; fault → warn red (same as temp value).
     final labelColor = switch (kind) {
       MonitorIndicatorKind.idle => MonitorDimens.labelColor,
@@ -433,7 +461,6 @@ class MonitorCommCard extends StatelessWidget {
       MonitorIndicatorKind.failure => const Color(0xFFFF8A80),
     };
     return MonitorGlassCard(
-      frosted: false,
       height: MonitorDimens.metricH,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
@@ -446,9 +473,8 @@ class MonitorCommCard extends StatelessWidget {
                 label,
                 maxLines: 1,
                 softWrap: false,
-                style: TextStyle(
+                style: context.hmiTypography.metricLabel.copyWith(
                   color: labelColor,
-                  fontSize: MonitorDimens.metricLabelSize,
                   fontWeight: FontWeight.w400,
                   height: 1.15,
                 ),
@@ -499,6 +525,7 @@ class MonitorTempMetricCard extends StatelessWidget {
         label: label,
         fault: overTemp,
         hasValue: hasValue || overTemp,
+        trend: hasValue ? series.trend : TempTrend.none,
       );
     }
 

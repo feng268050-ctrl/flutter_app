@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Date & Time hub — Automatic sync + NTP server + auto timezone + manual rows.
 class DateTimeSettingsPage extends StatefulWidget {
@@ -743,18 +745,19 @@ class _CyberDatePickerBodyState extends State<_CyberDatePickerBody> {
           ),
         ),
         actions: [
-          CyberButton(
+          HmiButton(
+            label: widget.cancelLabel,
+            size: HmiButtonSize.medium,
             variant: CyberButtonVariant.secondary,
             onPressed: () => Navigator.pop(context),
-            child: Text(widget.cancelLabel),
           ),
-          CyberButton(
+          HmiButton(
+            label: widget.confirmLabel,
+            size: HmiButtonSize.medium,
             variant: CyberButtonVariant.primary,
             onPressed: () {
-              CyberClickSoundRegistry.playClick();
               Navigator.pop(context, DateTime(_year, _month, _day));
             },
-            child: Text(widget.confirmLabel),
           ),
         ],
       ),
@@ -873,18 +876,19 @@ class _CyberTimePickerBodyState extends State<_CyberTimePickerBody> {
           ),
         ),
         actions: [
-          CyberButton(
+          HmiButton(
+            label: widget.cancelLabel,
+            size: HmiButtonSize.medium,
             variant: CyberButtonVariant.secondary,
             onPressed: () => Navigator.pop(context),
-            child: Text(widget.cancelLabel),
           ),
-          CyberButton(
+          HmiButton(
+            label: widget.confirmLabel,
+            size: HmiButtonSize.medium,
             variant: CyberButtonVariant.primary,
             onPressed: () {
-              CyberClickSoundRegistry.playClick();
               Navigator.pop(context, TimeOfDay(hour: _hour, minute: _minute));
             },
-            child: Text(widget.confirmLabel),
           ),
         ],
       ),

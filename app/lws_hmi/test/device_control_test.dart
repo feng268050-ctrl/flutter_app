@@ -194,7 +194,7 @@ void main() {
       ),
     ]);
     await Future<void>.delayed(Duration.zero);
-    expect(events, isEmpty);
+    expect(events, [DeviceControlSafetyEvent.keySwitchRestored]);
   });
 
   test('key off keeps Laser Enable UI off even when Modbus write fails',
@@ -237,7 +237,7 @@ void main() {
       ),
     ]);
     await Future<void>.delayed(Duration.zero);
-    expect(events, isEmpty);
+    expect(events, [DeviceControlSafetyEvent.keySwitchRestored]);
     expect(controller.laserEnable, isFalse);
   });
 
@@ -290,7 +290,7 @@ void main() {
     expect(controller.laserEnable, isFalse);
     expect(controller.laserOn, isFalse);
 
-    // Reset (release) e-stop → no second tip.
+    // Reset (release) e-stop → clear tip event (UI auto-dismisses).
     controller.applyChanges([
       const ModbusAttributeChange(
         id: DeviceControlIds.emergencyStop,
@@ -298,7 +298,7 @@ void main() {
       ),
     ]);
     await Future<void>.delayed(Duration.zero);
-    expect(events, isEmpty);
+    expect(events, [DeviceControlSafetyEvent.emergencyStopCleared]);
   });
 
   test('laserSessionArmed follows laserEnable only, not emission feedback', () {

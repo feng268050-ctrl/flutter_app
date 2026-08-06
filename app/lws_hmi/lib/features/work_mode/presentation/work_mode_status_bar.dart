@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
@@ -19,11 +18,10 @@ enum WorkMode { quick, engineer }
 
 /// App-local status bar for Quick / Engineer (lws-ui `EquipmentStatusBar` parity).
 ///
-/// Layout uses fixed, equal side rails and an Expanded center rail. Back fills
-/// the left rail (label centered). Each equipment status is a label+icon group
-/// with a fixed icon size; inter-group gaps share leftover width equally so
-/// labels stay fully visible when possible. Camera + clock are centered in the
-/// right rail.
+/// Home and camera+clock size to their content; the equipment cluster sits in
+/// an [Expanded] and is centered there so Home↔cluster and cluster↔trailing
+/// visual gaps stay equal. Inter-group gaps are capped at
+/// [WorkModeStatusBarDimens.equipmentItemGap] (smaller than the side gaps).
 final class WorkModeStatusBar extends StatelessWidget
     implements PreferredSizeWidget {
   const WorkModeStatusBar({
@@ -78,38 +76,36 @@ final class WorkModeStatusBar extends StatelessWidget
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Fixed left rail; Back fills the complete slot.
-              SizedBox(
-                width: WorkModeStatusBarDimens.sideRailWidth,
+              // Content-sized Home; screen-edge inset kept on the outside.
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: WorkModeStatusBarDimens.screenEdgeInset,
+                ),
                 child: CallBackHomeButton(
                   key: const ValueKey('work-mode-status-back'),
                   accent: accent,
                   enabled: backEnabled,
+                  expandWidth: false,
                   label: backLabel ??
                       AppLocalizations.of(context)?.equipmentStatusHome ??
                       'Home',
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                 ),
               ),
-              // Label+icon groups: fixed icon size, equal gaps; labels may ellipsize.
+              // Cluster centered in leftover → equal gaps to Home and trailing.
               Expanded(
                 child: _WorkModeEquipmentStrip(
                   status: equipmentStatus,
                 ),
               ),
-              // Fixed right rail; camera + clock centered (mirror Home).
-              SizedBox(
-                width: WorkModeStatusBarDimens.sideRailWidth,
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: _WorkModeTrailing(
-                      cameraStatus: cameraStatus,
-                      clockNow: resolvedNow,
-                      use24HourFormat:
-                          services?.wallClock.use24HourFormat ?? true,
-                    ),
-                  ),
+              Padding(
+                padding: const EdgeInsets.only(
+                  right: WorkModeStatusBarDimens.screenEdgeInset,
+                ),
+                child: _WorkModeTrailing(
+                  cameraStatus: cameraStatus,
+                  clockNow: resolvedNow,
+                  use24HourFormat: services?.wallClock.use24HourFormat ?? true,
                 ),
               ),
             ],
@@ -132,18 +128,23 @@ abstract final class WorkModeStatusBarDimens {
   /// lws-ui `equipment_status` minHeight / rail height.
   static const double height = 70;
 
-  /// lws-ui `equipment_status_side_rail_width`.
+  /// Legacy fixed side-rail width (Settings [CallBackHomeButton.railWidth]).
+  /// Quick / Engineer no longer use equal fixed rails — see [screenEdgeInset].
   static const double sideRailWidth = 160;
 
-  /// Soft target for inter-group spacing when the center rail has spare width.
-  /// Actual gaps shrink first so labels can stay fully visible.
-  static const double equipmentItemGap = 28;
+  /// Outer inset from screen edge to Home / camera+clock.
+  static const double screenEdgeInset = 12;
+
+  /// Max inter-group spacing (kept smaller than Home / trailing side gaps).
+  /// Leftover width in the center [Expanded] becomes equal side breathing room.
+  static const double equipmentItemGap = 10;
 
   /// Equipment on/off icons (not scaled by the status-strip layout).
   static const double primaryIconSize = 50;
 
   /// Text ↔ icon gap within one equipment status group.
-  static const double statusIconGap = 0;
+  /// Negative pulls the icon toward the label (mipmaps have transparent padding).
+  static const double statusIconGap = -8;
 
   /// Design size for camera (same as HomeStatusBar `iconSize: 32` on 1280×800).
   static const double trailingIconSize = 32;
@@ -168,14 +169,14 @@ abstract final class WorkModeStatusBarDimens {
 
   static const double edgeLineHeight = 3;
 
-  /// Five equipment status labels → [AppTypography.control].
-  static const double statusLabelFontSize = AppTypography.controlSize;
+  /// Five equipment status labels → [HmiTypography.statusBarLabel] (20).
+  static const double statusLabelFontSize = 20.0;
 
-  /// Home / Back label → [AppTypography.navigation].
-  static const double homeLabelFontSize = AppTypography.navigationSize;
+  /// Home / Back label → [HmiTypography.statusBarAction] (24).
+  static const double homeLabelFontSize = 24.0;
 
-  /// Clock size → [AppTypography.control].
-  static const double chromeLabelFontSize = AppTypography.controlSize;
+  /// Clock size → [HmiTypography.statusBarLabel] (20).
+  static const double chromeLabelFontSize = 20.0;
 
   static const Color background = Colors.transparent;
   static const Color label = Color(0xFFFFFFFF);
@@ -303,17 +304,26 @@ final class _WorkModeEquipmentStripState
               return painter.width;
             }(),
         ];
-        final iconBlock = WorkModeStatusBarDimens.primaryIconSize +
-            WorkModeStatusBarDimens.statusIconGap;
+        final iconOverlap = WorkModeStatusBarDimens.statusIconGap < 0
+            ? WorkModeStatusBarDimens.statusIconGap
+            : 0.0;
+        // Layout width accounts for label←icon overlap (visual translate).
+        final iconLayoutWidth =
+            WorkModeStatusBarDimens.primaryIconSize + iconOverlap;
         final contentWidth = labelWidths.fold<double>(0, (a, b) => a + b) +
-            iconBlock * specs.length;
+            iconLayoutWidth * specs.length;
         final gapCount = specs.length - 1;
         final free = constraints.maxWidth - contentWidth;
+        // Cap inter-group gap; leftover free width → side inset via [Center].
         // Prefer full labels: shrink gaps first. Ellipsize only if still tight.
-        final gap = free >= 0 ? free / gapCount : 0.0;
+        final gap = free >= 0
+            ? (free / gapCount)
+                .clamp(0.0, WorkModeStatusBarDimens.equipmentItemGap)
+            : 0.0;
         final maxLabelWidth = free >= 0
             ? double.infinity
-            : ((constraints.maxWidth - iconBlock * specs.length) / specs.length)
+            : ((constraints.maxWidth - iconLayoutWidth * specs.length) /
+                    specs.length)
                 .clamp(16.0, 400.0);
 
         return Center(
@@ -359,7 +369,10 @@ final class _EquipmentStatusItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconSize = WorkModeStatusBarDimens.primaryIconSize;
-    // Label + icon stay one group; icon size is fixed (not parent-scaled).
+    final iconGap = WorkModeStatusBarDimens.statusIconGap;
+    final iconLayoutWidth = iconSize + (iconGap < 0 ? iconGap : 0);
+    // Label + icon stay one group; negative gap pulls icon toward the label
+    // while layout width matches the visual trailing edge.
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -380,12 +393,29 @@ final class _EquipmentStatusItem extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: WorkModeStatusBarDimens.statusIconGap),
-        Image.asset(
-          active ? onAsset : offAsset,
-          width: iconSize,
+        if (iconGap > 0) SizedBox(width: iconGap),
+        SizedBox(
+          width: iconLayoutWidth,
           height: iconSize,
-          filterQuality: FilterQuality.medium,
+          child: iconGap < 0
+              ? OverflowBox(
+                  alignment: Alignment.centerRight,
+                  minWidth: iconSize,
+                  maxWidth: iconSize,
+                  maxHeight: iconSize,
+                  child: Image.asset(
+                    active ? onAsset : offAsset,
+                    width: iconSize,
+                    height: iconSize,
+                    filterQuality: FilterQuality.medium,
+                  ),
+                )
+              : Image.asset(
+                  active ? onAsset : offAsset,
+                  width: iconSize,
+                  height: iconSize,
+                  filterQuality: FilterQuality.medium,
+                ),
         ),
       ],
     );

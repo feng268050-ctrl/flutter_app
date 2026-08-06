@@ -103,6 +103,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               selected:
                                   controller.autoWireFeed && _wireCapable,
                               enabled: _wireCapable,
+                              balanceIconLabelGap: true,
                               onPressed: () =>
                                   unawaited(_toggleAutoWire(context, l10n)),
                             ),
@@ -146,7 +147,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                                   DeviceControlFeedbackCopy.continuousFeedLabel(
                                 l10n,
                               ),
-                              leading: _materialIcon(Icons.input),
+                              leading: _wireIcon(retract: false),
                               enabled: _wireCapable,
                               laserBlocked: laserOpen,
                               retract: false,
@@ -160,7 +161,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                             ProcessModeOutlineWireButton(
                               key: const ValueKey('device-control-retract'),
                               label: l10n.retract,
-                              leading: _materialIcon(Icons.output),
+                              leading: _wireIcon(retract: true),
                               enabled: _wireCapable,
                               laserBlocked: laserOpen,
                               retract: true,
@@ -226,6 +227,15 @@ final class QuickModeDeviceControls extends StatelessWidget {
       size: ProcessModeOutlineChrome.iconSize,
       color: Colors.white,
     );
+  }
+
+  /// Feed/Retract share the retract glyph; retract is mirrored horizontally.
+  static Widget _wireIcon({required bool retract}) {
+    final icon = _materialIcon(Icons.output);
+    if (!retract) {
+      return icon;
+    }
+    return Transform.flip(flipX: true, child: icon);
   }
 
   Future<void> _toggleManualGas(

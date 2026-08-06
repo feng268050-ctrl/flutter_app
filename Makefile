@@ -19,11 +19,11 @@ APP ?= lws_hmi
 
 # USB flash / adb / remote SSH (override when multiple devices connected)
 SN ?=
-CHIP_ID ?=
+CHIPID ?=
 SERIAL ?=
 IP ?=
 IMAGE ?=
-FLASH_ENV = SN='$(SN)' CHIP_ID='$(CHIP_ID)' SERIAL='$(SERIAL)' IP='$(IP)' UPDATE_IMG='$(IMAGE)'
+FLASH_ENV = SN='$(SN)' CHIPID='$(CHIPID)' SERIAL='$(SERIAL)' IP='$(IP)' UPDATE_IMG='$(IMAGE)'
 
 # Positional IP for: make connect <ip> / make disconnect <ip>
 ifneq ($(filter connect disconnect,$(firstword $(MAKECMDGOALS))),)
@@ -49,7 +49,7 @@ endif
 # Usage: $(call WITH_DOTENV,<command>)
 define WITH_DOTENV
 bash -c 'set -euo pipefail; \
-  __ENV_SN="$${SN-}"; __ENV_CHIP_ID="$${CHIP_ID-}"; __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
+  __ENV_SN="$${SN-}"; __ENV_CHIPID="$${CHIPID-}"; __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
   __ENV_APP="$${APP-}"; \
   __ENV_OEM_ONLY="$${OEM_ONLY-}"; \
   __ENV_UPGRADE_TRANSPORT="$${UPGRADE_TRANSPORT-}"; \
@@ -61,7 +61,7 @@ bash -c 'set -euo pipefail; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
   [[ -n "$$__ENV_SN" ]] && export SN="$$__ENV_SN"; \
-  [[ -n "$$__ENV_CHIP_ID" ]] && export CHIP_ID="$$__ENV_CHIP_ID"; \
+  [[ -n "$$__ENV_CHIPID" ]] && export CHIPID="$$__ENV_CHIPID"; \
   [[ -n "$$__ENV_SERIAL" ]] && export SERIAL="$$__ENV_SERIAL"; \
   [[ -n "$$__ENV_IP" ]] && export IP="$$__ENV_IP"; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
@@ -80,8 +80,6 @@ endef
 
 help:
 	@echo "lws-hmi — Buildroot + ynh960 (Linux: native build; macOS: Docker linux/amd64)"
-	@echo ""
-	@echo "Full per-target docs (usage / when / env vars): docs/make-commands.md"
 	@echo ""
 	@echo "Setup:"
 	@echo "  make setup                 # apply overlay (+ Docker image on macOS)"
@@ -123,8 +121,8 @@ help:
 	@echo "Emulator (P3.2 — same Image+rootfs + sim_virt OEM; docs/p32-emulator.md):"
 	@echo "  make setup-emulator-qemu   # once (macOS): install qemu-virgl (host VirGL / ANGLE→Metal)"
 	@echo "  make fetch-emulator-swgl   # once: guest Mesa virtio_gpu → prebuilt/ (9p; FORCE=1 to refetch)"
-	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (grows emulator rootfs copy to 1536M)"
-	@echo "  make emulator              # start QEMU (host VirGL required)"
+	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (grows emulator rootfs copy; EMULATOR_ROOTFS_SIZE=1536M)"
+	@echo "  make emulator              # start QEMU (host VirGL; SSH :2222 + HTTP :5580 hostfwd)"
 	@echo "  make emulator-stop         # stop lws-hmi QEMU guest (not Android Studio)"
 	@echo ""
 	@echo "Dependencies (prebuilt / fetch — run before first make build-rootfs):"
@@ -151,7 +149,7 @@ help:
 	@echo "  make fetch-opencv          # runtime: OpenCV sources → .cache/opencv/"
 	@echo "  make fetch-opencv-ximgproc # runtime: ximgproc EdgeDrawing → .cache/"
 	@echo "  make fetch-rknn-rt         # runtime: aarch64 librknnrt → prebuilt/rknn-rt/"
-	@echo "  make fetch-flutter-sdk     # dev: host Flutter SDK → DEST= (default flutter-sdk/; FORCE=1 refetch)"
+	@echo "  make fetch-flutter-sdk     # dev: host Flutter SDK → flutter-sdk/"
 	@echo "  make fetch-rknn-toolkit    # dev: RKNN-Toolkit2 + torch (ONNX→RKNN on x86)"
 	@echo "  make export-prebuilt       # re-export flutter + runtime (usually build-* already did)"
 	@echo "  rebuild-*                  # FORCE=1 refresh (e.g. make rebuild-runtime-deps)"
@@ -163,12 +161,12 @@ help:
 	@echo "  make disconnect <ip>       # remove registered remote SSH board"
 	@echo "  make devices               # RockUSB + USB-SSH + SSH + EMU (auto-probe QEMU :2222)"
 	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
-	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL_ONLY filters"
+	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
 	@echo "  make push-app              # scp APP over SSH (*_hmi→/opt/hmi+hmi restart; else /opt/<id>)"
 	@echo "  make upgrade-control-board # push latest control-board bin and trigger upgrade (no version gate)"
 	@echo "  make upgrade-process-library # push process-library for device model; force import (no version gate)"
 	@echo "  make reset-process-library # clear process-library DB via HMI watcher; re-import bundled (no restart)"
-	@echo "  make set-prop KEY=val ...  # upsert properties.ini tunables (not brand/model/sn); restart hmi"
+	@echo "  make set-prop KEY=val ...  # upsert product.ini tunables (not brand/model/sn); restart hmi"
 	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
 	@echo "  make write-identity …      # Vendor Storage BRAND/MODEL/PRODUCT_SN (FORCE=1 overwrite); restart hmi"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
@@ -179,7 +177,7 @@ help:
 	@echo "  make ota-release-keys          # release Ed25519 keypair → keys/ota/ + overlay /etc/ota/ed25519.pub"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
-	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); BAUD=; LOG_FILE= (hex)"
+	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); SERIAL_BAUD=; LOG= (hex)"
 	@echo "                             # TTL=miniterm @1500000 quit Ctrl+]; RS485/RS232=hex+TX bar @115200 quit Esc/:q"
 	@echo "  make serial-ports          # list host /dev/cu.* serial ports"
 	@echo "  make serial-sniff          # auto-detect baud while power-cycling board"
@@ -200,12 +198,13 @@ help:
 	@echo ""
 	@echo "Common Env Vars:"
 	@echo "  FLUTTER_SDK=$(FLUTTER_SDK)"
-	@echo "  BUILD_JOBS=8               # parallel jobs (default 8; lower if Docker OOM)"
+	@echo "  BUILD_JOBS=4|8             # parallel jobs (default 4 macOS Docker, 8 Linux native)"
 	@echo "  BUILD_BIND_MOUNT=1         # macOS only: bind-mount SDK instead of Docker volume"
-	@echo "  NAS_CACHE_ROOT=...         # NAS mount for large .cache artifacts (see .env.example)"
-	@echo "  NAS_READ_ONLY=0|1          # 1 = never write back to NAS (default 0)"
-	@echo "  SN=<sn>                    # select device by SN (flash / USB-SSH / SSH)"
-	@echo "  PRODUCT_SN=<sn>            # write-identity product serial (not selection SN=)"
+	@echo "  LWS_HMI_CACHE_ROOT=...   # NAS mount for large .cache artifacts (see .env.example)"
+	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
+	@echo "  SN=<sn|chipid>             # select device by SN or ChipID (flash / USB-SSH / SSH)"
+	@echo "  CHIPID=<chipid>            # select by ChipID only (multi-board)"
+	@echo "  PRODUCT_SN=<sn>            # write-identity product serial (alias IDENTITY_SN=; not selection SN=)"
 	@echo "  FORCE=1                    # write-identity: overwrite non-empty Vendor Storage SN"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  UPGRADE_TRANSPORT=auto|ssh|rockusb  # make upgrade transport (default auto)"
@@ -221,10 +220,9 @@ help:
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ only (no host linux-sdk/output/ mirror)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
 	@echo "  - APP= selects HMI product: overlay /opt/hmi + host rootfs/factory under output/firmware/<APP>/."
-	@echo "  - FACTORY_SKU=ynh960-p800 (default) → UBOOT_ID/OEM_ID via board/factory-skus.tsv; override either only when needed."
+	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
 	@echo "  - Emulator: README Make commands → P3.2 emulator (setup → deps → kernel/rootfs → setup-emulator-qemu → fetch-emulator-swgl → build-emulator → emulator)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
-	@echo "  - docs/make-commands.md — full catalog of targets, parameters, and when to use them."
 
 # --- Setup ---
 
@@ -439,10 +437,10 @@ rebuild-flutter-embedded-linux:
 	@FORCE=1 bash scripts/build-flutter-embedded-linux.sh
 
 fetch-flutter-sdk:
-	@DEST='$(DEST)' FORCE='$(FORCE)' bash scripts/fetch-flutter-sdk.sh
+	@bash scripts/fetch-flutter-sdk.sh
 
 refetch-flutter-sdk:
-	@DEST='$(DEST)' FORCE=1 bash scripts/fetch-flutter-sdk.sh
+	@FORCE=1 bash scripts/fetch-flutter-sdk.sh
 
 build-dev-deps:
 	@bash scripts/build-dev-deps.sh
@@ -629,13 +627,13 @@ set-prop:
 	@chmod +x scripts/set-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/set-product-prop.sh $(MAKEOVERRIDES))
 
-# Remove one UPPERCASE key from properties.ini (e.g. make del-prop CAMERA_IP).
+# Remove one UPPERCASE key from product.ini (e.g. make del-prop CAMERA_IP).
 del-prop:
 	@chmod +x scripts/del-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/del-product-prop.sh $(filter-out del-prop,$(MAKECMDGOALS)) $(MAKEOVERRIDES))
 
-# Write brand/model/product SN into Vendor Storage (SSH). Selection: SN=/IP=.
-# Payload: BRAND= MODEL= PRODUCT_SN=. FORCE=1 to overwrite SN.
+# Write brand/model/product SN into Vendor Storage (SSH). Selection: SN=/CHIPID=/IP=.
+# Payload: BRAND= MODEL= PRODUCT_SN= (alias IDENTITY_SN=). FORCE=1 to overwrite SN.
 # Pass via MAKEOVERRIDES only — do NOT wrap BRAND='$(BRAND)' inside WITH_DOTENV's
 # bash -c '…' (single quotes break on MODEL='L1 Pro' and silently no-op).
 write-identity:

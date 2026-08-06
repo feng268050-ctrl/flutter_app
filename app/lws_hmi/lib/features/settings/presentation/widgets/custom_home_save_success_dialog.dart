@@ -11,8 +11,7 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 enum _CustomHomeSaveStatus { success, failure }
 
-/// Custom Home save tip — green pass uses toast-like cream fill; failure uses
-/// opaque charcoal (same family as Key switch is off).
+/// Custom Home save tip — Self-Check dark frost (pass / fail content icons).
 Future<void> showCustomHomeSaveSuccessDialog(BuildContext context) =>
     _showCustomHomeSaveStatusDialog(
       context,
@@ -71,8 +70,6 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
   static const _maxWidth = 720.0;
   static const _iconSize = 80.0;
   static const _confirmMinWidth = 500.0;
-  static const _titleDark = Color(0xFF1A1A1A);
-  static const _bodyDark = Color(0xCC1A1A1A);
 
   @override
   Widget build(BuildContext context) {
@@ -80,13 +77,14 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
     final screenW = MediaQuery.sizeOf(context).width;
     final cardW = (screenW * 0.62).clamp(320.0, _maxWidth);
     final success = status == _CustomHomeSaveStatus.success;
-    final title = success ? l10n.saveSucceeded : l10n.saveFailed;
+    // lws-ui `saved_successfully` / save-failed tip titles.
+    final title = success ? l10n.savedSuccessfully : l10n.saveFailed;
     final message = success ? l10n.doneText : l10n.pleaseTryAgain;
     final icon = success
         ? ProcessModeAssets.dialogSuccess
         : ProcessModeAssets.dialogError;
-    final textColor = success ? _titleDark : CyberColors.textPrimary;
-    final bodyColor = success ? _bodyDark : CyberColors.textPrimary;
+    final textColor = CyberColors.textPrimary;
+    final bodyColor = CyberColors.textSecondary;
     final titleStyle = context.hmiTypography.dialogTitle.copyWith(
       color: textColor,
       fontWeight: FontWeight.w700,

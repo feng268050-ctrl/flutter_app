@@ -796,7 +796,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
                             variant: CyberButtonVariant.primary,
                             onPressed: () =>
                                 unawaited(_startDetect(force: false)),
-                            child: Text(l10n.aiVisionDetectBtn),
+                            label: l10n.aiVisionDetectBtn,
                           ),
                         ),
                       if (showPostEos)
@@ -807,14 +807,14 @@ class _AiVisionTabState extends State<AiVisionTab> {
                               MonitorFrostActionButton(
                                 variant: CyberButtonVariant.light,
                                 onPressed: () => unawaited(_startReplay()),
-                                child: Text(l10n.aiVisionVideoReplay),
+                                label: l10n.aiVisionVideoReplay,
                               ),
                               const SizedBox(width: 24),
                               MonitorFrostActionButton(
                                 variant: CyberButtonVariant.light,
                                 onPressed: () =>
                                     unawaited(_startDetect(force: true)),
-                                child: Text(l10n.aiVisionReinferBtn),
+                                label: l10n.aiVisionReinferBtn,
                               ),
                             ],
                           ),

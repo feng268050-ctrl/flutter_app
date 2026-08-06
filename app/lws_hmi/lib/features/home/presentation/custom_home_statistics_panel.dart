@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
@@ -126,8 +125,9 @@ _HomeStatisticDisplay _displayValue(
   };
 
   return switch (metric) {
+    // Titles match lws-ui `HomeLayoutUtils.typeToTitle`.
     CustomHomeMetric.wireConsumption => _HomeStatisticDisplay(
-        title: l10n.totalWireConsumption,
+        title: l10n.warnInfoWeldingConsumables,
         number: LengthUnitConvert.formatMm(
           (aggregate?.wireFeedLengthMmTotal ?? 0).toDouble(),
           unitWire: unitWire,
@@ -135,11 +135,11 @@ _HomeStatisticDisplay _displayValue(
         unit: LengthUnitConvert.suffix(unitWire),
       ),
     CustomHomeMetric.laserOnDuration => _durationDisplay(
-        title: l10n.totalLaserOnTime,
+        title: l10n.warnInfoLightTime,
         seconds: totalLaserSeconds,
       ),
     CustomHomeMetric.jobRuntime => _durationDisplay(
-        title: l10n.jobRuntime,
+        title: l10n.warnInfoLastWork,
         seconds: aggregate?.jobRuntimeSecondsTotal ?? 0,
       ),
     CustomHomeMetric.weldRatio => _HomeStatisticDisplay(
@@ -161,12 +161,12 @@ _HomeStatisticDisplay _displayValue(
         isRatio: true,
       ),
     CustomHomeMetric.weekOverWeekLaser => _HomeStatisticDisplay(
-        title: l10n.laserTimeVsLastWeek,
+        title: l10n.warnInfoLightTimeInfo,
         number: weekOverWeekLaserPercent(aggregate).toString(),
         unit: '%',
       ),
     CustomHomeMetric.favoriteMaterial => _HomeStatisticDisplay(
-        title: l10n.favoriteMaterial,
+        title: l10n.warnInfoWeldingConsumablesInfo,
         number: _materialName(l10n, aggregate?.favoriteMaterialType),
       ),
   };
@@ -271,11 +271,11 @@ final class _HomeStatisticCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final compact = width < 160 || height < 100;
     final titleSize =
-        (height * 0.19).clamp(AppTypography.microSize, AppTypography.sectionTitleSize);
+        (height * 0.19).clamp(12.0, 22.0); // micro → sectionTitle
     final numberSize =
-        (height * 0.52).clamp(AppTypography.pageTitleSize, AppTypography.criticalTitleSize);
+        (height * 0.52).clamp(28.0, 52.0); // pageTitle → criticalTitle
     final unitSize =
-        (height * 0.27).clamp(AppTypography.supportingSize, AppTypography.pageTitleSize);
+        (height * 0.27).clamp(16.0, 28.0); // supporting → pageTitle
     return SizedBox(
       width: width,
       height: height,

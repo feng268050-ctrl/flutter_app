@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// CyberUI status light (Material stand-in for lws-ui FrostStatusIndicator).
 ///
 /// Four common presentations (as in product reference shots):
-/// 1. [CyberStatusState.idle] — soft gray disc
+/// 1. [CyberStatusState.idle] — gray disc
 /// 2. [CyberStatusState.success] + [CyberStatusVariant.dot] — gray disc + green center
 /// 3. [CyberStatusState.success] + [CyberStatusVariant.icon] — green disc + white check
 /// 4. [CyberStatusState.failure] + [CyberStatusVariant.icon] — red disc + white cross
@@ -39,20 +39,16 @@ class CyberStatusIndicator extends StatelessWidget {
     final resolved = _resolve(state, variant);
     final glyphSize = size * 0.55;
 
+    // Solid disc (no soft radial fade): idle/success/failure must share the
+    // same painted diameter at [size]. A fade-to-transparent edge made idle
+    // gray look smaller than solid red/green on Alarm Comm cards.
     return SizedBox(
       width: size,
       height: size,
       child: DecoratedBox(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              resolved.background,
-              resolved.background,
-              resolved.background.withOpacity(0.0),
-            ],
-            stops: const [0.0, 0.86, 1.0],
-          ),
+          color: resolved.background,
         ),
         child: Center(
           child: switch (resolved.kind) {

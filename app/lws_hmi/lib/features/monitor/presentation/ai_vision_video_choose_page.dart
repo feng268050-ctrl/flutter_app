@@ -2,23 +2,27 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// lws-ui `AiVisionVideoChooseActivity` — table pick → [ProcessVideoRecord].
+///
+/// Body matches Monitor → Videos ([DataTable], no cover thumbnails).
 class AiVisionVideoChoosePage extends StatefulWidget {
   const AiVisionVideoChoosePage({super.key, this.repository});
 
   final ProcessVideoRepository? repository;
 
-  static const pageSize = 20;
+  static const pageSize = 10;
 
   @override
   State<AiVisionVideoChoosePage> createState() =>
@@ -26,13 +30,7 @@ class AiVisionVideoChoosePage extends StatefulWidget {
 }
 
 class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
-  static const _leftInset = 24.0;
-  static const _rightInset = 58.0;
-  static const _columnGap = 26.0;
-  static const _headerTop = 35.0;
-  static const _headerBottom = 32.0;
-  static const _rowTop = 35.0;
-  static const _rowBottom = 33.0;
+  static const _horizontalInset = 24.0;
 
   late final ProcessVideoRepository _repo =
       widget.repository ?? SqliteProcessVideoRepository();
@@ -111,94 +109,194 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
   }
 
   void _select(ProcessVideoRecord record) {
+    CyberClickSoundRegistry.playClick();
     Navigator.of(context).pop(record);
+  }
+
+  TextStyle _headingStyle(BuildContext context) =>
+      context.hmiTypography.sectionTitle.copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.w500,
+      );
+
+  TextStyle _cellStyle(BuildContext context) =>
+      context.hmiTypography.settingsRowTitle.copyWith(
+        color: Colors.white,
+        height: 1.15,
+      );
+
+  List<DataColumn> _columns(AppLocalizations l10n) => [
+        DataColumn(label: Text(l10n.processVideoRecordingTime)),
+        DataColumn(label: Text(l10n.processVideoWorkMode)),
+        DataColumn(label: Text(l10n.processVideoMaterial)),
+        DataColumn(label: Text(l10n.processVideoDuration)),
+        DataColumn(label: Text(l10n.processVideoOperations)),
+      ];
+
+  DataRow _dataRow(
+    BuildContext context,
+    ProcessVideoRecord row,
+    AppLocalizations l10n,
+  ) {
+    return DataRow(
+      cells: [
+        DataCell(
+          Center(
+            child: Text(
+              ProcessVideoFormat.recordingTime(row),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+        DataCell(
+          Center(
+            child: Text(
+              ProcessVideoFormat.workMode(row.processType, l10n),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+        DataCell(
+          Center(
+            child: Text(
+              ProcessVideoFormat.material(row, l10n),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+        DataCell(
+          Center(
+            child: Text(
+              ProcessVideoFormat.duration(row.durationMs),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        DataCell(
+          Center(
+            child: MonitorFrostActionButton(
+              variant: CyberButtonVariant.primary,
+              onPressed: () => _select(row),
+              label: l10n.aiVisionSelectBtn,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _themedTable({
+    required BuildContext context,
+    required ThemeData theme,
+    required AppLocalizations l10n,
+    required List<DataRow> rows,
+  }) {
+    return Theme(
+      data: theme.copyWith(
+        dataTableTheme: DataTableThemeData(
+          headingTextStyle: _headingStyle(context),
+          dataTextStyle: _cellStyle(context),
+          dividerThickness: 1,
+          headingRowColor: WidgetStateProperty.all(Colors.transparent),
+          dataRowColor: WidgetStateProperty.all(Colors.transparent),
+          headingRowHeight: 56,
+          dataRowMinHeight: 72,
+          dataRowMaxHeight: 96,
+          headingRowAlignment: MainAxisAlignment.center,
+        ),
+        dividerColor: const Color(0x33FFFFFF),
+      ),
+      child: DataTable(
+        showCheckboxColumn: false,
+        columnSpacing: 24,
+        horizontalMargin: 8,
+        columns: _columns(l10n),
+        rows: rows,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scale =
-        (MediaQuery.sizeOf(context).width / 1280).clamp(0.55, 1.0);
-    final headers = <(String, double)>[
-      (l10n.processVideoRecordingTime, 232),
-      (l10n.processVideoWorkMode, 232),
-      (l10n.processVideoMaterial, 205),
-      (l10n.processVideoDuration, 130),
-      (l10n.processVideoOperations, 0),
-    ];
+    final theme = Theme.of(context);
 
-    // Match Monitor page chrome (theme surface, not legacy #060720).
-    final pageBg = Theme.of(context).scaffoldBackgroundColor;
-    return Scaffold(
-      backgroundColor: pageBg,
-      appBar: ProductPageStatusBar(
-        title: l10n.aiVisionChooseBtn,
-        backgroundColor: pageBg,
-        foregroundColor: Colors.white,
-        toolbarHeight: WorkModeStatusBarDimens.height,
-        backLabel: l10n.aiVisionTitle,
-        backAccent: WorkModeAccent.weld,
-        onBack: () => Navigator.of(context).maybePop(),
-      ),
-      body: Column(
+    // Same shell as Monitor: wallpaper + static baked σ30 plate.
+    return SettingsBlurredPageShell(
+      blurSigma: SettingsPerspectiveChrome.blurSigma,
+      backdropBuilder: () => const Stack(
+        fit: StackFit.expand,
         children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(_leftInset, 0, _rightInset, 0),
-            padding: const EdgeInsets.fromLTRB(0, _headerTop, 0, _headerBottom),
-            decoration: const BoxDecoration(
+          SettingsHomeBackdrop(),
+          DecoratedBox(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Color(0x006C6C6C),
-                  Color(0xFF636385),
-                  Color(0x006C6C6C),
-                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x16000000), Color(0x26000000)],
               ),
             ),
-            child: Row(
-              children: [
-                for (final (label, width) in headers)
-                  if (width > 0)
-                    Padding(
-                      padding: EdgeInsets.only(right: _columnGap * scale),
-                      child: SizedBox(
-                        width: width * scale,
-                        child: Text(
-                          label,
-                          textAlign: TextAlign.center,
-                          style: context.hmiTypography.sectionTitle.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: context.hmiTypography.sectionTitle.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-              ],
-            ),
           ),
+        ],
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: ProductPageStatusBar(
+          title: l10n.aiVisionChooseBtn,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          toolbarHeight: WorkModeStatusBarDimens.height,
+          backLabel: 'Back',
+          backAccent: WorkModeAccent.weld,
+          onBack: () => Navigator.of(context).maybePop(),
+        ),
+        body: Column(
+        children: [
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _rows.isEmpty
-                    ? Center(
-                        child: Text(
-                          l10n.processVideoEmptyTitle,
-                          style: context.hmiTypography.body.copyWith(
-                            color: Colors.white54,
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              _horizontalInset,
+                              8,
+                              _horizontalInset,
+                              0,
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                return SizedBox(
+                                  width: constraints.maxWidth,
+                                  child: _themedTable(
+                                    context: context,
+                                    theme: theme,
+                                    l10n: l10n,
+                                    rows: const [],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                l10n.processVideoEmptyTitle,
+                                style: context.hmiTypography.body.copyWith(
+                                  color: Colors.white54,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       )
                     : NotificationListener<ScrollNotification>(
                         onNotification: (n) {
@@ -208,97 +306,48 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
                           }
                           return false;
                         },
-                        child: ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(
-                            _leftInset,
-                            8,
-                            _rightInset,
-                            16,
-                          ),
-                          itemCount: _rows.length,
-                          itemBuilder: (context, index) {
-                            final row = _rows[index];
-                            return _ChooseRow(
-                              record: row,
-                              scale: scale,
-                              selectLabel: l10n.aiVisionSelectBtn,
-                              onSelect: () => _select(row),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tableWidth =
+                                constraints.maxWidth - _horizontalInset * 2;
+                            return SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(
+                                _horizontalInset,
+                                8,
+                                _horizontalInset,
+                                16,
+                              ),
+                              child: SizedBox(
+                                width: tableWidth,
+                                child: _themedTable(
+                                  context: context,
+                                  theme: theme,
+                                  l10n: l10n,
+                                  rows: [
+                                    for (final row in _rows)
+                                      _dataRow(context, row, l10n),
+                                  ],
+                                ),
+                              ),
                             );
                           },
                         ),
                       ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-final class _ChooseRow extends StatelessWidget {
-  const _ChooseRow({
-    required this.record,
-    required this.scale,
-    required this.selectLabel,
-    required this.onSelect,
-  });
-
-  final ProcessVideoRecord record;
-  final double scale;
-  final String selectLabel;
-  final VoidCallback onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final cells = <({String text, double width})>[
-      (text: ProcessVideoFormat.recordingTime(record), width: 232),
-      (text: ProcessVideoFormat.workMode(record.processType, l10n), width: 232),
-      (text: ProcessVideoFormat.material(record, l10n), width: 205),
-      (text: ProcessVideoFormat.duration(record.durationMs), width: 130),
-    ];
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0x33FFFFFF))),
-      ),
-      child: Row(
-        children: [
-          for (final cell in cells)
+          if (!_loading && _rows.isNotEmpty)
             Padding(
-              padding: EdgeInsets.only(
-                top: _AiVisionVideoChoosePageState._rowTop,
-                bottom: _AiVisionVideoChoosePageState._rowBottom,
-                right: _AiVisionVideoChoosePageState._columnGap * scale,
-              ),
-              child: SizedBox(
-                width: cell.width * scale,
-                child: Text(
-                  cell.text,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.hmiTypography.settingsRowTitle.copyWith(color: Colors.white),
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(
+                l10n.processVideoLoadedCount(_rows.length, _total),
+                style: context.hmiTypography.technicalMeta.copyWith(
+                  color: Colors.white38,
                 ),
               ),
-            ),
-          Expanded(
-            child: Center(
-              // Do not wrap CyberButton in a shorter SizedBox — that clips glyphs.
-              child: CyberButton(
-                variant: CyberButtonVariant.primary,
-                shape: CyberButtonShape.rounded,
-                borderGradientCenter:
-                    CyberBorderGradientCenter.topLeftBottomRight,
-                onPressed: onSelect,
-                child: Text(
-                  selectLabel,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  style: context.hmiTypography.settingsRowTitle.copyWith(height: 1.0),
-                ),
-              ),
-            ),
-          ),
+            )
+          else
+            const SizedBox(height: 24),
         ],
+      ),
       ),
     );
   }

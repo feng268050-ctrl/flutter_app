@@ -23,6 +23,49 @@ void main() {
       expect(store.allowWorkAfterLensContamination, isFalse);
       expect(store.allowWorkAfterFeederAlarm, isFalse);
       expect(store.thresholds.inletGasPressureThreshold, 0.0);
+      expect(store.thresholds.laserStartPower, 10.0);
+      expect(store.thresholds.motorTempAlarm, 70.0);
+      expect(store.thresholds.collimatingLensTempAlarm, 65.0);
+      expect(store.thresholds.tempAlarmRecoveryInterval, 5.0);
+      expect(store.thresholds.zeroPointCorrection, 0.0);
+      await dir.delete(recursive: true);
+    });
+
+    test('heals zeroed product defaults from Modbus clobber', () async {
+      final dir = await Directory.systemTemp.createTemp('adv-heal-');
+      final path = '${dir.path}/advanced-settings.json';
+      await File(path).writeAsString(jsonEncode({
+        'lensContaminationDetectionEnabled': true,
+        'zeroPointOffsetDetectionEnabled': true,
+        'keepLaserOnWhileAlarmed': false,
+        'allowWorkAfterCameraAlarm': false,
+        'allowWorkAfterGasAlarm': false,
+        'allowWorkAfterLensContamination': false,
+        'allowWorkAfterFeederAlarm': false,
+        'zeroPointCorrection': -6.0,
+        'properSwingWidth': 5.0,
+        'laserStartPower': 0.0,
+        'laserEndPower': 19.4,
+        'blowPressureThreshold': 0.0,
+        'inletGasPressureThreshold': 0.0,
+        'motorTemperatureAlarmThreshold': 0.0,
+        'driverTemperatureAlarmThreshold': 0.0,
+        'protectiveLensTemperatureAlarmThreshold': 0.0,
+        'collimatingLensTemperatureAlarmThreshold': 0.0,
+        'temperatureAlarmRecoveryInterval': 0.0,
+      }));
+      final store = AdvancedSettingsStore(preferencePath: path);
+      store.warmRead();
+      expect(store.thresholds.zeroPointCorrection, -6.0);
+      expect(store.thresholds.properSwingWidth, 5.0);
+      expect(store.thresholds.laserStartPower, 10.0);
+      expect(store.thresholds.laserEndPower, 19.4);
+      expect(store.thresholds.motorTempAlarm, 70.0);
+      expect(store.thresholds.driverTempAlarm, 70.0);
+      expect(store.thresholds.protectiveLensTempAlarm, 70.0);
+      expect(store.thresholds.collimatingLensTempAlarm, 65.0);
+      expect(store.thresholds.tempAlarmRecoveryInterval, 5.0);
+      expect(store.thresholds.blowPressureThreshold, 0.0);
       await dir.delete(recursive: true);
     });
 

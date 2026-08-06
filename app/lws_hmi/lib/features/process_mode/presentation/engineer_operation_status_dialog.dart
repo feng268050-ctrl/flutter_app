@@ -1,7 +1,9 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui [FrostStatusDialog] success mode (`OperationDialogBuilder.openSuccessDialog`).
@@ -93,20 +95,14 @@ final class _EngineerOperationSuccessBody extends StatelessWidget {
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),
-              child: SizedBox(
-                width: double.infinity,
-                child: CyberButton(
-                  key: const ValueKey('engineer-operation-success-ok'),
-                  variant: CyberButtonVariant.primary,
-                  shape: CyberButtonShape.rounded,
-                  stretch: true,
-                  height: CyberDimens.actionButtonHeight,
-                  onPressed: () {
-                    CyberClickSoundRegistry.playClick();
-                    onConfirm();
-                  },
-                  child: Text(l10n.okText),
-                ),
+              child: HmiButton(
+                key: const ValueKey('engineer-operation-success-ok'),
+                label: l10n.okText,
+                size: HmiButtonSize.medium,
+                widthPolicy: HmiButtonWidthPolicy.fill,
+                variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
+                onPressed: onConfirm,
               ),
             ),
           ),

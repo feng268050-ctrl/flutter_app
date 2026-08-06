@@ -4,12 +4,12 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
+import 'package:lws_hmi/features/home/presentation/temp_trend_arrows.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/monitor/application/machine_status_controller.dart';
-import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
@@ -23,7 +23,7 @@ import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 /// Manual More Status route name (confirm bar). Distinct from gun-managed.
 const liveMachineStatusManualRouteName = 'manual-live-machine-status';
 
-/// lws-ui [MachineStatusOverlay] — light frost + live PR1 video (not Monitor route).
+/// lws-ui [MachineStatusOverlay] — Self-Check dark frost + live PR1 video.
 ///
 /// Quick Mode “More Status” opens this with a confirm action
 /// (`MachineStatusOverlay.show(context, true)`). Gun path uses
@@ -35,11 +35,12 @@ Future<void> showLiveMachineStatusDialog(
   String? routeName,
   void Function(BuildContext dialogContext)? onDialogContext,
 }) {
-  final panel = CyberPanelBorder(tone: CyberTone.light);
+  final panel = CyberPanelBorder(tone: CyberTone.dark);
   return showDialog<void>(
     context: context,
     barrierDismissible: !showConfirmButton,
-    barrierColor: CyberColors.scrim,
+    // Transparent: realtime frost samples the page, not a dim scrim.
+    barrierColor: Colors.transparent,
     routeSettings: RouteSettings(
       name: routeName ??
           (showConfirmButton
@@ -70,10 +71,10 @@ Future<void> showLiveMachineStatusDialog(
                   ),
                 ),
                 child: CyberModal(
-                  sampleMode: CyberBlurSampleMode.firstFrame,
+                  sampleMode: CyberBlurSampleMode.realtime,
                   intensity: CyberBlurIntensity.high,
-                  blurTint: CyberBlurTint.warm,
-                  useFakeGlass: true,
+                  blurTint: CyberBlurTint.dark,
+                  useFakeGlass: false,
                   borderRadius: panel.borderRadius,
                   // Horizontal pad 0 so the live frame sits 2px from screen edges.
                   padding: const EdgeInsets.fromLTRB(0, 16, 0, 12),
@@ -108,7 +109,7 @@ final class _LiveMachineStatusBody extends StatefulWidget {
 }
 
 final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
-  static const _titleDark = Color(0xFF1A1A1A);
+  static const _titleOnFrost = CyberColors.textPrimary;
   static const _liveGaugeSidePad = 12.0;
   /// Equal: above gauges and below status tiles.
   static const _liveEdgeGap = 12.0;
@@ -208,11 +209,11 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
     final machine = _machine;
 
     final tiles = <(String, bool?)>[
-      (l10n?.laserOnLabel ?? 'Laser', machine?.laserOn),
-      (l10n?.blowOnLabel ?? 'Blow', machine?.blowOn),
-      (l10n?.safetyLockLabel ?? 'Safety Lock', machine?.safetyLockOn),
-      (l10n?.gunSwitchLabel ?? 'Gun Switch', machine?.gunSwitchOn),
-      (l10n?.redLightLabel ?? 'Red Light', machine?.redLightOn),
+      (l10n?.laserText ?? 'Laser', machine?.laserOn),
+      (l10n?.blowText ?? 'Gas Flow', machine?.blowOn),
+      (l10n?.safetyLockText ?? 'Safety Clamp', machine?.safetyLockOn),
+      (l10n?.gunHeadSwitchText ?? 'Gun Switch', machine?.gunSwitchOn),
+      (l10n?.redLightText ?? 'Red Pointer', machine?.redLightOn),
       (l10n?.wireFeedingText ?? 'Wire Feeder', machine?.wireFeedingOn),
     ];
 
@@ -228,7 +229,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.hmiTypography.pageTitle.copyWith(
-              color: _titleDark,
+              color: _titleOnFrost,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,
@@ -494,12 +495,6 @@ final class _LiveTempMetricCard extends StatelessWidget {
 
   static const _idleLabel = Color(0xFFB0B1C2);
   static const _faultValue = Color(0xFFFF8A80);
-  static const _trendUp = Color(0xFFFF5A5A);
-  static const _trendDown = Color(0xFF3DDC84);
-  static const _trendIdle = Color(0x40FFFFFF);
-
-  /// Smaller than [MonitorDimens.metricValueSize] so left labels fit (body 18).
-  static const _valueSize = 18.0;
 
   @override
   Widget build(BuildContext context) {
@@ -538,9 +533,8 @@ final class _LiveTempMetricCard extends StatelessWidget {
                     maxLines: 2,
                     softWrap: true,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: context.hmiTypography.metricLabel.copyWith(
                       color: labelActive ? Colors.white : _idleLabel,
-                      fontSize: MonitorDimens.metricLabelSize,
                       fontWeight: FontWeight.w400,
                       height: 1.15,
                     ),
@@ -549,21 +543,15 @@ final class _LiveTempMetricCard extends StatelessWidget {
                 // No arrows when unavailable (dash only) or before first delta.
                 if (hasValue && series.trend != TempTrend.none) ...[
                   const SizedBox(width: 6),
-                  _TempTrendArrows(
-                    trend: series.trend,
-                    upColor: _trendUp,
-                    downColor: _trendDown,
-                    idleColor: _trendIdle,
-                  ),
+                  TempTrendArrows(trend: series.trend),
                   const SizedBox(width: 2),
                 ],
                 Text(
                   value,
                   maxLines: 1,
                   softWrap: false,
-                  style: TextStyle(
+                  style: context.hmiTypography.body.copyWith(
                     color: overTemp ? _faultValue : Colors.white,
-                    fontSize: _valueSize,
                     fontWeight: FontWeight.w400,
                     height: 1.1,
                   ),
@@ -581,54 +569,6 @@ final class _LiveTempMetricCard extends StatelessWidget {
     return ListenableBuilder(
       listenable: common,
       builder: (context, _) => card(),
-    );
-  }
-}
-
-/// Stacked ↑ / ↓ beside the temperature: red up = rise, green down = fall.
-final class _TempTrendArrows extends StatelessWidget {
-  const _TempTrendArrows({
-    required this.trend,
-    required this.upColor,
-    required this.downColor,
-    required this.idleColor,
-  });
-
-  final TempTrend trend;
-  final Color upColor;
-  final Color downColor;
-  final Color idleColor;
-
-  static const _size = 22.0;
-  static const _slotH = 28.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: _size,
-      height: _slotH,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: -6,
-            child: Icon(
-              Icons.arrow_drop_up,
-              size: _size,
-              color: trend == TempTrend.up ? upColor : idleColor,
-            ),
-          ),
-          Positioned(
-            bottom: -6,
-            child: Icon(
-              Icons.arrow_drop_down,
-              size: _size,
-              color: trend == TempTrend.down ? downColor : idleColor,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

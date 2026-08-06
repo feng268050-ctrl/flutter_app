@@ -25,6 +25,8 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
     this.clockNow,
     this.clockStyle,
     this.use24HourFormat = true,
+    this.showClockDate = true,
+    this.clockEndPadding = 55,
   });
 
   final String title;
@@ -50,6 +52,14 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
 
   /// Forwarded to [CyberStatusBarClock.use24HourFormat].
   final bool use24HourFormat;
+
+  /// Weekday + date left of time (Settings / Monitor / …). Quick / Engineer
+  /// use [WorkModeStatusBar] with time-only [CyberStatusBarClock].
+  final bool showClockDate;
+
+  /// Clock trailing inset vs screen end — matches Home Quick/Engineer mode
+  /// entry top inset (`55` on the 1280×800 design canvas).
+  final double clockEndPadding;
 
   @override
   Size get preferredSize {
@@ -99,6 +109,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
       shadowColor: Colors.transparent,
       toolbarHeight: toolbarHeight,
       automaticallyImplyLeading: false,
+      actionsPadding: EdgeInsets.zero,
       leadingWidth: leadingWidth,
       leading: resolvedLeading == null
           ? null
@@ -110,7 +121,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
       actions: [
         ...?actions,
         Padding(
-          padding: const EdgeInsets.only(right: 12),
+          padding: EdgeInsets.only(right: clockEndPadding),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -122,6 +133,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
               CyberStatusBarClock(
                 now: clockNow,
                 use24HourFormat: use24HourFormat,
+                showDate: showClockDate,
                 style: clockStyle ??
                     theme.textTheme.titleMedium?.copyWith(
                       color: fg,

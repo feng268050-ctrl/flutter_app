@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:cyber_ime/src/session/cyber_ime_commit.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -186,21 +187,30 @@ class CyberImePhysicalKeyRepeat {
   void _insert(TextEditingController controller, String ch) {
     final value = controller.value;
     final selection = value.selection;
+    final t = value.text;
     if (!selection.isValid) {
-      final text = '${value.text}$ch';
+      final text = '$t$ch';
       controller.value = TextEditingValue(
         text: text,
         selection: TextSelection.collapsed(offset: text.length),
+        composing: TextRange.empty,
       );
       return;
     }
 
-    final start = selection.start;
-    final end = selection.end;
-    final newText = value.text.replaceRange(start, end, ch);
+    final int start;
+    final int end;
+    if (CyberImeControllerCommit.isSpuriousSelectAll(selection, t)) {
+      start = end = t.length;
+    } else {
+      start = selection.start;
+      end = selection.end;
+    }
+    final newText = t.replaceRange(start, end, ch);
     controller.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: start + ch.length),
+      composing: TextRange.empty,
     );
   }
 

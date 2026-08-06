@@ -557,14 +557,15 @@ class _MetricSelectionCard extends StatelessWidget {
 
   static String _label(AppLocalizations l10n, CustomHomeMetric metric) =>
       switch (metric) {
-        CustomHomeMetric.wireConsumption => l10n.totalWireConsumption,
-        CustomHomeMetric.laserOnDuration => l10n.totalLaserOnTime,
-        CustomHomeMetric.jobRuntime => l10n.jobRuntime,
+        // Titles match lws-ui `HomeLayoutUtils.typeToTitle`.
+        CustomHomeMetric.wireConsumption => l10n.warnInfoWeldingConsumables,
+        CustomHomeMetric.laserOnDuration => l10n.warnInfoLightTime,
+        CustomHomeMetric.jobRuntime => l10n.warnInfoLastWork,
         CustomHomeMetric.weldRatio => l10n.weldingProportionText,
         CustomHomeMetric.cutRatio => l10n.cuttingProportionText,
         CustomHomeMetric.cleanRatio => l10n.washProportionText,
-        CustomHomeMetric.weekOverWeekLaser => l10n.laserTimeVsLastWeek,
-        CustomHomeMetric.favoriteMaterial => l10n.favoriteMaterial,
+        CustomHomeMetric.weekOverWeekLaser => l10n.warnInfoLightTimeInfo,
+        CustomHomeMetric.favoriteMaterial => l10n.warnInfoWeldingConsumablesInfo,
       };
 }
 

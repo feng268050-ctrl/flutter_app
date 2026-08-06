@@ -54,7 +54,7 @@ void main() {
     expect(find.text('No recordings'), findsOneWidget);
     // Column headers stay visible with zero recordings.
     expect(find.text('Recording Time'), findsOneWidget);
-    expect(find.text('Work Mode'), findsOneWidget);
+    expect(find.text('Process'), findsOneWidget);
     expect(find.text('Material'), findsOneWidget);
     expect(find.text('Duration'), findsOneWidget);
     expect(find.text('Operations'), findsOneWidget);

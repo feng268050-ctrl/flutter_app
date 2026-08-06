@@ -19,8 +19,10 @@ import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
-import 'package:video_player/video_player.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:video_player/video_player.dart';
 
 /// lws-ui `ProcessVideoDetailsActivity` — left params + right fixed player.
 ///
@@ -287,7 +289,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
                               child: _ParameterColumn(
                                 record: record,
                                 title: l10n.processVideoParametersTitle,
-                                backLabel: l10n.equipmentStatusBack,
+                                backLabel: 'Back',
                                 uploadLabel: l10n.uploadText,
                                 deleteLabel: l10n.deleteText,
                                 labelWidth: 230 * scale,
@@ -396,27 +398,22 @@ final class _ParameterColumn extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CyberButton(
-                          size: CyberButtonSize.small,
+                        HmiButton(
+                          label: uploadLabel,
+                          size: HmiButtonSize.small,
                           variant: CyberButtonVariant.primary,
                           shape: CyberButtonShape.rounded,
                           onPressed: onUpload,
-                          child: Text(uploadLabel),
                         ),
                         const SizedBox(width: 16),
-                        CyberButton(
-                          size: CyberButtonSize.small,
+                        HmiButton(
+                          label: deleteLabel,
+                          size: HmiButtonSize.small,
                           variant: CyberButtonVariant.secondary,
                           shape: CyberButtonShape.rounded,
                           borderGradientCenter:
                               CyberBorderGradientCenter.topLeftBottomRight,
                           onPressed: onDelete,
-                          child: Text(
-                            deleteLabel,
-                            style: const TextStyle(
-                              color: CyberColors.buttonSecondaryText,
-                            ),
-                          ),
                         ),
                       ],
                     ),

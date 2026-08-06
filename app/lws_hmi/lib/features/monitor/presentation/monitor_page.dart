@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/work_information_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
+import 'package:lws_hmi/features/status_bar/product_tab_slide_body.dart';
 import 'package:lws_hmi/features/status_bar/product_top_tabs.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
@@ -15,8 +16,9 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Product Monitor — five tabs aligned with lws-ui DeviceMonitoring (Material).
 ///
-/// Tab changes are tap-only (no swipe), matching lws-ui FragmentShowHideTabHost.
+/// Tab changes animate L/R on tap (finger swipe disabled — anti-mis-touch).
 /// Tab leading icons use Material Icons (replacing lws-ui WebP mipmaps).
+/// Page blur uses a static baked σ30 plate ([SettingsBlurredPageShell] default).
 class MonitorPage extends StatefulWidget {
   const MonitorPage({
     super.key,
@@ -99,7 +101,7 @@ class _MonitorPageState extends State<MonitorPage> {
     final l10n = AppLocalizations.of(context)!;
     final tabLabels = MonitorPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    // Same shell as Settings: page Widget blur (σ30) + Custom Home panel faces.
+    // Same shell as Settings: static baked σ30 plate + perspective panels.
     return SettingsBlurredPageShell(
       blurSigma: SettingsPerspectiveChrome.blurSigma,
       backdropBuilder: () => const Stack(
@@ -148,7 +150,7 @@ class _MonitorPageState extends State<MonitorPage> {
         // Scaffold already starts body layout at the custom Tab divider.
         // Clip there so scroll content cannot paint into the Tab strip.
         body: ClipRect(
-          child: IndexedStack(
+          child: ProductTabSlideBody(
             index: _currentTabIndex,
             children: [
               const WorkInformationTab(),

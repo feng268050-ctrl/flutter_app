@@ -1,17 +1,19 @@
 import 'dart:async';
 
+import 'package:cyber_ui/src/status_bar/cyber_product_date_format.dart';
 import 'package:flutter/material.dart';
 
-/// Compact `HH:mm` clock for page status bars.
+/// Compact status-bar clock (`HH:mm`, optional weekday + date on the left).
 ///
-/// Polls once per second and only rebuilds when the displayed minute changes
-/// (or when [now] jumps after a manual wall-clock set).
+/// Polls once per second and only rebuilds when the displayed text changes
+/// (minute rollover, midnight date change, or a manual wall-clock jump).
 class CyberStatusBarClock extends StatefulWidget {
   const CyberStatusBarClock({
     super.key,
     this.style,
     this.now,
     this.use24HourFormat = true,
+    this.showDate = false,
   });
 
   final TextStyle? style;
@@ -21,6 +23,10 @@ class CyberStatusBarClock extends StatefulWidget {
 
   /// When false, shows 12-hour time via [TimeOfDay.format].
   final bool use24HourFormat;
+
+  /// When true, prefixes [formatProductDateWeekday] (e.g. `Wed Aug 5` /
+  /// `8月5日 周三`). Quick / Engineer equipment bars keep this false.
+  final bool showDate;
 
   @override
   State<CyberStatusBarClock> createState() => _CyberStatusBarClockState();
@@ -32,7 +38,7 @@ class _CyberStatusBarClockState extends State<CyberStatusBarClock> {
 
   DateTime get _now => widget.now?.call() ?? DateTime.now();
 
-  String _format(DateTime t) {
+  String _formatTime(DateTime t) {
     try {
       final tod = TimeOfDay.fromDateTime(t);
       return MaterialLocalizations.of(context).formatTimeOfDay(
@@ -44,6 +50,22 @@ class _CyberStatusBarClockState extends State<CyberStatusBarClock> {
       final m = t.minute.toString().padLeft(2, '0');
       return '$h:$m';
     }
+  }
+
+  String _formatDatePrefix(DateTime t) {
+    try {
+      return formatProductDateWeekday(t, Localizations.localeOf(context));
+    } catch (_) {
+      return formatProductDateWeekday(t, const Locale('en'));
+    }
+  }
+
+  String _format(DateTime t) {
+    final time = _formatTime(t);
+    if (!widget.showDate) {
+      return time;
+    }
+    return '${_formatDatePrefix(t)} $time';
   }
 
   @override
@@ -71,7 +93,8 @@ class _CyberStatusBarClockState extends State<CyberStatusBarClock> {
   void didUpdateWidget(CyberStatusBarClock oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.now != widget.now ||
-        oldWidget.use24HourFormat != widget.use24HourFormat) {
+        oldWidget.use24HourFormat != widget.use24HourFormat ||
+        oldWidget.showDate != widget.showDate) {
       _onTick();
     }
   }

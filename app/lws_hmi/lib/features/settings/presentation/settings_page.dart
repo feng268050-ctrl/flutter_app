@@ -8,14 +8,16 @@ import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart
 import 'package:lws_hmi/features/settings/presentation/tabs/device_information_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
+import 'package:lws_hmi/features/status_bar/product_tab_slide_body.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Product Settings shell — four tabs; Custom Home body is blank for now.
 ///
-/// Tab changes are tap-only (no swipe) — same anti-mis-touch rule as Monitor.
+/// Tab changes animate L/R on tap (finger swipe disabled — anti-mis-touch).
 /// Top tabs use equal-width Material chrome aligned with card insets.
+/// Page blur uses a static baked σ30 plate ([SettingsBlurredPageShell] default).
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
@@ -102,7 +104,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final services = AppScope.of(context);
     final tabLabels = SettingsPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    // Sharp wallpaper → page ImageFiltered blur → panels with rim only (no fill).
+    // Sharp wallpaper → static baked σ30 plate → panels (tint/rim only).
     return SettingsBlurredPageShell(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -131,7 +133,7 @@ class _SettingsPageState extends State<SettingsPage> {
         // Scaffold starts body layout at the custom Tab divider.
         // Clip there so Settings content cannot enter the tab strip.
         body: ClipRect(
-          child: IndexedStack(
+          child: ProductTabSlideBody(
             index: _currentTabIndex,
             children: [
               DeviceInformationTab(services: services),

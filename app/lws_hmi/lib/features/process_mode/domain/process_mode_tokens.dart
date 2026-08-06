@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
@@ -117,11 +116,10 @@ abstract final class ProcessModeDimens {
   /// (was 680/3 ≈ 227, which clipped the second neighbor e.g. Weld Seam Cleaning).
   static const double wheelHeight = 280;
   static const double wheelItemHeight = 168 / 3; // 56 — was 136/3; more row gap
-  /// Mode / material selected label → [AppTypography.sectionTitle].
-  static const double wheelSelectedTextSize =
-      AppTypography.sectionTitleSize;
-  /// Mode / material unselected label → [AppTypography.control].
-  static const double wheelUnselectedTextSize = AppTypography.controlSize;
+  /// Mode / material selected label → sectionTitle (22).
+  static const double wheelSelectedTextSize = 22.0;
+  /// Mode / material unselected label → control (20).
+  static const double wheelUnselectedTextSize = 20.0;
   /// Full-page mode / material highlight length (lws-ui 400dp) plus a little
   /// past the scale *image* box so the fill peak meets the visible ticks after
   /// [QuickModePickerDimens.scaleImageVisualScale] shrinks the asset.
@@ -206,17 +204,17 @@ abstract final class ProcessModeDimens {
   static const double dashboardBorderOffsetX = 0;
   static const double dashboardBorderOffsetY = 16 / 3; // 5.333…
 
-  /// Dashboard title / value / unit → AppTypography + display tokens.
-  static const double dashboardTitleSize = AppTypography.sectionTitleSize;
+  /// Dashboard title / value / unit → ladder + display tokens.
+  static const double dashboardTitleSize = 22.0; // sectionTitle
   static const double dashboardValueSize =
       HmiDisplayTypography.dashboardValueSize;
-  static const double dashboardUnitSize = AppTypography.supportingSize;
+  static const double dashboardUnitSize = 16.0; // supporting
 
   /// Keep content rhythm proportional to the enlarged pressure panel.
   static const double dashboardContentTop = 50 * dashboardInnerSize / 372;
   static const double dashboardContentGap = 5 * dashboardInnerSize / 372;
   static const double dashboardButtonGap = 16.5 * dashboardInnerSize / 372;
-  static const double dashboardButtonTextSize = AppTypography.microSize;
+  static const double dashboardButtonTextSize = 12.0; // micro
   static const double dashboardButtonIconSize = 12;
   static const double dashboardButtonIconGap = 8 / 3; // 2.666…
 
@@ -225,7 +223,7 @@ abstract final class ProcessModeDimens {
   static const double quickLaserButtonWidth = 564;
   static const double quickLaserButtonHeight = 223;
   static const double quickLaserButtonIconSize = 67;
-  static const double quickLaserButtonLabelSize = AppTypography.displaySize;
+  static const double quickLaserButtonLabelSize = 44.0; // display
 
   /// Trapezoid clip inside the laser button (matches `_QuickLaserTrapezoid`).
   static const double quickLaserTrapezoidTopWidthRatio = 0.5;
@@ -243,7 +241,7 @@ abstract final class ProcessModeDimens {
   /// Match [quickSideButtonInset] so bottom edge equals left/right screen gap.
   static const double quickSideButtonBottom = 30;
   static const double quickSideOpIconSize = 24;
-  static const double quickSideOpLabelSize = AppTypography.navigationSize;
+  static const double quickSideOpLabelSize = 24.0; // navigation
   static const double quickSideOpIconGap = 6;
   static const double quickSideOpVerticalPadding = 12;
   static const double quickSideOpDividerHeight = 8;
@@ -275,8 +273,7 @@ abstract final class ProcessModeDimens {
   static const double quickTopChromeInset = 40;
   /// Fallback top inset when gear/thickness pickers are not shown (CNC / empty).
   static const double quickTopChromeTop = 20;
-  static const double quickTopChromeLabelSize =
-      AppTypography.navigationSize;
+  static const double quickTopChromeLabelSize = 24.0; // navigation
 
   /// Gear/Thickness: toStartOf/toEndOf dashboard + overlap + translation.
   static const double pickerWidth = 560 / 3; // 186.666…
@@ -322,7 +319,8 @@ abstract final class ProcessModeDimens {
   static const double engineerTabUnderlineInset = 18;
 
   /// Enlarged for the 1280×800 touch panel (lws-ui tabs used 12sp).
-  static const double engineerTabLabelSize = AppTypography.controlSize;
+  static const double engineerTabLabelSize = 20.0; // control / processTabLabel
+
 
   /// Left device panel — lws-ui `engineer_welding_left_panel_width`.
   static const double engineerLeftPanelWidth = 460;

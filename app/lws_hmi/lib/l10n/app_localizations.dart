@@ -206,67 +206,67 @@ abstract class AppLocalizations {
   /// No description provided for @advancedSettingEnterCollimatingLensTempAlarmThreshold.
   ///
   /// In en, this message translates to:
-  /// **'Enter Collimating Lens Temperature Alarm Threshold'**
+  /// **'Enter collimating lens temperature alarm threshold'**
   String get advancedSettingEnterCollimatingLensTempAlarmThreshold;
 
   /// No description provided for @advancedSettingEnterDriverTempAlarmThreshold.
   ///
   /// In en, this message translates to:
-  /// **'Enter Driver Temperature Alarm Threshold'**
+  /// **'Enter driver temperature alarm threshold'**
   String get advancedSettingEnterDriverTempAlarmThreshold;
 
   /// No description provided for @advancedSettingEnterInletGasPressure.
   ///
   /// In en, this message translates to:
-  /// **'Enter Inlet Gas Pressure Threshold'**
+  /// **'Enter inlet gas pressure threshold'**
   String get advancedSettingEnterInletGasPressure;
 
   /// No description provided for @advancedSettingEnterLaserEndPower.
   ///
   /// In en, this message translates to:
-  /// **'Enter Laser End Power'**
+  /// **'Enter laser end power'**
   String get advancedSettingEnterLaserEndPower;
 
   /// No description provided for @advancedSettingEnterLaserStartPower.
   ///
   /// In en, this message translates to:
-  /// **'Enter Laser Start Power'**
+  /// **'Enter laser start power'**
   String get advancedSettingEnterLaserStartPower;
 
   /// No description provided for @advancedSettingEnterMinGasPressure.
   ///
   /// In en, this message translates to:
-  /// **'Enter Minimum Gas Pressure Threshold'**
+  /// **'Enter minimum gas pressure threshold'**
   String get advancedSettingEnterMinGasPressure;
 
   /// No description provided for @advancedSettingEnterMotorTempAlarmThreshold.
   ///
   /// In en, this message translates to:
-  /// **'Enter Motor Temperature Alarm Threshold'**
+  /// **'Enter motor temperature alarm threshold'**
   String get advancedSettingEnterMotorTempAlarmThreshold;
 
   /// No description provided for @advancedSettingEnterProtectiveLensTempAlarmThreshold.
   ///
   /// In en, this message translates to:
-  /// **'Enter Protective Lens Temperature Alarm Threshold'**
+  /// **'Enter protective lens temperature alarm threshold'**
   String get advancedSettingEnterProtectiveLensTempAlarmThreshold;
 
   /// No description provided for @advancedSettingEnterScanWidthCorrection.
   ///
   /// In en, this message translates to:
-  /// **'Enter Scan Width Correction'**
+  /// **'Enter scan width correction'**
   String get advancedSettingEnterScanWidthCorrection;
 
   /// No description provided for @advancedSettingEnterTempAlarmRecoveryHysteresis.
   ///
   /// In en, this message translates to:
-  /// **'Enter Temperature Alarm Recovery Hysteresis'**
+  /// **'Enter temperature alarm recovery hysteresis'**
   String get advancedSettingEnterTempAlarmRecoveryHysteresis;
 
   /// No description provided for @advancedSettingEnterZeroOffset.
   ///
   /// In en, this message translates to:
-  /// **'Enter Zero Offset'**
+  /// **'Enter zero offset'**
   String get advancedSettingEnterZeroOffset;
 
   /// No description provided for @advancedSettingInletGasPressure.
@@ -824,7 +824,7 @@ abstract class AppLocalizations {
   /// No description provided for @blowOnLabel.
   ///
   /// In en, this message translates to:
-  /// **'Blow'**
+  /// **'Gas Flow'**
   String get blowOnLabel;
 
   /// No description provided for @blowText.
@@ -1400,7 +1400,7 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeModeAuto.
   ///
   /// In en, this message translates to:
-  /// **'Auto'**
+  /// **'Automatic'**
   String get dateTimeModeAuto;
 
   /// No description provided for @dateTimeModeManual.
@@ -1946,7 +1946,7 @@ abstract class AppLocalizations {
   /// No description provided for @favoriteMaterial.
   ///
   /// In en, this message translates to:
-  /// **'Favorite Material'**
+  /// **'Common consumables'**
   String get favoriteMaterial;
 
   /// No description provided for @feed.
@@ -2122,6 +2122,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Gun Switch'**
   String get gunHeadSwitchText;
+
+  /// No description provided for @gunMotorTempText.
+  ///
+  /// In en, this message translates to:
+  /// **'Motor Temperature'**
+  String get gunMotorTempText;
 
   /// No description provided for @gunSn.
   ///
@@ -2408,7 +2414,7 @@ abstract class AppLocalizations {
   /// No description provided for @jobRuntime.
   ///
   /// In en, this message translates to:
-  /// **'Job Runtime'**
+  /// **'Last Op-Time'**
   String get jobRuntime;
 
   /// No description provided for @kernelVersion.
@@ -2720,7 +2726,7 @@ abstract class AppLocalizations {
   /// No description provided for @laserTimeVsLastWeek.
   ///
   /// In en, this message translates to:
-  /// **'Laser Time Vs Last Week'**
+  /// **'vs. last week'**
   String get laserTimeVsLastWeek;
 
   /// No description provided for @laserVersion.
@@ -2930,25 +2936,25 @@ abstract class AppLocalizations {
   /// No description provided for @monitorCleanTimeRatio.
   ///
   /// In en, this message translates to:
-  /// **'Clean Time Ratio'**
+  /// **'Cleaning Ratio'**
   String get monitorCleanTimeRatio;
 
   /// No description provided for @monitorCutTimeRatio.
   ///
   /// In en, this message translates to:
-  /// **'Cut Time Ratio'**
+  /// **'Cutting Ratio'**
   String get monitorCutTimeRatio;
 
   /// No description provided for @monitorLaserOnTime.
   ///
   /// In en, this message translates to:
-  /// **'Laser On Time'**
+  /// **'Total Laser-On Time'**
   String get monitorLaserOnTime;
 
   /// No description provided for @monitorLastJob.
   ///
   /// In en, this message translates to:
-  /// **'Last Job'**
+  /// **'Last Op-Time'**
   String get monitorLastJob;
 
   /// No description provided for @monitorNavLabel.
@@ -2960,13 +2966,13 @@ abstract class AppLocalizations {
   /// No description provided for @monitorWeldTimeRatio.
   ///
   /// In en, this message translates to:
-  /// **'Weld Time Ratio'**
+  /// **'Welding Ratio'**
   String get monitorWeldTimeRatio;
 
   /// No description provided for @monitorWeldingConsumables.
   ///
   /// In en, this message translates to:
-  /// **'Welding Consumables'**
+  /// **'Total Wire Used'**
   String get monitorWeldingConsumables;
 
   /// No description provided for @moreFavorites.
@@ -3806,7 +3812,7 @@ abstract class AppLocalizations {
   /// No description provided for @processVideoBackToVideos.
   ///
   /// In en, this message translates to:
-  /// **'Back To Videos'**
+  /// **'Back to Videos'**
   String get processVideoBackToVideos;
 
   /// No description provided for @processVideoDeleteConfirmMessage.
@@ -3848,7 +3854,7 @@ abstract class AppLocalizations {
   /// No description provided for @processVideoLoadedCount.
   ///
   /// In en, this message translates to:
-  /// **'{loaded} / {total}'**
+  /// **'{loaded} of {total}'**
   String processVideoLoadedCount(int loaded, int total);
 
   /// No description provided for @processVideoMaterial.
@@ -3914,13 +3920,13 @@ abstract class AppLocalizations {
   /// No description provided for @processVideoUploadDone.
   ///
   /// In en, this message translates to:
-  /// **'Upload Complete'**
+  /// **'Upload complete'**
   String get processVideoUploadDone;
 
   /// No description provided for @processVideoUploadFailed.
   ///
   /// In en, this message translates to:
-  /// **'Upload Failed'**
+  /// **'Upload failed'**
   String get processVideoUploadFailed;
 
   /// No description provided for @processVideoUploadingCover.
@@ -3938,7 +3944,7 @@ abstract class AppLocalizations {
   /// No description provided for @processVideoWorkMode.
   ///
   /// In en, this message translates to:
-  /// **'Work Mode'**
+  /// **'Process'**
   String get processVideoWorkMode;
 
   /// No description provided for @processWheelCncCutting.
@@ -4124,7 +4130,7 @@ abstract class AppLocalizations {
   /// No description provided for @redLightLabel.
   ///
   /// In en, this message translates to:
-  /// **'Red Light'**
+  /// **'Red Pointer'**
   String get redLightLabel;
 
   /// No description provided for @redLightText.
@@ -4190,7 +4196,7 @@ abstract class AppLocalizations {
   /// No description provided for @safetyLockLabel.
   ///
   /// In en, this message translates to:
-  /// **'Safety Lock'**
+  /// **'Safety Clamp'**
   String get safetyLockLabel;
 
   /// No description provided for @safetyLockText.
@@ -4256,7 +4262,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveSucceeded.
   ///
   /// In en, this message translates to:
-  /// **'Save Succeeded'**
+  /// **'Saved'**
   String get saveSucceeded;
 
   /// No description provided for @savedSuccessfully.
@@ -4568,7 +4574,7 @@ abstract class AppLocalizations {
   /// No description provided for @totalWireConsumption.
   ///
   /// In en, this message translates to:
-  /// **'Total Wire Consumption'**
+  /// **'Total Wire Used'**
   String get totalWireConsumption;
 
   /// No description provided for @turnOffCncFirst.
@@ -4664,7 +4670,7 @@ abstract class AppLocalizations {
   /// No description provided for @usbOtgText.
   ///
   /// In en, this message translates to:
-  /// **'USB Otg'**
+  /// **'USB OTG'**
   String get usbOtgText;
 
   /// No description provided for @userPresetLabel.
@@ -5372,7 +5378,7 @@ abstract class AppLocalizations {
   /// No description provided for @wireFeedingLabel.
   ///
   /// In en, this message translates to:
-  /// **'Wire Feeding'**
+  /// **'Wire Feeder'**
   String get wireFeedingLabel;
 
   /// No description provided for @wireFeedingMachineCommunicationText.
@@ -5390,7 +5396,7 @@ abstract class AppLocalizations {
   /// No description provided for @wirelessNetworkText.
   ///
   /// In en, this message translates to:
-  /// **'Wireless Network'**
+  /// **'Wi‑Fi'**
   String get wirelessNetworkText;
 
   /// No description provided for @workInfoTitle.

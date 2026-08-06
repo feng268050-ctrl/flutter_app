@@ -16,6 +16,12 @@ abstract final class HomeClockTokens {
   static const fillBottom = CyberClockAppearance.fillBottom;
   static const milkOverlay = CyberClockAppearance.milkOverlay;
   static const borderShadow = CyberClockAppearance.borderShadow;
+
+  /// Date/weekday line relative to [HomeClock.fontSize].
+  static const dateFontScale = 0.30;
+
+  /// Gap between time and date lines (× time fontSize).
+  static const dateGapScale = 0.06;
 }
 
 /// Home hero clock — stand-in for lws-ui `FrostHomeClockView`.
@@ -38,6 +44,7 @@ class HomeClock extends StatefulWidget {
     this.now,
     this.listenable,
     this.use24HourFormat = true,
+    this.showDateLine = true,
   });
 
   /// Design text size (product Home: 120; lws-ui XML: 150sp).
@@ -58,6 +65,9 @@ class HomeClock extends StatefulWidget {
   /// When false, shows 12-hour time (localized meridiem when context allows).
   final bool use24HourFormat;
 
+  /// System date + weekday under the time (same frost glyph chrome).
+  final bool showDateLine;
+
   @override
   State<HomeClock> createState() => _HomeClockState();
 }
@@ -65,15 +75,20 @@ class HomeClock extends StatefulWidget {
 class _HomeClockState extends State<HomeClock> {
   Timer? _secondTimer;
   late String _text;
+  late String _dateText;
   ui.Image? _frozen;
   bool _capturePending = false;
 
   DateTime get _now => widget.now?.call() ?? DateTime.now();
 
+  double get _dateFontSize =>
+      widget.fontSize * HomeClockTokens.dateFontScale;
+
   @override
   void initState() {
     super.initState();
     _text = _formatFallback(_now);
+    _dateText = _formatDateFallback(_now);
     _secondTimer = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
     widget.listenable?.addListener(_onExternalTick);
     if (widget.sampleMode != CyberBlurSampleMode.realtime) {
@@ -95,7 +110,8 @@ class _HomeClockState extends State<HomeClock> {
       widget.listenable?.addListener(_onExternalTick);
     }
     if (oldWidget.use24HourFormat != widget.use24HourFormat ||
-        oldWidget.now != widget.now) {
+        oldWidget.now != widget.now ||
+        oldWidget.showDateLine != widget.showDateLine) {
       _onTick();
     }
     if (oldWidget.sampleMode != widget.sampleMode) {
@@ -115,6 +131,10 @@ class _HomeClockState extends State<HomeClock> {
     return '$h:$m';
   }
 
+  static String _formatDateFallback(DateTime t) {
+    return formatProductDateWeekday(t, const Locale('en'));
+  }
+
   String _format(DateTime t) {
     if (!mounted) {
       return _formatFallback(t);
@@ -126,6 +146,17 @@ class _HomeClockState extends State<HomeClock> {
       );
     } catch (_) {
       return _formatFallback(t);
+    }
+  }
+
+  String _formatDate(DateTime t) {
+    if (!mounted) {
+      return _formatDateFallback(t);
+    }
+    try {
+      return formatProductDateWeekday(t, Localizations.localeOf(context));
+    } catch (_) {
+      return _formatDateFallback(t);
     }
   }
 
@@ -143,11 +174,17 @@ class _HomeClockState extends State<HomeClock> {
     if (!mounted) {
       return;
     }
-    final next = _format(_now);
-    if (next == _text) {
+    final now = _now;
+    final next = _format(now);
+    final nextDate =
+        widget.showDateLine ? _formatDate(now) : '';
+    if (next == _text && nextDate == _dateText) {
       return;
     }
-    setState(() => _text = next);
+    setState(() {
+      _text = next;
+      _dateText = nextDate;
+    });
     if (widget.sampleMode == CyberBlurSampleMode.onChange) {
       _requestFrozenSample();
     }
@@ -161,21 +198,127 @@ class _HomeClockState extends State<HomeClock> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _captureBackdrop());
   }
 
-  TextPainter _measure(String value) {
+  TextPainter _measure(
+    String value,
+    double fontSize, {
+    double letterSpacing = 0,
+  }) {
     return TextPainter(
       text: TextSpan(
         text: value,
         style: TextStyle(
-          fontSize: widget.fontSize,
+          fontSize: fontSize,
           fontWeight: FontWeight.w700,
           height: 1.0,
-          letterSpacing: 0,
+          letterSpacing: letterSpacing,
           color: Colors.white,
         ),
       ),
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
       textAlign: TextAlign.center,
     )..layout();
+  }
+
+  Widget _glyphLine({
+    required String text,
+    required double fontSize,
+    required Color overlay,
+    Key? semanticsKey,
+    double letterSpacing = 0,
+    double? widthOverride,
+  }) {
+    final measured = _measure(text, fontSize, letterSpacing: letterSpacing);
+    final glyphW = widthOverride ?? measured.width;
+    final glyphH = measured.height * HomeClockTokens.verticalScale;
+    return SizedBox(
+      width: glyphW,
+      height: glyphH,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size(glyphW, glyphH),
+            painter: _HomeClockPainter(
+              text: text,
+              fontSize: fontSize,
+              mode: widget.sampleMode,
+              frozen: _frozen,
+              overlay: overlay,
+              edgeStrokePx: fontSize >= widget.fontSize * 0.8 ? 1.25 : 1.0,
+              letterSpacing: letterSpacing,
+            ),
+          ),
+          Opacity(
+            opacity: 0,
+            child: Text(
+              text,
+              key: semanticsKey,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w700,
+                height: 1.0,
+                letterSpacing: letterSpacing,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Plain date/weekday under the frost time (no glyph blur chrome).
+  Widget _dateLine() {
+    return Text(
+      _dateText,
+      key: const ValueKey('home-clock-date'),
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        color: const Color(0xCCF2F2F2),
+        fontSize: _dateFontSize,
+        fontWeight: FontWeight.w600,
+        height: 1.1,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pad = widget.fontSize * (10 / 150);
+    final overlay = cyberBlurOverlayColor(
+      intensity: widget.blurIntensity,
+      tint: widget.blurTint,
+    );
+    final showDate = widget.showDateLine && _dateText.isNotEmpty;
+    final gap = widget.fontSize * HomeClockTokens.dateGapScale;
+    final timeW = _measure(_text, widget.fontSize).width;
+
+    final column = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _glyphLine(
+          text: _text,
+          fontSize: widget.fontSize,
+          overlay: overlay,
+          semanticsKey: const ValueKey('home-clock-text'),
+          widthOverride: timeW,
+        ),
+        if (showDate) ...[
+          SizedBox(height: gap),
+          _dateLine(),
+        ],
+      ],
+    );
+
+    return Semantics(
+      label: 'Home clock',
+      value: showDate ? '$_text  $_dateText' : _text,
+      child: Padding(
+        // No top pad — Home places this block at Quick/Engineer top (55).
+        padding: EdgeInsets.fromLTRB(pad, 0, pad, pad),
+        child: column,
+      ),
+    );
   }
 
   Future<void> _captureBackdrop() async {
@@ -284,65 +427,6 @@ class _HomeClockState extends State<HomeClock> {
     first.dispose();
     return second;
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final pad = widget.fontSize * (10 / 150);
-    final measured = _measure(_text);
-    final glyphW = measured.width;
-    final glyphH = measured.height * HomeClockTokens.verticalScale;
-    final overlay = cyberBlurOverlayColor(
-      intensity: widget.blurIntensity,
-      tint: widget.blurTint,
-    );
-
-    final glyphs = CustomPaint(
-      size: Size(glyphW, glyphH),
-      painter: _HomeClockPainter(
-        text: _text,
-        fontSize: widget.fontSize,
-        mode: widget.sampleMode,
-        frozen: _frozen,
-        overlay: overlay,
-        edgeStrokePx: 1.25,
-      ),
-    );
-
-    // Realtime must NOT wrap [CyberBackdropBlur]: that paints a rectangular
-    // frost plate behind the glyphs. Glyph fill (overlay + milk) stays; the
-    // area around digits stays fully transparent.
-    final body = glyphs;
-
-    return Semantics(
-      label: 'Home clock',
-      value: _text,
-      child: Padding(
-        padding: EdgeInsets.all(pad),
-        child: SizedBox(
-          width: glyphW,
-          height: glyphH,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              body,
-              Opacity(
-                opacity: 0,
-                child: Text(
-                  _text,
-                  key: const ValueKey('home-clock-text'),
-                  style: TextStyle(
-                    fontSize: widget.fontSize,
-                    fontWeight: FontWeight.w700,
-                    height: 1.0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _HomeClockPainter extends CustomPainter {
@@ -353,6 +437,7 @@ class _HomeClockPainter extends CustomPainter {
     required this.frozen,
     required this.overlay,
     required this.edgeStrokePx,
+    this.letterSpacing = 0,
   });
 
   final String text;
@@ -361,6 +446,7 @@ class _HomeClockPainter extends CustomPainter {
   final ui.Image? frozen;
   final Color overlay;
   final double edgeStrokePx;
+  final double letterSpacing;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -372,12 +458,12 @@ class _HomeClockPainter extends CustomPainter {
       fontSize: fontSize,
       fontWeight: FontWeight.w700,
       height: 1.0,
-      letterSpacing: 0,
+      letterSpacing: letterSpacing,
       color: Colors.white,
     );
     final painter = TextPainter(
       text: TextSpan(text: text, style: style),
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
       textAlign: TextAlign.center,
     )..layout();
 
@@ -419,7 +505,7 @@ class _HomeClockPainter extends CustomPainter {
           text: text,
           style: style.copyWith(color: overlay),
         ),
-        textDirection: TextDirection.ltr,
+        textDirection: ui.TextDirection.ltr,
         textAlign: TextAlign.center,
       )..layout();
       fillPainter.paint(canvas, textOffset);
@@ -428,7 +514,7 @@ class _HomeClockPainter extends CustomPainter {
           text: text,
           style: style.copyWith(color: HomeClockTokens.milkOverlay),
         ),
-        textDirection: TextDirection.ltr,
+        textDirection: ui.TextDirection.ltr,
         textAlign: TextAlign.center,
       )..layout();
       milkPainter.paint(canvas, textOffset);
@@ -458,7 +544,7 @@ class _HomeClockPainter extends CustomPainter {
             foreground: Paint()..shader = shader,
           ),
         ),
-        textDirection: TextDirection.ltr,
+        textDirection: ui.TextDirection.ltr,
         textAlign: TextAlign.center,
       )..layout();
       fillPainter.paint(canvas, textOffset);
@@ -524,7 +610,7 @@ class _HomeClockPainter extends CustomPainter {
               ..color = HomeClockTokens.borderShadow,
           ),
         ),
-        textDirection: TextDirection.ltr,
+        textDirection: ui.TextDirection.ltr,
       )
         ..layout()
         ..paint(canvas, charOffset);
@@ -543,7 +629,7 @@ class _HomeClockPainter extends CustomPainter {
               ..shader = edgeShader,
           ),
         ),
-        textDirection: TextDirection.ltr,
+        textDirection: ui.TextDirection.ltr,
       )
         ..layout()
         ..paint(canvas, charOffset);
@@ -559,6 +645,7 @@ class _HomeClockPainter extends CustomPainter {
         oldDelegate.mode != mode ||
         oldDelegate.frozen != frozen ||
         oldDelegate.overlay != overlay ||
-        oldDelegate.edgeStrokePx != edgeStrokePx;
+        oldDelegate.edgeStrokePx != edgeStrokePx ||
+        oldDelegate.letterSpacing != letterSpacing;
   }
 }

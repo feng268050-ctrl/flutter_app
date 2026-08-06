@@ -56,9 +56,9 @@ void main() {
 
     expect(find.byKey(const ValueKey('call-back-home-button')), findsOneWidget);
     expect(find.text('Back'), findsOneWidget);
-    expect(find.text('Parameter recording'), findsOneWidget);
-    expect(find.text('Continuous welding'), findsOneWidget);
-    expect(find.text('Aluminum alloy'), findsOneWidget);
+    expect(find.text('Parameter Recording'), findsOneWidget);
+    expect(find.text('Continuous Welding'), findsOneWidget);
+    expect(find.text('Aluminum Alloy'), findsOneWidget);
     expect(find.text('Unable to play this recording'), findsOneWidget);
   });
 
@@ -123,7 +123,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Thickness:'), findsOneWidget);
-      expect(find.text('Swing width:'), findsOneWidget);
+      expect(find.text('Scan Width:'), findsOneWidget);
       // 5mm / 25 = 0.2 -> parameterValue renders 2 decimals => 0.20
       // Value + unit share one Text.rich, so match the combined span text.
       expect(find.textContaining('0.20'), findsWidgets);

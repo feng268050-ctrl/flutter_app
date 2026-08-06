@@ -12,10 +12,12 @@ class UnitSettingsPage extends StatelessWidget {
   static String _unitLabel(AppLocalizations l10n, String unit) {
     switch (unit) {
       case CommonSettingsStore.unitImperial:
-        return l10n.unitImperial;
+        // lws-ui `unit_option_imperial`
+        return l10n.unitOptionImperial;
       case CommonSettingsStore.unitMetric:
       default:
-        return l10n.unitMetric;
+        // lws-ui `unit_option_metric`
+        return l10n.unitOptionMetric;
     }
   }
 

@@ -263,11 +263,11 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
                 style: const TextStyle(color: CyberColors.textSecondary),
               ),
               const SizedBox(height: 20),
-              CyberButton(
-                size: CyberButtonSize.small,
+              HmiButton(
+                label: l10n.closeText,
+                size: HmiButtonSize.small,
                 shape: CyberButtonShape.rounded,
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(l10n.closeText),
               ),
             ],
           );
@@ -359,20 +359,20 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                CyberButton(
-                  variant: CyberButtonVariant.secondary,
-                  size: CyberButtonSize.small,
+                HmiButton(
+                  label: l10n.cancelText,
+                  size: HmiButtonSize.small,
                   shape: CyberButtonShape.rounded,
+                  variant: CyberButtonVariant.secondary,
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: Text(l10n.cancelText),
                 ),
                 const SizedBox(width: 12),
-                CyberButton(
-                  variant: CyberButtonVariant.primary,
-                  size: CyberButtonSize.small,
+                HmiButton(
+                  label: l10n.okText,
+                  size: HmiButtonSize.small,
                   shape: CyberButtonShape.rounded,
+                  variant: CyberButtonVariant.primary,
                   onPressed: () => Navigator.of(ctx).pop(true),
-                  child: Text(l10n.okText),
                 ),
               ],
             ),
@@ -423,11 +423,11 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
           style: const TextStyle(color: CyberColors.textSecondary),
         ),
         const SizedBox(height: 20),
-        CyberButton(
-          size: CyberButtonSize.small,
+        HmiButton(
+          label: l10n.closeText,
+          size: HmiButtonSize.small,
           shape: CyberButtonShape.rounded,
           onPressed: () => Navigator.of(ctx).pop(),
-          child: Text(l10n.closeText),
         ),
       ],
     );

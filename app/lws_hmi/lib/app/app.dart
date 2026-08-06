@@ -15,6 +15,7 @@ import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
+import 'package:lws_hmi/features/safety_tips/presentation/safety_tips_dialog.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/platform/cloud/device_users_client.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
@@ -24,6 +25,8 @@ import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_store.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
@@ -417,10 +420,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
             title: 'Disconnected',
             body: Text(body),
             actions: [
-              CyberButton(
+              HmiButton(
+                label: l10n?.closeText ?? 'Close',
+                size: HmiButtonSize.medium,
                 variant: CyberButtonVariant.primary,
                 onPressed: () => Navigator.of(dialogCtx).pop(),
-                child: Text(l10n?.closeText ?? 'Close'),
               ),
             ],
           );
@@ -669,6 +673,57 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                     navigatorObservers: [appRouteObserver],
                                     initialRoute: AppRoutes.home,
                                     onGenerateRoute: (settings) {
+                                      // In-module nested routes: L/R slide.
+                                      // Home → five modules: fade (below).
+                                      switch (settings.name) {
+                                        case AppRoutes.processVideoDetail:
+                                          final videoArgs = settings.arguments;
+                                          return buildAppSlideRoute<void>(
+                                            settings: settings,
+                                            builder: (_) => videoArgs
+                                                    is ProcessVideoDetailArgs
+                                                ? ProcessVideoDetailPage(
+                                                    args: videoArgs)
+                                                : const MonitorPage(),
+                                          );
+                                        case AppRoutes.aiVisionChoose:
+                                          return buildAppSlideRoute<void>(
+                                            settings: settings,
+                                            builder: (_) =>
+                                                const AiVisionVideoChoosePage(),
+                                          );
+                                        case AppRoutes.productDisclaimer:
+                                          // lws-ui UseSafetyTipsActivity — L/R
+                                          // slide over Safety Tips, not a
+                                          // second dialog stacked on Home.
+                                          return buildAppSlideRoute<void>(
+                                            settings: settings,
+                                            builder: (_) =>
+                                                const ProductDisclaimerPage(),
+                                          );
+                                        case AppRoutes.engineerMode:
+                                          final engineerArgs =
+                                              settings.arguments;
+                                          // Quick → Engineer handoff: slide.
+                                          // Home → Engineer: fade (fall through).
+                                          if (engineerArgs
+                                              is EngineerModeRouteArgs) {
+                                            return buildAppSlideRoute<void>(
+                                              settings: settings,
+                                              builder: (_) => _LockedModeGate(
+                                                lockStore: _remoteLockStore,
+                                                child: EngineerModePage(
+                                                  initialProcessType:
+                                                      engineerArgs.processType,
+                                                  initialPresetUuid:
+                                                      engineerArgs.presetUuid,
+                                                  fromQuickHandoff: true,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                      }
+
                                       final Widget page;
                                       switch (settings.name) {
                                         case AppRoutes.settings:
@@ -690,37 +745,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                                 : MonitorPage
                                                     .tabWorkInformation,
                                           );
-                                        case AppRoutes.processVideoDetail:
-                                          final videoArgs = settings.arguments;
-                                          page = videoArgs
-                                                  is ProcessVideoDetailArgs
-                                              ? ProcessVideoDetailPage(
-                                                  args: videoArgs)
-                                              : const MonitorPage();
-                                        case AppRoutes.aiVisionChoose:
-                                          page = const AiVisionVideoChoosePage();
                                         case AppRoutes.quickMode:
                                           page = _LockedModeGate(
                                             lockStore: _remoteLockStore,
                                             child: const QuickModePage(),
                                           );
                                         case AppRoutes.engineerMode:
-                                          final engineerArgs =
-                                              settings.arguments;
                                           page = _LockedModeGate(
                                             lockStore: _remoteLockStore,
-                                            child: engineerArgs
-                                                    is EngineerModeRouteArgs
-                                                ? EngineerModePage(
-                                                    initialProcessType:
-                                                        engineerArgs
-                                                            .processType,
-                                                    initialPresetUuid:
-                                                        engineerArgs
-                                                            .presetUuid,
-                                                    fromQuickHandoff: true,
-                                                  )
-                                                : const EngineerModePage(),
+                                            child: const EngineerModePage(),
                                           );
                                         case AppRoutes.demo:
                                           page = _demoPage();

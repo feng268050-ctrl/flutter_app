@@ -1,13 +1,14 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Confirm / progress / result dialogs for bundled control-board firmware.
 ///
-/// Confirm/progress use Startup Self-Check frost; success = cream pass tip;
-/// failure = charcoal error tip.
+/// All variants use Startup Self-Check frost via [TipDialogHost].
 abstract final class BundledFirmwareDialogs {
   static Future<bool> showConfirm({
     required BuildContext context,
@@ -25,15 +26,17 @@ abstract final class BundledFirmwareDialogs {
             l10n.bundledFirmwareDialogMessage(currentVersion, newVersion),
           ),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: l10n.cancelText,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.secondary,
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancelText),
             ),
-            CyberButton(
+            HmiButton(
+              label: l10n.okText,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.okText),
             ),
           ],
         );
@@ -107,14 +110,14 @@ abstract final class BundledFirmwareDialogs {
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return CyberPromptContent(
-          tone: CyberTone.light,
           title: l10n.bundledFirmwareSuccessTitle,
           body: Text(l10n.bundledFirmwareSuccessMessage),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: l10n.okText,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx),
-              child: Text(l10n.okText),
             ),
           ],
         );
@@ -131,10 +134,11 @@ abstract final class BundledFirmwareDialogs {
           title: l10n.bundledFirmwareFailedTitle,
           body: Text(l10n.bundledFirmwareFailedMessage),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: l10n.okText,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx),
-              child: Text(l10n.okText),
             ),
           ],
         );

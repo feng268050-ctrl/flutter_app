@@ -376,30 +376,36 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (showUpdateActions) ...[
-            HmiButton(
-              label: l10n.otaUpdateNow,
-              size: HmiButtonSize.large,
-              widthPolicy: HmiButtonWidthPolicy.fill,
-              shape: CyberButtonShape.rounded,
-              variant: CyberButtonVariant.primary,
-              borderGradientCenter:
-                  CyberBorderGradientCenter.topLeftBottomRight,
-              onPressed: () => unawaited(_startUpdate(available)),
+            Center(
+              child: HmiButton(
+                label: l10n.otaUpdateNow,
+                size: HmiButtonSize.large,
+                widthPolicy: HmiButtonWidthPolicy.fixed,
+                width: 340,
+                shape: CyberButtonShape.rounded,
+                variant: CyberButtonVariant.primary,
+                borderGradientCenter:
+                    CyberBorderGradientCenter.topLeftBottomRight,
+                onPressed: () => unawaited(_startUpdate(available)),
+              ),
             ),
             const SizedBox(height: 12),
-            HmiButton(
-              label: l10n.otaUpdateLater,
-              size: HmiButtonSize.large,
-              widthPolicy: HmiButtonWidthPolicy.fill,
-              shape: CyberButtonShape.rounded,
-              variant: CyberButtonVariant.secondary,
-              onPressed: () {
-                CyberClickSoundRegistry.playClick();
-                setState(() {
-                  _availableManifest = null;
-                  _checkUi = _CheckUi.idle;
-                });
-              },
+            Center(
+              child: HmiButton(
+                label: l10n.otaUpdateLater,
+                size: HmiButtonSize.large,
+                widthPolicy: HmiButtonWidthPolicy.fixed,
+                width: 340,
+                shape: CyberButtonShape.rounded,
+                variant: CyberButtonVariant.secondary,
+                onPressed: () {
+                  CyberClickSoundRegistry.playClick();
+                  setState(() {
+                    _availableManifest = null;
+                    _checkUi = _CheckUi.idle;
+                  });
+                },
+              ),
             ),
           ] else ...[
             Center(

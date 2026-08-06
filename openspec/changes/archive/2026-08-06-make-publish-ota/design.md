@@ -47,7 +47,7 @@
 
 **Token 解析（与 login / register-device 对齐）：** `PUBLISH_API_TOKEN` → `CLOUD_ACCESS_TOKEN` → `output/cloud/credentials.json` 的 `access_token`（`cloud_resolve_publish_token`）；皆无则失败并提示 `make login` 或设置静态 token。
 
-Basename 形如 `lws-hmi_v1.0.38-beta.tar.gz`（与现有静态制品命名习惯一致）。若服务端对 `key` / 后缀有白名单，在 sibling api-server（**api-prod**，除非操作者覆盖基址）放行 HMI 前缀下的 `.tar.gz` / `.sig` / 渠道 JSON；本仓客户端 fail-fast 打印 HTTP 错误。
+Basename 形如 `v1.0.38-beta.tar.gz`（无 artifact 前缀；目录仍为 `{artifact}/`）。若服务端对 `key` / 后缀有白名单，在 sibling api-server（**api-prod**，除非操作者覆盖基址）放行 HMI 前缀下的 `.tar.gz` / `.sig` / 渠道 JSON；本仓客户端 fail-fast 打印 HTTP 错误。
 
 **明确不做：** 不使用 `PUT /upload/{artifact}/{basename}`；不另设默认指向 api-test 的 publish host；不依赖 Worker 代写 manifest 的 `artifact_url` / `manifest_url` ApiResult。
 
@@ -76,6 +76,6 @@ Basename 形如 `lws-hmi_v1.0.38-beta.tar.gz`（与现有静态制品命名习�
 
 ## Open Questions
 
-- 上传时是否 rename 本地归档以匹配约定 basename（倾向 rename，同 lws-ui pack 命名）。
-- 是否需要 `PUBLISH_ARTIFACT=`（实现时按需）。
-- `.sig` 的 R2 key：独立对象 `…tar.gz.sig` / `….sig` 与设备发现规则——与 `unified-ota-cyber-ota` open question #4 对齐后写死。
+- ~~上传时是否 rename 本地归档以匹配约定 basename~~ → **已决：** 本地仍为 `ota-package.tar.gz`；R2 key / manifest `filename` 为 `v{semver}[-beta].tar.gz`（无 `{artifact}_` 前缀；上传时不改本地文件名）。
+- ~~是否需要 `PUBLISH_ARTIFACT=`~~ → **已决：** 支持，作为非 `*_hmi` 逃生阀与前缀覆盖。
+- ~~`.sig` 的 R2 key~~ → **已决：** `{artifact}/{pack_name}.sig`（即 archive `public_url` + `.sig`），与 `cyber_ota` `sigUrlResolved` 默认一致。

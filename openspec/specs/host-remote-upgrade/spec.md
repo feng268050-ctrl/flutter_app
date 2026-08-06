@@ -74,7 +74,7 @@ For the SSH path, the host SHALL: obtain the `tar.gz` and `.sig`; preflight the 
 
 ### Requirement: make upgrade depends on ota-package
 
-`make upgrade` SHALL automatically invoke **`make ota-package`** (as a Make prerequisite or equivalent first step) before serving anything to the device when no alternate package path is set. Future **`make publish`** SHALL require the same `ota-package` artifact (and its `.sig`). The package SHALL be one compressed `tar.gz` plus sibling `.sig` to reduce transfer size relative to shipping loose images while preserving authenticity.
+`make upgrade` SHALL automatically invoke **`make ota-package`** (as a Make prerequisite or equivalent first step) before serving anything to the device when no alternate package path is set. **`make publish`** SHALL require the same `ota-package` artifact (and its `.sig`). The package SHALL be one compressed `tar.gz` plus sibling `.sig` to reduce transfer size relative to shipping loose images while preserving authenticity.
 
 #### Scenario: upgrade runs packaging first
 
@@ -83,8 +83,22 @@ For the SSH path, the host SHALL: obtain the `tar.gz` and `.sig`; preflight the 
 
 #### Scenario: publish prerequisite is the same package
 
-- **WHEN** a developer reads Make/docs for future cloud publish
+- **WHEN** a developer reads Make/docs for cloud publish
 - **THEN** `make ota-package` (output `tar.gz` + `.sig`) is documented as the required prerequisite artifact for `make publish`
+
+### Requirement: make publish shares ota-package artifact with make upgrade
+
+**`make publish`** SHALL use the **same** OTA `tar.gz` (and detached `.sig`) produced by **`make ota-package`** (for the selected `APP` and packaging mode) as its upload artifact. **`make publish`** MUST invoke `ota-package` (or equivalent prerequisite) before upload when using the full `publish` target. Host documentation SHALL state that cloud publish and SSH `make upgrade` share that archive shape; publish MUST NOT invent a second unsigned or differently laid-out cloud-only archive.
+
+#### Scenario: publish prerequisite is ota-package tar.gz
+
+- **WHEN** a developer reads Make/docs for `make publish` or runs `make publish` with packaging available
+- **THEN** the uploaded archive bytes are the `ota-package` `tar.gz` (or a content-identical rename for basename rules), not a separate ad-hoc firmware layout
+
+#### Scenario: Docs link upgrade and publish packaging
+
+- **WHEN** a developer reads host upgrade/publish documentation
+- **THEN** the text states that both `make upgrade` and `make publish` depend on `make ota-package` for the whole-device `tar.gz`
 
 ### Requirement: Host refuses upgrade when required bundle images or signature are missing
 

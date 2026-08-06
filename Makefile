@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity login register-device ota-release-keys ota-package upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity login register-device publish publish-only ota-release-keys ota-package upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -62,6 +62,8 @@ bash -c 'set -euo pipefail; \
   __ENV_CLOUD_ACCOUNT="$${CLOUD_ACCOUNT-}"; \
   __ENV_CLOUD_PASSWORD="$${CLOUD_PASSWORD-}"; \
   __ENV_PUBLISH_API_TOKEN="$${PUBLISH_API_TOKEN-}"; \
+  __ENV_RELEASE="$${RELEASE-}"; \
+  __ENV_PUBLISH_ARTIFACT="$${PUBLISH_ARTIFACT-}"; \
   __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
@@ -82,6 +84,8 @@ bash -c 'set -euo pipefail; \
   [[ -n "$$__ENV_CLOUD_ACCOUNT" ]] && export CLOUD_ACCOUNT="$$__ENV_CLOUD_ACCOUNT"; \
   [[ -n "$$__ENV_CLOUD_PASSWORD" ]] && export CLOUD_PASSWORD="$$__ENV_CLOUD_PASSWORD"; \
   [[ -n "$$__ENV_PUBLISH_API_TOKEN" ]] && export PUBLISH_API_TOKEN="$$__ENV_PUBLISH_API_TOKEN"; \
+  [[ -n "$$__ENV_RELEASE" ]] && export RELEASE="$$__ENV_RELEASE"; \
+  [[ -n "$$__ENV_PUBLISH_ARTIFACT" ]] && export PUBLISH_ARTIFACT="$$__ENV_PUBLISH_ARTIFACT"; \
   [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
   [[ -n "$$__ENV_BUILD_JOBS" ]] && export BUILD_JOBS="$$__ENV_BUILD_JOBS"; \
   [[ -n "$$__ENV_BUILD_BIND_MOUNT" ]] && export BUILD_BIND_MOUNT="$$__ENV_BUILD_BIND_MOUNT"; \
@@ -181,6 +185,8 @@ help:
 	@echo "  make write-identity …      # Vendor Storage BRAND/MODEL/PRODUCT_SN (FORCE=1 overwrite); restart hmi"
 	@echo "  make login                 # api-server POST /v1/login → output/cloud/credentials.json (access_token)"
 	@echo "  make register-device       # SN=/IP= select board; SSH read-identity → POST /v1/admin/devices (needs login)"
+	@echo "  make publish               # ota-package + upload tar.gz+.sig + staging/release.json to R2 (presign)"
+	@echo "  make publish-only          # upload existing ota-package.tar.gz+.sig (no pack); RELEASE=1 → release.json"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
 	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
@@ -221,7 +227,9 @@ help:
 	@echo "  CLOUD_API_BASE=<url>       # api-server origin (default api-prod; test: api-test.lasercyber.workers.dev)"
 	@echo "  CLOUD_ACCESS_TOKEN=<jwt>   # override saved login token (else output/cloud/credentials.json)"
 	@echo "  CLOUD_ACCOUNT= / PASSWORD= # non-interactive make login (do not commit password)"
-	@echo "  PUBLISH_API_TOKEN=<tok>    # make publish static upload override (else login token)"
+	@echo "  PUBLISH_API_TOKEN=<tok>    # make publish presign Bearer (STATIC_API_TOKENS); else login token"
+	@echo "  RELEASE=1                  # make publish → release.json (no -beta); default staging.json + -beta"
+	@echo "  PUBLISH_ARTIFACT=<slug>    # override R2 prefix (default APP with _→-); allows non-*_hmi"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  UPGRADE_TRANSPORT=auto|ssh|rockusb  # make upgrade transport (default auto)"
 	@echo "  IMAGE=<path>               # firmware image for make flash"
@@ -233,9 +241,10 @@ help:
 	@echo "  - Loader/Maskrom: make reboot-loader (or Maskrom) then make upgrade (di OTA images; not factory uf)."
 	@echo "  - OEM-only (helpers/profile): make build-oem && OEM_ONLY=1 make upgrade"
 	@echo "  - Cloud/publish + SSH upgrade: OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make ota-package (archive + .sig); make upgrade serves via host HTTP."
+	@echo "  - make publish: same tar.gz+.sig as upgrade; GET presigned-url on CLOUD_API_BASE (api-prod) then PUT R2; manifest has no sha512."
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ only (no host linux-sdk/output/ mirror)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
-	@echo "  - APP= selects HMI product: overlay /opt/hmi + host rootfs/factory under output/firmware/<APP>/."
+	@echo "  - APP= selects HMI product: overlay /opt/hmi + host rootfs/factory under output/firmware/<APP>/ (+ R2 publish prefix)."
 	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
 	@echo "  - Emulator: README Make commands → P3.2 emulator (setup → deps → kernel/rootfs → setup-emulator-qemu → fetch-emulator-swgl → build-emulator → emulator)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
@@ -687,6 +696,17 @@ ota-release-keys:
 ota-package:
 	@chmod +x scripts/ota-package.sh scripts/ota-sign.sh
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/ota-package.sh)
+
+# Cloud publish: signed ota-package then upload tar.gz + .sig + staging/release.json (R2 presign on CLOUD_API_BASE).
+publish:
+	@chmod +x scripts/ota-package.sh scripts/ota-sign.sh scripts/publish-ota.sh scripts/cloud-credentials.sh
+	@$(call WITH_DOTENV,APP='$(APP)' REQUIRE_OTA_SIG=1 bash scripts/ota-package.sh)
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/publish-ota.sh)
+
+# Upload existing signed OTA package (no pack). RELEASE=1 → release.json; default staging.json + -beta.
+publish-only:
+	@chmod +x scripts/publish-ota.sh scripts/cloud-credentials.sh
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/publish-ota.sh)
 
 # SSH: package (unless UPGRADE_PACKAGE=) → host HTTP serve tar.gz+.sig → device download+verify+staged apply.
 # RockUSB: still di loose images (unsigned; or package members via upgrade-package-env).

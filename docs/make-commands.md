@@ -455,9 +455,25 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 ### `make ota-package`
 
 - **怎么用：** `make ota-package`；仅 OEM：`OEM_ONLY=1 make ota-package`；发布/CI：`OTA_SIGNING_KEY=keys/ota/ed25519.pem REQUIRE_OTA_SIG=1 make ota-package`
-- **何时用：** 打整机 OTA `tar.gz`（供 `make upgrade` / 未来 `make publish`）。SSH upgrade 与 publish/云均需 `.sig`（`OTA_SIGNING_KEY` / `make ota-release-keys`）。
+- **何时用：** 打整机 OTA `tar.gz`（供 `make upgrade` / `make publish`）。SSH upgrade 与 publish/云均需 `.sig`（`OTA_SIGNING_KEY` / `make ota-release-keys`）。
 - **产出：** `output/firmware/<APP>/ota-package.tar.gz`；有钥时旁路 `.sig`
 - **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`OTA_SIGNING_KEY`、`REQUIRE_OTA_SIG`
+
+### `make publish` / `make publish-only`
+
+- **怎么用：**
+  - 打包并发布（staging）：`make publish`（内部 `REQUIRE_OTA_SIG=1 make ota-package` 再上传）
+  - 仅上传已有包：`make publish-only`
+  - 正式渠道：`RELEASE=1 make publish`
+  - 其它 HMI：`APP=cnc_hmi make publish`（R2 前缀 `cnc-hmi/`；需 `app/cnc_hmi`）
+- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新渠道 manifest，供设备云端拉取。
+- **上传路径：** 与 `lws-ui` / `make login` 同源——默认 **`CLOUD_API_BASE=https://api-prod.lasercyber.workers.dev`**，`GET /v1/storage/r2/presigned-url` 取凭证后 Python **直传 R2**（不走 `PUT /upload/…`）。
+- **渠道：** 默认 `staging.json`，版本 `{pubspec-semver}-beta`；`RELEASE=1` → `release.json`，无 `-beta`。版本取自 `app/<APP>/pubspec.yaml`（去 `+build`）。
+- **Manifest 字段：** `version`、`filename`、`published_at`、`url`（**无 `sha512`**；完整性靠旁路 `.sig`，设备侧 `url + ".sig"`）。
+- **鉴权：** `PUBLISH_API_TOKEN`（优先）→ `CLOUD_ACCESS_TOKEN` → `make login` 的 `output/cloud/credentials.json`。
+- **产出对象（默认 APP）：** `lws-hmi/v{ver}[-beta].tar.gz`、同名 `.sig`、`lws-hmi/staging.json|release.json`。
+- **参数：** `APP`、`RELEASE`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
+- **前提：** `make ota-release-keys` / `OTA_SIGNING_KEY`；`make login` 或静态 token。
 
 ### `make upgrade`
 

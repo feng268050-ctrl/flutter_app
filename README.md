@@ -148,7 +148,7 @@ Firmware stage outputs:
   - **RockUSB Loader/Maskrom** (e.g. after `make reboot-loader`, or Maskrom): `upgrade_tool` **`di`** downloads the **OTA-equivalent** loose images — `boot.img` → `boot`, `boot_b.img` → `boot_b`, same `rootfs.img` → **both** `rootfs_a` and `rootfs_b`, optional `oem` — with Maskrom `ul` MiniLoader into RAM when needed. **Not** `uf factory.img` (no U-Boot / GPT / misc rewrite) and **not** product cloud OTA.
   Wait for the device to finish restarting before reconnecting.
 - OEM-only (board helpers / profile / screen pack): `make build-oem` then `OEM_ONLY=1 make upgrade` — oem partition only (SSH: staged apply + plain reboot; RockUSB: `di` oem only). Set `OEM_ONLY=1` in `.env` for repeated OEM iteration.
-- Cloud/publish + SSH upgrade packaging: `OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make ota-package` (archive + `.sig`). Release keys: `make ota-release-keys`.
+- Cloud/publish + SSH upgrade packaging: `OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make ota-package` (archive + `.sig`). Release keys: `make ota-release-keys`. Cloud publish: `make publish` / `make publish-only` uploads the same archive via R2 **presigned PUT** on **`CLOUD_API_BASE`** (default api-prod, same as `make login`); channel manifest has **no `sha512`** (trust = `.sig`).
 
 ### Daily iteration — by what you changed
 
@@ -409,6 +409,9 @@ make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/propert
 make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphens stripped → LC001; SN=… FORCE=1 to overwrite
 make login                          # api-server login → output/cloud/credentials.json (access_token)
 make register-device                # SN=/IP= select board; SSH read-identity → admin register (needs make login)
+make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign on api-prod; staging.json)
+RELEASE=1 make publish              # same → release.json (no -beta)
+make publish-only                   # upload existing output/firmware/<APP>/ota-package.tar.gz +.sig
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# host-ota-publish Specification
+
+## Purpose
+
+Host `make publish` / `publish-only`: upload signed `ota-package` `tar.gz` (+ `.sig`) and channel manifest to R2 via production-cloud presigned PUT (same API base as `make login`).
+
+## Requirements
 
 ### Requirement: make publish uploads OTA tar.gz and channel manifest to R2
 
@@ -64,7 +70,7 @@ Default publish (no `RELEASE=1`) SHALL treat the package as prerelease: the HMI 
 
 ### Requirement: R2 artifact prefix derives from APP
 
-The R2 directory (publish **artifact** segment) SHALL be derived from Make/env **`APP`**: replace underscores with hyphens (default `APP=lws_hmi` → artifact **`lws-hmi`**). Objects SHALL live under **`{artifact}/`** in the app bucket (`tar.gz`, `.sig`, + `staging.json` / `release.json`). Archive basename SHALL follow the agreed naming habit for that artifact (documented as `{artifact}_v{semver}[-beta].tar.gz` or equivalent agreed normalization).
+The R2 directory (publish **artifact** segment) SHALL be derived from Make/env **`APP`**: replace underscores with hyphens (default `APP=lws_hmi` → artifact **`lws-hmi`**). Objects SHALL live under **`{artifact}/`** in the app bucket (`tar.gz`, `.sig`, + `staging.json` / `release.json`). Archive basename SHALL be **`v{semver}[-beta].tar.gz`** (version segment only — MUST NOT prefix with `{artifact}_`).
 
 `make publish` / `make publish-only` SHALL target HMI product apps (`APP` ending in `_hmi`). Publishing a non-HMI `APP` (e.g. `factory_test`) SHALL fail fast unless an explicitly documented override is used.
 

@@ -27,7 +27,7 @@ The selected mode SHALL be persisted at `/var/lib/hal/power.conf` as `mode=perfo
 
 #### Scenario: Mode not in common-settings.json
 
-- **WHEN** the operator changes load profile from Display settings
+- **WHEN** the operator changes load profile from the Power Mode settings page
 - **THEN** the authoritative write is `/var/lib/hal/power.conf`
 - **AND** `/var/lib/hmi/common-settings.json` is not required to store the mode
 
@@ -69,12 +69,17 @@ The LWS HMI App SHALL load the effective load profile at startup and keep an app
 - **WHEN** the operator switches from `performance` to `balanced` in Settings while the HMI is running
 - **THEN** the continuous-paint / animation policy updates for subsequent navigation/decoration without requiring an HMI process restart
 
-### Requirement: Display settings exposes mode control
+### Requirement: Common Settings Power Mode sub-page exposes mode control
 
-Common Settings → Display SHALL include a control to select 性能 / 均衡 (localized: Performance / Balanced; tokens `performance` / `balanced`). Operator-facing copy MUST NOT present the mode primarily as “省电” / energy saving. Changing the control SHALL call the HAL load-profile API (persist + apply) and update the in-App continuous-paint policy.
+Common Settings SHALL expose **Power Mode** as its own untitled card (after Display & Sound, before RGB LED + Camera) with a Unit-style nav row that opens a Power Mode sub-page. The sub-page SHALL select 性能 / 均衡 (localized: Performance / Balanced; tokens `performance` / `balanced`). Operator-facing copy MUST NOT present the mode primarily as “省电” / energy saving. Changing the selection SHALL call the HAL load-profile API (persist + apply) and update the in-App continuous-paint policy. The mode MUST NOT be nested under Display.
 
-#### Scenario: Operator selects均衡 on Display
+#### Scenario: Operator selects均衡 on Power Mode page
 
-- **WHEN** the operator opens Common Settings → Display and selects the balanced / 均衡 option
+- **WHEN** the operator opens Common Settings → Power Mode and selects the balanced / 均衡 option
 - **THEN** HAL setMode(`balanced`) is invoked
-- **AND** the Display control reflects balanced after a successful apply
+- **AND** the Power Mode nav trailing summary reflects balanced after a successful apply
+
+#### Scenario: Mode not on Display page
+
+- **WHEN** the operator opens Common Settings → Display
+- **THEN** the Display page MUST NOT offer the performance / balanced selector

@@ -5,7 +5,7 @@ Today the ynh960 line boots with `cpu-performance.service` → `/usr/libexec/boa
 1. Sets CPU cpufreq + DMC/GPU **devfreq** governors to `performance` when available.
 2. Disables deep **cpuidle** states (keeps WFI only) to avoid wake-latency jank.
 
-That profile is correct for snappy HMI and boot KPI, but there is no operator way to trade clocks + continuous UI/GPU work for **lower sustained SoC load and heat**. Product intent for the second mode is **thermal / load reduction**, not battery life or “省电” marketing. Settings → Display is a reasonable home for the control. Flutter decorative work (home WebP loops, page transitions, CyberUI ripples) is independent of governors and must be gated in-App because it keeps the GPU/UI threads painting.
+That profile is correct for snappy HMI and boot KPI, but there is no operator way to trade clocks + continuous UI/GPU work for **lower sustained SoC load and heat**. Product intent for the second mode is **thermal / load reduction**, not battery life or “省电” marketing. Common Settings hosts a dedicated **Power Mode** entry (Unit-style nav → sub-page, own card). Flutter decorative work (home WebP loops, page transitions, CyberUI ripples) is independent of governors and must be gated in-App because it keeps the GPU/UI threads painting.
 
 Constraints: keep default = today’s performance behavior; no Android HAL backends; prefer verb-noun helpers under `/usr/libexec/board/`; persist under `/var/lib/hal/` (not App `common-settings.json`) so boot can restore **before** HMI start.
 
@@ -79,8 +79,10 @@ Exact mid OPP MAY be board-tuned in the helper (ynh960 table) with a safe fallba
 
 ### D6 — Settings UX
 
-- **Choice:** Common Settings → **Display** control: 性能 / 均衡 (en: Performance / Balanced; zh-TW aligned). Avoid “节能” as the primary label so operators do not expect battery semantics.
-- **Apply:** HAL `setMode` → hardware profile + in-App paint policy immediately (no HMI restart for soft side).
+- **Choice:** Common Settings gains an **independent untitled card** for **Power Mode** (en: Power Mode; zh-CN: 效能模式), placed **after Display & Sound and before RGB LED + Camera**. The card has one **SettingsNavRow** with trailing summary (Performance / Balanced), matching **Unit** chrome: tap → push `PowerModeSettingsPage` (or equivalent). The sub-page lists the two options; selection calls HAL `setMode` and updates soft policy immediately (no HMI restart for soft side).
+- **Why not under Display:** Power/clocks are board-wide load policy, not a display attribute; a separate group matches product “General” IA and keeps Display focused on brightness / screen-off.
+- **Why Unit-style sub-page:** Same discoverability and selection pattern operators already know; avoids cramming a third control onto Display.
+- **Copy:** Avoid “节能” as the primary label so operators do not expect battery semantics; Balanced / 均衡 MAY mention lower heat in help text.
 
 ### D7 — Boot verify
 
@@ -107,5 +109,5 @@ Under `balanced`, later slices MAY also: pause/throttle camera preview + MediaMT
 ## Open Questions
 
 - Exact mid OPP for ynh960 (measure once on device: thermal delta vs scroll latency).
-- Whether Display subtitle should explicitly say “降低发热” in zh-CN.
+- Whether Power Mode sub-page help text should explicitly say “降低发热” in zh-CN.
 - Operator binary: only `set-power-mode` long-term vs keep `set-performance-mode` forever.

@@ -9,7 +9,7 @@ The appliance today always locks CPU/DMC/GPU to `performance` governors (and dis
 - Persist the selected mode under HAL userdata and restore it at boot before HMI start (same early path as today’s `cpu-performance.service`).
 - Add a `cyber_hal` API so the App can read/set the mode and apply hardware side-effects without shelling out ad hoc from widgets.
 - Drive Flutter **animation / continuous-paint policy** from the mode: performance = current full motion; `balanced` = reduce/disable non-essential animations and looping decorations (page transitions, home WebP loops, decorative CyberUI motion) to cut sustained GPU/UI work, while keeping functional feedback usable.
-- Expose the switch on Common Settings → Display, with l10n for en-US / zh-CN / zh-TW (labels emphasize **load/heat**, not “省电”).
+- Expose **Power Mode** on Common Settings as its **own untitled card** (after Display & Sound, before RGB LED): Unit-style nav row → dedicated sub-page to choose Performance / Balanced, with l10n for en-US / zh-CN / zh-TW (labels emphasize **load/heat**, not “省电”).
 - Update boot verify expectations so a persisted `balanced` mode is not flagged as a false failure when governors are intentionally not `performance`.
 
 ## Capabilities
@@ -24,14 +24,14 @@ The appliance today always locks CPU/DMC/GPU to `performance` governors (and dis
 - `hmi-systemd-boot`: Early boot unit applies the **persisted** load profile (not hard-coded performance-only).
 - `linux-settings-persist`: Persist mode under `/var/lib/hal/` (dedicated conf or documented key).
 - `shell-hw-persist`: Document load-mode as a shell/HAL-restored preference.
-- `settings-ui`: Display sub-page includes the performance / balanced control.
+- `settings-ui`: Common Settings gains an independent Power Mode card + Unit-style sub-page (not under Display).
 - `dart-hal`: Linux (+ stub) HAL surface for get/set load profile.
 
 ## Impact
 
 - **Overlay / board**: `set-performance-mode.sh` (or successor), `cpu-performance.service`, `boot-verify.sh`, `post-build.sh` symlink, rootfs verify lists.
 - **`packages/cyber_hal`**: New output load-profile API + Linux/stub backends; prefs path constants.
-- **`app/lws_hmi`**: Display settings row, app-wide animation/continuous-paint policy, home decorative WebP gating, l10n ARBs.
+- **`app/lws_hmi`**: Common Settings Power Mode card + sub-page, app-wide animation/continuous-paint policy, home decorative WebP gating, l10n ARBs.
 - **`packages/cyber_ui`** (optional / minimal): Prefer App-owned policy wiring over large CyberUI API churn.
 - **Docs / AGENTS rebuild table**: Overlay + App paths when shipping.
 - **Non-goals for this change**: Battery / AC energy optimization as a product KPI, backlight dimming as a primary lever, automatic thermal-triggered mode switching, GPU/Weston compositor FPS caps beyond governor + animation policy, Android HAL backends. Follow-up heat levers (camera preview / AI daemon duty) MAY be added later under the same mode.

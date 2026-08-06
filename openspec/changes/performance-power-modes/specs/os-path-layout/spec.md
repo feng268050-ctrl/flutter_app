@@ -39,7 +39,7 @@ The legacy monolithic path **`/var/lib/lws-hmi/`** MUST NOT exist on shipped roo
 
 #### Scenario: Power mode uses power.conf under hal
 
-- **WHEN** an operator selects balanced via Display settings or `set-power-mode`
+- **WHEN** an operator selects balanced via Power Mode settings or `set-power-mode`
 - **THEN** `/var/lib/hal/power.conf` contains `mode=balanced` and MUST NOT rely on App JSON as the sole authority
 
 ### Requirement: Subsystem helpers under usr libexec tiers

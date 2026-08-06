@@ -15,8 +15,8 @@
 
 - [ ] 3.1 Add app-wide load-profile / continuous-paint scope loaded at startup from HAL; update on setMode
 - [ ] 3.2 Gate home decorative WebP loops to static fallbacks under balanced; snap/reduce non-essential Settings/chrome transitions; keep functional progress UX
-- [ ] 3.3 Add Display settings control for 性能 / 均衡 (en: Performance / Balanced; not 节能) wired to HAL; add l10n (`make l10n`)
-- [ ] 3.4 Add App widget/unit tests for policy gating and Display control invoke where practical
+- [ ] 3.3 Add Common Settings **Power Mode** untitled card (after Display & Sound, before RGB LED) with Unit-style nav → `PowerModeSettingsPage`; options 性能 / 均衡 (en: Performance / Balanced; not 节能); wire to HAL; add l10n (`make l10n`)
+- [ ] 3.4 Add App widget/unit tests for policy gating and Power Mode sub-page invoke where practical
 
 ## 4. Docs and verification
 

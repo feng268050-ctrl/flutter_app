@@ -50,8 +50,10 @@ Device compares channel `version` to running HMI `kSystemVersion` / pubspec. A s
 
 ## Pass criteria
 
-- [ ] `/r2/…/staging.json` (or release) GET succeeds with publish-shaped JSON
-- [ ] Device Information System Version → System Upgrade; Check + checkbox on upgrade page
-- [ ] Content card fills remaining height; check result in-card (no dialog)
-- [ ] `make upgrade` progress-only (no check footer)
-- [ ] Auto-check surfaces available only (no auto-apply)
+- [x] `/r2/…/staging.json` (or release) GET succeeds with publish-shaped JSON
+- [x] Device Information System Version → System Upgrade; Check + checkbox on upgrade page
+- [x] Content card fills remaining height; check result in-card (no dialog)
+- [x] `make upgrade` progress-only (no check footer)
+- [x] Auto-check surfaces available only (no auto-apply)
+
+**Board smoke:** passed (2026-08-06). Channel path exercised: `/r2/lws-hmi/staging.json`. `/view/lws-hmi/…` remain Worker allowlist-blocked until api-server ships HMI on static view.

@@ -21,7 +21,7 @@
 - [x] 4.1 Add `openspec/changes/settings-cloud-ota/smoke.md` (publish staging newer than device → Settings check → confirm → upgrade page → verify/apply)
 - [x] 4.2 Note same-version `-beta` vs release compare caveat in smoke or make-commands if missing
 - [x] 4.3 Host: `dart test` / `flutter test` for touched `cyber_ota` + App OTA tests
-- [ ] 4.4 Board smoke against a real `make publish` staging object; record `/view/` GET result (open question)
+- [x] 4.4 Board smoke against a real `make publish` staging object; channel via `/r2/lws-hmi/…` (`/view/` still allowlist-blocked — open question)
 - [x] 4.5 Update `smoke.md` for Device Information → OTA sub-page → Update Now → CyberUI progress page
 
 ## 5. Device Information → System Upgrade (full-height card)

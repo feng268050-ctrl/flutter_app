@@ -86,8 +86,7 @@ void main() {
     expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
     expect(find.byKey(const ValueKey('cyber-status-bt')), findsNothing);
 
-    // Home / trailing are content-sized; cluster centered → equal side gaps.
-    // Inter-group gaps capped smaller than Home↔cluster / cluster↔trailing.
+    // Home / trailing content-sized; fixed equal side gaps; strip fills middle.
     final home = tester.getRect(
       find.byKey(const ValueKey('work-mode-status-back')),
     );
@@ -112,8 +111,9 @@ void main() {
     final clock = tester.getRect(find.text('14:30'));
     final leftGap = gun.left - home.right;
     final rightGap = camera.left - eStop.right;
+    expect(leftGap, closeTo(WorkModeStatusBarDimens.clusterSideGap, 1.5));
+    expect(rightGap, closeTo(WorkModeStatusBarDimens.clusterSideGap, 1.5));
     expect(leftGap, closeTo(rightGap, 1.5));
-    expect(leftGap, greaterThan(WorkModeStatusBarDimens.equipmentItemGap));
     // Full English labels stay visible at design width.
     expect(find.text('Gun Switch'), findsOneWidget);
     expect(find.text('Safety Clamp'), findsOneWidget);
@@ -128,8 +128,7 @@ void main() {
     ];
     for (final gap in gaps) {
       expect(gap, closeTo(gaps.first, 0.5));
-      expect(gap, lessThanOrEqualTo(WorkModeStatusBarDimens.equipmentItemGap + 0.5));
-      expect(gap, lessThan(leftGap));
+      expect(gap, greaterThanOrEqualTo(0));
     }
     expect(gun.height, closeTo(WorkModeStatusBarDimens.primaryIconSize, 1));
     expect(clock.right, lessThan(1280));

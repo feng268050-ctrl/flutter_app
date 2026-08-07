@@ -223,35 +223,23 @@ final class _EngineerModeEntryTipsBodyState
           ),
           const SizedBox(height: _dontShowAgainInset),
           Center(
-            child: Row(
+            child: CyberCheckbox(
               key: const ValueKey('engineer-mode-entry-dont-show-again'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CyberCheckbox(
-                  value: _dontShowAgain,
-                  size: CyberDimens.checkboxLargeSize,
-                  onChanged: (v) {
-                    setState(() => _dontShowAgain = v ?? false);
-                  },
+              value: _dontShowAgain,
+              size: CyberDimens.checkboxLargeSize,
+              onChanged: (v) {
+                setState(() => _dontShowAgain = v ?? false);
+              },
+              label: Text(
+                l10n.dontShowAgainThisSession,
+                textAlign: TextAlign.center,
+                style: context.hmiTypography.sectionTitle.copyWith(
+                  fontSize: 26,
+                  height: 1.0,
+                  color: _labelMuted,
+                  decoration: TextDecoration.none,
                 ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: GestureDetector(
-                    onTap: () {
-                      CyberClickSoundRegistry.playClick();
-                      setState(() => _dontShowAgain = !_dontShowAgain);
-                    },
-                    child: Text(
-                      l10n.dontShowAgainThisSession,
-                      style: context.hmiTypography.sectionTitle.copyWith(
-                        fontSize: 26,
-                        color: _labelMuted,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],

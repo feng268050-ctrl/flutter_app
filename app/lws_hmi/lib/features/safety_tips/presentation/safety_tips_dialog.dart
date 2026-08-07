@@ -230,37 +230,40 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CyberCheckbox(
-                      key: ValueKey(
-                        isTips
-                            ? 'safety-tips-agree-cb'
-                            : 'product-disclaimer-agree-cb',
-                      ),
-                      value: _agreed,
-                      size: CyberDimens.checkboxLargeSize,
-                      onChanged: (v) {
-                        setState(() => _agreed = v ?? false);
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: isTips
-                          ? Wrap(
+                child: isTips
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          CyberCheckbox(
+                            key: const ValueKey('safety-tips-agree-cb'),
+                            value: _agreed,
+                            size: CyberDimens.checkboxLargeSize,
+                            onChanged: (v) {
+                              setState(() => _agreed = v ?? false);
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Wrap(
                               crossAxisAlignment: WrapCrossAlignment.center,
                               spacing: 0,
                               runSpacing: 2,
                               children: [
-                                WordBoundaryLabel(
-                                  text: checkboxLabel,
-                                  maxLines: 3,
-                                  style: context.hmiTypography.navigation
-                                      .copyWith(
-                                    color: CyberColors.textPrimary,
-                                    height: 1.3,
-                                    decoration: TextDecoration.none,
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    CyberClickSoundRegistry.playClick();
+                                    setState(() => _agreed = !_agreed);
+                                  },
+                                  child: WordBoundaryLabel(
+                                    text: checkboxLabel,
+                                    maxLines: 3,
+                                    style: context.hmiTypography.navigation
+                                        .copyWith(
+                                      color: CyberColors.textPrimary,
+                                      height: 1.3,
+                                      decoration: TextDecoration.none,
+                                    ),
                                   ),
                                 ),
                                 // lws-ui: ` “` + Product Disclaimer. + `”`
@@ -282,19 +285,28 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                   ),
                                 ),
                               ],
-                            )
-                          : WordBoundaryLabel(
-                              text: checkboxLabel,
-                              maxLines: 3,
-                              style: context.hmiTypography.navigation.copyWith(
-                                color: CyberColors.textPrimary,
-                                height: 1.3,
-                                decoration: TextDecoration.none,
-                              ),
                             ),
-                    ),
-                  ],
-                ),
+                          ),
+                        ],
+                      )
+                    : CyberCheckbox(
+                        key: const ValueKey('product-disclaimer-agree-cb'),
+                        value: _agreed,
+                        size: CyberDimens.checkboxLargeSize,
+                        expandLabel: true,
+                        onChanged: (v) {
+                          setState(() => _agreed = v ?? false);
+                        },
+                        label: WordBoundaryLabel(
+                          text: checkboxLabel,
+                          maxLines: 3,
+                          style: context.hmiTypography.navigation.copyWith(
+                            color: CyberColors.textPrimary,
+                            height: 1.3,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
               ),
               const SizedBox(width: CyberDimens.contentPadding),
               HmiButton(

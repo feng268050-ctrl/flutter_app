@@ -148,34 +148,23 @@ final class _LaserEnableReminderBodyState
         ),
         const SizedBox(height: 14),
         Center(
-          child: Row(
+          child: CyberCheckbox(
             key: const ValueKey('laser-enable-reminder-dont-show-again'),
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CyberCheckbox(
-                value: _dontShowAgain,
-                size: CyberDimens.checkboxLargeSize,
-                onChanged: (v) {
-                  setState(() => _dontShowAgain = v ?? false);
-                },
+            value: _dontShowAgain,
+            size: CyberDimens.checkboxLargeSize,
+            onChanged: (v) {
+              setState(() => _dontShowAgain = v ?? false);
+            },
+            label: Text(
+              l10n.dontShowAgainThisSession,
+              textAlign: TextAlign.center,
+              style: context.hmiTypography.sectionTitle.copyWith(
+                fontSize: 26,
+                color: _labelMuted,
+                height: 1.0,
+                decoration: TextDecoration.none,
               ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () {
-                  CyberClickSoundRegistry.playClick();
-                  setState(() => _dontShowAgain = !_dontShowAgain);
-                },
-                child: Text(
-                  l10n.dontShowAgainThisSession,
-                  style: context.hmiTypography.sectionTitle.copyWith(
-                    fontSize: 26,
-                    color: _labelMuted,
-                    height: 1.2,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ],

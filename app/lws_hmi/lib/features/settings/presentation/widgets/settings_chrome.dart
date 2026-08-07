@@ -1276,31 +1276,17 @@ class SettingsCheckboxRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onChanged == null
-          ? null
-          : () {
-              CyberClickSoundRegistry.playClick();
-              onChanged!(!value);
-            },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CyberCheckbox(
-              value: value,
-              size: CyberDimens.checkboxLargeSize,
-              onChanged: onChanged,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: context.hmiTypography.sectionTitle.copyWith(
-                color: CyberColors.textPrimary,
-              ),
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: CyberCheckbox(
+        value: value,
+        size: CyberDimens.checkboxLargeSize,
+        onChanged: onChanged,
+        label: Text(
+          title,
+          style: context.hmiTypography.sectionTitle.copyWith(
+            color: CyberColors.textPrimary,
+          ),
         ),
       ),
     );

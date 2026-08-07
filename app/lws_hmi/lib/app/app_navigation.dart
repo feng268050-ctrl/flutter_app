@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
 
 /// Always use bounce overscroll (phone/tablet feel on eLinux / Linux).
 class AppScrollBehavior extends MaterialScrollBehavior {
@@ -40,6 +41,28 @@ const Duration kAppPageEnterDuration = Duration(milliseconds: 280);
 /// Reverse (pop) duration for Home fade / in-module slide.
 const Duration kAppPageExitDuration = Duration(milliseconds: 240);
 
+/// Enter duration under balanced load profile (snap chrome transitions).
+Duration appPageEnterDuration(BuildContext? context, {bool? snap}) {
+  final effective = snap ??
+      (context != null &&
+          (LoadProfileScope.maybeOf(context)?.snapPageTransitions ?? false));
+  if (effective) {
+    return Duration.zero;
+  }
+  return kAppPageEnterDuration;
+}
+
+/// Exit duration under balanced load profile.
+Duration appPageExitDuration(BuildContext? context, {bool? snap}) {
+  final effective = snap ??
+      (context != null &&
+          (LoadProfileScope.maybeOf(context)?.snapPageTransitions ?? false));
+  if (effective) {
+    return Duration.zero;
+  }
+  return kAppPageExitDuration;
+}
+
 class _FadePageTransitionsBuilder extends PageTransitionsBuilder {
   const _FadePageTransitionsBuilder();
 
@@ -62,11 +85,13 @@ class _FadePageTransitionsBuilder extends PageTransitionsBuilder {
 Route<dynamic> buildAppPageRoute({
   required RouteSettings settings,
   required Widget child,
+  BuildContext? context,
+  bool? snap,
 }) {
   return PageRouteBuilder<dynamic>(
     settings: settings,
-    transitionDuration: kAppPageEnterDuration,
-    reverseTransitionDuration: kAppPageExitDuration,
+    transitionDuration: appPageEnterDuration(context, snap: snap),
+    reverseTransitionDuration: appPageExitDuration(context, snap: snap),
     pageBuilder: (context, animation, secondaryAnimation) => child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
@@ -107,22 +132,48 @@ List<Route<dynamic>> generateAppInitialRoutes(
 ///
 /// Used for Settings sub-pages, Monitor detail/choose flows, Quick→Engineer
 /// handoff, etc. Keeps industry L/R Cupertino transitions, including the
-/// left-edge swipe-to-pop gesture on nested pages.
+/// left-edge swipe-to-pop gesture on nested pages. Under balanced load
+/// profile, durations snap to zero.
 Route<T> buildAppSlideRoute<T>({
   RouteSettings? settings,
   required WidgetBuilder builder,
   bool fullscreenDialog = false,
+  BuildContext? context,
+  bool? snap,
 }) {
-  return CupertinoPageRoute<T>(
+  final effectiveSnap = snap ??
+      (context != null &&
+          (LoadProfileScope.maybeOf(context)?.snapPageTransitions ?? false));
+  return _LoadAwareCupertinoPageRoute<T>(
     settings: settings,
     builder: builder,
     fullscreenDialog: fullscreenDialog,
+    snap: effectiveSnap,
   );
 }
 
 /// Push [page] with [buildAppSlideRoute] (in-module L/R slide).
 Future<T?> pushAppSlidePage<T>(BuildContext context, Widget page) {
   return Navigator.of(context).push<T>(
-    buildAppSlideRoute<T>(builder: (_) => page),
+    buildAppSlideRoute<T>(context: context, builder: (_) => page),
   );
+}
+
+final class _LoadAwareCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
+  _LoadAwareCupertinoPageRoute({
+    required super.builder,
+    super.settings,
+    super.fullscreenDialog,
+    required this.snap,
+  });
+
+  final bool snap;
+
+  @override
+  Duration get transitionDuration =>
+      snap ? Duration.zero : super.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration =>
+      snap ? Duration.zero : super.reverseTransitionDuration;
 }

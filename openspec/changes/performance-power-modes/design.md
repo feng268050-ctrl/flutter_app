@@ -54,7 +54,7 @@ Constraints: keep default = today’s performance behavior; no Android HAL backe
 |------|-------------|----------|
 | CPU `scaling_governor` | `performance` if available | Prefer `ondemand`, else `schedutil`, else `powersave` |
 | CPU `scaling_max_freq` | restore policy max (or clear cap) | Cap to a mid OPP when the freq table allows (e.g. ~50–70% of max, pick nearest available); if uncappable, rely on governor only |
-| DMC/GPU `devfreq` governor | `performance` if available | Prefer `simple_ondemand`, else `ondemand` |
+| DMC/GPU `devfreq` governor | `performance` if available | Keep **all** devfreq on `performance` (GPU/NPU/DMC). GPU ondemand before Weston → black desktop (wallpaper never paints); NPU ondemand → `dvfs failed (-22)`; DMC ondemand → VOP `failed to set rate`. Balanced heat cut is CPU + App paint policy. |
 | Deep cpuidle (`name != WFI`) | **disable** | **re-enable** (helps idle average heat; secondary to clock cap under active UI) |
 
 - **Why max-freq cap:** Pure `ondemand` still ramps to top OPP under scroll/paint → heat spikes remain. A **hard ceiling** is the direct thermal lever; governor choice then handles below-cap dynamics.

@@ -56,7 +56,7 @@ migrate_hal_from_hmi() {
 	mkdir -p "$dst_root"
 
 	for name in display.conf sound.conf mouse.conf keyboard.conf datetime.conf \
-		usb-otg.conf properties.ini product.ini time-sync-mode timezone; do
+		power.conf usb-otg.conf properties.ini product.ini time-sync-mode timezone; do
 		src="$src_root/$name"
 		dst="$dst_root/$name"
 		if [ -e "$src" ] && [ ! -e "$dst" ]; then

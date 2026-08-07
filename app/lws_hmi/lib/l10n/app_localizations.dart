@@ -4097,6 +4097,36 @@ abstract class AppLocalizations {
   /// **'Wide-Area Cleaning'**
   String get processWheelWideCleaning;
 
+  /// No description provided for @powerModeOptionBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get powerModeOptionBalanced;
+
+  /// No description provided for @powerModeOptionPerformance.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get powerModeOptionPerformance;
+
+  /// No description provided for @powerModePersistedFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance keeps full clocks and motion. Balanced lowers SoC load and heat by capping clocks and reducing decorative animation.'**
+  String get powerModePersistedFooter;
+
+  /// No description provided for @powerModePreferenceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Mode settings are temporarily unavailable.'**
+  String get powerModePreferenceUnavailable;
+
+  /// No description provided for @powerModeSettingText.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Mode'**
+  String get powerModeSettingText;
+
   /// No description provided for @productDisclaimerContent.
   ///
   /// In en, this message translates to:

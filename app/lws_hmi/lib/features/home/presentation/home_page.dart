@@ -19,6 +19,8 @@ import 'package:lws_hmi/features/home/presentation/custom_home_statistics_panel.
 import 'package:lws_hmi/features/home/presentation/paced_home_webp.dart';
 import 'package:lws_hmi/features/home/presentation/home_webp_coverage_gate.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
+import 'package:lws_hmi/features/settings/application/load_profile_controller.dart';
+import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -65,7 +67,9 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
   /// Shared 33 ms tick for left/right decorative WebP (caps UI dirty rate ~30 Hz).
   /// Stays live under dialogs (frost blur); pauses under opaque full-page routes
-  /// via [homeWebpCoverageGate]. Set [playMotion] false later for 均衡 mode.
+  /// via [homeWebpCoverageGate]. Under balanced load profile, [playMotion] is
+  /// false so the paced plates hide (static Quick/Engineer frames stay via
+  /// [_PositionedAsset] below — do not reuse those frames as oversized fallbacks).
   late final PacedHomeWebpController _homeWebp = PacedHomeWebpController(
     layers: const [
       PacedHomeWebpSpec(
@@ -80,6 +84,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
   );
 
   Route<dynamic>? _homeRoute;
+  LoadProfileController? _loadProfile;
 
   Future<void> _openQuickMode() async {
     await DeviceRegistrationDialogs.pushNamedIfUnlocked(
@@ -121,6 +126,13 @@ class _HomePageState extends State<HomePage> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final load = LoadProfileScope.maybeOf(context);
+    if (!identical(_loadProfile, load)) {
+      _loadProfile?.removeListener(_syncHomeWebpMotionPolicy);
+      _loadProfile = load;
+      _loadProfile?.addListener(_syncHomeWebpMotionPolicy);
+      _syncHomeWebpMotionPolicy();
+    }
     appRouteObserver.unsubscribe(this);
     final route = ModalRoute.of(context);
     if (route is PageRoute) {
@@ -138,6 +150,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
   @override
   void dispose() {
+    _loadProfile?.removeListener(_syncHomeWebpMotionPolicy);
+    _loadProfile = null;
     homeWebpCoverageGate.removeListener(_syncHomeWebpToCoverage);
     if (_homeRoute != null) {
       homeWebpCoverageGate.detachHome(_homeRoute!);
@@ -149,8 +163,22 @@ class _HomePageState extends State<HomePage> with RouteAware {
     super.dispose();
   }
 
+  void _syncHomeWebpMotionPolicy() {
+    if (!mounted) {
+      return;
+    }
+    final reduce =
+        _loadProfile?.reduceDecorativeMotion ?? false;
+    _homeWebp.playMotion = !reduce;
+    _syncHomeWebpToCoverage();
+  }
+
   void _syncHomeWebpToCoverage() {
     if (!mounted) {
+      return;
+    }
+    if (_loadProfile?.reduceDecorativeMotion ?? false) {
+      _homeWebp.pause();
       return;
     }
     if (homeWebpCoverageGate.pauseWebp) {

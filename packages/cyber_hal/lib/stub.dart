@@ -9,6 +9,7 @@
 ///   final volume = StubVolume();
 ///   final autoSleep = StubAutoSleep();
 ///   final buttonFeedback = StubButtonFeedback();
+///   final loadProfile = StubLoadProfile();
 ///   final sysInfo = StubSysInfo();
 /// }
 /// ```
@@ -23,3 +24,4 @@ export 'package:cyber_hal/src/stub/stub_auto_sleep.dart';
 export 'package:cyber_hal/src/stub/stub_button_feedback.dart';
 export 'package:cyber_hal/src/stub/stub_orientation.dart';
 export 'package:cyber_hal/src/stub/stub_usb_otg.dart';
+export 'package:cyber_hal/src/stub/stub_load_profile.dart';

@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
+import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
+
+Duration _tabSlideDuration(BuildContext context, Duration requested) {
+  if (requested == Duration.zero) {
+    return Duration.zero;
+  }
+  if (LoadProfileScope.maybeOf(context)?.snapPageTransitions == true) {
+    return Duration.zero;
+  }
+  if (MediaQuery.disableAnimationsOf(context)) {
+    return Duration.zero;
+  }
+  return requested;
+}
 
 /// Tap-driven horizontal slide body for Settings / Monitor tabs.
 ///
 /// Finger swipe stays disabled (anti-mis-touch); tab taps animate L/R like
-/// in-module [buildAppSlideRoute] navigation.
+/// in-module [buildAppSlideRoute] navigation. Under balanced load profile /
+/// [MediaQuery.disableAnimations], duration snaps to zero.
 ///
 /// Unlike [PageView.animateToPage], non-adjacent jumps only paint the outgoing
 /// and incoming tabs (no intermediate-page sweep) — critical on RK3566 when
@@ -44,6 +59,12 @@ class _ProductTabSlideBodyState extends State<ProductTabSlideBody>
     _curved = CurvedAnimation(parent: _controller, curve: widget.curve);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = _tabSlideDuration(context, widget.duration);
+  }
+
   void _onStatus(AnimationStatus status) {
     if (status != AnimationStatus.completed) {
       return;
@@ -58,8 +79,9 @@ class _ProductTabSlideBodyState extends State<ProductTabSlideBody>
   @override
   void didUpdateWidget(covariant ProductTabSlideBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.duration != oldWidget.duration) {
-      _controller.duration = widget.duration;
+    final duration = _tabSlideDuration(context, widget.duration);
+    if (duration != _controller.duration) {
+      _controller.duration = duration;
     }
     if (widget.curve != oldWidget.curve) {
       _curved.dispose();
@@ -72,10 +94,22 @@ class _ProductTabSlideBodyState extends State<ProductTabSlideBody>
       _controller.stop();
       _outgoingIndex = null;
     }
+    final next = widget.index;
+    final forward = next > _index;
+    if (duration == Duration.zero) {
+      // Snap: switch index without painting an outgoing slide frame.
+      setState(() {
+        _forward = forward;
+        _outgoingIndex = null;
+        _index = next;
+      });
+      _controller.reset();
+      return;
+    }
     setState(() {
-      _forward = widget.index > _index;
+      _forward = forward;
       _outgoingIndex = _index;
-      _index = widget.index;
+      _index = next;
     });
     _controller.forward(from: 0);
   }
@@ -157,8 +191,9 @@ class ProductTabSlideSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effective = _tabSlideDuration(context, duration);
     return AnimatedSwitcher(
-      duration: duration,
+      duration: effective,
       switchInCurve: curve,
       switchOutCurve: curve,
       layoutBuilder: (currentChild, previousChildren) {

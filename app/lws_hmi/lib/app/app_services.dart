@@ -40,6 +40,7 @@ final class AppServices {
     BacklightController? backlightController,
     AutoSleep? autoSleep,
     ButtonFeedback? buttonFeedback,
+    LoadProfile? loadProfile,
     EthernetController? ethernetController,
     WifiController? wifiController,
     HttpClientController? httpClientController,
@@ -96,6 +97,7 @@ final class AppServices {
     backlight = backlightController ?? b.backlight();
     this.autoSleep = autoSleep ?? b.autoSleep();
     this.buttonFeedback = buttonFeedback ?? b.buttonFeedback(mediaAudio: audio);
+    this.loadProfile = loadProfile ?? b.loadProfile();
     ethernet = ethernetController ?? b.ethernetSession();
     wifi = wifiController ?? b.wifiSession();
     primaryNetwork = b.primaryNetwork(wifi: wifi, ethernet: ethernet);
@@ -164,6 +166,7 @@ final class AppServices {
   late final BacklightController backlight;
   late final AutoSleep autoSleep;
   late final ButtonFeedback buttonFeedback;
+  late final LoadProfile loadProfile;
   late final EthernetController ethernet;
   late final WifiController wifi;
   late final PrimaryNetworkController primaryNetwork;

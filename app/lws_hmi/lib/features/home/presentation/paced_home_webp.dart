@@ -306,7 +306,15 @@ class PacedHomeWebpPlate extends StatelessWidget {
         child: ListenableBuilder(
           listenable: controller,
           builder: (context, _) {
-            if (!controller.playMotion || controller.failedAt(layerIndex)) {
+            // Balanced / no-motion: do not paint the plate. Fallback assets
+            // (`home_*_img.webp`) are Quick/Engineer card frames already shown
+            // via Home `_PositionedAsset` at the correct 375×280 slots. Drawing
+            // them in this oversized plate puts the frame's inner edges beside
+            // the clock as two vertical lines.
+            if (!controller.playMotion) {
+              return const SizedBox.shrink();
+            }
+            if (controller.failedAt(layerIndex)) {
               return Image.asset(
                 controller.fallbackAt(layerIndex),
                 fit: BoxFit.contain,

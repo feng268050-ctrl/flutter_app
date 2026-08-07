@@ -582,6 +582,7 @@ enable-ssh-debug /usr/libexec/ssh/enable-ssh-debug.sh
 disable-ssh-debug /usr/libexec/ssh/disable-ssh-debug.sh
 usb-otg-mode /usr/libexec/usb/usb-otg-mode.sh
 set-performance-mode /usr/libexec/board/set-performance-mode.sh
+set-power-mode /usr/libexec/board/set-performance-mode.sh
 apply-mouse-settings /usr/libexec/display/apply-mouse-settings.sh
 EOF
 	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply change-backlight change-volume apply-proxy sync-time; do

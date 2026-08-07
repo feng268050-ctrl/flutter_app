@@ -587,7 +587,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 
 权威阶段表与旧号映射：[`docs/flutter-linux-hmi-plan.md` §1](docs/flutter-linux-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
 
-Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
+Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`（`set-power-mode`：`performance` / `balanced` load profile）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
 
 仍待移植：lensinspector / AI daemon、`probe-dual-stream.sh`、IPC 专链 eth0 配网细节（**P4.1**）。
 

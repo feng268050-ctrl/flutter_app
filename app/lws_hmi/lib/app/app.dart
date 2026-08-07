@@ -54,6 +54,8 @@ import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dar
 import 'package:lws_hmi/features/settings/application/app_cyber_ime_language_provider.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/load_profile_controller.dart';
+import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
 import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
@@ -152,6 +154,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   late final CommonSettingsStore _commonSettingsStore =
       widget.commonSettingsStore ?? CommonSettingsStore();
+
+  late final LoadProfileController _loadProfileController =
+      LoadProfileController(backend: _services.loadProfile);
 
   late final AdvancedSettingsStore _advancedSettingsStore =
       widget.advancedSettingsStore ?? AdvancedSettingsStore();
@@ -289,6 +294,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     _soundEffectStore.warmRead();
     _miscSettingsStore.warmRead();
     _commonSettingsStore.warmRead();
+    unawaited(_loadProfileController.load());
     _advancedSettingsStore.warmRead();
     _thresholdsController.warmFromStore();
     _bootSelfCheckSettings.warmRead();
@@ -598,12 +604,18 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   Widget _appBuilder(BuildContext context, Widget? child) {
     return ListenableBuilder(
-      listenable: _services.wallClock,
+      listenable: Listenable.merge([
+        _services.wallClock,
+        _loadProfileController,
+      ]),
       builder: (context, _) {
         final mq = MediaQuery.of(context);
         return MediaQuery(
           data: mq.copyWith(
             alwaysUse24HourFormat: _services.wallClock.use24HourFormat,
+            disableAnimations: _loadProfileController.disableAnimations
+                ? true
+                : mq.disableAnimations,
           ),
           child: SystemStatusOverlayHost(
             store: _miscSettingsStore,
@@ -622,9 +634,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return AppScope(
       services: _services,
-      child: CloudLocalRuntimeScope(
-        runtime: _cloudLocalRuntime,
-        child: CloudSettingsScope(
+      child: LoadProfileScope(
+        controller: _loadProfileController,
+        child: CloudLocalRuntimeScope(
+          runtime: _cloudLocalRuntime,
+          child: CloudSettingsScope(
           store: _cloudSettingsStore,
           child: RemoteLockScope(
             store: _remoteLockStore,
@@ -715,6 +729,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -726,6 +741,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         final videoArgs = settings.arguments;
         return buildAppSlideRoute<void>(
           settings: settings,
+          snap: _loadProfileController.snapPageTransitions,
           builder: (_) => videoArgs is ProcessVideoDetailArgs
               ? ProcessVideoDetailPage(args: videoArgs)
               : const MonitorPage(),
@@ -733,12 +749,14 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       case AppRoutes.aiVisionChoose:
         return buildAppSlideRoute<void>(
           settings: settings,
+          snap: _loadProfileController.snapPageTransitions,
           builder: (_) => const AiVisionVideoChoosePage(),
         );
       case AppRoutes.productDisclaimer:
         // lws-ui UseSafetyTipsActivity — L/R slide over Safety Tips.
         return buildAppSlideRoute<void>(
           settings: settings,
+          snap: _loadProfileController.snapPageTransitions,
           builder: (_) => const ProductDisclaimerPage(),
         );
       case AppRoutes.engineerMode:
@@ -748,6 +766,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         if (engineerArgs is EngineerModeRouteArgs) {
           return buildAppSlideRoute<void>(
             settings: settings,
+            snap: _loadProfileController.snapPageTransitions,
             builder: (_) => _LockedModeGate(
               lockStore: _remoteLockStore,
               child: EngineerModePage(
@@ -810,6 +829,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     return buildAppPageRoute(
       settings: settings,
       child: page,
+      snap: _loadProfileController.snapPageTransitions,
     );
   }
 }

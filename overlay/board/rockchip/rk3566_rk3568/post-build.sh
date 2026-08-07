@@ -70,6 +70,7 @@ ln -sf /usr/libexec/ssh/enable-ssh-debug.sh "$TARGET_DIR/usr/bin/enable-ssh-debu
 ln -sf /usr/libexec/ssh/disable-ssh-debug.sh "$TARGET_DIR/usr/bin/disable-ssh-debug"
 ln -sf /usr/libexec/usb/usb-otg-mode.sh "$TARGET_DIR/usr/bin/usb-otg-mode"
 ln -sf /usr/libexec/board/set-performance-mode.sh "$TARGET_DIR/usr/bin/set-performance-mode"
+ln -sf /usr/libexec/board/set-performance-mode.sh "$TARGET_DIR/usr/bin/set-power-mode"
 # Deprecated iface-named path (half-upgraded boards / old callers).
 rm -f \
 	"$TARGET_DIR/usr/bin/boot-verify" \

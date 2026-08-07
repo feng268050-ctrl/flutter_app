@@ -1,5 +1,5 @@
 [Unit]
-Description=CPU/DMC/GPU performance governors
+Description=CPU/DMC/GPU load profile restore
 DefaultDependencies=yes
 After=local-fs.target
 Before=mainserver.service hmi.service

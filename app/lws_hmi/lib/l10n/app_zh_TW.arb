@@ -533,6 +533,8 @@
   "pleaseTryAgain": "請重試",
   "pleaseWait": "請稍候…",
   "positioningLightFaultAlarmContent": "紅光（定位光）故障。請檢查指示光是否正常；若不亮，請聯繫 LaserCyber 售後。",
+  "powerModePersistedFooter": "性能模式保持滿頻與完整動畫；均衡模式透過限制時鐘並減少裝飾動畫降低機身發熱與負載。",
+  "powerModePreferenceUnavailable": "暫時無法更改效能模式。",
   "presetLabel": "預設",
   "processAppliedVerified": "工藝已應用並校驗。",
   "processApplyFailedGeneric": "應用失敗：{error}",

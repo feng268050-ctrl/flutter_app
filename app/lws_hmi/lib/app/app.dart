@@ -591,6 +591,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
           width: logical.width,
           height: logical.height,
           child: MediaQuery(
+            // copyWith keeps disableAnimations / textScaler / etc. from [mq].
             data: mq.copyWith(
               size: logical,
               devicePixelRatio: dpr * scale,
@@ -610,19 +611,40 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       ]),
       builder: (context, _) {
         final mq = MediaQuery.of(context);
+        final reduceMotion = _loadProfileController.disableAnimations;
+        final themed = Theme.of(context);
         return MediaQuery(
           data: mq.copyWith(
             alwaysUse24HourFormat: _services.wallClock.use24HourFormat,
-            disableAnimations: _loadProfileController.disableAnimations
-                ? true
-                : mq.disableAnimations,
+            disableAnimations: reduceMotion ? true : mq.disableAnimations,
           ),
-          child: SystemStatusOverlayHost(
-            store: _miscSettingsStore,
-            child: GpioLedOverlayHost(
-              // P3.2 QEMU / sim OEM only — never on ynh960 (or other) hardware.
-              enabled: widget.boardProfile.info.boardId == 'sim',
-              child: _matchFlutterPiDensity(context, child),
+          // Balanced: flat press dim (Home QA gray) instead of expanding ripple —
+          // covers InkWell / ListTile / Material buttons that use Theme splash.
+          child: Theme(
+            data: themed.copyWith(
+              splashFactory: reduceMotion
+                  ? CyberPressInkSplash.splashFactory
+                  : themed.splashFactory,
+              splashColor: reduceMotion
+                  ? CyberPressFeedback.overlay
+                  : themed.splashColor,
+              highlightColor:
+                  reduceMotion ? Colors.transparent : themed.highlightColor,
+            ),
+            // Density rescale must read MediaQuery *below* the disableAnimations
+            // override — using the outer builder context re-wraps mq without it
+            // and re-enables CyberButton InkRipple on device (DPR≈1 path).
+            child: Builder(
+              builder: (innerContext) {
+                return SystemStatusOverlayHost(
+                  store: _miscSettingsStore,
+                  child: GpioLedOverlayHost(
+                    // P3.2 QEMU / sim OEM only — never on ynh960 (or other) hardware.
+                    enabled: widget.boardProfile.info.boardId == 'sim',
+                    child: _matchFlutterPiDensity(innerContext, child),
+                  ),
+                );
+              },
             ),
           ),
         );

@@ -694,69 +694,63 @@ class _ModeEntry extends StatelessWidget {
       top: top,
       width: width,
       height: height,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            CyberClickSoundRegistry.playClick();
-            onTap();
-          },
-          borderRadius: BorderRadius.circular(18),
-          child: Stack(
-              alignment: Alignment.topCenter,
-              clipBehavior: Clip.none,
-              children: [
-                Positioned(
-                  top: heroTop,
-                  width: heroSize.clamp(48, width),
-                  height: heroSize.clamp(48, height * 0.85),
-                  child: Image.asset(
-                    hero,
-                    fit: BoxFit.contain,
-                    cacheWidth: (heroSize * dpr).round().clamp(160, 640),
-                    cacheHeight: (heroSize * dpr).round().clamp(160, 640),
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.touch_app,
-                      size: heroSize * 0.35,
-                      color: Colors.white70,
-                    ),
-                  ),
+      child: CyberPressable(
+        borderRadius: BorderRadius.circular(18),
+        onPressed: () async => onTap(),
+        child: Stack(
+          alignment: Alignment.topCenter,
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              top: heroTop,
+              width: heroSize.clamp(48, width),
+              height: heroSize.clamp(48, height * 0.85),
+              child: Image.asset(
+                hero,
+                fit: BoxFit.contain,
+                cacheWidth: (heroSize * dpr).round().clamp(160, 640),
+                cacheHeight: (heroSize * dpr).round().clamp(160, 640),
+                errorBuilder: (_, __, ___) => Icon(
+                  Icons.touch_app,
+                  size: heroSize * 0.35,
+                  color: Colors.white70,
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: labelBandH,
-                  child: Transform.translate(
-                    // Drop label 6 design units; keep the label band geometry.
-                    offset: Offset(0, labelDrop),
-                    child: Center(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          textLabel,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.w700,
-                            height: textHeightFactor,
-                            shadows: const [
-                              Shadow(
-                                color: Color(0x99000000),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: labelBandH,
+              child: Transform.translate(
+                // Drop label 6 design units; keep the label band geometry.
+                offset: Offset(0, labelDrop),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      textLabel,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.w700,
+                        height: textHeightFactor,
+                        shadows: const [
+                          Shadow(
+                            color: Color(0x99000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
+          ],
         ),
       ),
     );

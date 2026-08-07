@@ -73,7 +73,8 @@ Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `z
 Common Settings SHALL expose:
 
 - Display & Sound (untitled card): **Country/Region**, Language, and Unit as persisted controls backed by `/var/lib/hmi/common-settings.json`; Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then Sound.
-- RGB LED + Camera (untitled card, after Display & Sound, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
+- **Power Mode** (untitled card, **own group**, after Display & Sound and before RGB LED + Camera): a single nav row (same chrome pattern as **Unit**) with trailing summary of the current mode; tapping opens a Power Mode sub-page (see Power Mode requirement). Persistence remains `/var/lib/hal/power.conf` via HAL (not `common-settings.json`).
+- RGB LED + Camera (untitled card, after Power Mode, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
 - Date & Time (untitled card): Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController` (lws-ui parity).
 - Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera + RGB LED group requirement).
 - Operator-visible labels SHALL come from App localization. Group section titles MUST NOT be shown.
@@ -87,6 +88,12 @@ Common Settings SHALL expose:
 
 - **WHEN** the user selects an Auto Screen Off option on the Display page other than the current policy
 - **THEN** HAL `AutoSleep` is asked to set the corresponding policy and the choice is persisted
+
+#### Scenario: Power Mode group is separate from Display and Sound
+
+- **WHEN** the operator opens Common Settings
+- **THEN** Power Mode appears as its own untitled card (not a row inside Display & Sound)
+- **AND** that card is after Display & Sound and before RGB LED + Camera
 
 #### Scenario: Sound effect is not a stub
 
@@ -129,6 +136,23 @@ Common Settings SHALL expose:
 
 - **WHEN** Language is `zh-CN` and the operator opens Common Settings
 - **THEN** migrated row titles and control labels render in Simplified Chinese via App localization
+
+### Requirement: Common Settings Power Mode nav opens a Unit-style sub-page
+
+Common Settings SHALL present **Power Mode** (localized; en: Power Mode; zh-CN: 效能模式) as a **SettingsNavRow** in its own untitled card. The row SHALL show a trailing summary of the active profile (Performance / Balanced, localized 性能 / 均衡). Tapping SHALL push a dedicated Power Mode settings sub-page (same navigation chrome pattern as **Unit** → `UnitSettingsPage`). The sub-page SHALL list the two options `performance` and `balanced` for selection. Selecting an option SHALL call the HAL load-profile API (persist + apply) and update the in-App continuous-paint policy; the Common Settings trailing summary SHALL refresh to match. Operator-facing copy MUST NOT present the mode primarily as energy saving / 省电.
+
+#### Scenario: Power Mode opens sub-page like Unit
+
+- **WHEN** the operator taps Power Mode on Common Settings
+- **THEN** a Power Mode sub-page opens (not an inline dropdown on the Common Settings list)
+- **AND** the navigation pattern matches Unit (nav row → push settings page)
+
+#### Scenario: Sub-page lists performance and balanced
+
+- **WHEN** the operator opens the Power Mode sub-page
+- **THEN** Performance (性能) and Balanced (均衡) options are available
+- **AND** selecting Balanced invokes HAL setMode(`balanced`) and persists `/var/lib/hal/power.conf`
+- **AND** returning to Common Settings shows the Balanced trailing summary
 
 ### Requirement: Country/Region selection lists all markets and applies region effects
 
@@ -487,13 +511,14 @@ Device Information and Common Settings SHALL render settings groups with CyberUI
 
 ### Requirement: Common Settings Display and Sound — Display and Sound sub-pages
 
-Within Common Settings, Language and Unit remain as list/nav rows. **Brightness** and **Auto Screen Off** SHALL be merged into a single **Display** nav row. **Volume** and **Sound Effect** SHALL be merged into a single **Sound** nav row. Display SHALL provide Brightness via `CyberSlider` (drag-value chrome) → HAL `Backlight`, and Auto Screen Off as a dropdown → HAL `AutoSleep`. Sound SHALL provide Volume via left-label / right `CyberVolumeSlider` (speaker icons retained; no play-test card) → HAL media audio, and Sound Effect as a dropdown → `ButtonFeedback` / sound-effect store. Language SHALL continue to offer **three** App locales (`en-US`, `zh-CN`, `zh-TW`).
+Within Common Settings, Language and Unit remain as list/nav rows. **Brightness** and **Auto Screen Off** SHALL be merged into a single **Display** nav row. **Volume** and **Sound Effect** SHALL be merged into a single **Sound** nav row. Display SHALL provide Brightness via `CyberSlider` (drag-value chrome) → HAL `Backlight`, and Auto Screen Off as a dropdown → HAL `AutoSleep`. Sound SHALL provide Volume via left-label / right `CyberVolumeSlider` (speaker icons retained; no play-test card) → HAL media audio, and Sound Effect as a dropdown → `ButtonFeedback` / sound-effect store. Language SHALL continue to offer **three** App locales (`en-US`, `zh-CN`, `zh-TW`). Power Mode / load-profile selection MUST NOT live on the Display sub-page (see Power Mode requirement).
 
 #### Scenario: Display opens brightness and screen-off
 
 - **WHEN** the operator opens Common Settings → Display
 - **THEN** Brightness can be adjusted with a CyberSlider
 - **AND** Auto Screen Off can be chosen from a dropdown without a separate screen-off page
+- **AND** the Display page MUST NOT host the Power Mode / performance / balanced selector
 
 #### Scenario: Sound opens volume and sound effect
 
@@ -536,13 +561,13 @@ Common Settings SHALL present Date & Time in an untitled CyberUI card. The Commo
 
 ### Requirement: Camera shares an untitled card with RGB LED (not under Input)
 
-Common Settings SHALL present **Camera** in the same untitled card as **RGB LED**, placed **after** Display & Sound and **before** Date & Time. Camera MUST NOT be nested under Input. The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). Input SHALL retain Mouse, Keyboard, and USB OTG only (no Camera row under Input).
+Common Settings SHALL present **Camera** in the same untitled card as **RGB LED**, placed **after** Power Mode (and Display & Sound) and **before** Date & Time. Camera MUST NOT be nested under Input. The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). Input SHALL retain Mouse, Keyboard, and USB OTG only (no Camera row under Input).
 
 #### Scenario: Camera with RGB LED before Date & Time
 
 - **WHEN** the operator opens Common Settings
 - **THEN** RGB LED and Camera navigation rows appear in the same card group
-- **AND** that card is after Display & Sound and before Date & Time
+- **AND** that card is after Power Mode and before Date & Time
 - **AND** the Input card group does not list Camera / IP Camera
 
 #### Scenario: Camera label

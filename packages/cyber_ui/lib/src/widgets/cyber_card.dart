@@ -9,6 +9,8 @@ import 'package:cyber_ui/src/theme/cyber_colors.dart';
 import 'package:cyber_ui/src/theme/cyber_glass_theme.dart';
 import 'package:cyber_ui/src/theme/cyber_panel_outline.dart';
 import 'package:cyber_ui/src/theme/cyber_tone.dart';
+import 'package:cyber_ui/src/widgets/cyber_press_feedback.dart';
+import 'package:cyber_ui/src/widgets/cyber_press_ink_splash.dart';
 
 /// Frosted panel on Material [Card] + [CyberPanelOutline].
 ///
@@ -89,6 +91,7 @@ class CyberCard extends StatelessWidget {
     );
 
     if (onTap != null) {
+      final reduceMotion = MediaQuery.disableAnimationsOf(context);
       body = Material(
         color: Colors.transparent,
         borderRadius: outline.borderRadius,
@@ -101,6 +104,12 @@ class CyberCard extends StatelessWidget {
             onTap!();
           },
           borderRadius: outline.borderRadius,
+          splashFactory: reduceMotion
+              ? CyberPressInkSplash.splashFactory
+              : InkSplash.splashFactory,
+          splashColor:
+              reduceMotion ? CyberPressFeedback.overlay : null,
+          highlightColor: reduceMotion ? Colors.transparent : null,
           child: body,
         ),
       );

@@ -36,7 +36,7 @@ The selected mode SHALL be persisted at `/var/lib/hal/power.conf` as `mode=perfo
 The image SHALL provide a board helper under `/usr/libexec/board/` (operator symlink under `/usr/bin/`) that applies the hardware profile for a given mode:
 
 - **performance:** set CPU cpufreq and available DMC/GPU devfreq governors to `performance` when listed in `available_governors`; restore or clear any balanced CPU max-freq cap; disable deep cpuidle states whose name is not `WFI`.
-- **balanced:** set CPU governor to the first available of `ondemand`, `schedutil`, `powersave`; when `scaling_max_freq` is writable, cap CPU max frequency to a mid operating point from the available table (board-tuned nearest OPP); set each available devfreq governor to the first available of `simple_ondemand`, `ondemand` when present; re-enable deep cpuidle states previously disabled for performance.
+- **balanced:** set CPU governor to the first available of `ondemand`, `schedutil`, `powersave`; when `scaling_max_freq` is writable, cap CPU max frequency to a mid operating point from the available table (board-tuned nearest OPP); keep **all** available devfreq governors on `performance` (GPU ondemand before Weston leaves a black desktop; NPU ondemand → DVFS errors; DMC ondemand breaks VOP rate programming); re-enable deep cpuidle states previously disabled for performance.
 
 Invoking the helper with an explicit mode argument SHALL persist that mode to `power.conf`. Invoking with no mode argument SHALL read `power.conf` (default `performance`) and apply without requiring a UI.
 
@@ -56,7 +56,7 @@ Invoking the helper with an explicit mode argument SHALL persist that mode to `p
 The LWS HMI App SHALL load the effective load profile at startup and keep an app-wide continuous-paint / animation policy in sync with HAL mode changes:
 
 - **performance:** retain current full decorative and transition animation behavior (including home looping WebP decorations when those assets are used).
-- **balanced:** disable or snap non-essential page/chrome transitions; replace home looping decorative WebP with static fallback imagery; honor reduced-motion for widgets that respect `MediaQuery.disableAnimations` / equivalent. Functional progress UX (hold-confirm, OTA/upgrade progress, alarm attention) MUST remain usable.
+- **balanced:** disable or snap non-essential page/chrome transitions; replace home looping decorative WebP with static fallback imagery; disable CyberUI / Material press ripples (and honor `MediaQuery.disableAnimations` / equivalent). Functional progress UX (hold-confirm, OTA/upgrade progress, alarm attention) MUST remain usable.
 
 #### Scenario: Home decoration static in balanced
 

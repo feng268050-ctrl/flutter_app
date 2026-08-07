@@ -133,6 +133,27 @@ void main() {
     );
   });
 
+  test('pressedFaceAlpha keeps resting when ripple suppressed', () {
+    expect(
+      CyberButtonPressDefaults.pressedFaceAlpha(
+        CyberButtonVariant.primary,
+        suppressRipple: false,
+      ),
+      CyberButtonPressDefaults.pressedAlpha,
+    );
+    expect(
+      CyberButtonPressDefaults.pressedFaceAlpha(
+        CyberButtonVariant.primary,
+        suppressRipple: true,
+      ),
+      CyberButtonPressDefaults.restingFaceAlpha(CyberButtonVariant.primary),
+    );
+    expect(
+      CyberButtonPressDefaults.suppressRipplePressOverlay,
+      CyberPressFeedback.overlay,
+    );
+  });
+
   testWidgets('rounded shape uses pill corner radius', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -263,6 +284,28 @@ void main() {
     expect(tester.getSize(find.byKey(const Key('small'))).height, 56);
     expect(tester.getSize(find.byKey(const Key('regular'))).height, 56);
   });
-}
 
+  testWidgets('disableAnimations uses CyberPressInkSplash on InkWell path',
+      (tester) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: MaterialApp(
+          home: Scaffold(
+            body: CyberButton(
+              onPressed: _noop,
+              child: const Text('Go'),
+            ),
+          ),
+        ),
+      ),
+    );
+    final ink = tester.widget<InkWell>(find.byType(InkWell));
+    expect(
+      identical(ink.splashFactory, CyberPressInkSplash.splashFactory),
+      isTrue,
+    );
+    expect(ink.splashColor, CyberPressFeedback.overlay);
+  });
+}
 void _noop() {}

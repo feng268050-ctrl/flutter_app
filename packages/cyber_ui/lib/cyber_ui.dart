@@ -42,6 +42,8 @@ export 'src/widgets/cyber_keyboard_insets.dart';
 export 'src/widgets/cyber_lifted_panel.dart';
 export 'src/widgets/cyber_numeric_stepper.dart';
 export 'src/widgets/cyber_overlay_host.dart';
+export 'src/widgets/cyber_press_feedback.dart';
+export 'src/widgets/cyber_press_ink_splash.dart';
 export 'src/widgets/cyber_press_ripple.dart';
 export 'src/widgets/cyber_segmented_control.dart';
 export 'src/widgets/cyber_scaled_slider.dart';

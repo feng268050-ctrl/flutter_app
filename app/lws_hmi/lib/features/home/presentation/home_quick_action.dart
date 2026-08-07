@@ -8,10 +8,11 @@ import 'package:flutter/material.dart';
 const double kHomeQuickActionCorner = 18;
 const double kHomeQuickActionLabelMarginTop = 10;
 
-/// Press: scale 1.0 → 0.94 over 90ms, then ~30ms settle before activate.
-const double kHomeQaPressScale = 0.94;
-const int kHomeQaPressMs = 90;
+/// Press: scale 1.0 → [CyberPressFeedback.scalePressed] over 90ms, then settle.
+const double kHomeQaPressScale = CyberPressFeedback.scalePressed;
+const int kHomeQaPressMs = 90; // keep in sync with CyberPressFeedback.pressIn
 const int kHomeQaPressHoldMs = 30;
+
 
 /// Caption reference used to size all home quick-action labels equally.
 const String kHomeQuickActionLabelSizeRef = 'Settings';
@@ -19,9 +20,6 @@ const String kHomeQuickActionLabelSizeRef = 'Settings';
 /// lws-ui `home_quick_action_label_text` ColorStateList.
 const Color _kLabelIdle = Color(0xFFFFFFFF);
 const Color _kLabelPressed = Color(0xB3FFFFFF);
-
-/// Semi-transparent dark press overlay on the glass card.
-const Color _kPressOverlay = Color(0x66000000);
 
 /// Called after press settle. Return the [Navigator] push [Future] when
 /// navigating so the tile stays at press scale until the route pops.
@@ -59,7 +57,9 @@ double homeQuickActionLabelFontSize(double cardWidth) {
 /// Architecture:
 /// - Outer entry is the press target (card + caption).
 /// - Glass [CyberCard] is appearance only (no own gestures).
-/// - Card scales about its center (1.0 → [kHomeQaPressScale]) on press,
+/// - Card scales about its center (1.0 → [kHomeQaPressScale]) on press in
+///   performance mode; Balanced keeps scale at 1.0 and only paints the gray
+///   overlay (same press language as [CyberPressInkSplash] buttons).
 ///   with a semi-transparent dark overlay (no Material ink ripple).
 ///
 /// Not the looping Quick/Engineer WebP halo — those are separate assets.
@@ -182,6 +182,12 @@ class _HomeQuickActionState extends State<HomeQuickAction>
     final radius = BorderRadius.circular(widget.cornerRadius);
     final fontSize =
         widget.labelFontSize ?? homeQuickActionLabelFontSize(widget.cardWidth);
+    // Balanced: Theme uses CyberPressInkSplash — skip QA scale, overlay only.
+    final scaleOnPress = !MediaQuery.disableAnimationsOf(context) &&
+        !identical(
+          Theme.of(context).splashFactory,
+          CyberPressInkSplash.splashFactory,
+        );
 
     // Outer entry = press target (card + caption), like FrostQuickActionEntry.
     return GestureDetector(
@@ -193,52 +199,54 @@ class _HomeQuickActionState extends State<HomeQuickAction>
         animation: _pressCurve,
         builder: (context, child) {
           final t = _pressCurve.value;
-          final scale = lerpDouble(1.0, kHomeQaPressScale, t)!;
+          final scale =
+              scaleOnPress ? lerpDouble(1.0, kHomeQaPressScale, t)! : 1.0;
           final labelColor = Color.lerp(_kLabelIdle, _kLabelPressed, t)!;
+
+          Widget card = SizedBox(
+            width: widget.cardWidth,
+            height: widget.cardHeight,
+            child: ClipRRect(
+              borderRadius: radius,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Appearance only — CyberCard does not own gestures.
+                  CyberCard(
+                    width: widget.cardWidth,
+                    height: widget.cardHeight,
+                    sampleMode: widget.sampleMode,
+                    intensity: widget.blurIntensity,
+                    blurTint: widget.blurTint,
+                    borderRadius: radius,
+                    // Home QA only: 30% white (buttons use buttonRim 70%).
+                    outlineStyle: CyberPanelOutlineStyle.uniform,
+                    borderWidth: 1,
+                    borderColor: CyberColors.homeQuickActionRim,
+                    child: widget.child,
+                  ),
+                  // Press: Home-QA gray overlay (same token as buttons).
+                  IgnorePointer(
+                    child: ColoredBox(
+                      color: CyberPressFeedback.overlayAt(t),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+          if (scaleOnPress) {
+            card = Transform.scale(
+              scale: scale,
+              alignment: Alignment.center,
+              child: card,
+            );
+          }
 
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Transform.scale(
-                scale: scale,
-                alignment: Alignment.center,
-                child: SizedBox(
-                  width: widget.cardWidth,
-                  height: widget.cardHeight,
-                  child: ClipRRect(
-                    borderRadius: radius,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        // Appearance only — CyberCard does not own gestures.
-                        CyberCard(
-                          width: widget.cardWidth,
-                          height: widget.cardHeight,
-                          sampleMode: widget.sampleMode,
-                          intensity: widget.blurIntensity,
-                          blurTint: widget.blurTint,
-                          borderRadius: radius,
-                          // Home QA only: 30% white (buttons use buttonRim 70%).
-                          outlineStyle: CyberPanelOutlineStyle.uniform,
-                          borderWidth: 1,
-                          borderColor: CyberColors.homeQuickActionRim,
-                          child: widget.child,
-                        ),
-                        // Press: semi-transparent dark overlay.
-                        IgnorePointer(
-                          child: ColoredBox(
-                            color: Color.lerp(
-                              const Color(0x00000000),
-                              _kPressOverlay,
-                              t,
-                            )!,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              card,
               SizedBox(height: widget.labelMarginTop),
               SizedBox(
                 width: captionWidth,

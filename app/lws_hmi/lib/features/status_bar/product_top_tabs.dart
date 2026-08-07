@@ -289,14 +289,13 @@ final class _ProductTopTabItem extends StatelessWidget {
             ? unselectedLwsUi
             : Colors.white60);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: layout == ProductTopTabLayout.lwsUi
-            ? _buildLwsUi(context, color)
-            : _buildMonitorPinned(context, color),
-      ),
+    return CyberPressable(
+      scaleOnPress: false,
+      clickSoundEnabled: true,
+      onPressed: () async => onTap(),
+      child: layout == ProductTopTabLayout.lwsUi
+          ? _buildLwsUi(context, color)
+          : _buildMonitorPinned(context, color),
     );
   }
 

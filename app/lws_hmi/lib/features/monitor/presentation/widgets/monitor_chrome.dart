@@ -40,7 +40,7 @@ abstract final class MonitorDimens {
   static const panelDepthLipShadow = SettingsDimens.depthLipShadow;
   static const panelCardShadow = SettingsDimens.cardShadow;
   static const corner = 18.0;
-  static const metricH = 88.0;
+  static const metricH = 100.0;
   static const leftPanelW = 740.0;
   static const leftPanelH = 608.0;
   static const logPanelW = 468.0;
@@ -398,48 +398,51 @@ class MonitorMetricCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  height: 24,
+                  height: TempTrendArrows.slotHeight,
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        value,
-                        maxLines: 1,
-                        softWrap: false,
-                        style: context.hmiTypography.metricValue.copyWith(
-                          color: fault ? const Color(0xFFFF8A80) : Colors.white,
-                          fontWeight: FontWeight.w400,
-                          height: 1.1,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              value,
+                              maxLines: 1,
+                              softWrap: false,
+                              style:
+                                  context.hmiTypography.metricValue.copyWith(
+                                color: fault
+                                    ? const Color(0xFFFF8A80)
+                                    : Colors.white,
+                                fontWeight: FontWeight.w400,
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        // Always reserve arrow width when a reading exists.
+                        if (hasValue)
+                          TempTrendArrows(trend: trend),
+                      ],
                     ),
                   ),
                 ),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: context.hmiTypography.metricLabel.copyWith(
-                      color: MonitorDimens.labelColor,
-                      fontWeight: FontWeight.w400,
-                      height: 1.15,
-                    ),
+                WordBoundaryLabel(
+                  text: label,
+                  maxLines: 2,
+                  style: context.hmiTypography.metricLabel.copyWith(
+                    color: MonitorDimens.labelColor,
+                    fontWeight: FontWeight.w400,
+                    height: 1.15,
                   ),
                 ),
               ],
             ),
           ),
-          // Same size/colors as Live Machine Status (“更多监测”).
-          if (hasValue && trend != TempTrend.none) ...[
-            const SizedBox(width: 6),
-            TempTrendArrows(trend: trend),
-            const SizedBox(width: 6),
-          ],
           MonitorStatusIcon(kind: kind),
           const SizedBox(width: 4),
         ],

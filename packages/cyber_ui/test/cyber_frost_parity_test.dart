@@ -68,6 +68,9 @@ void main() {
     await tester.tap(find.byType(Switch));
     await tester.pump();
     expect(value, isTrue);
+    final sw = tester.widget<Switch>(find.byType(Switch));
+    expect(sw.activeTrackColor, CyberColors.buttonPrimaryAccent);
+    expect(sw.activeColor, CyberColors.textPrimary);
   });
 
   testWidgets('CyberNumericStepper increments', (tester) async {

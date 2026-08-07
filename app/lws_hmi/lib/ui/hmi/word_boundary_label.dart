@@ -21,25 +21,85 @@ class WordBoundaryLabel extends StatelessWidget {
 
   /// Painted width of a single space under [style] (LTR).
   static double spaceWidth(TextStyle style) {
+    return _measureWidth(' ', style);
+  }
+
+  static double _measureWidth(String text, TextStyle style) {
     final painter = TextPainter(
-      text: TextSpan(text: ' ', style: style),
+      text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
       maxLines: 1,
+      textScaler: TextScaler.noScaling,
     )..layout();
     return painter.width;
   }
 
-  WrapAlignment get _wrapAlignment => switch (textAlign) {
-        TextAlign.center => WrapAlignment.center,
-        TextAlign.right || TextAlign.end => WrapAlignment.end,
-        _ => WrapAlignment.start,
+  CrossAxisAlignment get _crossAxis => switch (textAlign) {
+        TextAlign.center => CrossAxisAlignment.center,
+        TextAlign.right || TextAlign.end => CrossAxisAlignment.end,
+        _ => CrossAxisAlignment.start,
       };
+
+  /// Pack [words] into at most [maxLines] lines that fit [maxWidth].
+  @visibleForTesting
+  static List<String> packLines({
+    required List<String> words,
+    required TextStyle style,
+    required double maxWidth,
+    required int maxLines,
+    double? spacing,
+  }) {
+    if (words.isEmpty || maxLines < 1) {
+      return const [];
+    }
+    final gap = spacing ?? spaceWidth(style);
+    final lines = <List<String>>[];
+    var current = <String>[];
+    var currentWidth = 0.0;
+
+    void pushCurrent() {
+      if (current.isEmpty) {
+        return;
+      }
+      lines.add(current);
+      current = <String>[];
+      currentWidth = 0.0;
+    }
+
+    for (final word in words) {
+      final wordW = _measureWidth(word, style);
+      final addW = current.isEmpty ? wordW : gap + wordW;
+      if (current.isNotEmpty && currentWidth + addW > maxWidth + 0.5) {
+        pushCurrent();
+        current.add(word);
+        currentWidth = wordW;
+      } else {
+        current.add(word);
+        currentWidth += addW;
+      }
+    }
+    pushCurrent();
+
+    if (lines.length <= maxLines) {
+      return [for (final line in lines) line.join(' ')];
+    }
+
+    // Collapse overflow into the last allowed line (ellipsis via Text).
+    final head = lines.sublist(0, maxLines - 1);
+    final tail = lines.sublist(maxLines - 1).expand((e) => e).toList();
+    return [
+      for (final line in head) line.join(' '),
+      tail.join(' '),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     final words =
         text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
-    if (words.isEmpty) return const SizedBox.shrink();
+    if (words.isEmpty) {
+      return const SizedBox.shrink();
+    }
     // Single line, or a single token (CJK): ordinary Text is fine.
     if (maxLines <= 1 || words.length == 1) {
       return Text(
@@ -51,20 +111,44 @@ class WordBoundaryLabel extends StatelessWidget {
         style: style,
       );
     }
-    return Wrap(
-      alignment: _wrapAlignment,
-      spacing: spacing ?? spaceWidth(style),
-      runSpacing: 0,
-      children: [
-        for (final word in words)
-          Text(
-            word,
-            softWrap: false,
-            maxLines: 1,
-            overflow: TextOverflow.clip,
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = constraints.maxWidth;
+        if (!maxW.isFinite || maxW <= 0) {
+          return Text(
+            text,
+            textAlign: textAlign,
+            maxLines: maxLines,
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
             style: style,
-          ),
-      ],
+          );
+        }
+        final lines = packLines(
+          words: words,
+          style: style,
+          maxWidth: maxW,
+          maxLines: maxLines,
+          spacing: spacing,
+        );
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: _crossAxis,
+          children: [
+            for (var i = 0; i < lines.length; i++)
+              Text(
+                lines[i],
+                textAlign: textAlign,
+                maxLines: 1,
+                softWrap: false,
+                // Last line may hold leftover words — ellipsis at end, not mid-token wrap.
+                overflow: TextOverflow.ellipsis,
+                style: style,
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -163,6 +247,7 @@ final class _WordBoundaryLine extends StatelessWidget {
             word,
             softWrap: false,
             maxLines: 1,
+            overflow: TextOverflow.visible,
             style: style,
           ),
       ],

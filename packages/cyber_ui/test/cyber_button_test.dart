@@ -36,6 +36,17 @@ void main() {
     final decoration = deco.decoration as BoxDecoration;
     expect(decoration.color, CyberColors.buttonPrimaryFill);
     expect(decoration.gradient, isNull);
+
+    final paint = tester.widgetList<CustomPaint>(find.byType(CustomPaint));
+    final outlinePainter = paint
+        .map((w) => w.foregroundPainter ?? w.painter)
+        .whereType<CyberFrostPanelOutlinePainter>()
+        .first;
+    expect(
+      outlinePainter.outline.resolvedUniformColor,
+      CyberColors.buttonPrimaryRim,
+    );
+    expect(outlinePainter.outline.width, CyberDimens.buttonStrokeWidth);
   });
 
   testWidgets('secondary matches standard chrome with red label',

@@ -140,9 +140,10 @@ class CyberButton extends StatefulWidget {
   /// Legacy frost HL/mid/shadow override — ignored; rim is [buttonRim].
   final List<Color>? borderGradientColors;
 
-  /// Flat stroke color override. Defaults to [CyberColors.buttonRim]
-  /// (70% white). Home Monitor / Settings / AI Vision keep
-  /// [CyberColors.homeQuickActionRim] (30%) on their tiles only.
+  /// Flat stroke color override. Defaults to [CyberColors.buttonRim] (70%
+  /// white) or [CyberColors.buttonPrimaryRim] (60%) for [primary]. Home
+  /// Monitor / Settings / AI Vision keep [CyberColors.homeQuickActionRim]
+  /// (30%) on their tiles only.
   final Color? borderColor;
 
   /// Stroke width override; defaults to [CyberDimens.buttonStrokeWidth] (1px).
@@ -258,7 +259,11 @@ class _CyberButtonState extends State<CyberButton>
     final textColor = widget.foregroundColor ?? _foreground(widget.variant);
     final fontSize = _fontSizeFor(tier);
 
-    // Flat 1px 70% white — Home QA tiles keep 30% via [homeQuickActionRim].
+    // Flat 1px rim: primary = 60% white highlight; others = 70% white.
+    // Home QA tiles keep 30% via [homeQuickActionRim] on their own chrome.
+    final defaultRim = widget.variant == CyberButtonVariant.primary
+        ? CyberColors.buttonPrimaryRim
+        : CyberColors.buttonRim;
     final outline = CyberPanelOutline(
       style: CyberPanelOutlineStyle.uniform,
       tone: widget.variant == CyberButtonVariant.light
@@ -266,7 +271,7 @@ class _CyberButtonState extends State<CyberButton>
           : CyberTone.dark,
       width: widget.strokeWidth ?? CyberDimens.buttonStrokeWidth,
       cornerRadius: cornerRadius,
-      uniformColor: widget.borderColor ?? CyberColors.buttonRim,
+      uniformColor: widget.borderColor ?? defaultRim,
     );
 
     final label = DefaultTextStyle(

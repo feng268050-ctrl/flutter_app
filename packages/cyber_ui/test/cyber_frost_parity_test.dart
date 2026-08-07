@@ -40,10 +40,12 @@ void main() {
     expect(CyberColors.homeQuickActionRim.alpha, 0x4D);
   });
 
-  test('button rim is 70% white', () {
+  test('button rim is 70% white; primary rim is 60% white', () {
     expect(CyberColors.buttonRim, const Color(0xB3FFFFFF));
     expect(CyberColors.buttonRim.alpha, 0xB3);
     expect(CyberColors.buttonRim.alpha, isNot(CyberColors.homeQuickActionRim.alpha));
+    expect(CyberColors.buttonPrimaryRim, const Color(0x99FFFFFF));
+    expect(CyberColors.buttonPrimaryRim.alpha, 0x99);
   });
 
   test('CyberClockNotes documents glyph-clip limit', () {

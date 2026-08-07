@@ -48,8 +48,11 @@ abstract final class CyberColors {
   /// Only those three tiles; [CyberButton] uses [buttonRim] instead.
   static const homeQuickActionRim = Color(0x4DFFFFFF);
 
-  /// [CyberButton] / [HmiButton] flat 1px rim — 70% white.
+  /// [CyberButton] standard / secondary / light flat 1px rim — 70% white.
   static const buttonRim = Color(0xB3FFFFFF);
+
+  /// [CyberButtonVariant.primary] flat 1px highlight rim — 60% white.
+  static const buttonPrimaryRim = Color(0x99FFFFFF);
 
   // Panel border — light
   static const lightBorderHighlight = Color(0xD9FFFFFF);

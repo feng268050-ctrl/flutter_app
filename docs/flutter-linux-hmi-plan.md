@@ -2,7 +2,7 @@
 
 目标：在 **lws-hmi** Buildroot 基线上，用 **Weston + flutter-embedded-linux** 跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **OEM board·screen pack** 插拔，**产品顶层 App 可分叉**（`gpio`/`modbus` 目录属 App，不进 OEM）。按 **P1→P5** 增量交付（见下表）。显示栈细节与切换命令见 [`embedder-migration-plan.md`](embedder-migration-plan.md)。平台化（OEM / 自有 SDK / P3.2 虚拟机）见 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md)。
 
-**能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**产品子进程**（MediaMTX、日后 AI daemon）经 **`cyber_pm`** 由 App 监护，**不**默认进通用 rootfs；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。MediaMTX App 化见 [`app-owned-mediamtx-cyber-pm`](../openspec/changes/archive/2026-07-30-app-owned-mediamtx-cyber-pm/)。AI daemon App 化见 [`app-owned-ai-daemon`](../openspec/changes/app-owned-ai-daemon/)。
+**能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**产品子进程**（MediaMTX、AI daemon）经 **`cyber_pm`** 由 App 监护，**不**默认进通用 rootfs；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。MediaMTX App 化见 [`app-owned-mediamtx-cyber-pm`](../openspec/changes/archive/2026-07-30-app-owned-mediamtx-cyber-pm/)。AI daemon App 化见 [`app-owned-ai-daemon`](../openspec/changes/archive/2026-08-01-app-owned-ai-daemon/)（已归档）。统一整机 OTA 见 [`unified-ota-cyber-ota`](../openspec/changes/archive/2026-08-06-unified-ota-cyber-ota/)（已归档）。
 
 **板级范围（当前）**：**ynh960 / ynh962 / ynh961** 同产品线三档（RK3566 → RK3568B2 → RK3568）；**P1～P4 以 ynh960 验收**。中长期目标是 **少量不同主板 + 不同屏幕** 共用 OS 契约与 CyberUI，而非每产品从零开始。Rockchip SDK `**rk3566_rk3568`** profile 见 **§3.0**。
 
@@ -20,8 +20,8 @@
 | **Linux P3.0 — UI 框架 + IME** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（`packages/` path 包；初期 Frosted Glass，API 面向可换设计）；骨架已落地，持续优化中 | 🔄 |
 | **Linux P3.1 — HAL 硬件抽象层** | **Dart HAL 子包** + **systemd-networkd 网络栈切换**（wpa D-Bus + networkd L3；无 Rust/`hald`）。设计：[`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md) | ✅ |
 | **Linux P3.2 — Linux 模拟器** | 同 `Image` + 同 rootfs 内容 + OEM `sim_virt`；QEMU + VirGL 自动 `hmi.service`；细则 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §6 / W4；操作 [`p32-emulator.md`](p32-emulator.md)；OpenSpec `archive/2026-07-28-platform-p32-sim-virt` | ✅ |
-| **Linux P3.3 — AI 库迁移** | `native/lws_ai` + `lws_ai_daemon` + RKNN；App 经 **`cyber_pm`** 监护；OpenSpec `app-owned-ai-daemon` | 🔄 |
-| **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**）；IPC MediaMTX 已 App 化 | 🔄 |
+| **Linux P3.3 — AI 库迁移** | `native/lws_ai` + `lws_ai_daemon` + RKNN；App 经 **`cyber_pm`** 监护；OpenSpec [`archive/2026-08-01-app-owned-ai-daemon`](../openspec/changes/archive/2026-08-01-app-owned-ai-daemon/) | ✅ |
+| **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务、**P4.8 统一整机 OTA** 等（原 P5 业务；子阶段见 **§1.2**）；IPC MediaMTX 已 App 化 | ✅ |
 | **Linux P5.0 — Android 兼容** | Flutter App 打 **APK**；Modbus / GPIO / Wi‑Fi / BT 等在 **App 侧**接 Android / `YNHAPI`（**不**往 `cyber_hal` 加 Android 后端） | 🔲 |
 | **Linux P5.1 — 升级 Flutter Engine** | flutter-engine / SDK / flutter-embedded-linux：**3.41.9** + eLinux **42d3d75a56** | ✅ |
 
@@ -80,34 +80,34 @@ P3.2  Linux 模拟器 ✅（W4 / archive/2026-07-28-platform-p32-sim-virt）
     └─ 量产显示栈：Weston + eLinux
         （见 docs/embedder-migration-plan.md）
 
-P3.3  AI → `native/lws_ai` / daemon 🔄
+P3.3  AI → `native/lws_ai` / daemon ✅
     ├─ 源码：`native/lws_ai`（自 lws-ui lensinspector 迁入）；`make build-opencv` + `make build-ai` → `prebuilt/`
     ├─ 产品路径：`/opt/hmi/bin/lws_ai_daemon` + `/opt/hmi/lib`；Unix sock `/run/hmi/ai/`；workdir `/var/lib/hmi/ai/`
-    ├─ App：`AiDaemonSupervisor` + `cyber_pm`（冷启动 smoke：`daemon_ready` / `ping`）
-    └─ 业务叠框 UI 仍在 P4；OpenSpec `openspec/changes/app-owned-ai-daemon/`
+    ├─ App：`AiDaemonSupervisor` + `cyber_pm`（冷启动 smoke：`daemon_ready` / `ping`；`make smoke-ai`）
+    └─ 业务叠框 UI 已在 P4 交付；OpenSpec `openspec/changes/archive/2026-08-01-app-owned-ai-daemon/`
 
-P4  业务迁移（子阶段见 §1.2）🔄
-    ├─ 已交付切片：产品 Home / Settings / Monitor（告警温度）/ 开机自检 / 系统状态卡等
+P4  业务迁移（子阶段见 §1.2）✅
+    ├─ 已交付：产品 Home / Settings / Monitor（告警温度）/ 开机自检 / 系统状态卡；P4.1～P4.7 业务页（含网络与状态栏、云服务 / `:5580`、AI Vision / process-video AI SSE）
     ├─ **IPC MediaMTX**：产品运行时 — `/opt/hmi/bin/mediamtx` + Dart YAML + `cyber_pm`
-    │   （OpenSpec `app-owned-mediamtx-cyber-pm`）；**不进**通用 rootfs
-    ├─ packages/cyber_pm — 可复用子进程监护（MediaMTX 已用；AI 复用）
-    ├─ 进行中：P4.2 网络与状态栏、P4.6 其余业务页；云服务 / `:5580`（OpenSpec `align-cloud-local-server`）已落地非 OTA 切片；AI Vision / process-video AI SSE（`ai-vision-and-process-video-ai`）已落地最小可交付；P4.1 / P4.3～P4.5 / P4.7 未开始
-    ├─ **P4.8 统一整机 OTA** 🔲（一级；无 App-only / 二级产品通道）
-    │   ├─ OpenSpec：`openspec/changes/unified-ota-cyber-ota/`（实现中）
+    │   （OpenSpec `archive/2026-07-30-app-owned-mediamtx-cyber-pm`）；**不进**通用 rootfs
+    ├─ packages/cyber_pm — 可复用子进程监护（MediaMTX + AI）
+    ├─ 云服务 / `:5580`：OpenSpec `archive/2026-07-29-align-cloud-local-server`；AI Vision：`archive/2026-07-31-ai-vision-and-process-video-ai`
+    ├─ **P4.8 统一整机 OTA** ✅（一级；无 App-only / 二级产品通道）
+    │   ├─ OpenSpec：`openspec/changes/archive/2026-08-06-unified-ota-cyber-ota/`（已归档；另见 `settings-cloud-ota` / `make-publish-ota` / `cyber-upgrade-ui-package`）
     │   ├─ 发布物 = **`make ota-package`**：`tar.gz`（inactive FIT + `rootfs.img`，可选 `oem.img` + manifest）
     │   │   + 旁路 **Ed25519** `*.tar.gz.sig`（供**云 / publish / SSH `make upgrade`**；**不含** uboot；不对包内各 img 单独签名）
     │   ├─ `/opt/hmi`（HMI）随 **rootfs** 一起更新；不规划产品侧「只推 App」
     │   ├─ **`packages/cyber_ota`**：manifest、包下载/上传、解压、写非活动分区、进度；**云与主机 SSH 均整包验签**
     │   ├─ **统一 staged 管线**（云与 `make upgrade` SSH 同源落盘形状；均验签）：
     │   │   · 云：下载 `tar.gz`+`.sig` → **Ed25519 验整包** → 解压 → 写非活动分区 → try-boot
-    │   │   · `make upgrade`（USB-SSH/SSH）：上传 `tar.gz`+`.sig`（`UPGRADE_PACKAGE` 默认同目录 `<archive>.sig`）→ 验签 → 解压 → 写非活动分区 → try-boot
+    │   │   · `make upgrade`（USB-SSH/SSH）：主机 ephemeral HTTP + 设备 `download <url>` → 验签 → 解压 → 写非活动分区 → try-boot
     │   ├─ **安全收工 → 直达专用升级页**（下载/验签/解压/烧录）；升级页无激光作业入口
     │   ├─ 签名在 **`make ota-package`**（需 `OTA_SIGNING_KEY` / `make ota-release-keys`）；`build-*` 只产出 img
     │   ├─ **不**再单独做逐 img `.sig`；云 `sha512` 不能替代 Ed25519 写盘授权
     │   ├─ 私钥仅发布机/HSM；设备公钥（如 `/etc/ota/ed25519.pub`）；manifest 非信任根
     │   ├─ `make push-app` 仍为开发热路径；**SSH `make upgrade` 纳入 staged 且验签**；RockUSB `di` / `make flash` 仍免签
-    │   └─ 另见 `openspec/changes/upgrade-package-env/`：`UPGRADE_PACKAGE=` 现成 tarball + 同目录 `.sig`
-    └─ 依赖 CyberUI（优化中）+ HAL（设置/硬件页）
+    │   └─ `UPGRADE_PACKAGE=` 现成 tarball + 同目录 `.sig`（主机提取后 apply / RockUSB `di`）
+    └─ 依赖 CyberUI（P3.0 持续优化）+ HAL（设置/硬件页，已完成）
 
 P5.0  Android 兼容 🔲
     ├─ Flutter App 双目标 APK；平台能力走 Android / YNHAPI（非 cyber_hal）
@@ -133,4 +133,4 @@ P5.1  Flutter Engine / SDK / flutter-embedded-linux 升级 ✅（3.41.9 + 42d3d7
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 与 P3.1（`cyber_hal` + networkd）已完成**；**IPC MediaMTX 已 App 化（`cyber_pm` + `/opt/hmi/bin`）**；**P3.3 AI daemon 脚手架进行中**（`native/lws_ai` + `cyber_pm` smoke）。**P5.1 Engine 三件套已完成**（**3.41.9** + eLinux **42d3d75a56**）。**进行中**：**P3.0 CyberUI/IME**（优化）、**P4**（含 **P4.2** 网络与状态栏、**P4.6** 业务页切片）。其后仍待：P3.3 板端验收与 P4 AI UI、P4 其余子阶段、**P4.8 统一整机 OTA**（OpenSpec `unified-ota-cyber-ota`）、**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**。**P3.2 模拟器主路径已落地**（USB Wi‑Fi/BT ⏸）。Linux 平台层长期为 **`cyber_hal` + Buildroot**；产品附属进程用 **`cyber_pm`**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**已完成**：**P1～P2.5**、**P3.1**（`cyber_hal` + networkd）、**P3.2** 模拟器主路径（USB Wi‑Fi/BT ⏸）、**P3.3**（`native/lws_ai` + `lws_ai_daemon` via `cyber_pm`）、**P4**（业务 UI + IPC MediaMTX + 云 / `:5580` + AI Vision + **P4.8 统一整机 OTA** / `cyber_ota`）、**P5.1** Engine 三件套（**3.41.9** + eLinux **42d3d75a56**）。**进行中**：**P3.0 CyberUI/IME**（优化）。其后仍待：**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**。Linux 平台层长期为 **`cyber_hal` + Buildroot**；产品附属进程用 **`cyber_pm`**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。

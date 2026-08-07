@@ -167,10 +167,12 @@ void main() {
     expect(resetButton.shape, CyberButtonShape.rounded);
     expect(
       resetButton.borderGradientCenter,
-      CyberBorderGradientCenter.topBottom,
+      CyberBorderGradientCenter.uniform,
     );
-    expect(resetButton.strokeWidth, 1.5);
-    expect(resetButton.borderGradientColors?.first.alpha, greaterThan(0x77));
+    expect(
+      resetButton.borderColor ?? CyberColors.buttonRim,
+      CyberColors.buttonRim,
+    );
 
     expect(find.byKey(const ValueKey('engineer-param-process.laser_power')),
         findsOneWidget);

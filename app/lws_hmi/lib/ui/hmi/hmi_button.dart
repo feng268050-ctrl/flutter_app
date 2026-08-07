@@ -21,7 +21,7 @@ final class HmiButton extends StatelessWidget {
     this.trailing,
     this.groupIconWithLabel = false,
     this.clickSoundEnabled = true,
-    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.uniform,
     this.borderGradientColors,
     this.borderColor,
     this.strokeWidth,
@@ -48,10 +48,11 @@ final class HmiButton extends StatelessWidget {
   final bool groupIconWithLabel;
 
   final bool clickSoundEnabled;
+  /// Legacy; buttons always paint [CyberColors.buttonRim] (70% white).
   final CyberBorderGradientCenter borderGradientCenter;
   final List<Color>? borderGradientColors;
 
-  /// Flat stroke when [borderGradientCenter] is uniform (home QA rim).
+  /// Flat stroke override; default is [CyberColors.buttonRim] (70% white).
   final Color? borderColor;
   final double? strokeWidth;
   final bool paintFill;

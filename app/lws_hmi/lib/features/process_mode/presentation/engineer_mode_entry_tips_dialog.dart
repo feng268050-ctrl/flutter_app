@@ -36,8 +36,9 @@ final class EngineerModeEntryTipsResult {
   final bool dontShowAgain;
 }
 
-/// Engineer entry tip — lws-ui `FrostTone.LIGHT` + prompt metrics
-/// (`engineer_mode_entry_dialog_*` / `frost_dialog_prompt_*`).
+/// Engineer entry tip — lws-ui `FrostTone.LIGHT` cream glass (full-page
+/// baked Gaussian + 透视) + prompt metrics (`engineer_mode_entry_dialog_*` /
+/// `frost_dialog_prompt_*`).
 Future<EngineerModeEntryTipsResult?> showEngineerModeEntryTipsDialog(
   BuildContext context,
 ) {

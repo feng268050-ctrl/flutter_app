@@ -13,9 +13,9 @@ import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
 
 /// Orchestrates once-per-process self-check when Home is entered.
 ///
-/// Each HMI process start shows the dialog again (settings toggle still
-/// applies). "Don't show again" only suppresses for the remainder of this
-/// process — it no longer writes a permanent preference / boot marker.
+/// Each HMI process start shows the dialog again unless the user checked
+/// "don't show again" (persists `showStartupSelfCheck=false` in misc settings)
+/// or Advanced Settings disabled the toggle.
 abstract final class BootSelfCheckCoordinator {
   /// Visible dwell so each row paints Checking… before the next item.
   static const minStepDuration = Duration(milliseconds: 280);
@@ -83,7 +83,11 @@ abstract final class BootSelfCheckCoordinator {
       finished = true;
       autoDismissTimer?.cancel();
       session.markDismissed();
-      // Don't persist "don't show again" — every HMI process start shows again.
+      // Persist "don't show again" so reboot / next HMI process stays quiet
+      // until Advanced Settings re-enables Show Startup Self-Check.
+      if (session.dontShowAgain) {
+        await settings.setEnabled(false);
+      }
       if (context.mounted) {
         final nav = Navigator.of(context, rootNavigator: true);
         if (nav.canPop()) {

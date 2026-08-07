@@ -16,6 +16,15 @@ abstract final class CyberColors {
   static const lightFillMid = Color(0x33FFFCFA);
   static const lightFillBottom = Color(0x2EFFF8F6);
 
+  /// LIGHT warn / work-status backdrop (lws-ui `WorkStatusDialogBackdropDrawable`).
+  static const lightWarnBackdropEdge = Color(0xB8FFEFD0);
+  static const lightWarnBackdropBlend = Color(0xA6FFF8F0);
+  static const lightWarnBackdropCenter = Color(0xBFFFFFFF);
+
+  /// LIGHT shell frost veil (lws-ui `WorkStatusDialogShellFrostDrawable`).
+  static const lightShellFrostEdge = Color(0x28FFFFFF);
+  static const lightShellFrostCenter = Color(0x1FFFFFFF);
+
   // Panel border — dark
   static const borderHighlight = Color(0x77FFFFFF);
   static const borderMid = Color(0x8868686C);

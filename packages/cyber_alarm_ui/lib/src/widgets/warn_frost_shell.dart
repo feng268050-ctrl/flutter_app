@@ -5,14 +5,20 @@ import 'package:cyber_alarm_ui/src/widgets/warn_dialog_metrics.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
-/// Light alarm prompt chrome: **card-only** Gaussian frost + cream wash.
+/// Light alarm prompt chrome — lws-ui `FrostTone.LIGHT` cream **glass**.
 ///
 /// Outside the panel stays sharp (scrim only). Card **shrink-wraps** to
 /// [WarnDialogBody] (do not expand to max height — that left a huge empty
 /// band above the icon).
 ///
-/// Cream frost matches lws-ui `FrostTone.LIGHT`:
-/// capture → [ImageFilter.blur] → warm intensity overlay → cream (`#FFFCFA`) wash.
+/// Layer stack (back → front), matching `dialog_frost_light_overlay` /
+/// `WorkStatusDialogBackdropDrawable` / EXTREME+WARM / shell frost:
+/// 1. Captured page crop → Gaussian EXTREME (σ 25), or translucent light fill
+/// 2. Warm-yellow → white → warm-yellow translucent backdrop gradient
+/// 3. Warm intensity overlay (`#50FFFFFF`)
+/// 4. Thin white shell-frost veil
+/// 5. Foreground content (unblurred)
+/// 6. Light-tone gradient rim above the clip
 final class WarnFrostShell extends StatefulWidget {
   const WarnFrostShell({
     super.key,
@@ -23,13 +29,6 @@ final class WarnFrostShell extends StatefulWidget {
   final CyberBlurBackdropScopeState? scope;
   final Widget child;
 
-  /// Opaque-enough cream when capture is unavailable (`#FFFCFA`).
-  static const creamFallback = Color(0xE6FFFCFA);
-
-  /// Cream wash over blur — 奶油白, translucent so page color shows through.
-  /// Heavier than intensity overlay alone; lighter than solid white.
-  static const creamWash = Color(0xB3FFFCFA);
-
   /// Warm white overlay from lws-ui LIGHT → EXTREME (`0x50` + warm RGB).
   static Color get warmOverlay => cyberBlurOverlayColor(
         intensity: CyberBlurIntensity.extreme,
@@ -38,6 +37,43 @@ final class WarnFrostShell extends StatefulWidget {
 
   /// Gaussian sigma — lws-ui LIGHT / EXTREME dialog frost.
   static const blurSigma = 25.0;
+
+  /// lws-ui `WorkStatusDialogBackdropDrawable` vertical stops.
+  static const backdropGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      CyberColors.lightWarnBackdropEdge,
+      CyberColors.lightWarnBackdropBlend,
+      CyberColors.lightWarnBackdropCenter,
+      CyberColors.lightWarnBackdropBlend,
+      CyberColors.lightWarnBackdropEdge,
+    ],
+    stops: [0.0, 0.32, 0.5, 0.68, 1.0],
+  );
+
+  /// lws-ui `WorkStatusDialogShellFrostDrawable` vertical stops.
+  static const shellFrostGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      CyberColors.lightShellFrostEdge,
+      CyberColors.lightShellFrostCenter,
+      CyberColors.lightShellFrostEdge,
+    ],
+    stops: [0.0, 0.5, 1.0],
+  );
+
+  /// Fallback when capture is unavailable — translucent light fill (not opaque cream).
+  static const lightFillFallback = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      CyberColors.lightFillTop,
+      CyberColors.lightFillMid,
+      CyberColors.lightFillBottom,
+    ],
+  );
 
   @override
   State<WarnFrostShell> createState() => _WarnFrostShellState();
@@ -109,7 +145,7 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
         _lastSampledSize = size;
       });
     } catch (_) {
-      // Keep cream fallback.
+      // Keep translucent light-fill fallback.
     }
   }
 
@@ -138,6 +174,12 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
     final maxW =
         MediaQuery.sizeOf(context).width * WarnDialogMetrics.maxWidthFraction;
     final maxH = WarnDialogMetrics.maxCardHeight(context);
+    final lightRim = CyberPanelOutline(
+      style: CyberPanelOutlineStyle.frostGradient,
+      tone: CyberTone.light,
+      width: panel.width,
+      cornerRadius: panel.cornerRadius,
+    );
 
     // Re-sample if layout settled to a new card size (first frame often empty).
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -156,7 +198,6 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
         Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxW, maxHeight: maxH),
-            // Orange rim above clip (Manual Gas / Feed / Retract style).
             child: Stack(
               fit: StackFit.passthrough,
               children: [
@@ -169,6 +210,7 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
                   child: Stack(
                     fit: StackFit.loose,
                     children: [
+                      // 1. Blurred page crop (透视) or translucent light fill.
                       Positioned.fill(
                         child: _capture != null
                             ? ImageFiltered(
@@ -184,28 +226,42 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
                                   height: double.infinity,
                                 ),
                               )
-                            : const ColoredBox(
-                                color: WarnFrostShell.creamFallback,
+                            : const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: WarnFrostShell.lightFillFallback,
+                                ),
                               ),
                       ),
-                      // Warm intensity overlay (lws-ui EXTREME + WARM).
+                      // 2. Warm-yellow cream glass wash (not opaque cream plate).
+                      const Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: WarnFrostShell.backdropGradient,
+                          ),
+                        ),
+                      ),
+                      // 3. EXTREME + WARM intensity overlay.
                       Positioned.fill(
                         child: ColoredBox(color: WarnFrostShell.warmOverlay),
                       ),
-                      // Cream 奶油白 wash (`#FFFCFA`) — not pure white.
+                      // 4. Thin white shell-frost veil.
                       const Positioned.fill(
-                        child: ColoredBox(color: WarnFrostShell.creamWash),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: WarnFrostShell.shellFrostGradient,
+                          ),
+                        ),
                       ),
+                      // 5. Foreground content.
                       widget.child,
                     ],
                   ),
                 ),
+                // 6. Light-tone gradient rim above clip.
                 Positioned.fill(
                   child: IgnorePointer(
                     child: CustomPaint(
-                      painter: CyberFrostPanelOutlinePainter(
-                        panel.tipRimOutline,
-                      ),
+                      painter: CyberFrostPanelOutlinePainter(lightRim),
                     ),
                   ),
                 ),

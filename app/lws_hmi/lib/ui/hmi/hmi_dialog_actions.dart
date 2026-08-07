@@ -11,7 +11,7 @@ final class HmiDialogActions extends StatelessWidget {
     required this.confirmLabel,
     required this.onCancel,
     required this.onConfirm,
-    this.equalWidth = 168,
+    this.equalWidth = 196,
     this.gap = 24,
   });
 

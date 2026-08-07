@@ -304,11 +304,10 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                       : 'product-disclaimer-agree-btn',
                 ),
                 label: l10n.safetyTipsAgree,
-                // lws-ui frost_action_button_height 58 ≈ Hmi large (60);
-                // width matches lws-ui (163).
+                // width matches dialog equal actions (196).
                 size: HmiButtonSize.large,
                 widthPolicy: HmiButtonWidthPolicy.fixed,
-                width: 163,
+                width: 196,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
                 onPressed: _agreed ? _onAgree : null,

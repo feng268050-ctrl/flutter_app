@@ -405,7 +405,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                 label: l10n.otaUpdateNow,
                 size: HmiButtonSize.large,
                 widthPolicy: HmiButtonWidthPolicy.fixed,
-                width: 340,
+                width: 480,
                 shape: CyberButtonShape.rounded,
                 variant: CyberButtonVariant.primary,
                 borderGradientCenter:
@@ -419,7 +419,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                 label: l10n.otaUpdateLater,
                 size: HmiButtonSize.large,
                 widthPolicy: HmiButtonWidthPolicy.fixed,
-                width: 340,
+                width: 480,
                 shape: CyberButtonShape.rounded,
                 variant: CyberButtonVariant.secondary,
                 onPressed: () {
@@ -437,7 +437,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                 label: l10n.checkUpdate,
                 size: HmiButtonSize.large,
                 widthPolicy: HmiButtonWidthPolicy.fixed,
-                width: 340,
+                width: 480,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
                 borderGradientCenter:

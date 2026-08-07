@@ -9,6 +9,9 @@ import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dar
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:cyber_alarm_ui/cyber_alarm_ui.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/hmi_dialog_actions.dart';
+
+void _noop() {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +43,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('EN HmiButton large Reset label does not ellipsize at 340w',
+  testWidgets('EN HmiButton large Reset label does not ellipsize at 480w',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -52,7 +55,7 @@ void main() {
         home: Scaffold(
           body: Center(
             child: SizedBox(
-              width: 340,
+              width: 480,
               child: HmiButton(
                 key: const ValueKey('reset-en'),
                 label: 'Reset To Default',
@@ -101,7 +104,7 @@ void main() {
     expect(find.byType(HmiButton), findsOneWidget);
     expect(find.text('Re-detect'), findsOneWidget);
     final text = tester.widget<Text>(find.text('Re-detect'));
-    expect(text.style?.fontSize, 18); // buttonMedium
+    expect(text.style?.fontSize, 20); // buttonMedium
     expect(text.style?.color, CyberColors.buttonSecondaryText);
     expect(tester.getSize(find.byType(HmiButton)).height, 52);
     expect(tester.takeException(), isNull);
@@ -139,7 +142,7 @@ void main() {
     expect(find.text('Clear'), findsOneWidget);
     final label = tester.widget<Text>(find.text('Clear'));
     final fontSize = label.style!.fontSize!;
-    expect(fontSize, 18);
+    expect(fontSize, 20);
     // Outer glyph box is fontSize×fontSize (FittedBox may keep Icon layout size).
     final glyphBox = tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
           (b) => b.width == fontSize && b.height == fontSize,
@@ -167,6 +170,93 @@ void main() {
     expect(WarnDialogMetrics.minTitleSize, 18);
   });
 
+  test('HmiTypography button ladder fonts match Size table', () {
+    const t = HmiTypography();
+    expect(t.buttonMini.fontSize, 14);
+    expect(t.buttonSmall.fontSize, 16);
+    expect(t.buttonMedium.fontSize, 20);
+    expect(t.buttonLarge.fontSize, 24);
+    expect(t.buttonHero.fontSize, 24);
+    expect(t.buttonJumbo.fontSize, 32);
+  });
+
+  test('EN fixed-width medium/large labels fit TextPainter budgets', () {
+    const typography = HmiTypography();
+    final medium = HmiButtonMetrics.forSize(HmiButtonSize.medium, typography);
+    final large = HmiButtonMetrics.forSize(HmiButtonSize.large, typography);
+    final hero = HmiButtonMetrics.forSize(HmiButtonSize.hero, typography);
+
+    double textWidth(String label, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style.copyWith(height: 1.0)),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+        textScaler: TextScaler.noScaling,
+      )..layout();
+      return painter.width;
+    }
+
+    bool fits({
+      required String label,
+      required HmiButtonMetrics metrics,
+      required double buttonWidth,
+      double iconSlot = 0,
+    }) {
+      final budget =
+          buttonWidth - 2 * metrics.horizontalPadding - iconSlot;
+      return textWidth(label, metrics.textStyle) <= budget;
+    }
+
+    // HmiDialogActions / camera overlay / IME equal fixed 196.
+    expect(
+      fits(label: 'Cancel', metrics: medium, buttonWidth: 196),
+      isTrue,
+    );
+    expect(
+      fits(label: 'Confirm', metrics: medium, buttonWidth: 196),
+      isTrue,
+    );
+    expect(
+      fits(label: 'Apply', metrics: medium, buttonWidth: 196),
+      isTrue,
+    );
+    expect(
+      fits(label: 'OK', metrics: medium, buttonWidth: 280),
+      isTrue,
+    );
+
+    // Safety tips Agree @ 196 large.
+    expect(
+      fits(label: 'Agree', metrics: large, buttonWidth: 196),
+      isTrue,
+    );
+
+    // OTA / control-board actions @ 480 large.
+    // Icon is overlaid (does not shrink centered-label budget).
+    expect(
+      fits(label: 'Update Now', metrics: large, buttonWidth: 480),
+      isTrue,
+    );
+    expect(
+      fits(label: 'Check for Updates', metrics: large, buttonWidth: 480),
+      isTrue,
+    );
+    expect(
+      fits(label: 'Reset To Default', metrics: large, buttonWidth: 480),
+      isTrue,
+    );
+
+    // Engineer entry / warn confirm @ 500 hero.
+    expect(
+      fits(label: 'Confirm & Enter', metrics: hero, buttonWidth: 500),
+      isTrue,
+    );
+    expect(
+      fits(label: 'Confirm', metrics: hero, buttonWidth: 500),
+      isTrue,
+    );
+  });
+
   test('tipBodySizeForTitle is one ladder step below the title', () {
     expect(AppTypography.tipBodySizeForTitle(52), 44);
     expect(AppTypography.tipBodySizeForTitle(37), 32);
@@ -174,5 +264,39 @@ void main() {
     expect(AppTypography.tipBodySizeForTitle(32), 28);
     expect(AppTypography.tipBodySizeForTitle(24), 22);
     expect(AppTypography.tipBodySizeForTitle(22), lessThan(22));
+  });
+
+  testWidgets('EN HmiDialogActions medium Cancel/Confirm fit equal 196',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        locale: const Locale('en', 'US'),
+        home: const Scaffold(
+          body: Center(
+            child: HmiDialogActions(
+              cancelLabel: 'Cancel',
+              confirmLabel: 'Confirm',
+              onCancel: _noop,
+              onConfirm: _noop,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.text('Confirm'), findsOneWidget);
+    final cancel = tester.widget<Text>(find.text('Cancel'));
+    final confirm = tester.widget<Text>(find.text('Confirm'));
+    expect(cancel.style?.fontSize, 20);
+    expect(confirm.style?.fontSize, 20);
+    expect(cancel.overflow, isNot(TextOverflow.ellipsis));
+    expect(confirm.overflow, isNot(TextOverflow.ellipsis));
+    expect(tester.takeException(), isNull);
   });
 }

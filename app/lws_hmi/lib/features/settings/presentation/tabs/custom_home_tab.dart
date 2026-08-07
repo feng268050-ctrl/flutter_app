@@ -417,7 +417,7 @@ class _SaveButton extends StatelessWidget {
       label: AppLocalizations.of(context)!.saveChanges,
       size: HmiButtonSize.large,
       widthPolicy: HmiButtonWidthPolicy.fixed,
-      width: 340,
+      width: 480,
       variant: CyberButtonVariant.primary,
       shape: CyberButtonShape.rounded,
       onPressed: onPressed,

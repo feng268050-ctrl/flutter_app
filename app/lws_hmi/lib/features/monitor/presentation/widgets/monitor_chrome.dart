@@ -206,7 +206,8 @@ class MonitorGlassCard extends StatelessWidget {
 /// Used by Alarms Clear and AI Vision Detect / Replay / Re-detect (same
 /// component). [HmiButton.paintFill] is off so the [SettingsPanel] blur shows
 /// through; [SettingsPanel.elevated] is off so lip/contact shadows do not read
-/// as a solid embossed chip over the preview.
+/// as a solid embossed chip over the preview. Rim matches tip stroke
+/// ([CyberColors.tipRimHighlight] — 50% white).
 class MonitorFrostActionButton extends StatelessWidget {
   const MonitorFrostActionButton({
     super.key,
@@ -247,8 +248,9 @@ class MonitorFrostActionButton extends StatelessWidget {
       borderRadius: radius,
       borderGradientCenter: borderGradientCenter,
       lightFromTopLeft: false,
-      rimColor: MonitorDimens.panelRim,
-      lightRim: MonitorDimens.panelHighlight,
+      // Same 50% white tip/dialog rim (`CyberColors.tipRimHighlight`).
+      rimColor: CyberColors.tipRimHighlight,
+      lightRim: CyberColors.tipRimHighlight,
       child: HmiButton(
         label: label,
         size: size,

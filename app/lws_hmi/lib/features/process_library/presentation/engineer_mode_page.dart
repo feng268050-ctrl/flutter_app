@@ -68,13 +68,6 @@ final class EngineerModePage extends StatefulWidget {
   State<EngineerModePage> createState() => _EngineerModePageState();
 }
 
-/// Brighter TL→BR rim for Reset / Save pills (default dark HL is 0x77).
-const _engineerActionPillBorder = <Color>[
-  Color(0xCCFFFFFF),
-  Color(0xAA86868C),
-  Color(0x66000000),
-];
-
 final class _EngineerModePageState extends State<EngineerModePage> {
   late ProcessType _processType;
   EngineerModeDraft? _draft;
@@ -1013,12 +1006,6 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                           shape:
                                                               CyberButtonShape
                                                                   .rounded,
-                                                          borderGradientCenter:
-                                                              CyberBorderGradientCenter
-                                                                  .topBottom,
-                                                          borderGradientColors:
-                                                              _engineerActionPillBorder,
-                                                          strokeWidth: 1.5,
                                                           icon: Icons
                                                               .restart_alt,
                                                           onPressed:
@@ -1042,12 +1029,6 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                           shape:
                                                               CyberButtonShape
                                                                   .rounded,
-                                                          borderGradientCenter:
-                                                              CyberBorderGradientCenter
-                                                                  .topBottom,
-                                                          borderGradientColors:
-                                                              _engineerActionPillBorder,
-                                                          strokeWidth: 1.5,
                                                           icon: Icons
                                                               .bookmark_add,
                                                           onPressed: controller

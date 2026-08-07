@@ -21,7 +21,7 @@ final class HmiButton extends StatelessWidget {
     this.trailing,
     this.groupIconWithLabel = false,
     this.clickSoundEnabled = true,
-    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.uniform,
     this.borderGradientColors,
     this.borderColor,
     this.strokeWidth,
@@ -48,10 +48,12 @@ final class HmiButton extends StatelessWidget {
   final bool groupIconWithLabel;
 
   final bool clickSoundEnabled;
+  /// Legacy; buttons default to [CyberColors.buttonRim] (70% white) or
+  /// [CyberColors.buttonPrimaryRim] (60%) when [variant] is primary.
   final CyberBorderGradientCenter borderGradientCenter;
   final List<Color>? borderGradientColors;
 
-  /// Flat stroke when [borderGradientCenter] is uniform (home QA rim).
+  /// Flat stroke override; default follows [CyberButton] rim tokens.
   final Color? borderColor;
   final double? strokeWidth;
   final bool paintFill;
@@ -120,7 +122,10 @@ final class HmiButton extends StatelessWidget {
       HmiButtonSize.mini => CyberButtonSize.mini,
       HmiButtonSize.small => CyberButtonSize.small,
       HmiButtonSize.medium => CyberButtonSize.medium,
-      HmiButtonSize.large || HmiButtonSize.hero => CyberButtonSize.large,
+      HmiButtonSize.large ||
+      HmiButtonSize.hero ||
+      HmiButtonSize.jumbo =>
+        CyberButtonSize.large,
     };
   }
 }

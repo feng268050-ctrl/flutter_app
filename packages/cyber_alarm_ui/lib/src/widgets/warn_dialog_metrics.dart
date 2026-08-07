@@ -39,7 +39,7 @@ abstract final class WarnDialogMetrics {
   /// `prompt_content` → largeDialogTitle (36) special large body.
   static const double bodySize = 36.0;
 
-  /// `frost_dialog_prompt_scroll_max_height` (tightened for hero confirm 72).
+  /// `frost_dialog_prompt_scroll_max_height` (tightened for hero confirm 68).
   static const double bodyScrollMaxHeight = 134;
 
   /// `frost_dialog_prompt_content_inset` / shell + body horizontal pad.
@@ -48,10 +48,10 @@ abstract final class WarnDialogMetrics {
   /// `frost_dialog_prompt_confirm_button_min_width`.
   static const double confirmMinWidth = 500;
 
-  /// `frost_action_button_height` (hero Confirm).
-  static const double confirmHeight = 72;
+  /// Confirm face — aligned with App `HmiButtonSize.hero` (68 / 24 / w700).
+  static const double confirmHeight = 68;
 
-  /// `frost_action_button_text_size` / `text_size_12`.
+  /// Confirm label — aligned with App `HmiButtonSize.hero` / `buttonHero`.
   static const double confirmLabelSize = 24.0;
 
   /// Body `lineSpacingExtra` 6dp on 37sp ≈ height multiplier.

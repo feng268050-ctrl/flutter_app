@@ -81,10 +81,11 @@ final class WorkInformationDisplay {
     );
     final laser = formatStatsDurationSeconds(laserOn);
     final job = formatStatsDurationSeconds(aggregate.jobRuntimeSecondsTotal);
+    final ratios = ratioPercents(weld: weld, cut: cut, clean: clean);
     return WorkInformationDisplay(
-      weldRatioPercent: ratioPercent(weld, sum),
-      cutRatioPercent: ratioPercent(cut, sum),
-      cleanRatioPercent: ratioPercent(clean, sum),
+      weldRatioPercent: ratios.weld,
+      cutRatioPercent: ratios.cut,
+      cleanRatioPercent: ratios.clean,
       laserOnNumber: laser.number,
       laserOnUnit: laser.unit,
       wireNumber: wire.number,
@@ -95,7 +96,62 @@ final class WorkInformationDisplay {
   }
 }
 
+/// Weld / cut / clean integer percents that always sum to 100 when [sum] > 0.
+///
+/// Plain truncation (lws-ui `Home.newRatio`) can leave 98–99% on real totals
+/// (e.g. board sample 2247/72/102 → 92+2+4). Largest-remainder distributes the
+/// leftover points by fractional part so Monitor Work Info gauges add to 100%.
+({int weld, int cut, int clean}) ratioPercents({
+  required int weld,
+  required int cut,
+  required int clean,
+}) {
+  final sum = weld + cut + clean;
+  if (sum <= 0) {
+    return (weld: 0, cut: 0, clean: 0);
+  }
+  final parts = <int>[weld, cut, clean];
+  final floors = List<int>.generate(3, (i) {
+    if (parts[i] <= 0) {
+      return 0;
+    }
+    return (parts[i] * 100 / sum).truncate();
+  });
+  var rem = 100 - floors.fold<int>(0, (a, b) => a + b);
+  if (rem <= 0) {
+    return (weld: floors[0], cut: floors[1], clean: floors[2]);
+  }
+  final fracs = List<double>.generate(3, (i) {
+    if (parts[i] <= 0) {
+      return -1;
+    }
+    return (parts[i] * 100 / sum) - floors[i];
+  });
+  final order = <int>[0, 1, 2]
+    ..sort((a, b) {
+      final c = fracs[b].compareTo(fracs[a]);
+      if (c != 0) {
+        return c;
+      }
+      // Stable tie-break: larger absolute portion first.
+      return parts[b].compareTo(parts[a]);
+    });
+  for (final i in order) {
+    if (rem <= 0) {
+      break;
+    }
+    if (parts[i] <= 0) {
+      continue;
+    }
+    floors[i]++;
+    rem--;
+  }
+  return (weld: floors[0], cut: floors[1], clean: floors[2]);
+}
+
 /// Truncated portion/total percent; 0 when either side is non-positive.
+///
+/// Prefer [ratioPercents] when all three Work Info gauges must sum to 100.
 int ratioPercent(int portionSeconds, int totalSeconds) {
   if (totalSeconds <= 0 || portionSeconds <= 0) {
     return 0;

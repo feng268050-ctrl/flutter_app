@@ -24,6 +24,30 @@ void main() {
     expect(panel.tipRimColor.alpha, 0x80);
   });
 
+  test('CyberPanelBorder cream dialog rim uses opaque black', () {
+    const panel = CyberPanelBorder(tone: CyberTone.light);
+    expect(panel.creamDialogRimColor, CyberColors.creamDialogRim);
+    expect(panel.creamDialogRimColor, const Color(0xFF000000));
+    expect(panel.creamDialogRimOutline.width, CyberDimens.borderWidth);
+    expect(
+      panel.creamDialogRimOutline.resolvedUniformColor,
+      CyberColors.creamDialogRim,
+    );
+  });
+
+  test('home quick-action rim is 30% white', () {
+    expect(CyberColors.homeQuickActionRim, const Color(0x4DFFFFFF));
+    expect(CyberColors.homeQuickActionRim.alpha, 0x4D);
+  });
+
+  test('button rim is 70% white; primary rim is 60% white', () {
+    expect(CyberColors.buttonRim, const Color(0xB3FFFFFF));
+    expect(CyberColors.buttonRim.alpha, 0xB3);
+    expect(CyberColors.buttonRim.alpha, isNot(CyberColors.homeQuickActionRim.alpha));
+    expect(CyberColors.buttonPrimaryRim, const Color(0x99FFFFFF));
+    expect(CyberColors.buttonPrimaryRim.alpha, 0x99);
+  });
+
   test('CyberClockNotes documents glyph-clip limit', () {
     expect(CyberClockNotes.glyphClipLiveBlurSupported, isFalse);
     expect(CyberClockNotes.glyphClipLiveBlurNote, isNotEmpty);

@@ -12,6 +12,7 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.d
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
@@ -74,11 +75,11 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Match right-panel parameter row height ([EngineerParameterForm] rows).
   static const _checkboxRowHeight = 86.0;
 
-  /// Retract / Feed — CyberButton medium height (style/width unchanged).
-  static const _wireButtonsHeight = CyberDimens.actionButtonMediumHeight;
+  /// Retract / Feed — [HmiButtonSize.hero] via [ProcessModeOutlineChrome].
+  static const _wireButtonsHeight = ProcessModeOutlineChrome.defaultHeight;
 
-  /// Enable Laser — CyberButton large height (style/width unchanged).
-  static const _laserButtonHeight = CyberDimens.actionButtonLargeHeight;
+  /// Enable Laser (filled) — [HmiButtonSize.jumbo] via [ProcessModeOutlineChrome].
+  static const _laserButtonHeight = ProcessModeOutlineChrome.laserEnableHeight;
 
   /// Top function-divider strip on last-three tabs (above Record Work).
   /// Height is the strip that holds the centered hairline, not empty padding.
@@ -506,7 +507,7 @@ final class _CheckRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: context.hmiTypography.sectionTitle.copyWith(
+                  style: context.hmiTypography.navigation.copyWith(
                     color: enabled ? Colors.white : const Color(0x66FFFFFF),
                     fontWeight: FontWeight.w500,
                     height: 1.0,
@@ -675,8 +676,8 @@ final class _EngineerWireActionButtonState
     final onFill = solidHighlight || filling;
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
-    final labelSize = context.hmiTypography.settingsRowTitle.fontSize!;
-    const iconSize = 26.0;
+    final labelSize = ProcessModeOutlineChrome.labelSize;
+    const iconSize = ProcessModeOutlineChrome.iconSize;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel(l10n)
         : widget.label;
@@ -716,8 +717,8 @@ final class _EngineerWireActionButtonState
                       color: actionOrange,
                     ),
                   if (latched) const FeedContinuousRipple(),
-                  // Label centered on the button; icon inset on the left
-                  // (same chrome as Quick [ProcessModeOutlineButton]).
+                  // Label-only when continuous feed is latched; otherwise
+                  // icon+label as one group with equal side insets.
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final style = TextStyle(
@@ -728,48 +729,49 @@ final class _EngineerWireActionButtonState
                         fontWeight: FontWeight.w600,
                         height: 1.0,
                       );
+                      final labelText = Text(
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
+                        textAlign: TextAlign.center,
+                        style: style,
+                      );
                       if (latched) {
-                        return Center(
-                          child: Text(
-                            label,
-                            textAlign: TextAlign.center,
-                            softWrap: false,
-                            style: style,
-                          ),
-                        );
+                        return Center(child: labelText);
                       }
                       final edgeInset =
                           ((constraints.maxHeight - iconSize) / 2)
                               .clamp(0.0, constraints.maxHeight);
-                      return Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Center(
-                            child: Text(
-                              label,
-                              maxLines: 1,
-                              softWrap: false,
-                              textAlign: TextAlign.center,
-                              style: style,
+                      return Padding(
+                        padding: EdgeInsets.symmetric(horizontal: edgeInset),
+                        child: Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: iconSize,
+                                  height: iconSize,
+                                  child: Transform.flip(
+                                    flipX: widget.retract,
+                                    child: Icon(
+                                      widget.icon,
+                                      color: widget.enabled
+                                          ? foreground
+                                          : disabledForeground,
+                                      size: iconSize,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: ProcessModeOutlineChrome.iconLabelGap,
+                                ),
+                                labelText,
+                              ],
                             ),
                           ),
-                          Positioned(
-                            left: edgeInset,
-                            top: edgeInset,
-                            width: iconSize,
-                            height: iconSize,
-                            child: Transform.flip(
-                              flipX: widget.retract,
-                              child: Icon(
-                                widget.icon,
-                                color: widget.enabled
-                                    ? foreground
-                                    : disabledForeground,
-                                size: iconSize,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       );
                     },
                   ),
@@ -875,12 +877,13 @@ final class _EngineerDeviceActionButtonState
     final foreground = widget.filled ? Colors.white : actionOrange;
     final disabledForeground =
         widget.filled ? const Color(0x99FFFFFF) : const Color(0xFF7D3E2B);
-    // Label scales with filled/outline; icons stay 34 (match Quick side ops).
-    final typography = context.hmiTypography;
+    // Label/icon: outline → hero chrome; filled Enable Laser → jumbo chrome.
     final labelSize = widget.filled
-        ? typography.sectionTitle.fontSize!
-        : typography.supporting.fontSize!;
-    const iconSize = 34.0;
+        ? ProcessModeOutlineChrome.laserEnableLabelSize
+        : ProcessModeOutlineChrome.labelSize;
+    final iconSize = widget.filled
+        ? ProcessModeOutlineChrome.laserEnableIconSize
+        : ProcessModeOutlineChrome.iconSize;
     return Semantics(
       button: true,
       enabled: canPress,
@@ -926,36 +929,50 @@ final class _EngineerDeviceActionButtonState
                       ),
                     ),
                   ),
-                // Label centered; icon left inset = top/bottom inset.
-                Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Center(
-                      child: Text(
-                        widget.label,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isVisuallyEnabled
-                              ? foreground
-                              : disabledForeground,
-                          fontSize: labelSize,
-                          fontWeight: FontWeight.w600,
-                          height: 1.0,
+                // Icon+label as one group with equal side insets (same as
+                // Engineer Feed/Retract and Quick Auto Wire).
+                Builder(
+                  builder: (context) {
+                    final edgeInset =
+                        ((widget.height - iconSize) / 2).clamp(0.0, widget.height);
+                    return Padding(
+                      padding: EdgeInsets.symmetric(horizontal: edgeInset),
+                      child: Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                widget.icon,
+                                color: isVisuallyEnabled
+                                    ? foreground
+                                    : disabledForeground,
+                                size: iconSize,
+                              ),
+                              const SizedBox(
+                                width: ProcessModeOutlineChrome.iconLabelGap,
+                              ),
+                              Text(
+                                widget.label,
+                                maxLines: 1,
+                                softWrap: false,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: isVisuallyEnabled
+                                      ? foreground
+                                      : disabledForeground,
+                                  fontSize: labelSize,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.0,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      left: (widget.height - iconSize) / 2,
-                      top: (widget.height - iconSize) / 2,
-                      child: Icon(
-                        widget.icon,
-                        color: isVisuallyEnabled
-                            ? foreground
-                            : disabledForeground,
-                        size: iconSize,
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ],
             ),

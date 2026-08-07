@@ -5,9 +5,9 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Product Back / Home rail (lws-ui `status_call_back_home`).
 ///
-/// Idle = transparent + accent edge lines; pressed = translucent accent fill.
-/// Leading glyph: [Icons.home_outlined] when [label] is Home, else
-/// [Icons.arrow_back] (Material; same pop action either way).
+/// Idle = transparent (+ optional accent edge lines); pressed = translucent
+/// accent fill. Leading glyph: [Icons.home_outlined] when [useHomeIcon] is
+/// true, or when unset and [label] is Home; otherwise [Icons.arrow_back].
 final class CallBackHomeButton extends StatefulWidget {
   const CallBackHomeButton({
     super.key,
@@ -16,6 +16,8 @@ final class CallBackHomeButton extends StatefulWidget {
     required this.onPressed,
     this.enabled = true,
     this.expandWidth = true,
+    this.useHomeIcon,
+    this.showEdgeAccent = true,
   });
 
   /// Rail width matching lws-ui `equipment_status_side_rail_width`.
@@ -26,10 +28,45 @@ final class CallBackHomeButton extends StatefulWidget {
   final VoidCallback onPressed;
   final bool enabled;
 
-  /// When true (Settings / page chrome), fills the parent rail width.
-  /// When false (Quick / Engineer), sizes to the icon + label so equipment
-  /// gaps can balance against the real Home trailing edge.
+  /// When true (legacy fixed rail), fills the parent width and may ellipsize.
+  /// When false (Quick / Engineer / Settings·Monitor titles), sizes to the
+  /// icon + full label so text is never truncated.
   final bool expandWidth;
+
+  /// Force Home vs Back glyph independent of [label].
+  ///
+  /// Settings / Monitor roots pass `true` while the label shows the tab title.
+  /// Nested pages leave this null (arrow) or set `false`.
+  final bool? useHomeIcon;
+
+  /// Top/bottom orange edge lines. Settings / Monitor pass `false`.
+  final bool showEdgeAccent;
+
+  /// Intrinsic width for [label] at product chrome size (icon + paddings).
+  static double widthForLabel(
+    String label, {
+    TextScaler textScaler = TextScaler.noScaling,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: const TextStyle(
+          fontSize: _kHomeLabelFontSize,
+          fontWeight: FontWeight.w400,
+          height: 1,
+        ),
+      ),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+    )..layout();
+    // +24 slack: painter can undershoot real glyph advance / font fallback.
+    return _kBackHorizontalPadding * 2 +
+        _kBackIconSize +
+        8 +
+        painter.width +
+        24;
+  }
 
   @override
   State<CallBackHomeButton> createState() => _CallBackHomeButtonState();
@@ -46,6 +83,10 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
   bool _pressed = false;
 
   IconData _leadingIcon(BuildContext context) {
+    final forced = widget.useHomeIcon;
+    if (forced != null) {
+      return forced ? Icons.home_outlined : Icons.arrow_back;
+    }
     final home = AppLocalizations.of(context)?.equipmentStatusHome;
     if (home != null && widget.label == home) {
       return Icons.home_outlined;
@@ -99,9 +140,11 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
               widget.label,
               maxLines: 1,
               softWrap: false,
+              overflow: TextOverflow.visible,
               style: TextStyle(
                 color: labelColor,
                 fontSize: _kHomeLabelFontSize,
+                fontWeight: FontWeight.w400,
                 height: 1,
               ),
             ),
@@ -138,12 +181,13 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
       ),
     );
 
+    final showEdges = widget.showEdgeAccent;
     final column = Column(
-      mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.max,
+      mainAxisSize: MainAxisSize.max,
       children: [
-        _AccentEdgeLine(gradient: accent.edgeGradient),
+        if (showEdges) _AccentEdgeLine(gradient: accent.edgeGradient),
         Expanded(child: face),
-        _AccentEdgeLine(gradient: accent.edgeGradient),
+        if (showEdges) _AccentEdgeLine(gradient: accent.edgeGradient),
       ],
     );
 

@@ -771,7 +771,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeAutomatic => 'Automatic';
 
   @override
-  String get dateTimeModeAuto => 'Automatic';
+  String get dateTimeModeAuto => 'Auto';
 
   @override
   String get dateTimeModeManual => 'Manual';
@@ -786,13 +786,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeNtpCloudflare => 'Cloudflare';
 
   @override
-  String get dateTimeNtpCnPool => 'China Ntp Pool';
+  String get dateTimeNtpCnPool => 'China NTP Pool';
 
   @override
   String get dateTimeNtpGoogle => 'Google';
 
   @override
-  String get dateTimeNtpPool => 'Ntp Pool';
+  String get dateTimeNtpPool => 'NTP Pool';
 
   @override
   String get dateTimeNtpServer => 'Time Server';
@@ -821,16 +821,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeSelectTimeZone => 'Select Time Zone';
 
   @override
-  String get dateTimeSetDate => 'Set Date';
+  String get dateTimeSetDate => 'Date';
 
   @override
   String get dateTimeSetFailed => 'Couldn’t update date or time';
 
   @override
-  String get dateTimeSetTime => 'Set Time';
+  String get dateTimeSetTime => 'Time';
 
   @override
-  String get dateTimeSetTimeZone => 'Set Time Zone';
+  String get dateTimeSetTimeZone => 'Time Zone';
 
   @override
   String get dateTimeSettings => 'Date & Time';
@@ -1229,7 +1229,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get httpProxySaveSuccess => 'Proxy settings saved';
 
   @override
-  String get httpProxySettingsTitle => 'HTTP Proxy';
+  String get httpProxySettingsTitle => 'Proxy';
 
   @override
   String get httpProxyStatusIncomplete => 'On (incomplete)';
@@ -1250,7 +1250,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get httpProxyTestSuccess => 'Connection successful';
 
   @override
-  String get httpProxyTitle => 'HTTP Proxy';
+  String get httpProxyTitle => 'Proxy';
 
   @override
   String get httpProxyUsername => 'Username';
@@ -2562,10 +2562,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unitMetric => 'Metric';
 
   @override
-  String get unitOptionImperial => 'IN';
+  String get unitOptionImperial => 'Imperial';
 
   @override
-  String get unitOptionMetric => 'MM';
+  String get unitOptionMetric => 'Metric';
 
   @override
   String get unitPersistedFooter =>
@@ -2641,7 +2641,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weldingProportionText => 'Welding Ratio';
 
   @override
-  String get wifiAddDnsServer => 'Add Dns Server';
+  String get wifiAddDnsServer => 'Add DNS Server';
 
   @override
   String get wifiAdvancedSettings => 'IP Settings';
@@ -2653,7 +2653,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiApply => 'Apply';
 
   @override
-  String get wifiAssociatingPlaceholder => '(Associating…)';
+  String get wifiAssociatingPlaceholder => '(associating…)';
 
   @override
   String get wifiAutoJoin => 'Auto Join';
@@ -2662,10 +2662,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiAutomatic => 'Automatic';
 
   @override
-  String get wifiBssid => 'Bssid';
+  String get wifiBssid => 'BSSID';
 
   @override
-  String get wifiConfigureDns => 'Configure Dns';
+  String get wifiConfigureDns => 'Configure DNS';
 
   @override
   String get wifiConfigureIp => 'Configure IP';
@@ -2675,10 +2675,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'This device is not connected to Wi‑Fi. Connect a network to use cloud features.';
 
   @override
-  String get wifiConnectTipOpenSettings => 'Wi-Fi Settings';
+  String get wifiConnectTipOpenSettings => 'Wi‑Fi Settings';
 
   @override
-  String get wifiConnectTipTitle => 'Connect To Wi-Fi';
+  String get wifiConnectTipTitle => 'Connect to Wi‑Fi';
 
   @override
   String get wifiDetailsTitle => 'Wi‑Fi Details';
@@ -2711,7 +2711,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiDns2 => 'DNS 2';
 
   @override
-  String get wifiDnsServers => 'Dns Servers';
+  String get wifiDnsServers => 'DNS Servers';
 
   @override
   String get wifiEditIpConfig => 'Edit IP Configuration';
@@ -2794,10 +2794,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiIpSettingsHide => 'Hide IP Settings';
 
   @override
-  String get wifiIpv4 => 'Ipv4';
+  String get wifiIpv4 => 'IPv4';
 
   @override
-  String get wifiIpv4AddressSection => 'Ipv4 Address';
+  String get wifiIpv4AddressSection => 'IPv4 Address';
 
   @override
   String wifiJoinSsidFormat(String ssid) {
@@ -2819,7 +2819,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiManual => 'Manual';
 
   @override
-  String get wifiMaxDnsServers => 'You Can Add Up To 3 DNS Servers';
+  String get wifiMaxDnsServers => 'You can add up to 3 DNS servers';
 
   @override
   String get wifiMyNetworks => 'My Networks';
@@ -2828,13 +2828,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiNetworkText => 'Wi‑Fi';
 
   @override
-  String get wifiNoNetworksScan => '(No Networks — Scan)';
+  String get wifiNoNetworksScan => '(no networks — Scan)';
 
   @override
-  String get wifiNoOtherNetworks => 'No Networks Found';
+  String get wifiNoOtherNetworks => 'No networks found';
 
   @override
-  String get wifiNoSavedNetworks => 'No Saved Networks';
+  String get wifiNoSavedNetworks => 'No saved networks';
 
   @override
   String get wifiNotAvailable => 'Unavailable';

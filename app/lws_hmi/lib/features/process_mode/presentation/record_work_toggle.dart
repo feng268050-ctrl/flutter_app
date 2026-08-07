@@ -92,7 +92,7 @@ final class _RecordWorkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelSize = compact
         ? ProcessModeDimens.quickTopChromeLabelSize
-        : context.hmiTypography.processAction.fontSize!;
+        : context.hmiTypography.navigation.fontSize!;
     return InkWell(
       onTap: enabled && onChanged != null
           ? () {

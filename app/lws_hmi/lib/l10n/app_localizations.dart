@@ -1454,7 +1454,7 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeModeAuto.
   ///
   /// In en, this message translates to:
-  /// **'Automatic'**
+  /// **'Auto'**
   String get dateTimeModeAuto;
 
   /// No description provided for @dateTimeModeManual.
@@ -1484,7 +1484,7 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeNtpCnPool.
   ///
   /// In en, this message translates to:
-  /// **'China Ntp Pool'**
+  /// **'China NTP Pool'**
   String get dateTimeNtpCnPool;
 
   /// No description provided for @dateTimeNtpGoogle.
@@ -1496,7 +1496,7 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeNtpPool.
   ///
   /// In en, this message translates to:
-  /// **'Ntp Pool'**
+  /// **'NTP Pool'**
   String get dateTimeNtpPool;
 
   /// No description provided for @dateTimeNtpServer.
@@ -1550,7 +1550,7 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeSetDate.
   ///
   /// In en, this message translates to:
-  /// **'Set Date'**
+  /// **'Date'**
   String get dateTimeSetDate;
 
   /// No description provided for @dateTimeSetFailed.
@@ -1562,13 +1562,13 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeSetTime.
   ///
   /// In en, this message translates to:
-  /// **'Set Time'**
+  /// **'Time'**
   String get dateTimeSetTime;
 
   /// No description provided for @dateTimeSetTimeZone.
   ///
   /// In en, this message translates to:
-  /// **'Set Time Zone'**
+  /// **'Time Zone'**
   String get dateTimeSetTimeZone;
 
   /// No description provided for @dateTimeSettings.
@@ -2312,7 +2312,7 @@ abstract class AppLocalizations {
   /// No description provided for @httpProxySettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'HTTP Proxy'**
+  /// **'Proxy'**
   String get httpProxySettingsTitle;
 
   /// No description provided for @httpProxyStatusIncomplete.
@@ -2354,7 +2354,7 @@ abstract class AppLocalizations {
   /// No description provided for @httpProxyTitle.
   ///
   /// In en, this message translates to:
-  /// **'HTTP Proxy'**
+  /// **'Proxy'**
   String get httpProxyTitle;
 
   /// No description provided for @httpProxyUsername.
@@ -4760,13 +4760,13 @@ abstract class AppLocalizations {
   /// No description provided for @unitOptionImperial.
   ///
   /// In en, this message translates to:
-  /// **'IN'**
+  /// **'Imperial'**
   String get unitOptionImperial;
 
   /// No description provided for @unitOptionMetric.
   ///
   /// In en, this message translates to:
-  /// **'MM'**
+  /// **'Metric'**
   String get unitOptionMetric;
 
   /// No description provided for @unitPersistedFooter.
@@ -4910,7 +4910,7 @@ abstract class AppLocalizations {
   /// No description provided for @wifiAddDnsServer.
   ///
   /// In en, this message translates to:
-  /// **'Add Dns Server'**
+  /// **'Add DNS Server'**
   String get wifiAddDnsServer;
 
   /// No description provided for @wifiAdvancedSettings.
@@ -4934,7 +4934,7 @@ abstract class AppLocalizations {
   /// No description provided for @wifiAssociatingPlaceholder.
   ///
   /// In en, this message translates to:
-  /// **'(Associating…)'**
+  /// **'(associating…)'**
   String get wifiAssociatingPlaceholder;
 
   /// No description provided for @wifiAutoJoin.
@@ -4952,13 +4952,13 @@ abstract class AppLocalizations {
   /// No description provided for @wifiBssid.
   ///
   /// In en, this message translates to:
-  /// **'Bssid'**
+  /// **'BSSID'**
   String get wifiBssid;
 
   /// No description provided for @wifiConfigureDns.
   ///
   /// In en, this message translates to:
-  /// **'Configure Dns'**
+  /// **'Configure DNS'**
   String get wifiConfigureDns;
 
   /// No description provided for @wifiConfigureIp.
@@ -4976,13 +4976,13 @@ abstract class AppLocalizations {
   /// No description provided for @wifiConnectTipOpenSettings.
   ///
   /// In en, this message translates to:
-  /// **'Wi-Fi Settings'**
+  /// **'Wi‑Fi Settings'**
   String get wifiConnectTipOpenSettings;
 
   /// No description provided for @wifiConnectTipTitle.
   ///
   /// In en, this message translates to:
-  /// **'Connect To Wi-Fi'**
+  /// **'Connect to Wi‑Fi'**
   String get wifiConnectTipTitle;
 
   /// No description provided for @wifiDetailsTitle.
@@ -5048,7 +5048,7 @@ abstract class AppLocalizations {
   /// No description provided for @wifiDnsServers.
   ///
   /// In en, this message translates to:
-  /// **'Dns Servers'**
+  /// **'DNS Servers'**
   String get wifiDnsServers;
 
   /// No description provided for @wifiEditIpConfig.
@@ -5198,13 +5198,13 @@ abstract class AppLocalizations {
   /// No description provided for @wifiIpv4.
   ///
   /// In en, this message translates to:
-  /// **'Ipv4'**
+  /// **'IPv4'**
   String get wifiIpv4;
 
   /// No description provided for @wifiIpv4AddressSection.
   ///
   /// In en, this message translates to:
-  /// **'Ipv4 Address'**
+  /// **'IPv4 Address'**
   String get wifiIpv4AddressSection;
 
   /// No description provided for @wifiJoinSsidFormat.
@@ -5240,7 +5240,7 @@ abstract class AppLocalizations {
   /// No description provided for @wifiMaxDnsServers.
   ///
   /// In en, this message translates to:
-  /// **'You Can Add Up To 3 DNS Servers'**
+  /// **'You can add up to 3 DNS servers'**
   String get wifiMaxDnsServers;
 
   /// No description provided for @wifiMyNetworks.
@@ -5258,19 +5258,19 @@ abstract class AppLocalizations {
   /// No description provided for @wifiNoNetworksScan.
   ///
   /// In en, this message translates to:
-  /// **'(No Networks — Scan)'**
+  /// **'(no networks — Scan)'**
   String get wifiNoNetworksScan;
 
   /// No description provided for @wifiNoOtherNetworks.
   ///
   /// In en, this message translates to:
-  /// **'No Networks Found'**
+  /// **'No networks found'**
   String get wifiNoOtherNetworks;
 
   /// No description provided for @wifiNoSavedNetworks.
   ///
   /// In en, this message translates to:
-  /// **'No Saved Networks'**
+  /// **'No saved networks'**
   String get wifiNoSavedNetworks;
 
   /// No description provided for @wifiNotAvailable.

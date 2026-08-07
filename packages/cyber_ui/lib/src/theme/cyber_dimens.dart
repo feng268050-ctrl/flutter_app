@@ -51,8 +51,8 @@ abstract final class CyberDimens {
 
   // --- Checkbox face tiers (small / large) ---
 
-  /// Small checkbox face edge length (20).
-  static const checkboxSmallSize = 20.0;
+  /// Small checkbox face edge length (24).
+  static const checkboxSmallSize = 24.0;
 
   /// Large checkbox face edge length (28).
   static const checkboxLargeSize = 28.0;

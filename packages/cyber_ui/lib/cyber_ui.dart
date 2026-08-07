@@ -35,6 +35,7 @@ export 'src/widgets/cyber_capsule_slider.dart';
 export 'src/widgets/cyber_card.dart';
 export 'src/widgets/cyber_checkbox.dart';
 export 'src/widgets/cyber_dialog.dart';
+export 'src/widgets/cyber_frost_divider.dart';
 export 'src/widgets/cyber_hold_confirm.dart';
 export 'src/widgets/cyber_keyboard_avoiding_lift.dart';
 export 'src/widgets/cyber_keyboard_insets.dart';

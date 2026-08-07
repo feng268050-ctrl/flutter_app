@@ -274,14 +274,6 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                           widthPolicy: HmiButtonWidthPolicy.fill,
                           variant: CyberButtonVariant.standard,
                           shape: CyberButtonShape.rounded,
-                          strokeWidth: 1.5,
-                          borderGradientCenter:
-                              CyberBorderGradientCenter.topBottom,
-                          borderGradientColors: const [
-                            Color(0xE6FFFFFF),
-                            Color(0xAA86868C),
-                            Color(0x66000000),
-                          ],
                           trailing: Icon(
                             Icons.chevron_right,
                             size: metrics.buttonIconSize,

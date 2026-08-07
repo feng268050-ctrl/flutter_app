@@ -16,6 +16,15 @@ abstract final class CyberColors {
   static const lightFillMid = Color(0x33FFFCFA);
   static const lightFillBottom = Color(0x2EFFF8F6);
 
+  /// LIGHT warn / work-status backdrop (lws-ui `WorkStatusDialogBackdropDrawable`).
+  static const lightWarnBackdropEdge = Color(0xB8FFEFD0);
+  static const lightWarnBackdropBlend = Color(0xA6FFF8F0);
+  static const lightWarnBackdropCenter = Color(0xBFFFFFFF);
+
+  /// LIGHT shell frost veil (lws-ui `WorkStatusDialogShellFrostDrawable`).
+  static const lightShellFrostEdge = Color(0x28FFFFFF);
+  static const lightShellFrostCenter = Color(0x1FFFFFFF);
+
   // Panel border — dark
   static const borderHighlight = Color(0x77FFFFFF);
   static const borderMid = Color(0x8868686C);
@@ -28,6 +37,22 @@ abstract final class CyberColors {
   ///
   /// Not solid action orange (`#F46E01`).
   static const tipRimHighlight = Color(0x80FFFFFF);
+
+  /// LIGHT cream dialog container rim — 1px opaque black.
+  ///
+  /// Warn frost + Engineer / Laser Enable light prompts.
+  static const creamDialogRim = Color(0xFF000000);
+
+  /// Home quick-action (Monitor / Settings / AI Vision) flat 1px rim — 30% white.
+  ///
+  /// Only those three tiles; [CyberButton] uses [buttonRim] instead.
+  static const homeQuickActionRim = Color(0x4DFFFFFF);
+
+  /// [CyberButton] standard / secondary / light flat 1px rim — 70% white.
+  static const buttonRim = Color(0xB3FFFFFF);
+
+  /// [CyberButtonVariant.primary] flat 1px highlight rim — 60% white.
+  static const buttonPrimaryRim = Color(0x99FFFFFF);
 
   // Panel border — light
   static const lightBorderHighlight = Color(0xD9FFFFFF);

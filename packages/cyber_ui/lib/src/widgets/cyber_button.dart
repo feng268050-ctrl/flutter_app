@@ -99,7 +99,7 @@ class CyberButton extends StatefulWidget {
     this.height,
     this.foregroundColor,
     this.onLongPress,
-    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.uniform,
     this.borderGradientColors,
     this.borderColor,
     this.strokeWidth,
@@ -133,18 +133,20 @@ class CyberButton extends StatefulWidget {
   /// Optional label/icon color override (e.g. IME accent backspace).
   final Color? foregroundColor;
 
-  /// Frost `borderGradientCenter` for the 1dp stroke.
+  /// Stroke direction (legacy). Buttons always paint a flat home QA rim;
+  /// gradient centers are ignored unless a caller needs API compatibility.
   final CyberBorderGradientCenter borderGradientCenter;
 
-  /// Optional HL / mid / shadow override for the frost rim (e.g. brighter
-  /// engineer Reset / Save pills). When null, uses [variant] defaults.
+  /// Legacy frost HL/mid/shadow override — ignored; rim is [buttonRim].
   final List<Color>? borderGradientColors;
 
-  /// Flat stroke color when [borderGradientCenter] is
-  /// [CyberBorderGradientCenter.uniform] (e.g. home quick-action 30% white).
+  /// Flat stroke color override. Defaults to [CyberColors.buttonRim] (70%
+  /// white) or [CyberColors.buttonPrimaryRim] (60%) for [primary]. Home
+  /// Monitor / Settings / AI Vision keep [CyberColors.homeQuickActionRim]
+  /// (30%) on their tiles only.
   final Color? borderColor;
 
-  /// Stroke width override; defaults to [CyberDimens.buttonStrokeWidth].
+  /// Stroke width override; defaults to [CyberDimens.buttonStrokeWidth] (1px).
   final double? strokeWidth;
 
   /// When false, [InkWell] does not own taps — parent drives [externalPress]
@@ -257,17 +259,19 @@ class _CyberButtonState extends State<CyberButton>
     final textColor = widget.foregroundColor ?? _foreground(widget.variant);
     final fontSize = _fontSizeFor(tier);
 
+    // Flat 1px rim: primary = 60% white highlight; others = 70% white.
+    // Home QA tiles keep 30% via [homeQuickActionRim] on their own chrome.
+    final defaultRim = widget.variant == CyberButtonVariant.primary
+        ? CyberColors.buttonPrimaryRim
+        : CyberColors.buttonRim;
     final outline = CyberPanelOutline(
-      style: CyberPanelOutlineStyle.frostGradient,
+      style: CyberPanelOutlineStyle.uniform,
       tone: widget.variant == CyberButtonVariant.light
           ? CyberTone.light
           : CyberTone.dark,
       width: widget.strokeWidth ?? CyberDimens.buttonStrokeWidth,
       cornerRadius: cornerRadius,
-      gradientCenter: widget.borderGradientCenter,
-      gradientColorsOverride:
-          widget.borderGradientColors ?? _borderGradientColors(widget.variant),
-      uniformColor: widget.borderColor ?? _borderFlat(widget.variant),
+      uniformColor: widget.borderColor ?? defaultRim,
     );
 
     final label = DefaultTextStyle(
@@ -486,29 +490,6 @@ class _CyberButtonState extends State<CyberButton>
         CyberButtonVariant.primary ||
         CyberButtonVariant.light =>
           CyberColors.textPrimary,
-      };
-
-  static Color _borderFlat(CyberButtonVariant variant) => switch (variant) {
-        CyberButtonVariant.primary => CyberColors.buttonPrimaryBorderMid,
-        CyberButtonVariant.light => CyberColors.lightBorderHighlight,
-        CyberButtonVariant.standard ||
-        CyberButtonVariant.secondary =>
-          CyberColors.borderUniform,
-      };
-
-  static List<Color>? _borderGradientColors(CyberButtonVariant variant) =>
-      switch (variant) {
-        CyberButtonVariant.primary => const [
-            CyberColors.buttonPrimaryBorderHighlight,
-            CyberColors.buttonPrimaryBorderMid,
-            CyberColors.buttonPrimaryBorderShadow,
-          ],
-        CyberButtonVariant.light => const [
-            CyberColors.lightBorderHighlight,
-            CyberColors.lightBorderMid,
-            CyberColors.lightBorderShadow,
-          ],
-        CyberButtonVariant.standard || CyberButtonVariant.secondary => null,
       };
 
   static Color? _solidFill(CyberButtonVariant variant) => switch (variant) {

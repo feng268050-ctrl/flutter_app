@@ -63,6 +63,17 @@ class CyberPanelBorder {
         uniformColor: tipRimColor,
       );
 
+  /// LIGHT cream dialog container — 1px opaque black.
+  Color get creamDialogRimColor => CyberColors.creamDialogRim;
+
+  CyberPanelOutline get creamDialogRimOutline => CyberPanelOutline(
+        style: CyberPanelOutlineStyle.uniform,
+        tone: tone,
+        width: width,
+        cornerRadius: cornerRadius,
+        uniformColor: creamDialogRimColor,
+      );
+
   BoxDecoration fillDecoration({bool includeBorder = true}) {
     return BoxDecoration(
       borderRadius: borderRadius,

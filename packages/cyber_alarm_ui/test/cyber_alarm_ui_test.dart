@@ -1,4 +1,5 @@
 import 'package:cyber_alarm_ui/cyber_alarm_ui.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -183,6 +184,7 @@ void main() {
 
       final title = tester.widget<Text>(find.text('Gun Communication Alarm'));
       expect(title.style?.color, WarnDialogBody.titleRed);
+      expect(find.byType(CyberFrostDivider), findsNWidgets(2));
     });
 
     testWidgets('package warn/info icons resolve', (tester) async {
@@ -218,5 +220,33 @@ void main() {
     expect(WarnDialogMetrics.bodySize, 36);
     expect(WarnDialogMetrics.confirmLabelSize, 24);
     expect(WarnDialogMetrics.minTitleSize, 18);
+  });
+
+  test('WarnFrostShell LIGHT glass tokens match lws-ui work-status colors', () {
+    expect(WarnFrostShell.blurSigma, 25);
+    expect(
+      WarnFrostShell.backdropGradient.colors,
+      const [
+        CyberColors.lightWarnBackdropEdge,
+        CyberColors.lightWarnBackdropBlend,
+        CyberColors.lightWarnBackdropCenter,
+        CyberColors.lightWarnBackdropBlend,
+        CyberColors.lightWarnBackdropEdge,
+      ],
+    );
+    expect(CyberColors.lightWarnBackdropEdge, const Color(0xB8FFEFD0));
+    expect(CyberColors.lightWarnBackdropCenter, const Color(0xBFFFFFFF));
+    expect(CyberColors.lightShellFrostEdge, const Color(0x28FFFFFF));
+    expect(CyberColors.lightShellFrostCenter, const Color(0x1FFFFFFF));
+    expect(CyberColors.creamDialogRim, const Color(0xFF000000));
+    expect(
+      const CyberPanelBorder(tone: CyberTone.light)
+          .creamDialogRimOutline
+          .resolvedUniformColor,
+      CyberColors.creamDialogRim,
+    );
+    // No opaque cream plate — wash is translucent warm-yellow gradient.
+    expect(WarnFrostShell.backdropGradient.colors.every((c) => c.alpha < 0xFF),
+        isTrue);
   });
 }

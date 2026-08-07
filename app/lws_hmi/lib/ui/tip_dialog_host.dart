@@ -153,23 +153,28 @@ abstract final class TipDialogHost {
   }
 }
 
-/// Nearest [CyberBlurBackdropScope] under [root] (active page), if any.
+/// Prefer the blur scope on the *current* navigator route (top page).
+///
+/// Same rationale as warn presentation: Home stays under pushed routes, so the
+/// first DFS hit is the wrong wallpaper for Engineer / Settings tips.
 CyberBlurBackdropScopeState? _findBlurScope(BuildContext root) {
-  CyberBlurBackdropScopeState? found;
+  CyberBlurBackdropScopeState? last;
+  CyberBlurBackdropScopeState? onCurrentRoute;
   void visit(Element element) {
-    if (found != null) {
-      return;
-    }
     if (element is StatefulElement &&
         element.state is CyberBlurBackdropScopeState) {
-      found = element.state as CyberBlurBackdropScopeState;
-      return;
+      final state = element.state as CyberBlurBackdropScopeState;
+      last = state;
+      final route = ModalRoute.of(element);
+      if (route != null && route.isCurrent) {
+        onCurrentRoute = state;
+      }
     }
     element.visitChildren(visit);
   }
 
   root.visitChildElements(visit);
-  return found;
+  return onCurrentRoute ?? last;
 }
 
 /// LIGHT cream glass card — same recipe as `WarnFrostShell` / lws-ui

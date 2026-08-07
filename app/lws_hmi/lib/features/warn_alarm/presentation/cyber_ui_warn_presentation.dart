@@ -131,21 +131,35 @@ final class CyberUiWarnPresentation implements WarnPresentation {
   }
 }
 
-/// Nearest [CyberBlurBackdropScope] under [root] (active page), if any.
+/// Prefer the blur scope on the *current* navigator route (top page).
+///
+/// Home stays mounted under pushed routes (Engineer / Settings / …). A DFS that
+/// returns the first [CyberBlurBackdropScope] therefore captures Home wallpaper
+/// instead of the visible page — alarms then show the wrong 透视 backdrop.
 CyberBlurBackdropScopeState? _findBlurScope(BuildContext root) {
-  CyberBlurBackdropScopeState? found;
+  CyberBlurBackdropScopeState? last;
+  CyberBlurBackdropScopeState? onCurrentRoute;
   void visit(Element element) {
-    if (found != null) {
-      return;
-    }
     if (element is StatefulElement &&
         element.state is CyberBlurBackdropScopeState) {
-      found = element.state as CyberBlurBackdropScopeState;
-      return;
+      final state = element.state as CyberBlurBackdropScopeState;
+      last = state;
+      final route = ModalRoute.of(element);
+      if (route != null && route.isCurrent) {
+        onCurrentRoute = state;
+      }
     }
     element.visitChildren(visit);
   }
 
   root.visitChildElements(visit);
-  return found;
+  final chosen = onCurrentRoute ?? last;
+  assert(() {
+    debugPrint(
+      'warn-frost: blur scope '
+      '${onCurrentRoute != null ? "currentRoute" : (last != null ? "fallbackLast" : "null")}',
+    );
+    return true;
+  }());
+  return chosen;
 }

@@ -1179,7 +1179,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get httpProxySaveSuccess => '代理设置已保存';
 
   @override
-  String get httpProxySettingsTitle => 'HTTP 代理';
+  String get httpProxySettingsTitle => '代理';
 
   @override
   String get httpProxyStatusIncomplete => '开启（未完成）';
@@ -1200,7 +1200,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get httpProxyTestSuccess => '连接成功';
 
   @override
-  String get httpProxyTitle => 'HTTP 代理';
+  String get httpProxyTitle => '代理';
 
   @override
   String get httpProxyUsername => '用户名';

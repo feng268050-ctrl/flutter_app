@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/settings/application/common_settings_store.dart
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/cloud_services_settings_page.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/country_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/date_time_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/display_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/http_proxy_settings_page.dart';
@@ -315,6 +316,35 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
         SettingsGroup(
           borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
           children: [
+            if (store == null)
+              SettingsNavRow(
+                title: l10n.countrySettingText,
+                value: CountrySettingsPage.countryLabel(
+                  context,
+                  CommonSettingsStore.defaultCountry,
+                ),
+                onTap: () => pushSettingsPage(
+                  context,
+                  CountrySettingsPage(services: services),
+                ),
+              )
+            else
+              ListenableBuilder(
+                listenable: store,
+                builder: (context, _) {
+                  return SettingsNavRow(
+                    title: l10n.countrySettingText,
+                    value: CountrySettingsPage.countryLabel(
+                      context,
+                      store.country,
+                    ),
+                    onTap: () => pushSettingsPage(
+                      context,
+                      CountrySettingsPage(services: services),
+                    ),
+                  );
+                },
+              ),
             if (store == null)
               SettingsNavRow(
                 title: l10n.languageSettingText,

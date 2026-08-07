@@ -320,6 +320,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       // Settings restore only. Modbus live poll + warn alarm start from Home
       // after boot self-check finishes (or immediately when self-check is skipped).
       unawaited(_services.restorePersistedSettingsOnce());
+      unawaited(
+        _services.regionSettings.applyAfterWarmRead(_commonSettingsStore),
+      );
       unawaited(_maybeRestoreRoute());
       _services.autoSleep.arm(backlight: _services.backlight);
       SystemOtaCoordinator.instance.configure(

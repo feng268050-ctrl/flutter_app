@@ -436,7 +436,7 @@ class _TimezonePickerPageState extends State<_TimezonePickerPage> {
               SettingsDimens.inset,
               SettingsDimens.inset,
               SettingsDimens.inset,
-              SettingsDimens.helpGap,
+              SettingsDimens.groupGap,
             ),
             child: CyberImeTextField(
               fieldType: CyberImeFieldType.text,

@@ -15,5 +15,6 @@ export 'package:cyber_hal/src/network/linux_wifi.dart';
 export 'package:cyber_hal/src/network/networkd_dbus.dart';
 export 'package:cyber_hal/src/network/networkd_ipv4_apply.dart';
 export 'package:cyber_hal/src/network/primary_network.dart';
+export 'package:cyber_hal/src/network/wifi_country_apply.dart';
 export 'package:cyber_hal/src/network/wifi_radio.dart';
 export 'package:cyber_hal/src/network/wpa_supplicant_dbus.dart';

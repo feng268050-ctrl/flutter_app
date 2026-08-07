@@ -72,7 +72,7 @@ Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `z
 
 Common Settings SHALL expose:
 
-- Display & Sound (untitled card): Language and Unit as persisted controls backed by `/var/lib/hmi/common-settings.json`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: Language and Unit before Display before Sound.
+- Display & Sound (untitled card): **Country/Region**, Language, and Unit as persisted controls backed by `/var/lib/hmi/common-settings.json`; Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then Sound.
 - RGB LED + Camera (untitled card, after Display & Sound, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
 - Date & Time (untitled card): Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController` (lws-ui parity).
 - Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera + RGB LED group requirement).
@@ -92,6 +92,12 @@ Common Settings SHALL expose:
 
 - **WHEN** the user selects a Sound Effect option on the Sound page
 - **THEN** Effect 1 / Effect 2 / Effect 3 are selectable and the choice is persisted via `ButtonFeedback`
+
+#### Scenario: Country/Region appears before Language
+
+- **WHEN** the operator opens Common Settings
+- **THEN** the Display & Sound card lists Country/Region above Language
+- **AND** Country/Region summary reflects the persisted Country preference
 
 #### Scenario: Language is persisted
 
@@ -123,6 +129,23 @@ Common Settings SHALL expose:
 
 - **WHEN** Language is `zh-CN` and the operator opens Common Settings
 - **THEN** migrated row titles and control labels render in Simplified Chinese via App localization
+
+### Requirement: Country/Region selection lists all markets and applies region effects
+
+Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory catalog (plus `XK`) with human-readable labels (English / Simplified Chinese by UI locale) and search. Selecting a country SHALL persist via `CommonSettingsStore` and trigger region apply (wireless regulatory and Country-linked timezone/NTP defaults). Common Settings Country/Region summary MUST show the selected country label (or code). Country/Region MUST appear as a nav row before Language on the Common Settings Display & Sound card. Operator-visible title SHALL be Country/Region (zh: 国家/地区).
+
+#### Scenario: Country page lists options with US default summary
+
+- **WHEN** Country preference is `US` and the operator opens Common Settings
+- **THEN** Country/Region summary indicates United States (or localized equivalent)
+- **AND** opening Country/Region Settings shows `US` among the selectable options
+
+#### Scenario: Selecting Germany updates summary and apply path
+
+- **WHEN** the operator selects Germany (`DE`) on Country/Region Settings
+- **THEN** the choice is persisted
+- **AND** Common Settings Country/Region summary shows the matching label
+- **AND** region apply runs for regulatory / linked clock defaults
 
 ### Requirement: Device Information shows available identity and version rows
 

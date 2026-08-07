@@ -1383,6 +1383,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageSettingText => 'Language';
 
   @override
+  String get countrySettingText => 'Country/Region';
+
+  @override
+  String get countryAppliesFooter =>
+      'Sets Wi‑Fi regulatory domain and default time zone / NTP server. Language stays separate.';
+
+  @override
+  String get countryPreferenceUnavailable =>
+      'Country/Region settings are temporarily unavailable.';
+
+  @override
+  String get countrySearchHint => 'Search by name or country/region code';
+
+  @override
+  String get countryNoMatches => 'No countries/regions found';
+
+  @override
   String get laserCommunicationAlarmContent =>
       'Confirm that the Reset button has been pressed. If it still doesn’t recover, power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 

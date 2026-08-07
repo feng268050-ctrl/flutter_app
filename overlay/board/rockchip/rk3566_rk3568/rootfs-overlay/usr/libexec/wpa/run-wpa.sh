@@ -21,7 +21,7 @@ if [ ! -f "$WPA_CONF" ]; then
 	cat >"$WPA_CONF" <<'EOF'
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=root
 update_config=1
-country=CN
+country=US
 EOF
 	chmod 600 "$WPA_CONF"
 fi

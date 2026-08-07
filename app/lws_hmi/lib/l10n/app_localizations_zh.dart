@@ -1325,6 +1325,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get languageSettingText => '语言';
 
   @override
+  String get countrySettingText => '国家/地区';
+
+  @override
+  String get countryAppliesFooter => '用于无线法规域名，以及默认时区与 NTP 服务器。界面语言仍单独设置。';
+
+  @override
+  String get countryPreferenceUnavailable => '无法读取国家/地区偏好。';
+
+  @override
+  String get countrySearchHint => '按名称或国家/地区代码搜索';
+
+  @override
+  String get countryNoMatches => '未找到匹配的国家/地区';
+
+  @override
   String get laserCommunicationAlarmContent =>
       '请确认已经按下了 Reset 按钮。若依旧没有恢复，请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
@@ -4080,6 +4095,21 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get languageSettingText => '語言';
+
+  @override
+  String get countrySettingText => '國家/地區';
+
+  @override
+  String get countryAppliesFooter => '用於無線法規域名，以及預設時區與 NTP 伺服器。介面語言仍單獨設定。';
+
+  @override
+  String get countryPreferenceUnavailable => '無法讀取國家/地區偏好。';
+
+  @override
+  String get countrySearchHint => '按名稱或國家/地區代碼搜尋';
+
+  @override
+  String get countryNoMatches => '未找到匹配的國家/地區';
 
   @override
   String get laserCommunicationAlarmContent =>

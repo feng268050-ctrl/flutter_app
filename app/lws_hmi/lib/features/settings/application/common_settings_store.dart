@@ -2,12 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/settings/application/region_country_catalog.dart';
 import 'package:lws_hmi/l10n/app_locales.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
 /// App-owned Common Settings product prefs (`/var/lib/hmi/common-settings.json`).
 ///
-/// Language / Unit (and future non-HAL, non-Misc peers). Not Misc JSON; not HAL.
+/// Language / Unit / Country (and future non-HAL, non-Misc peers). Not Misc JSON; not HAL.
 final class CommonSettingsStore extends ChangeNotifier {
   CommonSettingsStore({String? preferencePath})
       : preferencePath =
@@ -15,6 +16,7 @@ final class CommonSettingsStore extends ChangeNotifier {
 
   static const keyLanguage = 'language';
   static const keyUnit = 'unit';
+  static const keyCountry = 'country';
 
   /// BCP-47 wire values (persisted).
   static const languageEnUs = 'en-US';
@@ -30,6 +32,7 @@ final class CommonSettingsStore extends ChangeNotifier {
 
   static const defaultLanguage = languageEnUs;
   static const defaultUnit = unitMetric;
+  static const defaultCountry = RegionCountryCatalog.defaultCountry;
 
   static const supportedLanguages = <String>[
     languageEnUs,
@@ -37,15 +40,22 @@ final class CommonSettingsStore extends ChangeNotifier {
     languageZhTw,
   ];
   static const supportedUnits = <String>[unitMetric, unitImperial];
+  static const supportedCountries = RegionCountryCatalog.supportedCodes;
 
   final String preferencePath;
 
   String _language = defaultLanguage;
   String _unit = defaultUnit;
+  String _country = defaultCountry;
   bool _warmed = false;
+  bool _countryKeyPresent = false;
 
   String get language => _language;
   String get unit => _unit;
+  String get country => _country;
+
+  /// True when last read found a `country` key (false → default US, first migrate).
+  bool get hadPersistedCountry => _countryKeyPresent;
 
   /// Flutter [Locale] for [MaterialApp.locale].
   Locale get locale => localeFromLanguageTag(_language);
@@ -130,6 +140,20 @@ final class CommonSettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Persist Country (ISO alpha-2). Does not apply Wi‑Fi / clock side effects —
+  /// callers use [RegionSettingsApplier].
+  Future<void> setCountry(String value) async {
+    warmRead();
+    final next = normalizeCountry(value);
+    if (_country == next && _countryKeyPresent) {
+      return;
+    }
+    _country = next;
+    _countryKeyPresent = true;
+    await _writeUnlocked();
+    notifyListeners();
+  }
+
   static String normalizeLanguage(String? value) {
     switch (value) {
       case languageZhCn:
@@ -155,9 +179,14 @@ final class CommonSettingsStore extends ChangeNotifier {
     return defaultUnit;
   }
 
+  static String normalizeCountry(String? value) =>
+      RegionCountryCatalog.normalize(value);
+
   void _applyDefaults() {
     _language = defaultLanguage;
     _unit = defaultUnit;
+    _country = defaultCountry;
+    _countryKeyPresent = false;
   }
 
   void _applyJson(String raw) {
@@ -174,6 +203,10 @@ final class CommonSettingsStore extends ChangeNotifier {
       if (map.containsKey(keyUnit)) {
         _unit = normalizeUnit('${map[keyUnit]}');
       }
+      if (map.containsKey(keyCountry)) {
+        _country = normalizeCountry('${map[keyCountry]}');
+        _countryKeyPresent = true;
+      }
     } catch (e) {
       debugPrint('common-settings: corrupt JSON, using defaults: $e');
       _applyDefaults();
@@ -183,6 +216,7 @@ final class CommonSettingsStore extends ChangeNotifier {
   Map<String, dynamic> _toJson() => {
         keyLanguage: _language,
         keyUnit: _unit,
+        keyCountry: _country,
       };
 
   Future<void> _writeUnlocked() async {

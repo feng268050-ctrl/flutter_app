@@ -50,8 +50,10 @@ class TimeSyncPrefs {
   /// Curated Demo short list (Settings uses [DateTimeController.listTimezoneEntries]).
   static const curatedTimezones = <String>[
     'UTC',
-    'Asia/Shanghai',
+    'America/New_York',
     'America/Los_Angeles',
+    'Europe/Berlin',
+    'Asia/Shanghai',
   ];
 
   /// Default when preference file is missing: network (Settings Automatic on).

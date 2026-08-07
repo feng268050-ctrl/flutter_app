@@ -117,7 +117,7 @@ final class SystemdWifiRadio implements WifiRadio {
     this.ifaceFilePath = '/run/wpa-wlan.iface',
     this.wlanUnit = 'wlan-wpa.service',
     this.stockWpaUnit = 'wpa_supplicant.service',
-    this.country = 'CN',
+    this.country = 'US',
     WifiModemPort? modem,
     Future<ProcessResult> Function(String exe, List<String> args)? run,
     DBusClient Function()? busFactory,

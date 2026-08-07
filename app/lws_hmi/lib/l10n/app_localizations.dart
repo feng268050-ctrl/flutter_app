@@ -2579,6 +2579,36 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get languageSettingText;
 
+  /// No description provided for @countrySettingText.
+  ///
+  /// In en, this message translates to:
+  /// **'Country/Region'**
+  String get countrySettingText;
+
+  /// No description provided for @countryAppliesFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets Wi‑Fi regulatory domain and default time zone / NTP server. Language stays separate.'**
+  String get countryAppliesFooter;
+
+  /// No description provided for @countryPreferenceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Country/Region settings are temporarily unavailable.'**
+  String get countryPreferenceUnavailable;
+
+  /// No description provided for @countrySearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or country/region code'**
+  String get countrySearchHint;
+
+  /// No description provided for @countryNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No countries/regions found'**
+  String get countryNoMatches;
+
   /// No description provided for @laserCommunicationAlarmContent.
   ///
   /// In en, this message translates to:

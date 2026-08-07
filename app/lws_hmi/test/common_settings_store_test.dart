@@ -14,26 +14,33 @@ void main() {
     expect(store.language, CommonSettingsStore.defaultLanguage);
     expect(store.language, CommonSettingsStore.languageEnUs);
     expect(store.unit, CommonSettingsStore.defaultUnit);
+    expect(store.country, CommonSettingsStore.defaultCountry);
+    expect(store.country, 'US');
+    expect(store.hadPersistedCountry, isFalse);
     expect(File('${dir.path}/common-settings.json').existsSync(), isFalse);
     await dir.delete(recursive: true);
   });
 
-  test('JSON round-trip for language and unit', () async {
+  test('JSON round-trip for language unit and country', () async {
     final dir = await Directory.systemTemp.createTemp('common-');
     final path = '${dir.path}/common-settings.json';
     final store = CommonSettingsStore(preferencePath: path);
     store.warmRead();
     await store.setLanguage(CommonSettingsStore.languageZhCn);
     await store.setUnit(CommonSettingsStore.unitImperial);
+    await store.setCountry('DE');
 
     final again = CommonSettingsStore(preferencePath: path);
     again.warmRead();
     expect(again.language, CommonSettingsStore.languageZhCn);
     expect(again.unit, CommonSettingsStore.unitImperial);
+    expect(again.country, 'DE');
+    expect(again.hadPersistedCountry, isTrue);
 
     final decoded = jsonDecode(await File(path).readAsString()) as Map;
     expect(decoded['language'], 'zh-CN');
     expect(decoded['unit'], 'Imperial');
+    expect(decoded['country'], 'DE');
 
     await dir.delete(recursive: true);
   });
@@ -48,6 +55,8 @@ void main() {
     store.warmRead();
     expect(store.language, CommonSettingsStore.languageZhCn);
     expect(store.isChineseLanguage, isTrue);
+    expect(store.country, 'US');
+    expect(store.hadPersistedCountry, isFalse);
 
     await File(path).writeAsString(
       jsonEncode({'language': 'EN', 'unit': 'Metric'}),
@@ -67,6 +76,7 @@ void main() {
     store.warmRead();
     expect(store.language, CommonSettingsStore.defaultLanguage);
     expect(store.unit, CommonSettingsStore.defaultUnit);
+    expect(store.country, CommonSettingsStore.defaultCountry);
     await dir.delete(recursive: true);
   });
 
@@ -74,12 +84,14 @@ void main() {
     final dir = await Directory.systemTemp.createTemp('common-');
     final path = '${dir.path}/common-settings.json';
     await File(path).writeAsString(
-      jsonEncode({'language': 'FR', 'unit': 'Stone'}),
+      jsonEncode({'language': 'FR', 'unit': 'Stone', 'country': 'XX'}),
     );
     final store = CommonSettingsStore(preferencePath: path);
     store.warmRead();
     expect(store.language, CommonSettingsStore.defaultLanguage);
     expect(store.unit, CommonSettingsStore.defaultUnit);
+    expect(store.country, CommonSettingsStore.defaultCountry);
+    expect(store.hadPersistedCountry, isTrue);
     await dir.delete(recursive: true);
   });
 
@@ -104,6 +116,8 @@ void main() {
       CommonSettingsStore.normalizeUnit('nope'),
       CommonSettingsStore.defaultUnit,
     );
+    expect(CommonSettingsStore.normalizeCountry('de'), 'DE');
+    expect(CommonSettingsStore.normalizeCountry('nope'), 'US');
   });
 
   test('language endonyms are not locale-translated', () {

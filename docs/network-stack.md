@@ -4,7 +4,7 @@
 
 | Layer | Owner | Notes |
 |-------|--------|--------|
-| Wi‑Fi L2 (scan/assoc) | **wpa_supplicant D-Bus** (`-u` **required**) | `wlan-wpa.service` → `run-wpa.sh`. Binary must have `BR2_PACKAGE_WPA_SUPPLICANT_DBUS`. No soft-fallback without `-u`. Stock `wpa_supplicant.service` (`-u` only, D-Bus-activated) is **masked** — HMI must not auto-spawn an empty daemon that steals `fi.w1.wpa_supplicant1`. `ctrl_interface=` may still exist for engineering `wpa_cli`. |
+| Wi‑Fi L2 (scan/assoc) | **wpa_supplicant D-Bus** (`-u` **required**) | `wlan-wpa.service` → `run-wpa.sh`. Binary must have `BR2_PACKAGE_WPA_SUPPLICANT_DBUS`. No soft-fallback without `-u`. Stock `wpa_supplicant.service` (`-u` only, D-Bus-activated) is **masked** — HMI must not auto-spawn an empty daemon that steals `fi.w1.wpa_supplicant1`. `ctrl_interface=` may still exist for engineering `wpa_cli`. Image / script seed `country=US`; runtime Country preference (Common Settings) upserts `country=` + `iw reg set` via `WifiCountryApply`. |
 | eth0 / wlan0 L3 (addr/route) | **systemd-networkd** | Helpers render `/etc/systemd/network/50-hmi-<iface>.network` then `networkctl reconfigure` / D-Bus |
 | DNS | **systemd-resolved** | networkd feeds DNS to resolved; `/etc/resolv.conf` → `../run/systemd/resolve/resolv.conf`. LLMNR/mDNS off. **Wall clock (ynh960):** RK809 PMIC RTC is unusable (internal RC ~15% slow) — **`CONFIG_RTC_DRV_RK808` unset** in `ynh960-rtc.config`. Product board uses **external PCF8563 on i2c5 @0x51** (`ynh960-rtc.dtsi` → sole `rtc0`); HCTOSYS/SYSTOHC + `rtc-systohc.timer` persist wall time offline. Settings **Automatic NTP is on by default** (`systemd-timesyncd` preset-enabled; HAL `sync_mode` defaults to `network`). Primary NTP is user-selectable from a curated preset list (default `pool.ntp.org`); HAL writes `20-hmi-ntp.conf` with `FallbackNTP` = remaining presets. Image seed: `10-appliance.conf`. Optional **Automatic Time Zone** (default off) uses public IP geolocation. Manual sync mode turns NTP off. Boot DT is FIT/`overlay/kernel`, **not** oem/. **DNSSEC=no** / **DNSOverTLS=no**. Do **not** hand-write resolv from helpers. |
 | Live UI / HAL status | **D-Bus subscribe** | L2: `fi.w1.wpa_supplicant1` PropertiesChanged. L3: `org.freedesktop.network1` PropertiesChanged for link state; addresses via **`Link.Describe` JSON** (current upstream API, systemd 254) with fallback to legacy Link property **`Addresses`** (`a(iiay)`) on older networkd. **Not** Timer + `wpa_cli`/`ip` as primary. |
@@ -83,6 +83,7 @@ Do **not** fold vendor bring-up into the portable HAL default path.
 | `/var/lib/network/eth0-wanted` | restore starts `eth0-network.service` |
 | `/var/lib/wpa_supplicant/wlan0-ipv4` | wlan L3 mode |
 | `/var/lib/wpa_supplicant/wifi-wanted` | restore brings Wi‑Fi stack up |
+| `/var/lib/hmi/common-settings.json` | App Country / Language / Unit; Country drives wpa `country=` + linked timezone/NTP (default **US**) |
 | `/var/lib/network/proxy.conf` | multi-scheme proxy (migrates from `/var/lib/hmi/http-proxy`) |
 
 ## Helpers (board / interim)

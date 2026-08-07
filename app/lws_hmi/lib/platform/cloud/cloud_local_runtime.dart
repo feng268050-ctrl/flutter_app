@@ -1232,6 +1232,7 @@ final class CloudLocalRuntime {
       commonSettings: {
         'language': common?.language ?? CommonSettingsStore.defaultLanguage,
         'unit': common?.unit ?? CommonSettingsStore.defaultUnit,
+        'country': common?.country ?? CommonSettingsStore.defaultCountry,
         'soundEffect': sound?.index ?? SoundEffectStore.defaultIndex,
         'showBootSelfCheck': misc?.showStartupSelfCheck ?? true,
         'showSafetyGroundLockAlarm': misc?.showGroundLockAlarm ?? true,

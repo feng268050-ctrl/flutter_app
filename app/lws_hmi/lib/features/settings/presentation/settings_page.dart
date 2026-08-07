@@ -159,7 +159,10 @@ class _SettingsPageState extends State<SettingsPage> {
           child: ProductTabSlideBody(
             index: _currentTabIndex,
             children: [
-              DeviceInformationTab(services: services),
+              DeviceInformationTab(
+                services: services,
+                cameraDeviceInfoCache: widget.cameraDeviceInfoCache,
+              ),
               CommonSettingsTab(
                 services: services,
                 cameraDeviceInfoCache: widget.cameraDeviceInfoCache,

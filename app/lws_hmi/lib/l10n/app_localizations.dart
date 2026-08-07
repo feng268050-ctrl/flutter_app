@@ -4625,6 +4625,36 @@ abstract class AppLocalizations {
   /// **'SSH Debug'**
   String get sshDebugText;
 
+  /// No description provided for @storageAvailableLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get storageAvailableLegend;
+
+  /// No description provided for @storageMountSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get storageMountSystem;
+
+  /// No description provided for @storageMountUserData.
+  ///
+  /// In en, this message translates to:
+  /// **'User Data'**
+  String get storageMountUserData;
+
+  /// No description provided for @storageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get storageTitle;
+
+  /// No description provided for @storageUsedOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {total} used'**
+  String storageUsedOfTotal(String used, String total);
+
   /// No description provided for @straightTrackTemperatureAlarmContent.
   ///
   /// In en, this message translates to:

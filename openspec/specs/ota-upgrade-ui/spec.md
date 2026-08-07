@@ -2,11 +2,10 @@
 
 ## Purpose
 Dedicated whole-device upgrade page: safe shutdown, download/verify/extract/burn UX, no laser controls during write.
-
 ## Requirements
 ### Requirement: Settings check-for-updates uses cyber_ota
 
-Device Information SHALL expose **System Version** as navigation into **System Upgrade**. System Upgrade SHALL host **Check for Updates** and **Automatically check for updates**, invoke `cyber_ota` against the **cloud channel manifest** for the active environment tier, and render check outcomes **in the content card** using **`cyber_upgrade_ui` check-card primitives** — not as dialogs. When a newer package exists, the card SHALL present an **Update Now** (and dismiss/later) gate (version / optional notes). **Update Now** SHALL start cloud download+apply via safe-shutdown with progress on the **same** System Upgrade page (`runCloudUpdate`, no remount required). Controls MUST NOT report a false success when cloud services or API origin are unavailable, MUST NOT report “up to date” when the check could not run, and MUST NOT remain permanently deferred once this capability is implemented. Auto-check MUST NOT apply an update without operator confirmation via Update Now (or equivalent confirm); when auto-check finds a newer package it MAY open System Upgrade already in the available state.
+Device Information SHALL expose **System Version** as navigation into **System Upgrade**. System Upgrade SHALL host **Check for Updates** and **Automatically check for updates**, invoke `cyber_ota` against the **cloud channel manifest** for the active environment tier, and render check outcomes **in the content card** using **`cyber_upgrade_ui` check-card primitives** — not as dialogs. When not in progress-only / apply mode, System Upgrade SHALL also display read-only **Kernel Version** and **Process Library Version** rows (value or `-`) alongside the current System Version, so upgrade-related version detail lives on this page rather than Device Information. When a newer package exists, the card SHALL present an **Update Now** (and dismiss/later) gate (version / optional notes). **Update Now** SHALL start cloud download+apply via safe-shutdown with progress on the **same** System Upgrade page (`runCloudUpdate`, no remount required). Controls MUST NOT report a false success when cloud services or API origin are unavailable, MUST NOT report “up to date” when the check could not run, and MUST NOT remain permanently deferred once this capability is implemented. Auto-check MUST NOT apply an update without operator confirmation via Update Now (or equivalent confirm); when auto-check finds a newer package it MAY open System Upgrade already in the available state.
 
 #### Scenario: Check for Updates runs manifest check
 
@@ -31,6 +30,12 @@ Device Information SHALL expose **System Version** as navigation into **System U
 - **WHEN** Automatically check for updates is enabled and a newer manifest is found
 - **THEN** the HMI may open System Upgrade with the available state
 - **AND** MUST NOT start partition writes until the operator confirms with Update Now (or equivalent)
+
+#### Scenario: Kernel and process library versions on System Upgrade
+
+- **WHEN** the operator opens System Upgrade in check mode from Device Information
+- **THEN** Kernel Version and Process Library Version are visible on System Upgrade
+- **AND** Device Information does not list those rows
 
 ### Requirement: Dedicated upgrade page unifies transfer as download progress
 
@@ -94,3 +99,4 @@ The product App SHALL depend on `packages/cyber_upgrade_ui` for System Upgrade c
 - **WHEN** System Upgrade is shown after migration
 - **THEN** check and progress visuals are composed from `cyber_upgrade_ui` widgets
 - **AND** `cyber_ota` remains the apply/progress event source
+

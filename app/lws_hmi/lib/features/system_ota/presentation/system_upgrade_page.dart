@@ -1,13 +1,17 @@
 import 'dart:async';
 
+import 'package:cyber_hal/sys_info.dart';
 import 'package:cyber_ota/cyber_ota.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:cyber_upgrade_ui/cyber_upgrade_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app_version.dart';
+import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
@@ -43,10 +47,13 @@ class SystemUpgradePage extends StatefulWidget {
 
 class _SystemUpgradePageState extends State<SystemUpgradePage> {
   StreamSubscription<OtaProgress>? _sub;
+  StreamSubscription<SysInfoUpdate>? _sysSub;
   OtaProgress? _progress;
   OtaManifest? _availableManifest;
   UpgradeCheckUiState _checkUi = UpgradeCheckUiState.idle;
   bool _applyUi = false;
+  String _kernelVersion = kUnavailableDisplay;
+  String _processLibVersion = kUnavailableDisplay;
 
   /// Effective policy for this page entry.
   UpgradePolicy get _policy => widget.progressOnly
@@ -106,6 +113,10 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       });
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!widget.progressOnly) {
+        _startVersionWatch();
+        _refreshProcessLib();
+      }
       if (widget.autoCheckOnOpen &&
           widget.initialManifest == null &&
           !widget.progressOnly) {
@@ -114,9 +125,48 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     });
   }
 
+  void _startVersionWatch() {
+    try {
+      final services = AppScope.of(context);
+      _sysSub = services.sysInfo
+          .watch(interval: const Duration(seconds: 5))
+          .listen((update) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _kernelVersion =
+              update.snapshot.kernelRelease ?? kUnavailableDisplay;
+        });
+      }, onError: (_) {});
+    } catch (_) {}
+  }
+
+  void _refreshProcessLib() {
+    try {
+      final lib = ProcessLibraryScope.of(context);
+      final fromPreset = lib.presets
+          .map((p) => p.libraryVersion)
+          .whereType<String>()
+          .where((v) => v.trim().isNotEmpty)
+          .cast<String?>()
+          .firstWhere((_) => true, orElse: () => null);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _processLibVersion =
+            (fromPreset == null || fromPreset.isEmpty)
+                ? kUnavailableDisplay
+                : fromPreset;
+      });
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
     unawaited(_sub?.cancel());
+    unawaited(_sysSub?.cancel());
     super.dispose();
   }
 
@@ -253,6 +303,28 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                         SettingsValueRow(
                           title: l10n.systemVersion,
                           value: kSystemVersion,
+                        ),
+                        const Divider(
+                          height: SettingsDimens.sectionDividerHeight,
+                          thickness: SettingsDimens.sectionDividerHeight,
+                          indent: 20,
+                          endIndent: 20,
+                          color: SettingsDimens.sectionDividerColor,
+                        ),
+                        SettingsValueRow(
+                          title: l10n.kernelVersion,
+                          value: _kernelVersion,
+                        ),
+                        const Divider(
+                          height: SettingsDimens.sectionDividerHeight,
+                          thickness: SettingsDimens.sectionDividerHeight,
+                          indent: 20,
+                          endIndent: 20,
+                          color: SettingsDimens.sectionDividerColor,
+                        ),
+                        SettingsValueRow(
+                          title: l10n.processLibVersion,
+                          value: _processLibVersion,
                         ),
                         const Divider(
                           height: SettingsDimens.sectionDividerHeight,

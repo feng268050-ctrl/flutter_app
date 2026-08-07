@@ -47,13 +47,17 @@ In `SystemUpgradePage` when not progress-only / apply UI, show read-only rows fo
 
 Add a small Settings widget (e.g. `SettingsStorageBar`) that:
 
-1. Reads `SysInfoSnapshot.storage` for board mounts (typically `/`, `/userdata`)
-2. Renders a single full-width rounded bar with **colored used segments** (one per mount with known `totalBytes`/`freeBytes`) and a trailing **available** segment (sum of free bytes across those mounts, or free of `/userdata` if product prefers “operator free space” — default: **sum of free across listed mounts**, with used = total−free per mount)
-3. Shows a short legend and/or caption: used / available in human units (GB/MB), localized
+1. Reads `SysInfoSnapshot.storage`
+2. Renders a single full-width rounded bar with colored segments and a trailing **available** segment
+3. **Appliance accounting:**
+   - **System**: sum of GPT partition block sizes for board `system_storage_part_labels` (default: uboot, misc, boot, boot_b, recovery, backup, rootfs_a, rootfs_b, oem, private, private1, vendor0–3) — full size each, including inactive A/B rootfs and oem. Exposed as synthetic `/` [StorageInfo] with `freeBytes: 0`.
+   - **User Data**: used on `/userdata` (df)
+   - **Available**: free on `/userdata` only
+4. Shows legend/caption with occupied / available in human units
 
-No per-folder media accounting. Colors: distinct, muted, CyberUI-friendly (avoid purple/glow clichés); available segment light/gray like iOS Settings → General → iPhone Storage.
+No per-folder media accounting. When part-label sysfs is unavailable, HAL falls back to df on `/` as before.
 
-**Rationale:** HAL already provides per-mount totals; category breakdown would need new tooling. Alternative: userdata-only bar (acceptable fallback if root totals are misleading on A/B images — prefer dual-segment if both mounts report).
+**Rationale:** Operators care about reclaimable userdata; all other GPT slots are OS-owned footprint.
 
 ### D5 — Spec deltas only; no new capability folder
 

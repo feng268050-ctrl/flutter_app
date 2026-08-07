@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cyber_hal/src/sys_info/product_info.dart';
+import 'package:cyber_hal/src/sys_info/storage_part_labels.dart';
 import 'package:flutter/foundation.dart';
 
 export 'package:cyber_hal/src/sys_info/product_info.dart';
+export 'package:cyber_hal/src/sys_info/storage_part_labels.dart';
 
 /// Host/board inventory snapshot (D17).
 abstract class SysInfo {
@@ -157,6 +159,55 @@ final class StorageInfo {
   final int? freeBytes;
 }
 
+/// Parse `df -P` / `df -Pk` / `df -B1` stdout for [mountPoint].
+///
+/// Uses the last data line (handles wrapped filesystem names). Columns:
+/// `Filesystem blocks Used Available …`. Multiplies block counts by
+/// [blockSizeBytes] (1 for GNU `-B1`, 1024 for BusyBox/POSIX `-k`/`-P`).
+StorageInfo? parseDfStorageLine({
+  required String stdout,
+  required String mountPoint,
+  int blockSizeBytes = 1024,
+}) {
+  final lines = stdout.trim().split('\n');
+  if (lines.length < 2) {
+    return null;
+  }
+  // Prefer a line that ends with the mount point; else last non-header line.
+  String? dataLine;
+  for (var i = lines.length - 1; i >= 1; i--) {
+    final line = lines[i].trim();
+    if (line.isEmpty) {
+      continue;
+    }
+    if (line == mountPoint ||
+        line.endsWith(' $mountPoint') ||
+        line.endsWith('\t$mountPoint')) {
+      dataLine = line;
+      break;
+    }
+    dataLine ??= line;
+  }
+  if (dataLine == null) {
+    return null;
+  }
+  final cols = dataLine.split(RegExp(r'\s+'));
+  if (cols.length < 4) {
+    return null;
+  }
+  final totalBlocks = int.tryParse(cols[1]);
+  final freeBlocks = int.tryParse(cols[3]);
+  if (totalBlocks == null || freeBlocks == null || totalBlocks <= 0) {
+    return null;
+  }
+  final scale = blockSizeBytes <= 0 ? 1 : blockSizeBytes;
+  return StorageInfo(
+    mountPoint: mountPoint,
+    totalBytes: totalBlocks * scale,
+    freeBytes: freeBlocks * scale,
+  );
+}
+
 final class ThermalZone {
   const ThermalZone({
     required this.id,
@@ -225,6 +276,8 @@ class LinuxSysInfo implements SysInfo {
     this.deviceSnReader = const DeviceSnReader(),
     this.appVersion,
     this.mountPoints = const <String>['/', '/userdata'],
+    this.systemPartLabels = kDefaultSystemStoragePartLabels,
+    this.partSizeReader,
     this.frameTimingSampler,
     this.productIniPath = kPropertiesIniPath,
     ProductInfo? productInfo,
@@ -236,6 +289,12 @@ class LinuxSysInfo implements SysInfo {
   final String? appVersion;
 
   final List<String> mountPoints;
+
+  /// GPT PARTNAMEs summed into the System (`/`) [StorageInfo] entry.
+  final List<String> systemPartLabels;
+
+  /// Optional override for tests (returns bytes for a part label).
+  final Future<int?> Function(String partLabel)? partSizeReader;
 
   /// Optional FPS sampler (App injects Flutter timings; stub uses fixed).
   final FrameTimingSampler? frameTimingSampler;
@@ -477,30 +536,81 @@ class LinuxSysInfo implements SysInfo {
 
   Future<List<StorageInfo>> _readStorage() async {
     final out = <StorageInfo>[];
+    final systemBytes = await _sumSystemPartBytes();
+    final haveSystemParts = systemBytes != null && systemBytes > 0;
+    if (haveSystemParts) {
+      // Synthetic `/` entry: full GPT system footprint (rootfs A/B, oem, …).
+      out.add(
+        StorageInfo(
+          mountPoint: '/',
+          totalBytes: systemBytes,
+          freeBytes: 0,
+        ),
+      );
+    }
     for (final mp in mountPoints) {
+      if (mp == '/' && haveSystemParts) {
+        // Avoid double-counting active rootfs via df.
+        continue;
+      }
+      final info = await _readOneMount(mp);
+      if (info != null) {
+        out.add(info);
+      }
+    }
+    return out;
+  }
+
+  Future<int?> _sumSystemPartBytes() async {
+    if (systemPartLabels.isEmpty) {
+      return null;
+    }
+    var sum = 0;
+    var any = false;
+    for (final label in systemPartLabels) {
+      final name = label.trim();
+      if (name.isEmpty || name == 'userdata') {
+        continue;
+      }
+      final bytes = partSizeReader != null
+          ? await partSizeReader!(name)
+          : await readPartLabelSizeBytes(name);
+      if (bytes == null || bytes <= 0) {
+        continue;
+      }
+      sum += bytes;
+      any = true;
+    }
+    return any ? sum : null;
+  }
+
+  /// BusyBox `df` has no `-B1` (GNU only). Prefer POSIX `-Pk` (1024-byte
+  /// blocks), then GNU `-B1`, then plain `df -P`.
+  Future<StorageInfo?> _readOneMount(String mp) async {
+    const attempts = <({List<String> flags, int blockBytes})>[
+      (flags: <String>['-Pk'], blockBytes: 1024),
+      (flags: <String>['-B1'], blockBytes: 1),
+      (flags: <String>['-P'], blockBytes: 1024),
+    ];
+    for (final attempt in attempts) {
       try {
-        final stat = await Process.run('df', <String>['-B1', mp]);
+        final stat = await Process.run('df', <String>[...attempt.flags, mp]);
         if (stat.exitCode != 0) {
           continue;
         }
-        final lines = (stat.stdout as String).trim().split('\n');
-        if (lines.length < 2) {
-          continue;
-        }
-        final cols = lines.last.trim().split(RegExp(r'\s+'));
-        if (cols.length < 4) {
-          continue;
-        }
-        out.add(
-          StorageInfo(
-            mountPoint: mp,
-            totalBytes: int.tryParse(cols[1]),
-            freeBytes: int.tryParse(cols[3]),
-          ),
+        final parsed = parseDfStorageLine(
+          stdout: stat.stdout is String
+              ? stat.stdout as String
+              : stat.stdout.toString(),
+          mountPoint: mp,
+          blockSizeBytes: attempt.blockBytes,
         );
+        if (parsed != null) {
+          return parsed;
+        }
       } catch (_) {}
     }
-    return out;
+    return null;
   }
 
   Future<List<ThermalZone>> _readThermal() async {

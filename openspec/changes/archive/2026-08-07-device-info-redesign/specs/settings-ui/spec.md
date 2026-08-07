@@ -59,7 +59,7 @@ Device Information SHALL show CyberUI untitled cards with:
 
 1. Identity: Device Model (QR), Device SN  
 2. Versions: System Version, Camera Version, Firmware Version (existing control-card / firmware Modbus value), Laser Version, Wire Feeder Version  
-3. Storage: iOS-style capacity bar and used/available summary from HAL `SysInfo.storage`  
+3. Storage: iOS-style capacity bar with `{used} of {total} used` summary and HAL `SysInfo.storage` (System = GPT system partitions; Available = `/userdata` free)  
 4. Accessory (last): Welding Gun SN, Focus Scale Reference  
 
 Device Information MUST NOT show Camera Type. Device Information MUST NOT show Kernel Version or Process Library Version. Device Information SHALL expose **System Version** as a navigation row into **System Upgrade**. Check for Updates and Automatically check for updates SHALL live on System Upgrade (not as a Device Information footer). Auto-check may open System Upgrade when a newer package exists but MUST NOT auto-apply. When cloud services are disabled or the API origin is not pinned, Check for Updates MUST show an unavailable outcome on System Upgrade (not a false “up to date”). They MUST NOT report a false success, and MUST NOT remain permanently deferred/unavailable once whole-device OTA is implemented on the device image. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
@@ -121,17 +121,30 @@ System Upgrade SHALL use the shared **Settings scaffold** and a content **Settin
 
 Device Information SHALL include an untitled storage card after the versions card and before the accessory card. The card SHALL present:
 
-- A single horizontal rounded **segmented bar** (iOS Settings storage style): colored segments for used space per HAL-reported board storage mount (typically `/` and `/userdata`), plus a trailing available/free segment
-- A readable used / available (or free) capacity summary in human units
+- A capacity summary line in the form **`{used} of {total} used`** (localized; human units such as `GB` / `MB`), placed below the Storage title and above the bar
+- A single horizontal rounded **segmented bar** (iOS Settings storage style): colored **System** and **User Data** segments plus a trailing **Available** segment, with a legend
+- System / User Data / Available legend labels with human-readable sizes
 
-Data SHALL come from HAL `SysInfo` / `StorageInfo` (board-profile `storageMounts`). When storage data is unavailable, the card SHALL still render without crashing and SHALL show `-` or an equivalent unavailable presentation. The storage card MUST NOT offer delete/clear actions in this change.
+**Accounting (HAL `SysInfo.storage`):**
+
+- **System** SHALL be the sum of full block sizes of board system GPT partitions (default PARTNAMEs: uboot, misc, boot, boot_b, recovery, backup, rootfs_a, rootfs_b, oem, private, private1, vendor0–3), not merely active `/` filesystem used space
+- **User Data** SHALL be used space on `/userdata`
+- **Available** SHALL be free space on `/userdata` only
+
+When storage data is unavailable, the card SHALL still render without crashing and SHALL show `-` or an equivalent unavailable presentation. The storage card MUST NOT offer delete/clear actions in this change.
 
 #### Scenario: Storage bar visible after versions
 
-- **WHEN** the operator opens Device Information and HAL reports storage totals for board mounts
+- **WHEN** the operator opens Device Information and HAL reports storage totals
 - **THEN** a storage card appears below the versions card and above Welding Gun SN / Focus Scale Reference
-- **AND** a segmented used/available bar is visible
-- **AND** used and available capacity text is visible
+- **AND** a summary line in the `{used} of {total} used` form is visible
+- **AND** a segmented System / User Data / Available bar is visible
+
+#### Scenario: System includes oem and other GPT system partitions
+
+- **WHEN** HAL can read GPT part-label sizes for system partitions including `oem` and both `rootfs_a` / `rootfs_b`
+- **THEN** the System segment size reflects the sum of those partition block sizes (and the other default system PARTNAMEs when present)
+- **AND** Available does not include free space on `/`
 
 #### Scenario: Storage unavailable soft-fails
 

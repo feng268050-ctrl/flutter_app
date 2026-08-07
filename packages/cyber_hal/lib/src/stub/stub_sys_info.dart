@@ -19,10 +19,16 @@ final class StubSysInfo implements SysInfo {
       memoryTotalBytes: 4 * 1024 * 1024 * 1024,
       memoryAvailableBytes: 2 * 1024 * 1024 * 1024,
       storage: [
+        // Approximate GPT system footprint (rootfs A+B + oem + boots…).
         StorageInfo(
           mountPoint: '/',
-          totalBytes: 32 * 1024 * 1024 * 1024,
-          freeBytes: 16 * 1024 * 1024 * 1024,
+          totalBytes: (2 * 1024 + 128 + 64 * 2) * 1024 * 1024,
+          freeBytes: 0,
+        ),
+        StorageInfo(
+          mountPoint: '/userdata',
+          totalBytes: 24 * 1024 * 1024 * 1024,
+          freeBytes: 13 * 1024 * 1024 * 1024,
         ),
       ],
       thermal: [

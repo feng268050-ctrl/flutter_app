@@ -1010,6 +1010,21 @@
   "soundSettings": "Sound",
   "sshDebugFooter": "When enabled, you can connect to this device over the network for remote troubleshooting. Turns off after reboot. USB debugging is set separately under USB OTG.",
   "sshDebugText": "SSH Debug",
+  "storageAvailableLegend": "Available",
+  "storageMountSystem": "System",
+  "storageMountUserData": "User Data",
+  "storageTitle": "Storage",
+  "storageUsedOfTotal": "{used} of {total} used",
+  "@storageUsedOfTotal": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "straightTrackTemperatureAlarmContent": "Inspect the collimating lens. If the collimating lens has burn marks, replace it immediately.",
   "swingWidthLabel": "Scan Width",
   "syncNow": "Sync Now",

@@ -69,6 +69,7 @@ final class BoardBindings {
       deviceSnReader: deviceSnReader,
       appVersion: appVersion,
       mountPoints: profile.storageMounts,
+      systemPartLabels: profile.systemStoragePartLabels,
       frameTimingSampler: frameTimingSampler,
       productIniPath: productIniPath,
       productInfo: productInfo,

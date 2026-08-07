@@ -2395,6 +2395,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sshDebugText => 'SSH 调试';
 
   @override
+  String get storageAvailableLegend => '可用';
+
+  @override
+  String get storageMountSystem => '系统';
+
+  @override
+  String get storageMountUserData => '用户数据';
+
+  @override
+  String get storageTitle => '存储空间';
+
+  @override
+  String storageUsedOfTotal(String used, String total) {
+    return '已用 $used，共 $total';
+  }
+
+  @override
   String get straightTrackTemperatureAlarmContent => '检查聚焦镜。若聚焦镜有明显烧痕，请立即更换。';
 
   @override
@@ -5017,6 +5034,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get sshDebugText => 'SSH 調試';
+
+  @override
+  String get storageMountSystem => '系統';
+
+  @override
+  String get storageMountUserData => '用戶數據';
+
+  @override
+  String get storageTitle => '存儲空間';
 
   @override
   String get straightTrackTemperatureAlarmContent => '檢查聚焦鏡。若聚焦鏡有明顯燒痕，請立即更換。';

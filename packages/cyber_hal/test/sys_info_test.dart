@@ -22,6 +22,63 @@ void main() {
     await info.close();
   });
 
+  test('sectorsFileToBytes parses sysfs size', () {
+    expect(sectorsFileToBytes('2048\n'), 2048 * 512);
+    expect(sectorsFileToBytes('0'), isNull);
+    expect(sectorsFileToBytes('x'), isNull);
+  });
+
+  test('LinuxSysInfo storage sums system part labels into /', () async {
+    final sizes = <String, int>{
+      'rootfs_a': 1000,
+      'rootfs_b': 1000,
+      'oem': 128,
+      'boot': 64,
+    };
+    final info = LinuxSysInfo(
+      deviceSnReader: const DeviceSnReader(readSerialPath: '/bin/false'),
+      productInfo: ProductInfo.empty,
+      mountPoints: const ['/', '/userdata'],
+      systemPartLabels: sizes.keys.toList(),
+      partSizeReader: (label) async => sizes[label],
+    );
+    final snap = await info.snapshot();
+    final system = snap.storage.where((s) => s.mountPoint == '/').single;
+    expect(system.totalBytes, 1000 + 1000 + 128 + 64);
+    expect(system.freeBytes, 0);
+    await info.close();
+  });
+
+  test('parseDfStorageLine handles BusyBox df -Pk', () {
+    const out = '''
+Filesystem     1024-blocks      Used Available Capacity Mounted on
+/dev/root         1048576    524288    524288      50% /
+''';
+    final info = parseDfStorageLine(
+      stdout: out,
+      mountPoint: '/',
+      blockSizeBytes: 1024,
+    );
+    expect(info, isNotNull);
+    expect(info!.totalBytes, 1048576 * 1024);
+    expect(info.freeBytes, 524288 * 1024);
+  });
+
+  test('parseDfStorageLine handles GNU df -B1', () {
+    const out = '''
+Filesystem     1B-blocks      Used Available Use% Mounted on
+/dev/mmcblk0p6 1000000000 600000000 400000000  60% /userdata
+''';
+    final info = parseDfStorageLine(
+      stdout: out,
+      mountPoint: '/userdata',
+      blockSizeBytes: 1,
+    );
+    expect(info, isNotNull);
+    expect(info!.totalBytes, 1000000000);
+    expect(info.freeBytes, 400000000);
+  });
+
   test('StubSysInfo.watch emits primed once', () async {
     final updates = await StubSysInfo().watch().toList();
     expect(updates, hasLength(1));

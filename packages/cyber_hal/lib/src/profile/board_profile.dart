@@ -5,7 +5,11 @@ import 'package:cyber_hal/src/core/board_info.dart';
 import 'package:cyber_hal/src/core/capabilities.dart';
 import 'package:cyber_hal/src/core/errors.dart';
 import 'package:cyber_hal/src/core/net_role.dart';
+import 'package:cyber_hal/src/sys_info/storage_part_labels.dart';
 import 'package:flutter/services.dart';
+
+export 'package:cyber_hal/src/sys_info/storage_part_labels.dart'
+    show kDefaultSystemStoragePartLabels;
 
 /// Well-known keys under [BoardProfile.helpers] (D22 live wiring).
 abstract final class BoardHelperKeys {
@@ -57,6 +61,7 @@ final class BoardProfile {
     this.gpioConfigAsset,
     this.modbusConfigAsset,
     this.storageMounts = const ['/', '/userdata'],
+    this.systemStoragePartLabels = kDefaultSystemStoragePartLabels,
     this.routeMetrics = const {},
     this.helpers = const {},
     this.secretsBackend,
@@ -68,6 +73,9 @@ final class BoardProfile {
   final String? gpioConfigAsset;
   final String? modbusConfigAsset;
   final List<String> storageMounts;
+
+  /// GPT part labels whose full size rolls into System (excludes userdata).
+  final List<String> systemStoragePartLabels;
 
   /// Iface → systemd-networkd RouteMetric (lower preferred). Empty → HAL defaults.
   final Map<String, int> routeMetrics;
@@ -172,6 +180,7 @@ final class BoardProfile {
       gpioConfigAsset: gpio ?? gpioConfigAsset,
       modbusConfigAsset: modbus ?? modbusConfigAsset,
       storageMounts: storageMounts,
+      systemStoragePartLabels: systemStoragePartLabels,
       routeMetrics: routeMetrics,
       helpers: helpers,
       secretsBackend: secretsBackend,
@@ -214,6 +223,14 @@ final class BoardProfile {
       mounts.addAll(storage.map((e) => '$e'));
     }
 
+    final systemParts = <String>[];
+    final systemLabels = json['system_storage_part_labels'];
+    if (systemLabels is List) {
+      systemParts.addAll(
+        systemLabels.map((e) => '$e'.trim()).where((e) => e.isNotEmpty),
+      );
+    }
+
     final metrics = <String, int>{};
     final rm = json['route_metrics'];
     if (rm is Map) {
@@ -252,6 +269,9 @@ final class BoardProfile {
       gpioConfigAsset: gpioAsset,
       modbusConfigAsset: modbusAsset,
       storageMounts: mounts.isEmpty ? const ['/', '/userdata'] : mounts,
+      systemStoragePartLabels: systemParts.isEmpty
+          ? kDefaultSystemStoragePartLabels
+          : List<String>.unmodifiable(systemParts),
       routeMetrics: metrics,
       helpers: helpers,
       secretsBackend: secretsBackend,

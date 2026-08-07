@@ -2490,6 +2490,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sshDebugText => 'SSH Debug';
 
   @override
+  String get storageAvailableLegend => 'Available';
+
+  @override
+  String get storageMountSystem => 'System';
+
+  @override
+  String get storageMountUserData => 'User Data';
+
+  @override
+  String get storageTitle => 'Storage';
+
+  @override
+  String storageUsedOfTotal(String used, String total) {
+    return '$used of $total used';
+  }
+
+  @override
   String get straightTrackTemperatureAlarmContent =>
       'Inspect the collimating lens. If the collimating lens has burn marks, replace it immediately.';
 

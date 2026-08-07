@@ -9,9 +9,12 @@ import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
-import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
-import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
+import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
+import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
+import 'package:lws_hmi/features/settings/application/storage_capacity.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_storage_bar.dart';
 import 'package:lws_hmi/features/system_ota/presentation/system_upgrade_page.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
@@ -24,9 +27,16 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 /// Device Information — CyberUI untitled cards (lws-ui Frost parity).
 class DeviceInformationTab extends StatefulWidget {
-  const DeviceInformationTab({super.key, required this.services});
+  const DeviceInformationTab({
+    super.key,
+    required this.services,
+    this.cameraDeviceInfoCache,
+  });
 
   final AppServices services;
+
+  /// Shared with Camera settings / cloud WS when provided by Settings.
+  final CameraDeviceInfoCache? cameraDeviceInfoCache;
 
   @override
   State<DeviceInformationTab> createState() => _DeviceInformationTabState();
@@ -37,12 +47,18 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   String _deviceSn = kUnavailableDisplay;
   String _gunheadSn = kUnavailableDisplay;
   String _systemVersion = kUnavailableDisplay;
-  String _kernelVersion = kUnavailableDisplay;
   String _controlCardVersion = kUnavailableDisplay;
   String _laserVersion = kUnavailableDisplay;
   String _wireFeederVersion = kUnavailableDisplay;
   String _focusScaleRef = kUnavailableDisplay;
-  String _processLibVersion = kUnavailableDisplay;
+  String _cameraVersion = kUnavailableDisplay;
+  StorageCapacitySummary _storage =
+      const StorageCapacitySummary(
+    segments: [],
+    usedBytes: 0,
+    availableBytes: 0,
+    totalBytes: 0,
+  );
 
   String? _brandRaw;
   String? _modelRaw;
@@ -51,13 +67,17 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   StreamSubscription<SysInfoUpdate>? _sysSub;
   StreamSubscription<List<ModbusAttributeChange>>? _modbusSub;
+  late final CameraDeviceInfoCache _versionCache;
+  late final bool _ownsVersionCache;
 
   @override
   void initState() {
     super.initState();
+    final shared = widget.cameraDeviceInfoCache;
+    _ownsVersionCache = shared == null;
+    _versionCache = shared ?? CameraDeviceInfoCache();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_start());
-      _refreshProcessLib();
     });
   }
 
@@ -81,6 +101,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
           .watch(interval: const Duration(seconds: 2))
           .listen(_onSys, onError: (_) {});
     } catch (_) {}
+
+    unawaited(_refreshCameraVersion());
 
     try {
       await widget.services.ensureModbusLive();
@@ -110,8 +132,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
       _modelRaw = snap.model;
       _deviceModel = productDeviceModelDisplay(snap.brand, snap.model);
       _deviceSn = _dash(snap.serialNumber);
-      _kernelVersion = snap.kernelRelease ?? kUnavailableDisplay;
       _systemVersion = snap.appVersion ?? kUnavailableDisplay;
+      _storage = summarizeStorage(snap.storage);
     });
     unawaited(_refreshProductRows());
   }
@@ -127,20 +149,25 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     } catch (_) {}
   }
 
-  void _refreshProcessLib() {
+  Future<void> _refreshCameraVersion() async {
     try {
-      final lib = ProcessLibraryScope.of(context);
-      final fromPreset = lib.presets
-          .map((p) => p.libraryVersion)
-          .whereType<String>()
-          .where((v) => v.trim().isNotEmpty)
-          .cast<String?>()
-          .firstWhere((_) => true, orElse: () => null);
-      if (!mounted) return;
-      setState(() {
-        _processLibVersion = _dash(fromPreset);
-      });
-    } catch (_) {}
+      final product = await widget.services.ensureProductInfo();
+      final host = effectiveCameraHost(product);
+      if (host.isEmpty) {
+        if (mounted) {
+          setState(() => _cameraVersion = kUnavailableDisplay);
+        }
+        return;
+      }
+      final version = await _versionCache.fetch(host);
+      if (mounted) {
+        setState(() => _cameraVersion = version);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _cameraVersion = kUnavailableDisplay);
+      }
+    }
   }
 
   void _onModbus(List<ModbusAttributeChange> changes) {
@@ -200,30 +227,19 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   void dispose() {
     unawaited(_sysSub?.cancel() ?? Future<void>.value());
     unawaited(_modbusSub?.cancel() ?? Future<void>.value());
+    if (_ownsVersionCache) {
+      _versionCache.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    try {
-      final lib = ProcessLibraryScope.of(context);
-      final v = lib.presets
-          .map((p) => p.libraryVersion)
-          .whereType<String>()
-          .where((s) => s.trim().isNotEmpty)
-          .cast<String?>()
-          .firstWhere((_) => true, orElse: () => null);
-      final next = _dash(v);
-      if (next != _processLibVersion) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() => _processLibVersion = next);
-        });
-      }
-    } catch (_) {}
 
     return SettingsScrollView(
       children: [
+        // Identity: Model + SN
         SettingsGroup(
           borderGradientCenter:
               CyberBorderGradientCenter.topLeftBottomRight,
@@ -250,9 +266,9 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
                 }
               },
             ),
-            SettingsValueRow(title: l10n.gunSn, value: _gunheadSn),
           ],
         ),
+        // Versions: System, Camera, Control Board, Laser, Wire Feeder
         SettingsGroup(
           borderGradientCenter:
               CyberBorderGradientCenter.bottomLeftTopRight,
@@ -263,12 +279,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               onTap: () => unawaited(_openSystemUpgrade()),
             ),
             SettingsValueRow(
-              title: l10n.kernelVersion,
-              value: _kernelVersion,
-            ),
-            SettingsValueRow(
-              title: l10n.processLibVersion,
-              value: _processLibVersion,
+              title: l10n.cameraVersion,
+              value: _cameraVersion,
             ),
             SettingsNavRow(
               title: l10n.firmwareVersion,
@@ -285,9 +297,19 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             ),
           ],
         ),
+        // Storage
         SettingsGroup(
           borderGradientCenter: CyberBorderGradientCenter.topBottom,
           children: [
+            SettingsStorageBar(summary: _storage),
+          ],
+        ),
+        // Accessory: Welding Gun SN + Focus Scale Reference
+        SettingsGroup(
+          borderGradientCenter:
+              CyberBorderGradientCenter.topLeftBottomRight,
+          children: [
+            SettingsValueRow(title: l10n.gunSn, value: _gunheadSn),
             SettingsValueRow(
               title: l10n.focusScaleReference,
               value: _focusScaleRef,

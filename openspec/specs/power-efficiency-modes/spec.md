@@ -61,14 +61,26 @@ Invoking the helper with an explicit mode argument SHALL persist that mode to `p
 
 The LWS HMI App SHALL load the effective load profile at startup and keep an app-wide continuous-paint / animation policy in sync with HAL mode changes:
 
-- **performance:** retain current full decorative and transition animation behavior (including home looping WebP decorations when those assets are used).
-- **balanced:** disable or snap non-essential page/chrome transitions; replace home looping decorative WebP with static fallback imagery; replace Material / CyberUI ripples with a flat Home-QA press dim (`CyberPressInkSplash` / `CyberPressFeedback.overlay`) via Theme splashFactory (covers list rows, buttons, tiles). Functional progress UX (hold-confirm, OTA/upgrade progress, alarm attention) MUST remain usable.
+- **performance:** retain current full decorative and transition animation behavior (including home looping WebP decorations when those assets are used; Home Monitor / Settings / AI Vision quick-action tiles MAY scale on press with the Home-QA gray overlay).
+- **balanced:** disable or snap non-essential page/chrome transitions (including Settings / Monitor / Engineer tab slide bodies); replace home looping decorative WebP with static fallback imagery (oversized paced plates MUST NOT paint); set `MediaQuery.disableAnimations` and Theme `splashFactory` to **`CyberPressInkSplash`** so Material / CyberUI ink targets (list rows, buttons, cards, tiles) paint a flat Home-QA press dim (`CyberPressFeedback.overlay`, ARGB `0x66000000`) instead of an expanding ripple. Home Monitor / Settings / AI Vision entries MUST keep that overlay and MUST NOT scale on press under `balanced`. Quick / Engineer mode entries and product top tabs SHALL use the same overlay press language (no ink ripple). Functional progress UX (hold-confirm, OTA/upgrade progress, alarm attention) MUST remain usable.
 
 #### Scenario: Home decoration static in balanced
 
 - **WHEN** mode is `balanced` and the Home route shows decorative side assets
 - **THEN** looping animated WebP playback is not required
 - **AND** a static fallback image (or equivalent still presentation) is shown instead
+
+#### Scenario: Press feedback replaces ripple in balanced
+
+- **WHEN** mode is `balanced` and the operator presses a Material `InkWell` / `CyberButton` / list row that uses Theme splash
+- **THEN** the splash MUST NOT be an expanding ripple
+- **AND** a flat press dim matching Home-QA overlay gray SHALL be shown instead
+
+#### Scenario: Home quick-action tiles do not scale in balanced
+
+- **WHEN** mode is `balanced` and the operator presses Home Monitor, Settings, or AI Vision
+- **THEN** the tile MUST NOT scale down on press
+- **AND** the Home-QA gray press overlay SHALL still appear
 
 #### Scenario: Mode switch updates soft policy without reboot
 

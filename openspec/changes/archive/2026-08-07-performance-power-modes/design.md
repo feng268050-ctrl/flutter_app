@@ -5,7 +5,7 @@ Today the ynh960 line boots with `cpu-performance.service` → `/usr/libexec/boa
 1. Sets CPU cpufreq + DMC/GPU **devfreq** governors to `performance` when available.
 2. Disables deep **cpuidle** states (keeps WFI only) to avoid wake-latency jank.
 
-That profile is correct for snappy HMI and boot KPI, but there is no operator way to trade clocks + continuous UI/GPU work for **lower sustained SoC load and heat**. Product intent for the second mode is **thermal / load reduction**, not battery life or “省电” marketing. Common Settings hosts a dedicated **Power Mode** entry (Unit-style nav → sub-page, own card). Flutter decorative work (home WebP loops, page transitions, CyberUI ripples) is independent of governors and must be gated in-App because it keeps the GPU/UI threads painting.
+That profile is correct for snappy HMI and boot KPI, but there is no operator way to trade clocks + continuous UI/GPU work for **lower sustained SoC load and heat**. Product intent for the second mode is **thermal / load reduction**, not battery life or “省电” marketing. Common Settings hosts a dedicated **Power Mode** entry (Unit-style nav → sub-page, own card). Flutter decorative work (home WebP loops, page transitions, expanding CyberUI/Material ripples) is independent of governors and must be gated in-App because it keeps the GPU/UI threads painting. Under `balanced`, press feedback stays as a flat Home-QA dim (`CyberPressInkSplash` / `CyberPressFeedback.overlay`), not “no feedback.”
 
 Constraints: keep default = today’s performance behavior; no Android HAL backends; prefer verb-noun helpers under `/usr/libexec/board/`; persist under `/var/lib/hal/` (not App `common-settings.json`) so boot can restore **before** HMI start.
 
@@ -74,8 +74,8 @@ Exact mid OPP MAY be board-tuned in the helper (ynh960 table) with a safe fallba
 
 - **Choice:** App-level scope loaded at startup from HAL, updated on Settings change.
 - **performance:** Current full decorative and transition animation.
-- **balanced:** Cut **sustained** GPU/UI work — snap non-essential transitions; replace home looping WebP with static fallbacks; honor reduced-motion where applicable. Keep functional progress (hold-confirm, OTA, alarms) perceptible.
-- **Rationale:** Looping Home WebP and chrome transitions are continuous heat contributors on this platform, independent of “省电”.
+- **balanced:** Cut **sustained** GPU/UI work — snap non-essential transitions (incl. tab slide bodies); replace home looping WebP with static fallbacks; Theme `splashFactory` → `CyberPressInkSplash` (flat Home-QA press dim, not expanding ripple); Home Monitor/Settings/AI Vision: overlay only, no press scale. Keep functional progress (hold-confirm, OTA, alarms) perceptible.
+- **Rationale:** Looping Home WebP, chrome transitions, and expanding ink ripples are continuous heat contributors on this platform, independent of “省电”.
 
 ### D6 — Settings UX
 

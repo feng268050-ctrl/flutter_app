@@ -15,14 +15,42 @@ abstract final class ProcessModeOutlineChrome {
   static const Color idleFill = Color(0xFF2C1923);
   static const Color disabledForeground = Color(0xFF7D3E2B);
   /// Quick side ops / Engineer action icons (unified).
-  /// Ladder: sectionTitle (22).
-  static const double labelSize = 22.0;
+  /// Ladder: hero label (24).
+  static const double labelSize = 24.0;
   static const double iconSize = 34.0;
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;
 
-  /// CyberButton medium face height (Quick side ops).
-  static const double defaultHeight = CyberDimens.actionButtonMediumHeight;
+  /// Face height for Quick Manual Gas / Auto Wire / Feed / Retract and
+  /// Engineer Feed / Retract — aligned with [HmiButtonSize.hero] (68).
+  static const double defaultHeight = 68.0;
+
+  /// Engineer Enable Laser (filled) — aligned with [HmiButtonSize.jumbo] (88).
+  static const double laserEnableHeight = 88.0;
+
+  /// Jumbo label / icon for filled Enable Laser.
+  static const double laserEnableLabelSize = 32.0;
+  static const double laserEnableIconSize = 36.0;
+
+  /// Icon left inset when label is centered: equal gaps in the left free
+  /// band (`|--gap--|icon|--gap--|label…`). If the band is too narrow,
+  /// keep the icon→label gap and let the left inset shrink (no overlap).
+  static double iconLeftForCenteredLabel({
+    required double buttonWidth,
+    required double labelWidth,
+    required double iconSize,
+    double minIconLabelGap = 0,
+  }) {
+    final textLeft = ((buttonWidth - labelWidth) / 2).clamp(0.0, buttonWidth);
+    final free = textLeft - iconSize;
+    if (free >= 0) {
+      // Equal left inset and icon→label gap.
+      return free / 2;
+    }
+    // Prefer icon→label gap: pin icon to the left edge when possible, but
+    // never overlap the centered label.
+    return (textLeft - iconSize - minIconLabelGap).clamp(0.0, buttonWidth);
+  }
 }
 
 /// Tap outline button (Quick Manual Gas / Auto Wire).
@@ -263,6 +291,8 @@ final class _ProcessModeOutlineWireButtonState
             continuousRipple: latched,
             // Continuous Feed chrome: label only (no leading icon).
             showLeading: !latched,
+            // Same left-band equal-gap layout as Engineer Feed/Retract.
+            balanceIconLabelGap: true,
           ),
         ),
       ),
@@ -350,19 +380,22 @@ final class _OutlineFace extends StatelessWidget {
             if (showLeading)
               LayoutBuilder(
                 builder: (context, constraints) {
-                  var iconLeft = edgeInset;
-                  if (balanceIconLabelGap) {
-                    final painter = TextPainter(
-                      text: TextSpan(text: label, style: style),
-                      maxLines: 1,
-                      textDirection: TextDirection.ltr,
-                    )..layout();
-                    final textLeft =
-                        (constraints.maxWidth - painter.width) / 2;
-                    // left == gap between icon right and centered label.
-                    iconLeft = ((textLeft - iconSize) / 2)
-                        .clamp(0.0, double.infinity);
-                  }
+                  final painter = TextPainter(
+                    text: TextSpan(text: label, style: style),
+                    maxLines: 1,
+                    textDirection: TextDirection.ltr,
+                    textScaler: TextScaler.noScaling,
+                  )..layout();
+                  // Feed/Retract (and Auto Wire when balanceIconLabelGap):
+                  // equal gaps in the left free band; Manual Gas keeps the
+                  // height-matched edge inset.
+                  final iconLeft = balanceIconLabelGap
+                      ? ProcessModeOutlineChrome.iconLeftForCenteredLabel(
+                          buttonWidth: constraints.maxWidth,
+                          labelWidth: painter.width,
+                          iconSize: iconSize,
+                        )
+                      : edgeInset;
                   return Stack(
                     fit: StackFit.expand,
                     children: [

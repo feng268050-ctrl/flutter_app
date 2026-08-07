@@ -12,6 +12,7 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.d
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
@@ -74,11 +75,11 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Match right-panel parameter row height ([EngineerParameterForm] rows).
   static const _checkboxRowHeight = 86.0;
 
-  /// Retract / Feed — CyberButton medium height (style/width unchanged).
-  static const _wireButtonsHeight = CyberDimens.actionButtonMediumHeight;
+  /// Retract / Feed — [ProcessModeOutlineChrome.defaultHeight] (hero 68).
+  static const _wireButtonsHeight = ProcessModeOutlineChrome.defaultHeight;
 
-  /// Enable Laser — CyberButton large height (style/width unchanged).
-  static const _laserButtonHeight = CyberDimens.actionButtonLargeHeight;
+  /// Enable Laser (filled) — [ProcessModeOutlineChrome.laserEnableHeight] (88).
+  static const _laserButtonHeight = ProcessModeOutlineChrome.laserEnableHeight;
 
   /// Top function-divider strip on last-three tabs (above Record Work).
   /// Height is the strip that holds the centered hairline, not empty padding.
@@ -675,8 +676,8 @@ final class _EngineerWireActionButtonState
     final onFill = solidHighlight || filling;
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
-    final labelSize = context.hmiTypography.settingsRowTitle.fontSize!;
-    const iconSize = 26.0;
+    final labelSize = ProcessModeOutlineChrome.labelSize;
+    const iconSize = ProcessModeOutlineChrome.iconSize;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel(l10n)
         : widget.label;
@@ -738,7 +739,19 @@ final class _EngineerWireActionButtonState
                           ),
                         );
                       }
-                      final edgeInset =
+                      final painter = TextPainter(
+                        text: TextSpan(text: label, style: style),
+                        maxLines: 1,
+                        textDirection: TextDirection.ltr,
+                        textScaler: TextScaler.noScaling,
+                      )..layout();
+                      final iconLeft =
+                          ProcessModeOutlineChrome.iconLeftForCenteredLabel(
+                        buttonWidth: constraints.maxWidth,
+                        labelWidth: painter.width,
+                        iconSize: iconSize,
+                      );
+                      final iconTop =
                           ((constraints.maxHeight - iconSize) / 2)
                               .clamp(0.0, constraints.maxHeight);
                       return Stack(
@@ -754,8 +767,8 @@ final class _EngineerWireActionButtonState
                             ),
                           ),
                           Positioned(
-                            left: edgeInset,
-                            top: edgeInset,
+                            left: iconLeft,
+                            top: iconTop,
                             width: iconSize,
                             height: iconSize,
                             child: Transform.flip(
@@ -875,12 +888,13 @@ final class _EngineerDeviceActionButtonState
     final foreground = widget.filled ? Colors.white : actionOrange;
     final disabledForeground =
         widget.filled ? const Color(0x99FFFFFF) : const Color(0xFF7D3E2B);
-    // Label scales with filled/outline; icons stay 34 (match Quick side ops).
-    final typography = context.hmiTypography;
+    // Label/icon: outline → hero chrome; filled Enable Laser → jumbo chrome.
     final labelSize = widget.filled
-        ? typography.sectionTitle.fontSize!
-        : typography.supporting.fontSize!;
-    const iconSize = 34.0;
+        ? ProcessModeOutlineChrome.laserEnableLabelSize
+        : ProcessModeOutlineChrome.labelSize;
+    final iconSize = widget.filled
+        ? ProcessModeOutlineChrome.laserEnableIconSize
+        : ProcessModeOutlineChrome.iconSize;
     return Semantics(
       button: true,
       enabled: canPress,

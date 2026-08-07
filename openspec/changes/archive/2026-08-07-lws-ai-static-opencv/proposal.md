@@ -1,3 +1,7 @@
+## Status
+
+**Abandoned** (2026-08-07): static OpenCV was dropped after weighing slower `make build-ai` final link on AI-only iteration. Prefer keeping shared OpenCV and speeding builds via incremental CMake (`lws-ai-incremental-build`). Archived with `--skip-specs` (never applied).
+
 ## Why
 
 `make build-ai` currently stages a pile of OpenCV shared libraries (`libopencv_*.so*` SONAME chains) under `prebuilt/ai/linux-arm64/lib/` and ships them to `/opt/hmi/lib`. OpenCV is only consumed by the single App-owned `lws_ai_daemon`, so dynamic companions add deployment noise without meaningful runtime sharing. Static-link OpenCV into the daemon to leave a single binary (plus system `librknnrt.so`), without pursuing function-level tree-shake / LTO.

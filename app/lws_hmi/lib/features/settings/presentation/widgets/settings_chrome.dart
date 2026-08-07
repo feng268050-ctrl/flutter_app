@@ -1985,6 +1985,10 @@ class SettingsScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
+    // Keep Back visible (grayed) when the route cannot pop — e.g. host
+    // `make upgrade` clears the stack onto System Upgrade — so chrome matches
+    // the operator nested path that disables Back during apply.
+    final effectiveBackEnabled = backEnabled && canPop;
     final l10n = AppLocalizations.of(context)!;
     // Nested Settings: static σ30 plate (shell default). Never live ImageFiltered
     // under Cupertino L/R — parent root also uses a baked plate.
@@ -2000,11 +2004,17 @@ class SettingsScaffold extends StatelessWidget {
           toolbarHeight: WorkModeStatusBarDimens.height,
           bottom: const SettingsStatusBarHairline(),
           // Product CallBackHomeButton: Home → home icon, Back → arrow_back.
-          // Nested settings pop → "Back".
+          // Nested settings pop → "Back". Always pass onBack so the rail stays
+          // visible when !canPop (disabled via [effectiveBackEnabled]).
           backLabel: l10n.equipmentStatusBack,
           backAccent: WorkModeAccent.weld,
-          backEnabled: backEnabled,
-          onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+          backEnabled: effectiveBackEnabled,
+          onBack: () {
+            if (!canPop) {
+              return;
+            }
+            Navigator.of(context).maybePop();
+          },
         ),
         // Clip at status-bar hairline so scroll cannot enter the Back row.
         body: ClipRect(child: body),

@@ -38,6 +38,19 @@ abstract final class CyberColors {
   /// Not solid action orange (`#F46E01`).
   static const tipRimHighlight = Color(0x80FFFFFF);
 
+  /// LIGHT cream dialog container rim — 1px opaque black.
+  ///
+  /// Warn frost + Engineer / Laser Enable light prompts.
+  static const creamDialogRim = Color(0xFF000000);
+
+  /// Home quick-action (Monitor / Settings / AI Vision) flat 1px rim — 30% white.
+  ///
+  /// Only those three tiles; [CyberButton] uses [buttonRim] instead.
+  static const homeQuickActionRim = Color(0x4DFFFFFF);
+
+  /// [CyberButton] / [HmiButton] flat 1px rim — 70% white.
+  static const buttonRim = Color(0xB3FFFFFF);
+
   // Panel border — light
   static const lightBorderHighlight = Color(0xD9FFFFFF);
   static const lightBorderMid = Color(0x80E0E0E0);

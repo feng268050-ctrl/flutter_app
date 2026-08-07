@@ -133,7 +133,7 @@ final class _LaserEnableReminderBodyState
             child: HmiButton(
               key: const ValueKey('laser-enable-reminder-confirm'),
               label: l10n.laserEnableReminderConfirm,
-              size: HmiButtonSize.medium,
+              size: HmiButtonSize.large,
               widthPolicy: HmiButtonWidthPolicy.fill,
               variant: CyberButtonVariant.primary,
               shape: CyberButtonShape.rounded,
@@ -168,6 +168,7 @@ final class _LaserEnableReminderBodyState
                 child: Text(
                   l10n.dontShowAgainThisSession,
                   style: context.hmiTypography.sectionTitle.copyWith(
+                    fontSize: 26,
                     color: _labelMuted,
                     height: 1.2,
                     decoration: TextDecoration.none,

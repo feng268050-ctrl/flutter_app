@@ -105,13 +105,14 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                           child: Text(
                             l10n.bootSelfCheckDontShowAgain,
                             style: context.hmiTypography.sectionTitle.copyWith(
+                              fontSize: 26,
                               color: CyberColors.textSecondary,
                             ),
                           ),
                         ),
                         HmiButton(
                           label: l10n.bootSelfCheckClose,
-                          size: HmiButtonSize.medium,
+                          size: HmiButtonSize.large,
                           variant: CyberButtonVariant.primary,
                           onPressed: () {
                             onUserInteracted?.call();

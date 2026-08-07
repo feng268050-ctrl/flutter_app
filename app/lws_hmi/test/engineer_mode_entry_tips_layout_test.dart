@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_tips_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 void main() {
   testWidgets('engineer tip shows full title and body (no clip)', (tester) async {
@@ -39,6 +40,7 @@ void main() {
     expect(find.byType(CyberCheckbox), findsOneWidget);
     final checkbox = tester.widget<CyberCheckbox>(find.byType(CyberCheckbox));
     expect(checkbox.size, CyberDimens.checkboxLargeSize);
+    expect(find.byType(TipFrostDivider), findsNWidgets(2));
 
     final card = tester.getSize(
       find

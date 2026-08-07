@@ -172,7 +172,9 @@ final class _EngineerModeEntryTipsBodyState
               ),
             ),
           ),
-          const SizedBox(height: _contentInset),
+          const SizedBox(height: 16),
+          const TipFrostDivider(),
+          const SizedBox(height: 16),
           // Use remaining card height (not Android's 148dp scroll cap). That
           // fixed maxHeight clipped mid-line and looked like a white mask
           // above Confirm while empty space sat below.
@@ -184,8 +186,9 @@ final class _EngineerModeEntryTipsBodyState
               ),
             ),
           ),
-          // Light overlay action section `layout_marginTop` 12dp.
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          const TipFrostDivider(),
+          const SizedBox(height: 16),
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -197,7 +200,7 @@ final class _EngineerModeEntryTipsBodyState
                 child: HmiButton(
                   key: const ValueKey('engineer-mode-entry-confirm'),
                   label: l10n.engineerModeEntryConfirm,
-                  size: HmiButtonSize.medium,
+                  size: HmiButtonSize.hero,
                   widthPolicy: HmiButtonWidthPolicy.fill,
                   variant: CyberButtonVariant.primary,
                   shape: CyberButtonShape.rounded,
@@ -235,6 +238,7 @@ final class _EngineerModeEntryTipsBodyState
                     child: Text(
                       l10n.dontShowAgainThisSession,
                       style: context.hmiTypography.sectionTitle.copyWith(
+                        fontSize: 26,
                         color: _labelMuted,
                         decoration: TextDecoration.none,
                       ),

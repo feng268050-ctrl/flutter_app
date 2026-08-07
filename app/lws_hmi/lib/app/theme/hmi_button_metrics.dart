@@ -8,6 +8,7 @@ enum HmiButtonSize {
   medium,
   large,
   hero,
+  jumbo,
 }
 
 /// Width behavior independent of text size (doc §6.2).
@@ -74,11 +75,18 @@ class HmiButtonMetrics {
           textStyle: typography.buttonLarge,
         ),
       HmiButtonSize.hero => HmiButtonMetrics(
-          height: 72,
+          height: 68,
           minWidth: 200,
           horizontalPadding: 32,
           iconSize: 32,
           textStyle: typography.buttonHero,
+        ),
+      HmiButtonSize.jumbo => HmiButtonMetrics(
+          height: 88,
+          minWidth: 240,
+          horizontalPadding: 36,
+          iconSize: 36,
+          textStyle: typography.buttonJumbo,
         ),
     };
   }

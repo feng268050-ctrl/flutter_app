@@ -31,6 +31,7 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     this.buttonMedium = _buttonMedium,
     this.buttonLarge = _buttonLarge,
     this.buttonHero = _buttonHero,
+    this.buttonJumbo = _buttonJumbo,
     this.processAction = _processAction,
     this.displayAction = _displayAction,
 
@@ -67,17 +68,22 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     height: 1.20,
   );
   static const _buttonMedium = TextStyle(
-    fontSize: AppTypography.bodySize,
-    fontWeight: FontWeight.w600,
-    height: 1.20,
-  );
-  static const _buttonLarge = TextStyle(
     fontSize: AppTypography.controlSize,
     fontWeight: FontWeight.w600,
     height: 1.20,
   );
+  static const _buttonLarge = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    height: 1.20,
+  );
   static const _buttonHero = TextStyle(
-    fontSize: AppTypography.navigationSize,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.10,
+  );
+  static const _buttonJumbo = TextStyle(
+    fontSize: 32,
     fontWeight: FontWeight.w700,
     height: 1.10,
   );
@@ -126,6 +132,7 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
   final TextStyle buttonMedium;
   final TextStyle buttonLarge;
   final TextStyle buttonHero;
+  final TextStyle buttonJumbo;
   final TextStyle processAction;
   final TextStyle displayAction;
 
@@ -169,6 +176,7 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     TextStyle? buttonMedium,
     TextStyle? buttonLarge,
     TextStyle? buttonHero,
+    TextStyle? buttonJumbo,
     TextStyle? processAction,
     TextStyle? displayAction,
     TextStyle? metricLabel,
@@ -205,6 +213,7 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
       buttonMedium: buttonMedium ?? this.buttonMedium,
       buttonLarge: buttonLarge ?? this.buttonLarge,
       buttonHero: buttonHero ?? this.buttonHero,
+      buttonJumbo: buttonJumbo ?? this.buttonJumbo,
       processAction: processAction ?? this.processAction,
       displayAction: displayAction ?? this.displayAction,
       metricLabel: metricLabel ?? this.metricLabel,
@@ -247,6 +256,7 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
       buttonMedium: L(buttonMedium, other.buttonMedium),
       buttonLarge: L(buttonLarge, other.buttonLarge),
       buttonHero: L(buttonHero, other.buttonHero),
+      buttonJumbo: L(buttonJumbo, other.buttonJumbo),
       processAction: L(processAction, other.processAction),
       displayAction: L(displayAction, other.displayAction),
       metricLabel: L(metricLabel, other.metricLabel),

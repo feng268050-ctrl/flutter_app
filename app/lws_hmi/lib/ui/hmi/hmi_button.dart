@@ -121,7 +121,10 @@ final class HmiButton extends StatelessWidget {
       HmiButtonSize.mini => CyberButtonSize.mini,
       HmiButtonSize.small => CyberButtonSize.small,
       HmiButtonSize.medium => CyberButtonSize.medium,
-      HmiButtonSize.large || HmiButtonSize.hero => CyberButtonSize.large,
+      HmiButtonSize.large ||
+      HmiButtonSize.hero ||
+      HmiButtonSize.jumbo =>
+        CyberButtonSize.large,
     };
   }
 }

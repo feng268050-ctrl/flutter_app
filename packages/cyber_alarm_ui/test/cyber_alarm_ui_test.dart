@@ -184,6 +184,7 @@ void main() {
 
       final title = tester.widget<Text>(find.text('Gun Communication Alarm'));
       expect(title.style?.color, WarnDialogBody.titleRed);
+      expect(find.byType(CyberFrostDivider), findsNWidgets(2));
     });
 
     testWidgets('package warn/info icons resolve', (tester) async {

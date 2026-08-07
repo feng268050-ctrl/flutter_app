@@ -7,8 +7,12 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 void main() {
   testWidgets('engineer tip shows full title and body (no clip)', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1280, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    // Prefer view.physicalSize — setSurfaceSize alone can leave MediaQuery at
+    // the default 800×600 in this Flutter pin, which would keep cardH at 600.
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -53,7 +57,7 @@ void main() {
     // Title-based width (≥700, ≤95% screen) so 53sp title fits.
     expect(card.width, greaterThanOrEqualTo(700));
     expect(card.width, lessThanOrEqualTo(1280 * 0.95));
-    expect(card.height, greaterThanOrEqualTo(480));
-    expect(card.height, lessThanOrEqualTo(680));
+    // cardH = (800 + 600) / 2 → 700; margins ~50 each (half of former ~100).
+    expect(card.height, moreOrLessEquals(700, epsilon: 1));
   });
 }

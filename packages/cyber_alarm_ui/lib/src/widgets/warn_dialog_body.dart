@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 
 /// Warn dialog body matching lws-ui `dialog_frost_body_prompt` + confirm action.
 ///
-/// Layout: centered alarm icon → title → body → primary Confirm.
+/// Layout: centered alarm icon → title → frost divider → body → frost
+/// divider → primary Confirm.
 /// [infoStyle] / [chromeStyle] INFO: orange info icon + black title — used when
 /// a bypassable alarm is allowed. Otherwise WARN: red siren + red title.
 class WarnDialogBody extends StatelessWidget {
@@ -131,7 +132,9 @@ class WarnDialogBody extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: inset),
+          SizedBox(height: 16 * scale),
+          const CyberFrostDivider(),
+          SizedBox(height: 16 * scale),
           // Reserve the design body scroll band so fitted (smaller) body fonts
           // do not shrink the card — keeps warn dialogs height-unified.
           SizedBox(
@@ -145,9 +148,9 @@ class WarnDialogBody extends StatelessWidget {
               ),
             ),
           ),
-          // Explicit gap before Confirm (lws-ui body marginBottom = content inset).
-          // Keeps the button from painting over the last body line.
-          SizedBox(height: inset),
+          SizedBox(height: 16 * scale),
+          const CyberFrostDivider(),
+          SizedBox(height: 16 * scale),
           Center(
             child: SizedBox(
               width: confirmW,

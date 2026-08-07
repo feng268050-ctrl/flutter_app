@@ -47,16 +47,20 @@ Future<EngineerModeEntryTipsResult?> showEngineerModeEntryTipsDialog(
     context,
     l10n.engineerModeEntryTitle,
   );
+  // Former max was 600; grow by half the leftover vertical slack so top/bottom
+  // screen margins each shrink by half: (screenH + 600) / 2.
+  final screenH = MediaQuery.sizeOf(context).height;
+  final cardH = (screenH + 600) / 2;
   return TipDialogHost.showLightPrompt<EngineerModeEntryTipsResult>(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Engineer mode entry tips',
-    // Width: 600dp floor (title-based grow). Height: 400–600.
+    // Width: 600dp floor (title-based grow). Height tight to halved margins.
     constraints: BoxConstraints(
       minWidth: width,
       maxWidth: width,
-      minHeight: 400,
-      maxHeight: 600,
+      minHeight: cardH,
+      maxHeight: cardH,
     ),
     builder: (dialogContext) => const _EngineerModeEntryTipsBody(),
   );
@@ -75,7 +79,9 @@ final class _EngineerModeEntryTipsBodyState
   bool _dontShowAgain = false;
 
   /// `engineer_mode_entry_icon_size` / `frost_dialog_prompt_icon_size`.
-  static const _iconSize = 150.0;
+  /// Slightly under Android 150 so body lines clear the scroll clip after
+  /// TipFrostDivider chrome was added.
+  static const _iconSize = 140.0;
 
   /// `frost_dialog_prompt_title_text_size` → [HmiTypography.criticalTitle] (52).
   static const _titleSize = 52.0;
@@ -156,7 +162,7 @@ final class _EngineerModeEntryTipsBodyState
               filterQuality: FilterQuality.high,
             ),
           ),
-          const SizedBox(height: _contentInset),
+          const SizedBox(height: 16),
           // Card width follows the title; FittedBox is a safety net for
           // locales / text scale that still overflow the 95% screen cap.
           SizedBox(
@@ -175,11 +181,11 @@ final class _EngineerModeEntryTipsBodyState
           const SizedBox(height: 16),
           const TipFrostDivider(),
           const SizedBox(height: 16),
-          // Use remaining card height (not Android's 148dp scroll cap). That
-          // fixed maxHeight clipped mid-line and looked like a white mask
-          // above Confirm while empty space sat below.
+          // Remaining height for body. Bottom pad keeps the last line (and
+          // descenders) clear of the scroll clip edge above the divider.
           Expanded(
             child: SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: bodySize * 0.35),
               child: WordBoundaryBody(
                 text: l10n.engineerModeEntryBody,
                 style: bodyStyle,

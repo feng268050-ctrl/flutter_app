@@ -717,8 +717,9 @@ final class _EngineerWireActionButtonState
                       color: actionOrange,
                     ),
                   if (latched) const FeedContinuousRipple(),
-                  // Label-only when continuous feed is latched; otherwise
-                  // icon+label as one group with equal side insets.
+                  // Label-only when continuous feed is latched.
+                  // Feed: left inset = icon↔label gap = top/bottom; label not
+                  // button-centered. Retract: keep prior icon+label group.
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final style = TextStyle(
@@ -733,7 +734,6 @@ final class _EngineerWireActionButtonState
                         label,
                         maxLines: 1,
                         softWrap: false,
-                        textAlign: TextAlign.center,
                         style: style,
                       );
                       if (latched) {
@@ -742,6 +742,41 @@ final class _EngineerWireActionButtonState
                       final edgeInset =
                           ((constraints.maxHeight - iconSize) / 2)
                               .clamp(0.0, constraints.maxHeight);
+                      final iconFace = SizedBox(
+                        width: iconSize,
+                        height: iconSize,
+                        child: Transform.flip(
+                          flipX: widget.retract,
+                          child: Icon(
+                            widget.icon,
+                            color: widget.enabled
+                                ? foreground
+                                : disabledForeground,
+                            size: iconSize,
+                          ),
+                        ),
+                      );
+                      // Feed only: [edgeInset][icon][edgeInset][label…]
+                      if (!widget.retract) {
+                        return Padding(
+                          padding: EdgeInsets.only(left: edgeInset),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  iconFace,
+                                  SizedBox(width: edgeInset),
+                                  labelText,
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }
                       return Padding(
                         padding: EdgeInsets.symmetric(horizontal: edgeInset),
                         child: Center(
@@ -750,20 +785,7 @@ final class _EngineerWireActionButtonState
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                SizedBox(
-                                  width: iconSize,
-                                  height: iconSize,
-                                  child: Transform.flip(
-                                    flipX: widget.retract,
-                                    child: Icon(
-                                      widget.icon,
-                                      color: widget.enabled
-                                          ? foreground
-                                          : disabledForeground,
-                                      size: iconSize,
-                                    ),
-                                  ),
-                                ),
+                                iconFace,
                                 const SizedBox(
                                   width: ProcessModeOutlineChrome.iconLabelGap,
                                 ),

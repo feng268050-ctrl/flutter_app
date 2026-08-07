@@ -73,6 +73,45 @@ expected release from that overlay pin file and this section. After a tip bump,
 update **both** this table and `KERNEL_6_1_SUBLEVEL`, then re-apply overlay and
 rebuild the dual FIT.
 
+## Buildroot 2025.02.x LTS pin
+
+Owned `linux-sdk/buildroot` tracks the Buildroot **2025.02.x** long-term support
+line (not the three-month stable). Product policy (see
+`openspec/changes/upgrade-buildroot-lts`): catch up via **full LTS tip merge**
+into the Rockchip/Innohi tree, not a primary package cherry-pick stack on frozen
+2024.02. Git-tracked product fragments and package pins stay under
+`overlay/buildroot/` and are re-injected by `make apply-overlay`.
+
+| Field | Value |
+|-------|--------|
+| Pin (`BR2_VERSION`) | **2025.02.16** |
+| Floor | ≥ 2025.02.16 |
+| Locked | 2026-08-07 from [buildroot.org/downloads](https://buildroot.org/downloads/) (newest `2025.02.*`) |
+| Git-readable pin file | [`overlay/buildroot/BUILDROOT_VERSION`](../overlay/buildroot/BUILDROOT_VERSION) (one line `2025.02.<n>`) |
+| Merge approach | **A** — 3-way merge (vanilla 2024.02 / owned Rockchip tree / vanilla 2025.02.16) under `linux-sdk/.lws-buildroot-lts-merge/` |
+| Vendor drop ≥ floor? | No Innohi SDK on 2025.02.x at lock time |
+
+Until `linux-sdk/` is committed, colleagues without a populated SDK still learn the
+expected Buildroot tip from that overlay pin file and this section. After a tip
+bump, update **both** this table and `BUILDROOT_VERSION`, then
+`make clean-buildroot-output`, `make apply-overlay`, `make lunch`, and
+`make build-rootfs` (do **not** reuse 2024.02 `buildroot/output` stamps).
+
+### Colleague sync (gitignored Buildroot)
+
+Each machine must obtain a rebased `linux-sdk/buildroot` matching the pin. Either:
+
+1. **Replay the merge runbook** (preferred while no shared artifact exists): download
+   vanilla `2024.02` + locked tip tag archives, 3-way merge into a workdir with the
+   current owned tree as “vendor”, rsync result into `linux-sdk/buildroot` (preserve
+   `dl/` / wipe `output/`), then `make apply-overlay`. Details:
+   `openspec/changes/upgrade-buildroot-lts/notes.md`.
+2. **Replace from a shared internal artifact** once one is published (tarball or
+   volume snapshot of the rebased tree). Overlay + pin file still ship via normal PR.
+
+macOS: after replacing Buildroot, refresh the Docker volume
+(`make docker-volume-init` or `make docker-volume-sync`).
+
 ## Device tree / kernel fragments (until S4)
 
 `linux-sdk/` is **not** in git. Colleagues cannot sync edits that live only under

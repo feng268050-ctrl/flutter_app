@@ -64,8 +64,8 @@ bash "$ROOT/scripts/docker-run.sh" bash -lc "
   cd \"\${SDK_DIR}/buildroot\"
   OUT=output/${BR_OUTPUT}
   if [[ ! -d \"\$OUT\" ]]; then
-    echo 'ERROR: Buildroot output missing — run: make lunch' >&2
-    exit 1
+    echo \"br-make-packages: bootstrapping \$OUT (missing after clean-buildroot-output)\"
+    mkdir -p \"\$OUT\"
   fi
   make O=\"\$OUT\" rockchip_rk3566_rk3568_lws_hmi_defconfig
   # Option flips (e.g. WPA_SUPPLICANT_DBUS) do not invalidate stamps — dirclean first.

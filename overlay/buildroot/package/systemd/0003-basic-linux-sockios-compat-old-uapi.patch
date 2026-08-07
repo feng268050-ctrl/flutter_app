@@ -1,0 +1,29 @@
+Compat for older toolchain UAPI (e.g. 4.20) missing SIOCGSTAMP*_OLD.
+
+systemd 256 networkd includes a bundled linux/sockios.h that remaps
+SIOCGSTAMP to SIOCGSTAMP_OLD. Toolchain headers 4.20 define SIOCGSTAMP
+directly (0x8906 / 0x8907) and lack *_OLD, breaking the build when
+NETWORKD is enabled.
+
+Signed-off-by: lws-hmi BR LTS rebase
+
+--- a/src/basic/linux/sockios.h
++++ b/src/basic/linux/sockios.h
+@@ -22,6 +22,17 @@
+ #include <asm/bitsperlong.h>
+ #include <asm/sockios.h>
+ 
++/* Compat for older toolchain UAPI (e.g. 4.20): asm defines SIOCGSTAMP
++ * as 0x8906/0x8907 and lacks *_OLD names expected by this header. */
++#ifndef SIOCGSTAMP_OLD
++# define SIOCGSTAMP_OLD 0x8906
++#endif
++#ifndef SIOCGSTAMPNS_OLD
++# define SIOCGSTAMPNS_OLD 0x8907
++#endif
++#undef SIOCGSTAMP
++#undef SIOCGSTAMPNS
++
+ /* Linux-specific socket ioctls */
+ #define SIOCINQ		FIONREAD
+ #define SIOCOUTQ	TIOCOUTQ        /* output queue size (not sent + not acked) */

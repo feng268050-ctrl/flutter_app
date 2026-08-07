@@ -580,7 +580,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `pull-display-params` | `make pull-display-params` | 从 Android 板拉 LCD/MIPI 表到 `board/` | adb 设备；会 `apply-overlay` |
 | `migrate-buildroot-output` | `make migrate-buildroot-output` | 旧 `*_lws_hmi_p1` BR 树迁为 `lws_hmi` | — |
 | `fix-buildroot-host-rpaths` | `make fix-buildroot-host-rpaths` | migrate 后修 host rpath | — |
-| `clean-buildroot-output` | `make clean-buildroot-output` | 删当前 BR output（保留 `dl/`）后全量重编 rootfs | 之后常需 `lunch` + `build-rootfs` |
+| `clean-buildroot-output` | `make clean-buildroot-output` | 删当前 BR output（保留 `dl/`）后全量重编 rootfs；**macOS** 走 Docker volume（勿只清 host `linux-sdk/`） | 大版本 BR 升级（见 `BUILDROOT_VERSION`）必做；之后 `lunch` + `build-rootfs` |
 | `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
 | `build-uboot` | **ynh960 勿用**（无 Innohi 指示） | 有砖机风险 | — |
 | `fetch-uboot` | 内部/少用 | 拉 uboot | — |

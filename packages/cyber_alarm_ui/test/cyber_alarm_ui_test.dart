@@ -237,6 +237,13 @@ void main() {
     expect(CyberColors.lightWarnBackdropCenter, const Color(0xBFFFFFFF));
     expect(CyberColors.lightShellFrostEdge, const Color(0x28FFFFFF));
     expect(CyberColors.lightShellFrostCenter, const Color(0x1FFFFFFF));
+    expect(CyberColors.creamDialogRim, const Color(0xFF000000));
+    expect(
+      const CyberPanelBorder(tone: CyberTone.light)
+          .creamDialogRimOutline
+          .resolvedUniformColor,
+      CyberColors.creamDialogRim,
+    );
     // No opaque cream plate — wash is translucent warm-yellow gradient.
     expect(WarnFrostShell.backdropGradient.colors.every((c) => c.alpha < 0xFF),
         isTrue);

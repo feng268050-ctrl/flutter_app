@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.d
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Blue link color from lws-ui `activity_safety_tips.xml` (`#324BF3`).
 const Color _kDisclaimerLink = Color(0xFF324BF3);
@@ -184,7 +185,12 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
             ),
           ),
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: _kCardPadH),
+          child: TipFrostDivider(),
+        ),
+        const SizedBox(height: 16),
         Expanded(
           // Scrollbar tracks the full card width (flush to the frost edge);
           // body text keeps the 50dp inset + a little right clearance so the
@@ -202,7 +208,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
               child: WordBoundaryBody(
                 text: content,
                 sectionGap: 20,
-                style: context.hmiTypography.pageTitle.copyWith(
+                style: context.hmiTypography.navigation.copyWith(
                   color: CyberColors.textPrimary,
                   height: 1.4,
                   fontWeight: FontWeight.w400,
@@ -211,6 +217,11 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
               ),
             ),
           ),
+        ),
+        const SizedBox(height: 16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: _kCardPadH),
+          child: TipFrostDivider(),
         ),
         const SizedBox(height: 16),
         Padding(
@@ -234,8 +245,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                         setState(() => _agreed = v ?? false);
                       },
                     ),
-                    // lws-ui info_use marginStart 16dp.
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: isTips
                           ? Wrap(
@@ -246,7 +256,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                 WordBoundaryLabel(
                                   text: checkboxLabel,
                                   maxLines: 3,
-                                  style: context.hmiTypography.pageTitle
+                                  style: context.hmiTypography.navigation
                                       .copyWith(
                                     color: CyberColors.textPrimary,
                                     height: 1.3,
@@ -262,7 +272,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                   child: WordBoundaryLabel(
                                     text: '“${l10n.safetyTipsInfoUse}”',
                                     maxLines: 2,
-                                    style: context.hmiTypography.pageTitle
+                                    style: context.hmiTypography.navigation
                                         .copyWith(
                                       color: _kDisclaimerLink,
                                       height: 1.3,
@@ -276,7 +286,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                           : WordBoundaryLabel(
                               text: checkboxLabel,
                               maxLines: 3,
-                              style: context.hmiTypography.pageTitle.copyWith(
+                              style: context.hmiTypography.navigation.copyWith(
                                 color: CyberColors.textPrimary,
                                 height: 1.3,
                                 decoration: TextDecoration.none,
@@ -294,8 +304,9 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                       : 'product-disclaimer-agree-btn',
                 ),
                 label: l10n.safetyTipsAgree,
-                // FrostUI 100% ladder: small (44h); width matches lws-ui (163).
-                size: HmiButtonSize.small,
+                // lws-ui frost_action_button_height 58 ≈ Hmi large (60);
+                // width matches lws-ui (163).
+                size: HmiButtonSize.large,
                 widthPolicy: HmiButtonWidthPolicy.fixed,
                 width: 163,
                 variant: CyberButtonVariant.primary,

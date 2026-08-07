@@ -100,7 +100,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
   });
 
-  testWidgets('EN Safety Tips Agree uses HmiButton small; no overflow at panel size',
+  testWidgets('EN Safety Tips Agree uses HmiButton large; no overflow at panel size',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -111,7 +111,7 @@ void main() {
     final agree = find.byKey(const ValueKey('safety-tips-agree-btn'));
     expect(agree, findsOneWidget);
     expect(tester.widget(agree), isA<HmiButton>());
-    expect(tester.getSize(agree).height, 44);
+    expect(tester.getSize(agree).height, 60);
     expect(tester.getSize(agree).width, 163);
     expect(tester.takeException(), isNull);
   });

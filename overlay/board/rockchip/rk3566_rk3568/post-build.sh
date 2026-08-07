@@ -59,6 +59,8 @@ ln -sf /usr/libexec/board/read-product-identity.sh "$TARGET_DIR/usr/bin/read-ide
 ln -sf /usr/libexec/board/write-product-identity.sh "$TARGET_DIR/usr/bin/write-identity"
 ln -sf /usr/libexec/board/read-cloud-ed25519-sealed.sh "$TARGET_DIR/usr/bin/read-cloud-ed25519-sealed"
 ln -sf /usr/libexec/board/write-cloud-ed25519-sealed.sh "$TARGET_DIR/usr/bin/write-cloud-ed25519-sealed"
+ln -sf /usr/libexec/board/read-seal-kek-wrapped.sh "$TARGET_DIR/usr/bin/read-seal-kek-wrapped"
+ln -sf /usr/libexec/board/write-seal-kek-wrapped.sh "$TARGET_DIR/usr/bin/write-seal-kek-wrapped"
 ln -sf /usr/libexec/usb/usb-plug-ssh-start.sh "$TARGET_DIR/usr/bin/start-usb-ssh"
 ln -sf /usr/libexec/usb/usb-plug-ssh-stop.sh "$TARGET_DIR/usr/bin/stop-usb-ssh"
 ln -sf /usr/libexec/usb/usb-plug-ssh-recover.sh "$TARGET_DIR/usr/bin/recover-usb-ssh"

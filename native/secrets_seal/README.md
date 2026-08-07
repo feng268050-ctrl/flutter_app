@@ -15,9 +15,10 @@ native/secrets_seal/
 ## Build
 
 ```bash
+# Signs with keys/oem/vendor_ta.pem when present (gitignored).
 make build-secrets-seal          # or FORCE=1 make rebuild-secrets-seal
-# Optional: sign with vendor key (required for Rockchip rkbin BL32):
-TA_SIGN_KEY=/path/to/vendor_ta.pem FORCE=1 make rebuild-secrets-seal
+# Override path if needed:
+TA_SIGN_KEY=/path/to/other.pem FORCE=1 make rebuild-secrets-seal
 ```
 
 Produces:
@@ -28,16 +29,16 @@ Produces:
   (merged `/usr`; do not use overlay top-level `lib/`)
 
 TA is built against **OP-TEE OS 3.13** `export-ta_arm64` (matches ynh960 BL32
-`optee: revision 3.13` / `9f2aca7d`). Default signing uses optee_os
-`keys/default_ta.pem`.
+`optee: revision 3.13` / `9f2aca7d`). Default signing key is
+`keys/oem/vendor_ta.pem` (BL32-matched vendor RSA). If missing, falls back to
+optee_os `keys/default_ta.pem` (rejected by production Rockchip BL32).
 
 ### Device note (ynh960 / rk3568_bl32_v2.15)
 
-Hot-deploy smoke (2026-08-01): `tee-supplicant` + `/dev/tee*` OK, but
-`TEEC_OpenSession` returns **`0xffff000f` (TEEC_ERROR_SECURITY)** — vendor BL32
-rejects TAs signed with the OP-TEE default test key. **Need Innohi/Rockchip
-`TA_SIGN_KEY`** (or a BL32 built with our public key) before seal/unseal works
-on hardware.
+Vendor BL32 rejects TAs signed with the OP-TEE default test key
+(`TEEC_OpenSession` → **`0xffff000f` / `TEEC_ERROR_SECURITY`**). Place the
+matching private key at `keys/oem/vendor_ta.pem` (see `keys/oem/README.md`)
+before `make rebuild-secrets-seal`.
 
 ## Protocol
 

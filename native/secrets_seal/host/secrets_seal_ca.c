@@ -204,6 +204,197 @@ static int cmd_probe(void)
 	return 0;
 }
 
+static int cmd_derive_probe(void)
+{
+	TEEC_Result res;
+	TEEC_Context ctx;
+	TEEC_Session sess;
+	TEEC_Operation op;
+	uint32_t origin = 0;
+	uint8_t key[TA_SEAL_KEY_LEN];
+	uint8_t key2[TA_SEAL_KEY_LEN];
+	char *b64 = NULL;
+	int rc = 1;
+
+	res = TEEC_InitializeContext(NULL, &ctx);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr, "secrets-seal-ca: InitializeContext 0x%x\n", res);
+		return 1;
+	}
+	res = TEEC_OpenSession(&ctx, &sess, &ta_uuid, TEEC_LOGIN_PUBLIC, NULL,
+			       NULL, &origin);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr,
+			"secrets-seal-ca: OpenSession 0x%x origin 0x%x\n", res,
+			origin);
+		TEEC_FinalizeContext(&ctx);
+		return 1;
+	}
+
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.buffer = key;
+	op.params[0].tmpref.size = sizeof(key);
+	res = TEEC_InvokeCommand(&sess, TA_SEAL_CMD_DERIVE_PROBE, &op, &origin);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr,
+			"secrets-seal-ca: derive-probe 0x%x origin 0x%x\n", res,
+			origin);
+		goto done;
+	}
+	op.params[0].tmpref.buffer = key2;
+	op.params[0].tmpref.size = sizeof(key2);
+	res = TEEC_InvokeCommand(&sess, TA_SEAL_CMD_DERIVE_PROBE, &op, &origin);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr,
+			"secrets-seal-ca: derive-probe2 0x%x origin 0x%x\n", res,
+			origin);
+		goto done;
+	}
+	if (memcmp(key, key2, sizeof(key)) != 0) {
+		fprintf(stderr, "secrets-seal-ca: derive-probe non-deterministic\n");
+		goto done;
+	}
+	if (b64_encode(key, sizeof(key), &b64))
+		goto done;
+	printf("DERIVE_OK %s\n", b64);
+	rc = 0;
+
+done:
+	TEEC_CloseSession(&sess);
+	TEEC_FinalizeContext(&ctx);
+	free(b64);
+	return rc;
+}
+
+static int cmd_kek_export_wrap(void)
+{
+	TEEC_Result res;
+	TEEC_Context ctx;
+	TEEC_Session sess;
+	TEEC_Operation op;
+	uint32_t origin = 0;
+	uint8_t out[TA_KEK_WRAP_LEN];
+	char *b64 = NULL;
+	int rc = 1;
+
+	res = TEEC_InitializeContext(NULL, &ctx);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr, "secrets-seal-ca: InitializeContext 0x%x\n", res);
+		return 1;
+	}
+	res = TEEC_OpenSession(&ctx, &sess, &ta_uuid, TEEC_LOGIN_PUBLIC, NULL,
+			       NULL, &origin);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr,
+			"secrets-seal-ca: OpenSession 0x%x origin 0x%x\n", res,
+			origin);
+		TEEC_FinalizeContext(&ctx);
+		return 1;
+	}
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.buffer = out;
+	op.params[0].tmpref.size = sizeof(out);
+	res = TEEC_InvokeCommand(&sess, TA_SEAL_CMD_KEK_EXPORT_WRAP, &op,
+				 &origin);
+	TEEC_CloseSession(&sess);
+	TEEC_FinalizeContext(&ctx);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr,
+			"secrets-seal-ca: kek-export-wrap 0x%x origin 0x%x\n",
+			res, origin);
+		return 1;
+	}
+	if (b64_encode(out, op.params[0].tmpref.size, &b64))
+		return 1;
+	puts(b64);
+	free(b64);
+	return 0;
+}
+
+static int cmd_kek_import_wrap(void)
+{
+	TEEC_Result res;
+	TEEC_Context ctx;
+	TEEC_Session sess;
+	TEEC_Operation op;
+	uint32_t origin = 0;
+	char *raw = NULL;
+	char *blob_b64 = NULL;
+	uint8_t *blob = NULL;
+	size_t blob_len = 0;
+	int rc = 1;
+
+	raw = read_stdin_all();
+	if (!raw) {
+		fprintf(stderr, "secrets-seal-ca: empty stdin\n");
+		return 1;
+	}
+	/* Prefer JSON; else treat entire stdin (trimmed) as b64. */
+	if (json_get_string(raw, "blob_b64", &blob_b64) == 0) {
+		/* ok */
+	} else {
+		char *p = raw;
+		size_t n;
+
+		while (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t')
+			p++;
+		n = strlen(p);
+		while (n && (p[n - 1] == '\n' || p[n - 1] == '\r' ||
+			     p[n - 1] == ' '))
+			n--;
+		blob_b64 = malloc(n + 1);
+		if (!blob_b64)
+			goto done;
+		memcpy(blob_b64, p, n);
+		blob_b64[n] = '\0';
+	}
+	if (b64_decode(blob_b64, &blob, &blob_len)) {
+		fprintf(stderr, "secrets-seal-ca: bad b64 wrap blob\n");
+		goto done;
+	}
+
+	res = TEEC_InitializeContext(NULL, &ctx);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr, "secrets-seal-ca: InitializeContext 0x%x\n", res);
+		goto done;
+	}
+	res = TEEC_OpenSession(&ctx, &sess, &ta_uuid, TEEC_LOGIN_PUBLIC, NULL,
+			       NULL, &origin);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr,
+			"secrets-seal-ca: OpenSession 0x%x origin 0x%x\n", res,
+			origin);
+		TEEC_FinalizeContext(&ctx);
+		goto done;
+	}
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.buffer = blob;
+	op.params[0].tmpref.size = blob_len;
+	res = TEEC_InvokeCommand(&sess, TA_SEAL_CMD_KEK_IMPORT_WRAP, &op,
+				 &origin);
+	TEEC_CloseSession(&sess);
+	TEEC_FinalizeContext(&ctx);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr,
+			"secrets-seal-ca: kek-import-wrap 0x%x origin 0x%x\n",
+			res, origin);
+		goto done;
+	}
+	rc = 0;
+
+done:
+	free(raw);
+	free(blob_b64);
+	free(blob);
+	return rc;
+}
+
 static int cmd_seal_unseal(int seal)
 {
 	TEEC_Result res;
@@ -313,7 +504,8 @@ done:
 int main(int argc, char **argv)
 {
 	if (argc != 2) {
-		fprintf(stderr, "usage: secrets-seal-ca {probe|seal|unseal}\n");
+		fprintf(stderr,
+			"usage: secrets-seal-ca {probe|seal|unseal|derive-probe|kek-export-wrap|kek-import-wrap}\n");
 		return 2;
 	}
 	if (!strcmp(argv[1], "probe"))
@@ -322,6 +514,13 @@ int main(int argc, char **argv)
 		return cmd_seal_unseal(1);
 	if (!strcmp(argv[1], "unseal"))
 		return cmd_seal_unseal(0);
-	fprintf(stderr, "usage: secrets-seal-ca {probe|seal|unseal}\n");
+	if (!strcmp(argv[1], "derive-probe"))
+		return cmd_derive_probe();
+	if (!strcmp(argv[1], "kek-export-wrap"))
+		return cmd_kek_export_wrap();
+	if (!strcmp(argv[1], "kek-import-wrap"))
+		return cmd_kek_import_wrap();
+	fprintf(stderr,
+		"usage: secrets-seal-ca {probe|seal|unseal|derive-probe|kek-export-wrap|kek-import-wrap}\n");
 	return 2;
 }

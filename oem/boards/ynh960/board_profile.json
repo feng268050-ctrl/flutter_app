@@ -2,7 +2,7 @@
   "board_id": "ynh960",
   "display_name": "Innohi ynh960",
   "model_hint": "RK3566",
-  "secrets_backend": "software",
+  "secrets_backend": "optee",
   "capabilities": [
     "ethernet",
     "wifi",

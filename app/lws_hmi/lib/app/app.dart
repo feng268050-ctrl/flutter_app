@@ -72,6 +72,7 @@ import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgr
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/sync_firmware_command_watcher.dart';
 import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/upgrade_process_library_command_watcher.dart';
+import 'package:lws_hmi/features/secrets/infrastructure/migrate_secrets_command_watcher.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
 import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
 import 'package:lws_hmi/features/system_ota/infrastructure/upgrade_ota_command_watcher.dart';
@@ -252,6 +253,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   late final UpgradeOtaCommandWatcher _upgradeOtaCommandWatcher =
       UpgradeOtaCommandWatcher();
 
+  late final MigrateSecretsCommandWatcher _migrateSecretsCommandWatcher =
+      MigrateSecretsCommandWatcher(services: _services);
+
   late final RgbLedPolicyDriver _rgbLedPolicy = RgbLedPolicyDriver(
     services: _services,
     warnAlarm: _warnAlarm,
@@ -345,6 +349,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       _syncFirmwareCommandWatcher.start();
       _upgradeProcessLibraryCommandWatcher.start();
       _upgradeOtaCommandWatcher.start();
+      _migrateSecretsCommandWatcher.start();
       unawaited(_startCloudLocalRuntime());
       unawaited(_liveWeldStreamDetect.start());
       _jobRuntimeStatistics.resume();
@@ -506,6 +511,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_syncFirmwareCommandWatcher.dispose());
     unawaited(_upgradeProcessLibraryCommandWatcher.dispose());
     unawaited(_upgradeOtaCommandWatcher.dispose());
+    unawaited(_migrateSecretsCommandWatcher.dispose());
     unawaited(_rgbLedPolicy.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();

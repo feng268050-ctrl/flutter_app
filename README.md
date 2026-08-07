@@ -402,6 +402,8 @@ make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= 
 make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
 make upgrade-process-library    # push process-library for device model; force import (HMI running)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
+make migrate-secrets            # re-seal software Wi‑Fi vault + cloud Ed25519 → OP-TEE (SCOPE=all|wifi|cloud)
+make migrate-seal-kek           # HUK-wrap OP-TEE seal KEK ↔ Vendor Storage ID 23 (cloud seed unchanged)
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/properties.ini (multi-key OK); restarts hmi
 # brand / model / sn → Vendor Storage: make write-identity (not set-prop / del-prop / OEM seed)
 make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphens stripped → LC001; SN=… FORCE=1 to overwrite
@@ -733,6 +735,8 @@ make push-app                  # SN=... or IP=... when multiple devices
 make upgrade-control-board    # push latest control-board bin and trigger upgrade (no version gate)
 make upgrade-process-library  # push process-library for device Vendor Storage model; force import
 make reset-process-library    # clear process-library DB via HMI watcher; re-import bundled (no restart)
+make migrate-secrets          # re-seal software Wi‑Fi vault + cloud key → OP-TEE (SCOPE=all|wifi|cloud)
+make migrate-seal-kek         # HUK-wrap seal KEK ↔ VS ID 23 (does not change cloud Ed25519)
 make set-prop CAMERA_IP=192.168.1.50   # optional: product tunables over SSH (not brand/model/sn)
 make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001  # Vendor Storage; "-" stripped
 ```

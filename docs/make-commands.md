@@ -409,6 +409,20 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **何时用：** 按设备 Vendor Storage `model` 推工艺库；或清 DB 后强制重导捆绑包（不重启）。
 - **前提：** HMI watcher 在跑。
 
+### `make migrate-secrets`
+
+- **怎么用：** `make migrate-secrets`；仅 Wi‑Fi：`SCOPE=wifi make migrate-secrets`；仅云密钥：`SCOPE=cloud make migrate-secrets`
+- **何时用：** 设备曾用 software KEK 封存 Wi‑Fi vault / Vendor Storage 云 Ed25519，OEM 已切到 `secrets_backend: optee` 后一次性重封到 OP-TEE。
+- **行为：** SSH 写 `/run/hmi/migrate-secrets.cmd`；HMI 用 software 解封再 OP-TEE 重封；已是 `LWS1` 的条目跳过。
+- **前提：** HMI 含 `MigrateSecretsCommandWatcher`；`secrets-seal probe` 通过；云路径需要产品 SN。
+
+### `make migrate-seal-kek`
+
+- **怎么用：** `make migrate-seal-kek`
+- **何时用：** OP-TEE 已在用时，把 seal KEK 以 HUK wrap 写入 Vendor Storage ID **23**（或从 ID 23 恢复到 REE `/userdata/tee`），使刷机清 userdata 后仍能解 VS 云密钥。
+- **行为：** SSH 在板上跑 `secrets-seal sync-kek` / CA `kek-export-wrap`↔`kek-import-wrap`；**不**改云 Ed25519 种子。
+- **前提：** vendor 签名 seal TA/CA；`read/write-seal-kek-wrapped` helpers；`/dev/vendor_storage`。
+
 ### `make set-prop` / `make del-prop`
 
 - **怎么用：** `make set-prop CAMERA_IP=192.168.1.10`；`make del-prop CAMERA_IP`

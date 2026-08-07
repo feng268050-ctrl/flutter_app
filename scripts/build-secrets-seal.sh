@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Cross-build OP-TEE seal TA + secrets-seal-ca → prebuilt/ + rootfs overlay.
-# TA signed with optee_os 3.13 default_ta.pem (matches many Rockchip engineering
-# BL32 builds; production keys may need TA_SIGN_KEY override).
+# Default sign key: keys/oem/vendor_ta.pem (BL32-matched vendor RSA).
+# Override with TA_SIGN_KEY=…; if neither is present, falls back to optee_os
+# keys/default_ta.pem (rejected by production Rockchip BL32).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,6 +18,27 @@ OVERLAY_ROOT="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay"
 TA_UUID="b8e4f2a1-9c3d-4e6f-8a1b-2c3d4e5f6071"
 TA_NAME="${TA_UUID}.ta"
 STAMP_VER="seal-${OPTEE_OS_VER}-$(date -u +%Y%m%d 2>/dev/null || echo 0)"
+DEFAULT_TA_SIGN_KEY="$ROOT/keys/oem/vendor_ta.pem"
+
+# Resolve signing key: explicit TA_SIGN_KEY wins; else keys/oem/vendor_ta.pem;
+# else empty (ta_dev_kit falls back to default_ta.pem).
+resolve_ta_sign_key() {
+	local key="${TA_SIGN_KEY:-}"
+	if [[ -n "$key" ]]; then
+		if [[ ! -f "$key" ]]; then
+			echo "ERROR: TA_SIGN_KEY=$key not found" >&2
+			exit 1
+		fi
+		echo "$key"
+		return 0
+	fi
+	if [[ -f "$DEFAULT_TA_SIGN_KEY" ]]; then
+		echo "$DEFAULT_TA_SIGN_KEY"
+		return 0
+	fi
+	echo "build-secrets-seal: WARN: $DEFAULT_TA_SIGN_KEY missing; using optee_os default_ta.pem (BL32 may reject)" >&2
+	echo ""
+}
 
 ensure_optee_os() {
 	mkdir -p "$CACHE"
@@ -137,13 +159,19 @@ do_build() {
 	mkdir -p "$(dirname "$ta_dev_kit")"
 	cp -a "$export_src" "$ta_dev_kit"
 
+	local ta_sign_key
+	ta_sign_key="$(resolve_ta_sign_key)"
+	if [[ -n "$ta_sign_key" ]]; then
+		echo "build-secrets-seal: TA_SIGN_KEY=$ta_sign_key"
+	fi
+
 	echo "build-secrets-seal: building TA ..."
 	make -C "$ROOT/native/secrets_seal/ta" clean \
 		TA_DEV_KIT_DIR="$ta_dev_kit" O=out >/dev/null 2>&1 || true
 	make -C "$ROOT/native/secrets_seal/ta" -j"$jobs" \
 		CROSS_COMPILE="${cross}" \
 		TA_DEV_KIT_DIR="$ta_dev_kit" \
-		${TA_SIGN_KEY:+TA_SIGN_KEY="$TA_SIGN_KEY"} \
+		${ta_sign_key:+TA_SIGN_KEY="$ta_sign_key"} \
 		O=out
 
 	local ta_bin
@@ -195,8 +223,21 @@ fi
 
 # macOS: compile inside builder (linux/amd64) with SDK toolchain.
 if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+	# Resolve on the host first, then remap into the docker bind mount.
+	ta_sign_key="$(resolve_ta_sign_key)"
+	if [[ -n "$ta_sign_key" ]]; then
+		case "$ta_sign_key" in
+		"$ROOT"/*) ta_sign_key="/work/lws-hmi/${ta_sign_key#"$ROOT"/}" ;;
+		/*) ;; # non-repo absolute path will not exist in the container
+		*)
+			if [[ -f "$ROOT/$ta_sign_key" ]]; then
+				ta_sign_key="/work/lws-hmi/$ta_sign_key"
+			fi
+			;;
+		esac
+	fi
 	exec env LWS_HMI_SKIP_OVERLAY=1 FORCE="$FORCE" OPTEE_OS_VER="$OPTEE_OS_VER" \
-		BUILD_JOBS="${BUILD_JOBS:-8}" TA_SIGN_KEY="${TA_SIGN_KEY:-}" \
+		BUILD_JOBS="${BUILD_JOBS:-8}" TA_SIGN_KEY="$ta_sign_key" \
 		bash "$ROOT/scripts/docker-run.sh" \
 		bash /work/lws-hmi/scripts/build-secrets-seal.sh
 fi

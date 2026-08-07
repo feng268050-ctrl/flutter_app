@@ -166,12 +166,12 @@ void main() {
       expect(s, isA<SoftwareFallbackKekProvider>());
     });
 
-    test('ynh960 OEM defaults to software via secrets_backend', () async {
+    test('ynh960 OEM defaults to optee via secrets_backend', () async {
       final profile = await BoardProfile.loadFile(oemYnh960);
-      expect(profile.secretsBackend, 'software');
+      expect(profile.secretsBackend, 'optee');
       expect(
         BoardBindings.resolveSecretsBackend(profile),
-        SecretsBackendPreference.software,
+        SecretsBackendPreference.optee,
       );
       final s = BoardBindings(profile).secrets(
         materialReader: () async => const DeviceBindingMaterial(
@@ -180,19 +180,19 @@ void main() {
           mmcCid: 'emmc-cid',
         ),
       );
-      expect(s, isA<SoftwareFallbackKekProvider>());
-      expect(s.isHardwareBound, isFalse);
+      expect(s, isA<OpteeKekProvider>());
+      expect(s.isHardwareBound, isTrue);
     });
 
-    test('ynh960 app asset selects software', () {
+    test('ynh960 app asset selects optee', () {
       final json = File('$appHalRoot/board_profile.json').readAsStringSync();
       final profile = BoardProfile.fromJsonString(json);
       expect(profile.info.boardId, 'ynh960');
-      expect(profile.secretsBackend, 'software');
+      expect(profile.secretsBackend, 'optee');
       final s = BoardBindings(profile).secrets(
         chipIdReader: () async => 'ASSET-CHIP',
       );
-      expect(s, isA<SoftwareFallbackKekProvider>());
+      expect(s, isA<OpteeKekProvider>());
     });
 
     test('explicit secrets_backend optee selects OP-TEE', () {

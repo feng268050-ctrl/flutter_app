@@ -348,15 +348,15 @@ Dart HAL Stub backends SHALL be selected only when the environment variable `HAL
 
 `BoardBindings` (or equivalent board profile construction) SHALL construct the abstract Secrets / KEK provider according to OEM `BoardProfile.secretsBackend` (`software` | `optee`), with the unset-field heuristic documented in the Secrets capability (sim/emu → software; other board ids → optee). Product App code that only needs Wi‑Fi MUST NOT be required to import the Secrets module; Wi‑Fi HAL internals MAY use Secrets without exposing it as a required App import.
 
-#### Scenario: ynh960 software profile
+#### Scenario: ynh960 OP-TEE profile
 
-- **WHEN** bindings construct Secrets for a ynh960 product profile with `secrets_backend: software`
-- **THEN** the selected backend is the device-bound software KEK provider
-
-#### Scenario: Profile flip to OP-TEE
-
-- **WHEN** the same board id profile sets `secrets_backend: optee`
+- **WHEN** bindings construct Secrets for a ynh960 product profile with `secrets_backend: optee`
 - **THEN** the selected backend is the OP-TEE-backed provider (fail-closed if TEE/TA missing)
+
+#### Scenario: Explicit software profile
+
+- **WHEN** a product profile sets `secrets_backend: software`
+- **THEN** the selected backend is the device-bound software KEK provider
 
 #### Scenario: Sim profile may use software
 

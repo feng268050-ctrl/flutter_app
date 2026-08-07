@@ -2,16 +2,19 @@
 Description=OP-TEE Client Supplicant
 Documentation=https://github.com/OP-TEE/optee_client
 DefaultDependencies=yes
-After=local-fs.target
+# After userdata is mounted — interim REE FS KEK lives under /userdata/tee
+# (survives A/B). Target end-state is RPMB (see docs/hal-secrets-kek.md).
+After=local-fs.target userdata.mount
+RequiresMountsFor=/userdata
 # Outside HMI cgroup — available before / with Secrets consumers.
 Before=hmi.service
 
 [Service]
 Type=simple
-# optee-client 4.x: device is a positional arg; -d/--daemonize forks (do not use
-# with Type=simple). SysV S30tee-supplicant's "-d /dev/teepriv0" was the old
-# meaning of -d=device.
-ExecStart=/usr/sbin/tee-supplicant /dev/teepriv0
+ExecStartPre=/bin/mkdir -p /userdata/tee
+# Wrapper: -r <eMMC CID> for when BL32 exposes RPMB; -f /userdata/tee for
+# interim REE FS KEK (not on A/B rootfs /var/lib/tee).
+ExecStart=/usr/libexec/board/tee-supplicant-start.sh
 Restart=on-failure
 RestartSec=2
 StandardOutput=journal

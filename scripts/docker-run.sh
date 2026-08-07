@@ -64,6 +64,10 @@ docker_args=(
   -e "LWS_HMI_WESTON=${LWS_HMI_WESTON:-1}"
   -e "FORCE_PLATFORM_OVERLAY=${FORCE_PLATFORM_OVERLAY:-0}"
   -e "NAS_READ_ONLY=${NAS_READ_ONLY:-0}"
+  -e "FORCE=${FORCE:-0}"
+  -e "OPTEE_OS_VER=${OPTEE_OS_VER:-}"
+  -e "TA_SIGN_KEY=${TA_SIGN_KEY:-}"
+  -e "LWS_HMI_SKIP_OVERLAY=${LWS_HMI_SKIP_OVERLAY:-}"
   -v "$ROOT:/work/lws-hmi"
   -v lws-hmi-ccache:/ccache
   -e CCACHE_DIR=/ccache

@@ -59,9 +59,14 @@ App Wi‑Fi UI must **not** import `cyber_hal/secrets.dart`.
 4. Reboot with Wi‑Fi wanted; Auto Join associates without re-entering PSK.
 5. Forget one SSID; vault entry for that SSID is gone; conf network block gone.
 
-### 4.3 OP-TEE re-seal smoke (when `secrets_backend: optee` is green)
+### 4.3 OP-TEE vault smoke (ynh960 default)
 
-1. Board profile uses `"secrets_backend": "optee"` and vendor-signed seal TA.
-2. Connect or migrate so vault entries seal with OP-TEE backend.
-3. Unseal / reconnect after reboot; `backendId` diagnostics show `optee`.
-4. See Secrets notes for TA signing / `tee-supplicant` prerequisites.
+1. Board profile uses `"secrets_backend": "optee"` (ynh960 OEM default) and
+   vendor-signed seal TA (`keys/oem/vendor_ta.pem`).
+2. If the unit previously sealed with software KEK, run
+   `make migrate-secrets` (or `SCOPE=wifi` / `SCOPE=cloud`) once.
+3. Connect or migrate so vault entries seal with OP-TEE backend.
+4. Unseal / reconnect after reboot; `backendId` diagnostics show `optee`.
+5. See Secrets notes for TA signing / `tee-supplicant` prerequisites.
+   Existing **software**-sealed vault blobs will not unseal after the flip
+   without `make migrate-secrets` (or re-entering PSKs).

@@ -11,13 +11,42 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
   group('WorkInformationDisplay', () {
-    test('ratios match lws-ui Home.newRatio truncation', () {
+    test('ratios sum to 100 with largest-remainder (not bare truncate)', () {
       final d = WorkInformationDisplay.fromAggregate(
         _agg(weld: 50, cut: 30, clean: 20, laserOn: 100),
       );
       expect(d.weldRatioPercent, 50);
       expect(d.cutRatioPercent, 30);
       expect(d.cleanRatioPercent, 20);
+      expect(
+        d.weldRatioPercent + d.cutRatioPercent + d.cleanRatioPercent,
+        100,
+      );
+    });
+
+    test('board sample 2247/72/102 truncates to 98 — remainder fills to 100', () {
+      // Real L1SZ2026070002 hmi-stats.db row (2026-08-07).
+      final d = WorkInformationDisplay.fromAggregate(
+        _agg(weld: 2247, cut: 72, clean: 102, laserOn: 2421),
+      );
+      expect(ratioPercent(2247, 2421), 92);
+      expect(ratioPercent(72, 2421), 2);
+      expect(ratioPercent(102, 2421), 4);
+      expect(
+        d.weldRatioPercent + d.cutRatioPercent + d.cleanRatioPercent,
+        100,
+      );
+      expect(d.weldRatioPercent, 93);
+      expect(d.cutRatioPercent, 3);
+      expect(d.cleanRatioPercent, 4);
+    });
+
+    test('ratioPercents keeps zero modes at 0 and gives 100 to the only mode',
+        () {
+      final onlyWeld = ratioPercents(weld: 10, cut: 0, clean: 0);
+      expect(onlyWeld, (weld: 100, cut: 0, clean: 0));
+      final empty = ratioPercents(weld: 0, cut: 0, clean: 0);
+      expect(empty, (weld: 0, cut: 0, clean: 0));
     });
 
     test('wire metric stays mm under 1 m and switches to integer metres', () {
@@ -123,6 +152,14 @@ void main() {
     expect(find.text('60%'), findsOneWidget);
     expect(find.text('30%'), findsOneWidget);
     expect(find.text('10%'), findsOneWidget);
+
+    // Left → right: Welding, Cleaning, Cutting.
+    final weldTitle = tester.getTopLeft(find.text('Welding Ratio'));
+    final cleanTitle = tester.getTopLeft(find.text('Cleaning Ratio'));
+    final cutTitle = tester.getTopLeft(find.text('Cutting Ratio'));
+    expect(weldTitle.dx, lessThan(cleanTitle.dx));
+    expect(cleanTitle.dx, lessThan(cutTitle.dx));
+
     expect(find.text('1'), findsWidgets); // laser hours
     expect(find.text('5'), findsWidgets); // wire metres
     expect(find.text('3'), findsWidgets); // job minutes

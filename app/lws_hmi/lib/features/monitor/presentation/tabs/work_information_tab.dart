@@ -199,20 +199,21 @@ class _WorkInfoBody extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: MonitorDimens.gap),
+                // Cleaning left of Cutting (product layout).
                 Expanded(
                   child: _PercentCard(
-                    title: l10n.cuttingProportionText,
-                    value: display.cutRatioPercent.toDouble(),
-                    color: const Color(0xFF00A4F2),
+                    title: l10n.washProportionText,
+                    value: display.cleanRatioPercent.toDouble(),
+                    color: const Color(0xFFFF8000),
                     borderGradientCenter: CyberBorderGradientCenter.topBottom,
                   ),
                 ),
                 const SizedBox(width: MonitorDimens.gap),
                 Expanded(
                   child: _PercentCard(
-                    title: l10n.washProportionText,
-                    value: display.cleanRatioPercent.toDouble(),
-                    color: const Color(0xFFFF8000),
+                    title: l10n.cuttingProportionText,
+                    value: display.cutRatioPercent.toDouble(),
+                    color: const Color(0xFF00A4F2),
                     borderGradientCenter:
                         CyberBorderGradientCenter.bottomLeftTopRight,
                   ),

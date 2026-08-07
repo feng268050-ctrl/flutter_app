@@ -506,7 +506,7 @@ final class _CheckRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: context.hmiTypography.sectionTitle.copyWith(
+                  style: context.hmiTypography.navigation.copyWith(
                     color: enabled ? Colors.white : const Color(0x66FFFFFF),
                     fontWeight: FontWeight.w500,
                     height: 1.0,

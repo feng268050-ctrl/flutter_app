@@ -3,7 +3,7 @@ import 'package:cyber_ui/src/status_bar/cyber_home_status_bar.dart';
 import 'package:cyber_ui/src/status_bar/cyber_status_bar_clock.dart';
 import 'package:flutter/material.dart';
 
-/// Non-Home page chrome: back · centered title · status icons + clock.
+/// Non-Home page chrome: back · centered title (or clock) · status icons.
 ///
 /// Background defaults to ambient AppBar / surface theme color; override with
 /// [backgroundColor]. Does not call [Navigator] — supply [onBack].
@@ -27,6 +27,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
     this.use24HourFormat = true,
     this.showClockDate = true,
     this.clockEndPadding = 55,
+    this.centerClock = false,
   });
 
   final String title;
@@ -61,6 +62,10 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
   /// entry top inset (`55` on the 1280×800 design canvas).
   final double clockEndPadding;
 
+  /// When true, put [CyberStatusBarClock] in the AppBar title (centered) and
+  /// keep only status icons on the trailing side (no trailing clock).
+  final bool centerClock;
+
   @override
   Size get preferredSize {
     final bottomHeight = bottom?.preferredSize.height ?? 0;
@@ -76,6 +81,18 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
         theme.colorScheme.surface;
   }
 
+  TextStyle _resolvedClockStyle(ThemeData theme, Color fg) {
+    return clockStyle ??
+        theme.textTheme.titleMedium?.copyWith(
+          color: fg,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ) ??
+        TextStyle(
+          color: fg,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -83,6 +100,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
         theme.appBarTheme.foregroundColor ??
         theme.colorScheme.onSurface;
     final bg = _resolveBackground(context);
+    final clockTextStyle = _resolvedClockStyle(theme, fg);
 
     final resolvedLeading = leading ??
         (onBack == null
@@ -97,9 +115,43 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
                 },
               ));
 
+    final Widget titleWidget = centerClock
+        ? CyberStatusBarClock(
+            now: clockNow,
+            use24HourFormat: use24HourFormat,
+            showDate: showClockDate,
+            style: clockTextStyle,
+          )
+        : Text(title);
+
+    final List<Widget> trailing = [
+      ...?actions,
+      Padding(
+        padding: EdgeInsets.only(right: clockEndPadding),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CyberHomeStatusBar(
+              items: statusItems,
+              gap: statusIconGap,
+            ),
+            if (!centerClock) ...[
+              if (statusItems.isNotEmpty) SizedBox(width: clockGap),
+              CyberStatusBarClock(
+                now: clockNow,
+                use24HourFormat: use24HourFormat,
+                showDate: showClockDate,
+                style: clockTextStyle,
+              ),
+            ],
+          ],
+        ),
+      ),
+    ];
+
     return AppBar(
       key: const ValueKey('cyber-page-status-bar'),
-      title: Text(title),
+      title: titleWidget,
       centerTitle: true,
       backgroundColor: bg,
       foregroundColor: fg,
@@ -116,34 +168,18 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
           : SizedBox(
               height: toolbarHeight,
               width: leadingWidth,
-              child: resolvedLeading,
+              // Loose horizontal max so IntrinsicWidth / full labels do not
+              // report a flex overflow when painter undershoots slightly.
+              child: OverflowBox(
+                alignment: Alignment.centerLeft,
+                minWidth: 0,
+                maxWidth: leadingWidth == null
+                    ? double.infinity
+                    : leadingWidth! * 1.5,
+                child: resolvedLeading,
+              ),
             ),
-      actions: [
-        ...?actions,
-        Padding(
-          padding: EdgeInsets.only(right: clockEndPadding),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CyberHomeStatusBar(
-                items: statusItems,
-                gap: statusIconGap,
-              ),
-              if (statusItems.isNotEmpty) SizedBox(width: clockGap),
-              CyberStatusBarClock(
-                now: clockNow,
-                use24HourFormat: use24HourFormat,
-                showDate: showClockDate,
-                style: clockStyle ??
-                    theme.textTheme.titleMedium?.copyWith(
-                      color: fg,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      actions: trailing,
       bottom: bottom,
     );
   }

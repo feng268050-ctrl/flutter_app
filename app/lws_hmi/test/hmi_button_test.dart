@@ -87,33 +87,30 @@ void main() {
     expect(find.text('Confirm'), findsOneWidget);
   });
 
-  test('ProcessModeOutlineChrome iconLeft equal gaps then prefer label gap', () {
-    // textLeft=100, free=66 → equal gaps 33.
+  test('ProcessModeOutlineChrome size tokens alias HmiButton ladder', () {
     expect(
-      ProcessModeOutlineChrome.iconLeftForCenteredLabel(
-        buttonWidth: 300,
-        labelWidth: 100,
-        iconSize: 34,
-      ),
-      33,
+      ProcessModeOutlineChrome.defaultHeight,
+      HmiButtonMetrics.heroHeight,
     );
-    // textLeft=50, free=16 → equal gaps 8.
     expect(
-      ProcessModeOutlineChrome.iconLeftForCenteredLabel(
-        buttonWidth: 200,
-        labelWidth: 100,
-        iconSize: 34,
-      ),
-      8,
+      ProcessModeOutlineChrome.labelSize,
+      HmiTypography.buttonHeroFontSize,
     );
-    // textLeft=20 < icon 34 → no room; pin left, no overlap claim.
     expect(
-      ProcessModeOutlineChrome.iconLeftForCenteredLabel(
-        buttonWidth: 200,
-        labelWidth: 160,
-        iconSize: 34,
-      ),
-      0,
+      ProcessModeOutlineChrome.iconSize,
+      HmiButtonMetrics.heroIconSize,
+    );
+    expect(
+      ProcessModeOutlineChrome.laserEnableHeight,
+      HmiButtonMetrics.jumboHeight,
+    );
+    expect(
+      ProcessModeOutlineChrome.laserEnableLabelSize,
+      HmiTypography.buttonJumboFontSize,
+    );
+    expect(
+      ProcessModeOutlineChrome.laserEnableIconSize,
+      HmiButtonMetrics.jumboIconSize,
     );
   });
 }

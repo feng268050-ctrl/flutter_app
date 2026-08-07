@@ -5,11 +5,13 @@ import 'dart:ui' as ui;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
+import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
+import 'package:lws_hmi/ui/hmi/hmi_primary_tab_content.dart';
 import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// Shared Settings chrome (lws-ui InsetList / FrostCard → CyberUI).
@@ -105,8 +107,9 @@ static const titleSize = 20.0;
 /// Settings page Material-style top tabs (equal width, no rounded strip chrome).
 ///
 /// L/R inset matches [SettingsDimens.inset] so the tab track, hairline, and
-/// setting cards share the same outer edges. Every tab centers icon+label in
-/// its equal-width cell; selection = bright label/icon + full-cell indicator.
+/// setting cards share the same outer edges. Icon+label are one compact group
+/// centered in each equal-width cell; selection = color/weight + full-cell
+/// indicator.
 final class SettingsTopTabs extends StatelessWidget
     implements PreferredSizeWidget {
   const SettingsTopTabs({
@@ -118,13 +121,12 @@ final class SettingsTopTabs extends StatelessWidget
     this.backgroundColor,
   });
 
-  static const tabHeight = 68.0;
+  static const tabHeight = HmiTabMetrics.tabHeight;
   static const dividerThickness = 1.0;
-  static const iconSize = 31.0;
-  /// Primary tab label size — mirrors [HmiTypography.primaryTabLabel] (24).
-  static const labelSize = 24.0;
-  static const iconTextGap = 6.0;
-  static const indicatorHeight = 2.0;
+  static const iconSize = HmiTabMetrics.iconSize;
+  static const labelSize = HmiTabMetrics.labelFontSize;
+  static const iconTextGap = HmiTabMetrics.iconLabelGap;
+  static const indicatorHeight = HmiTabMetrics.indicatorHeight;
   static const unselected = Color(0xFF94A3B8);
   static const dividerColor = Color(0x33FFFFFF);
 
@@ -132,13 +134,7 @@ final class SettingsTopTabs extends StatelessWidget
   static const background = CyberColors.fillSolidTop;
 
   final List<String> labels;
-  final List<
-      ({
-        Key key,
-        IconData icon,
-        double iconLeftNudge,
-        bool balanceIconLabelGap,
-      })> tabs;
+  final List<({Key key, IconData icon})> tabs;
   final int currentIndex;
   final ValueChanged<int> onSelected;
   final Color? backgroundColor;
@@ -169,8 +165,6 @@ final class SettingsTopTabs extends StatelessWidget
                         label: labels[i],
                         icon: tabs[i].icon,
                         selected: i == currentIndex,
-                        iconLeftNudge: tabs[i].iconLeftNudge,
-                        balanceIconLabelGap: tabs[i].balanceIconLabelGap,
                         onTap: () => onSelected(i),
                       ),
                     ),
@@ -196,31 +190,16 @@ final class _SettingsTopTabItem extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
-    this.iconLeftNudge = 0,
-    this.balanceIconLabelGap = false,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-  /// Negative shifts icon left from the equal L/T inset.
-  final double iconLeftNudge;
-
-  /// When true, icon left inset equals the gap between icon and centered label.
-  final bool balanceIconLabelGap;
 
   @override
   Widget build(BuildContext context) {
     final color = selected ? Colors.white : SettingsTopTabs.unselected;
-    final labelStyle = context.hmiTypography.primaryTabLabel.copyWith(
-      color: color,
-      fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-      height: 1.0,
-    );
-    // Left inset matches top/bottom inset to the tab edge (ProductTopTabs).
-    final iconInset =
-        (SettingsTopTabs.tabHeight - SettingsTopTabs.iconSize) / 2;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -228,61 +207,34 @@ final class _SettingsTopTabItem extends StatelessWidget {
           CyberClickSoundRegistry.playClick();
           onTap();
         },
-        // Stretch so the indicator spans the full equal-width tab cell;
-        // outer cell edges match [SettingsDimens.inset] with the cards.
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            var iconLeft = iconInset + iconLeftNudge;
-            if (balanceIconLabelGap) {
-              final painter = TextPainter(
-                text: TextSpan(text: label, style: labelStyle),
-                maxLines: 1,
-                ellipsis: '…',
-                textDirection: Directionality.of(context),
-              )..layout(maxWidth: constraints.maxWidth);
-              final textLeft = (constraints.maxWidth - painter.width) / 2;
-              // left == (textLeft - iconRight) ⇒ left == gap to label.
-              iconLeft = ((textLeft - SettingsTopTabs.iconSize) / 2)
-                  .clamp(0.0, double.infinity);
-            }
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                Center(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: labelStyle,
-                  ),
+        // Full equal-width cell is the hit target; indicator spans the cell.
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: HmiPrimaryTabContent(
+                icon: Icon(
+                  icon,
+                  size: HmiTabMetrics.iconSize,
+                  color: color,
                 ),
-                Positioned(
-                  left: iconLeft,
-                  top: iconInset,
-                  width: SettingsTopTabs.iconSize,
-                  height: SettingsTopTabs.iconSize,
-                  child: Icon(
-                    icon,
-                    size: SettingsTopTabs.iconSize,
-                    color: color,
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: SettingsTopTabs.indicatorHeight,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOut,
-                    color: selected ? Colors.white : Colors.transparent,
-                  ),
-                ),
-              ],
-            );
-          },
+                label: label,
+                color: color,
+                selected: selected,
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: SettingsTopTabs.indicatorHeight,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                color: selected ? Colors.white : Colors.transparent,
+              ),
+            ),
+          ],
         ),
       ),
     );

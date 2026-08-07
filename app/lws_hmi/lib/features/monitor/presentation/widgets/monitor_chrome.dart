@@ -41,9 +41,13 @@ abstract final class MonitorDimens {
   static const panelCardShadow = SettingsDimens.cardShadow;
   static const corner = 18.0;
   static const metricH = 100.0;
-  static const leftPanelW = 740.0;
+  /// Alarm metrics column flex weight (legacy design token; Alarm Log now uses
+  /// [ProcessModeDimens.engineerLeftPanelWidthFor] for absolute width).
+  static const leftPanelW = 1618.0;
   static const leftPanelH = 608.0;
-  static const logPanelW = 468.0;
+
+  /// Design-canvas Alarm Log width — same as Engineer left device panel.
+  static const logPanelW = 467.5;
   static const gaugeCardW = 604.0;
   static const gaugeCardH = 344.0;
   static const gaugeSide = 220.0;

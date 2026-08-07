@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
@@ -95,12 +96,16 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
     final m = _monitor ?? WarnAlarmScope.maybeOf(context)?.monitor;
 
     // Advanced Settings layout on the left: section headers + inset card grid
-    // (same MonitorGlassCard face as the right Alarm Log plate). Outer glow
-    // paints into shared inset gutters (Clip.none); gap ≈ SettingsDimens.inset.
+    // (same MonitorGlassCard face as the right Alarm Log plate). Alarm Log
+    // outer pad matches left column insets ([SettingsDimens.inset] = 24).
     const ambient = MonitorDimens.outerAmbientExtent;
     const pageEdge = MonitorDimens.pad - ambient;
     const hPad = EdgeInsets.symmetric(horizontal: SettingsDimens.inset);
     const cardGap = SizedBox(height: SettingsDimens.inset);
+    // Same absolute width as Engineer left device panel (1 : φ row share).
+    final alarmLogWidth = ProcessModeDimens.engineerLeftPanelWidthFor(
+      MediaQuery.sizeOf(context).width,
+    );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(pageEdge, 0, pageEdge, 16),
@@ -111,7 +116,6 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  flex: 740,
                   child: SettingsScrollView(
                     // Headers own the top inset (Advanced Settings parity).
                     padding: EdgeInsets.zero,
@@ -194,15 +198,12 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                 ),
                 // Face-to-face gap ≈ pad: each column already reserves [ambient].
                 const SizedBox(width: MonitorDimens.pad - ambient),
-                Expanded(
-                  flex: 468,
+                SizedBox(
+                  width: alarmLogWidth,
+                  // Match left monitoring column insets: SettingsSectionHeader
+                  // topInset + card hPad + trailing inset (all SettingsDimens.inset).
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      ambient,
-                      ambient,
-                      ambient,
-                      0,
-                    ),
+                    padding: const EdgeInsets.all(SettingsDimens.inset),
                     child: MonitorGlassCard(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                       child: Column(

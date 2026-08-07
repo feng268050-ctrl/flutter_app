@@ -1452,6 +1452,31 @@ EOF
 			echo "OK:  rknn_common_test absent"
 		fi
 	fi
+	if grep -qF '#include "chips/lws_hmi_font.config"' "$def" 2>/dev/null; then
+		echo ""
+		echo "--- CJK fonts (lws_hmi_font.config) ---"
+		local han_dir="$target/usr/share/fonts/source-han-sans-cn"
+		local han_otf
+		if [[ ! -d "$han_dir" ]]; then
+			echo "FAIL: $han_dir missing (Source Han Sans CN; CJK will tofu). Fix: apply-overlay must wire package/source-han-sans into package/Config.in, then: bash scripts/br-make-packages.sh fonts source-han-sans-cn && make build-rootfs" >&2
+			missing=1
+		else
+			for han_otf in SourceHanSansCN-Regular.otf SourceHanSansCN-Medium.otf SourceHanSansCN-Bold.otf; do
+				if [[ -f "$han_dir/$han_otf" ]]; then
+					echo "OK:  fonts/source-han-sans-cn/$han_otf"
+				else
+					echo "FAIL: fonts/source-han-sans-cn/$han_otf missing" >&2
+					missing=1
+				fi
+			done
+		fi
+		if [[ ! -d "$target/usr/share/fonts/dejavu" ]]; then
+			echo "FAIL: fonts/dejavu missing" >&2
+			missing=1
+		else
+			echo "OK:  fonts/dejavu"
+		fi
+	fi
 
 	check_rootfs_image "$out_dir" || missing=1
 

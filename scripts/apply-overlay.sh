@@ -673,7 +673,13 @@ backup_sdk_script() {
 
 sync_source_han_sans_cn_package() {
   local src="$OVERLAY/buildroot/package/source-han-sans-cn/source-han-sans-cn.mk"
+  local br_pkg_cfg="$SDK/buildroot/package/Config.in"
+  local source_line='	source "package/source-han-sans/Config.in"'
   if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -d "$SDK/buildroot/package/source-han-sans" ]]; then
+    echo "WARNING: overlay source-han-sans-cn.mk present but SDK package/source-han-sans missing" >&2
     return 0
   fi
   if [[ ! -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" ]]; then
@@ -681,6 +687,29 @@ sync_source_han_sans_cn_package() {
       "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig"
   fi
   install_file "$src" "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk"
+
+  # Vendor package tree exists under package/source-han-sans/, but stock
+  # Buildroot 2025.02 package/Config.in does not source it — then
+  # BR2_PACKAGE_SOURCE_HAN_SANS_CN=y is dropped by olddefconfig and the
+  # rootfs ships DejaVu only (CJK tofu). Re-wire into the Fonts menu.
+  if [[ -f "$br_pkg_cfg" ]] && ! grep -qF 'package/source-han-sans/Config.in' "$br_pkg_cfg"; then
+    if grep -qF 'package/wqy-zenhei/Config.in' "$br_pkg_cfg"; then
+      # Insert after wqy-zenhei (last stock font entry in Fonts comment).
+      local tmp
+      tmp="$(mktemp)"
+      awk -v line="$source_line" '
+        { print }
+        $0 ~ /package\/wqy-zenhei\/Config\.in/ && !done {
+          print line
+          done=1
+        }
+      ' "$br_pkg_cfg" >"$tmp"
+      mv -f "$tmp" "$br_pkg_cfg"
+      echo "overlay: wired package/source-han-sans into package/Config.in"
+    else
+      echo "WARNING: could not wire source-han-sans (wqy-zenhei anchor missing in package/Config.in)" >&2
+    fi
+  fi
 }
 
 # GStreamer 1.28.5 needs host Meson ≥ 1.4; SDK ships 1.3.1.

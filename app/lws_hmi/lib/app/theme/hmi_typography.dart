@@ -57,33 +57,42 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     this.navigation = AppTypography.navigation,
   });
 
+  // Buttons (w600 unless noted). Font sizes are named so specialty chrome can
+  // alias the same ladder without copying literals.
+  static const buttonMiniFontSize = AppTypography.captionSize;
+  static const buttonSmallFontSize = AppTypography.supportingSize;
+  static const buttonMediumFontSize = AppTypography.controlSize;
+  static const buttonLargeFontSize = 24.0;
+  static const buttonHeroFontSize = 24.0;
+  static const buttonJumboFontSize = 32.0;
+
   static const _buttonMini = TextStyle(
-    fontSize: AppTypography.captionSize,
+    fontSize: buttonMiniFontSize,
     fontWeight: FontWeight.w600,
     height: 1.20,
   );
   static const _buttonSmall = TextStyle(
-    fontSize: AppTypography.supportingSize,
+    fontSize: buttonSmallFontSize,
     fontWeight: FontWeight.w600,
     height: 1.20,
   );
   static const _buttonMedium = TextStyle(
-    fontSize: AppTypography.controlSize,
+    fontSize: buttonMediumFontSize,
     fontWeight: FontWeight.w600,
     height: 1.20,
   );
   static const _buttonLarge = TextStyle(
-    fontSize: 24,
+    fontSize: buttonLargeFontSize,
     fontWeight: FontWeight.w600,
     height: 1.20,
   );
   static const _buttonHero = TextStyle(
-    fontSize: 24,
+    fontSize: buttonHeroFontSize,
     fontWeight: FontWeight.w700,
     height: 1.10,
   );
   static const _buttonJumbo = TextStyle(
-    fontSize: 32,
+    fontSize: buttonJumboFontSize,
     fontWeight: FontWeight.w700,
     height: 1.10,
   );

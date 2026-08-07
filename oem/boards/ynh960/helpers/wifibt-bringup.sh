@@ -88,6 +88,7 @@ resolve_module() {
 
 insmod_one() {
 	name="$1"
+	shift
 	if lsmod 2>/dev/null | grep -wq "$name"; then
 		log "$name already loaded"
 		return 0
@@ -96,8 +97,8 @@ insmod_one() {
 		log "missing $name.ko under:$MODULE_DIRS"
 		return 1
 	}
-	log "insmod $ko"
-	insmod "$ko" || {
+	log "insmod $ko $*"
+	insmod "$ko" "$@" || {
 		log "insmod failed: $ko"
 		return 1
 	}
@@ -274,8 +275,9 @@ bringup_aic_once() {
 	fi
 
 	# Innohi order: bsp → fdrv → btlpm
+	# custregd=0: use cfg80211 regulatory.db (not AIC permissive test domain)
 	insmod_one aic8800_bsp || return 1
-	insmod_one aic8800_fdrv || return 1
+	insmod_one aic8800_fdrv custregd=0 || return 1
 	insmod_one aic8800_btlpm || log "aic8800_btlpm optional / missing — continue"
 
 	if iface="$(wait_wlan)"; then

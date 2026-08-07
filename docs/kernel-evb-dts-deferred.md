@@ -38,7 +38,9 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 | `mdio_bus stmmac-1: MDIO device at address 0 is missing` / `__stmmac_open: Cannot attach to PHY` | EVB `phy@0` / wrong reset (UART5) | **P2.1** | `eth0` exists, cannot attach PHY | [`ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi): `gpio4 PB3` reset, `phy@1` `reg=<1>`; pin name with `10-gmac.link` |
 | `Failed to reset the dma` / `stmmac_hw_setup` after PHY `stmmac-1:01` OK | Still EVB **RGMII** (`init for RGMII`, 125 MHz); product is **RMII** like ynh512/518 | **P2.1** | PHY OK; `ip link set eth0 up` → Connection timed out | Same dtsi: `phy-mode="rmii"`, 50 MHz clocks, RMII pinctrl; drop `tx_delay`/`rx_delay` |
 | `pin gpio3-20 already requested by fe6b0000.serial; cannot claim for fe700020.pwm` | EVB `&uart7` (m1 on gpio3 PC4/PC5) vs customer LED `&pwm14`/`&pwm15` on same pads | **P2.1 fixed** | pwm14 probe failed (LED PWM only; panel BL is pwm4) | [`ynh960-uart7-pwm.dtsi`](../overlay/kernel/rockchip/ynh960-uart7-pwm.dtsi) disables unused `&uart7` |
-| `of_dma_request_slave_channel: dma-names … /serial@fe690000` | UART5 DT lacks DMA channel names | — | Harmless; UART falls back to IRQ mode (Modbus OK) | Optional: add `dmas`/`dma-names` later |
+| `of_dma_request_slave_channel: dma-names … /serial@fe690000` (also uart0/1/3) | SoC UART nodes have `dmas` but no `dma-names` | **fixed** | Was: IRQ fallback (Modbus/BT still OK) | [`ynh960-uart-dma.dtsi`](../overlay/kernel/rockchip/ynh960-uart-dma.dtsi): `dma-names = "tx", "rx"` on `&uart0`/`&uart1`/`&uart3`/`&uart5` |
+| `cfg80211: failed to load regulatory.db` | Built-in cfg80211 loads DB before rootfs | **fixed** | Was: silent fail then AIC custom domain | Embed via [`ynh960-wifibt.config`](../overlay/kernel/rockchip/ynh960-wifibt.config) `CONFIG_EXTRA_FIRMWARE` + [`overlay/kernel/firmware/`](../overlay/kernel/firmware/); also `BR2_PACKAGE_WIRELESS_REGDB` for `/lib/firmware` |
+| `PERMISSIVE CUSTOM REGULATORY RULES` | AIC `aic8800_fdrv` defaulted `custregd=1` (testing) | **fixed** | Was: driver ignored cfg80211 DB | Patch [`0014-aic8800-default-custregd-off.patch`](../overlay/kernel/patches/0014-aic8800-default-custregd-off.patch); OEM bringup also `insmod … custregd=0` |
 | `pin 114 already requested by fe690000.serial; switch mux 4 to GPIO` | EVB `&gmac1` `snps,reset-gpio = gpio3 RK_PC2` == UART5_TX_M1 | **P2.1 fixed** | Was: `/dev/ttyS5` TX count↑ but **no Modbus RX** (Android OK) | Same dtsi: drop EVB PC2 reset; use `gpio4 PB3` instead |
 | `own-gpio … pin gpio4-0 already requested by fe010000.ethernet` | `own-gpio` vs `gmac1` RGMII (gpio4 A0/A1/A2, gpio3 D7) | **P2 fixed** | Was: whole `own-gpio` group failed → side LEDs stuck | [`ynh960-own-gpio.dtsi`](../overlay/kernel/rockchip/ynh960-own-gpio.dtsi) drops USB_HOST_PWREN*/Relay from `own-gpio-pins` |
 | `fiq_debugger … IRQ fiq/wakeup not found` | EVB FIQ wiring absent; partial probe on ynh960 | — | Harmless; **keep node enabled** (`console=ttyFIQ0`) | Do not disable in evb-trim — serial goes quiet after ~2 s earlycon if disabled |
@@ -85,6 +87,15 @@ tr '\0' ' ' </proc/device-tree/rkvenc-opp-table/nvmem-cell-names 2>/dev/null; ec
 # Expect: leakage pvtm
 test -e /proc/device-tree/dmc/vop-pn-msch-readlatency && echo dmc-vop-pn=ok
 
+# UART DMA names + wireless regdb (after ynh960-uart-dma.dtsi + WIRELESS_REGDB):
+dmesg | grep -E 'of_dma_request_slave_channel|failed to load regulatory.db|PERMISSIVE CUSTOM REGULATORY'
+# Expect: empty
+tr '\0' ' ' </proc/device-tree/serial@fe690000/dma-names; echo
+# Expect: tx rx
+test -f /lib/firmware/regulatory.db && echo regdb=ok
+cat /sys/module/aic8800_fdrv/parameters/custregd
+# Expect: N
+
 # Other residual (until deferred row fixed):
 dmesg | grep -E 'fiq_debugger|own-gpio|stmmac-1'
 
@@ -98,6 +109,7 @@ verify-boot
 | Path | Role |
 |------|------|
 | `overlay/kernel/rockchip/ynh960-mpp-dmc.dtsi` | MPP: rkvdec NIU resets, rkvenc OPP leakage; DMC: `vop-pn-msch-readlatency` (log-only on RK3568) |
+| `overlay/kernel/rockchip/ynh960-uart-dma.dtsi` | UART: `dma-names = "tx", "rx"` on enabled uart0/1/3/5 |
 | `overlay/kernel/rockchip/ynh960-npu-vop.dtsi` | P3.3: bus-npu `pvtm-supply`, VOP `vop-supply`, RKNPU `interrupt-names` |
 | `overlay/kernel/rockchip/ynh960-evb-trim.dtsi` | P1 EVB node disable + CPU `cpu-supply` |
 | `overlay/kernel/rockchip/ynh960-own-gpio.dtsi` | P2: own-gpio pinmux fix vs gmac1 |
@@ -115,6 +127,7 @@ verify-boot
 
 | Date | Change |
 |------|--------|
+| 2026-08-07 | UART dma-names + embed `regulatory.db` + AIC `custregd=0` — silence dma-names / cfg80211 / PERMISSIVE regulatory warnings |
 | 2026-08-07 | `ynh960-mpp-dmc.dtsi` — rkvdec `niu_a`/`niu_h` resets, rkvenc OPP `log_leakage`, DMC `vop-pn-msch-readlatency` (RK3568 log-only) |
 | 2026-07-31 | P3.3: `ynh960-npu-vop.dtsi` — bus-npu `pvtm-supply`→`vdd_cpu_1`, VOP `vop-supply`→`vdd_logic`, RKNPU `interrupt-names=npu_irq`; document IOMMU mem-region noise as accepted |
 | 2026-07-15 | P2.1 USB keyboard userspace: xkeyboard-config + Compose stubs; flutter-pi patches 0001–0003 (arrows / NumLock LED / key-repeat); `FLUTTER_PI_APPLY_PACKAGE_PATCHES` for `SITE_METHOD=local` |

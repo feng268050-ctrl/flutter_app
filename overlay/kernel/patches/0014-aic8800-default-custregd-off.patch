@@ -1,0 +1,25 @@
+From: lws-hmi <devnull@localhost>
+Subject: [PATCH] aic8800: default custregd=0 to use cfg80211 regulatory.db
+
+MODULE_PARM_DESC already says Default: 0 / testing ONLY, but
+COMMON_PARAM left custregd enabled. With EXTRA_FIRMWARE regulatory.db
+embedded for early cfg80211, keep the vendor default off so boot no
+longer prints PERMISSIVE CUSTOM REGULATORY RULES.
+
+---
+ drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c b/drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c
+index 1111111..2222222 100644
+--- a/drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c
++++ b/drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c
+@@ -53,7 +53,7 @@
+ 	COMMON_PARAM(mutx, true, true)
+ 	COMMON_PARAM(mutx_on, true, true)
+ 	COMMON_PARAM(use_80, false, false)
+-	COMMON_PARAM(custregd, true, true)
++	COMMON_PARAM(custregd, false, false)
+ 	COMMON_PARAM(custchan, false, false)
+ 	COMMON_PARAM(roc_dur_max, 500, 500)
+ 	COMMON_PARAM(listen_itv, 0, 0)

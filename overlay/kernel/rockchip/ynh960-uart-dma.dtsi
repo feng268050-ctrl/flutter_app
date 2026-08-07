@@ -1,0 +1,25 @@
+// ynh960: name UART DMA channels so 8250/dw-apb can claim slave DMA.
+// Git SoT: overlay/kernel/rockchip/ynh960-uart-dma.dtsi
+//
+// SoC rk356x.dtsi lists dmas but omits dma-names on most UARTs. When the
+// driver requests a slave channel it logs:
+//   of_dma_request_slave_channel: dma-names property of node '/serial@…'
+//   missing or empty
+// and falls back to IRQ mode. Product enables uart0 / uart1 (BT) / uart3 /
+// uart5 (Modbus). Sibling Rockchip SoCs use dma-names = "tx", "rx".
+
+&uart0 {
+	dma-names = "tx", "rx";
+};
+
+&uart1 {
+	dma-names = "tx", "rx";
+};
+
+&uart3 {
+	dma-names = "tx", "rx";
+};
+
+&uart5 {
+	dma-names = "tx", "rx";
+};

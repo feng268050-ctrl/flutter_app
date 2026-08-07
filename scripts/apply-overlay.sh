@@ -258,6 +258,7 @@ sync_kernel_display_dts() {
     "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-uart-dma.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-npu-vop.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-mpp-dmc.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-rtc.dtsi" \
@@ -279,6 +280,7 @@ sync_kernel_display_dts() {
     "$OVERLAY/kernel/rockchip/ynh960-own-gpio.dtsi" "ynh960-own-gpio.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-uart5-gmac.dtsi" "ynh960-uart5-gmac.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-uart7-pwm.dtsi" "ynh960-uart7-pwm.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-uart-dma.dtsi" "ynh960-uart-dma.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-npu-vop.dtsi" "ynh960-npu-vop.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-mpp-dmc.dtsi" "ynh960-mpp-dmc.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-rtc.dtsi" "ynh960-rtc.dtsi" \
@@ -309,6 +311,27 @@ sync_kernel_config_fragments() {
   done
 }
 
+# Embed cfg80211 regulatory.db into the kernel Image (EXTRA_FIRMWARE_DIR=firmware).
+# Built-in cfg80211 requests the DB before rootfs is mounted.
+sync_kernel_firmware() {
+  local kernel fw_src fw_dst f
+  kernel="$(kernel_source_dir)"
+  fw_src="$OVERLAY/kernel/firmware"
+  fw_dst="$kernel/firmware"
+  if [[ ! -d "$fw_src" ]]; then
+    echo "WARNING: $fw_src missing; skip kernel firmware sync" >&2
+    return 0
+  fi
+  mkdir -p "$fw_dst"
+  for f in regulatory.db regulatory.db.p7s; do
+    if [[ -f "$fw_src/$f" ]]; then
+      install_file "$fw_src/$f" "$fw_dst/$f"
+    else
+      echo "WARNING: $fw_src/$f missing" >&2
+    fi
+  done
+}
+
 kernel_source_dir() {
   if [[ -d "$SDK/kernel/drivers/gpu/drm" ]]; then
     echo "$SDK/kernel"
@@ -332,6 +355,7 @@ apply_kernel_patches() {
     "drivers/net/phy/icplus.c"
     "drivers/pinctrl/pinctrl-rockchip.c"
     "drivers/mfd/rk808.c"
+    "drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c"
     # Restore from .lws-hmi.orig even with no active patch: keep vendor
     # `if (1) return -EINVAL` (PMIC RTC probe off). Do not re-add 0008.
     "drivers/rtc/rtc-rk808.c"
@@ -385,6 +409,7 @@ restore_kernel_patches() {
     "drivers/net/phy/icplus.c"
     "drivers/pinctrl/pinctrl-rockchip.c"
     "drivers/mfd/rk808.c"
+    "drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c"
     "drivers/rtc/rtc-rk808.c"
   )
   kernel="$(kernel_source_dir)"
@@ -958,6 +983,7 @@ fi
 run_platform_overlay() {
   sync_kernel_display_dts
   sync_kernel_config_fragments
+  sync_kernel_firmware
   apply_kernel_patches
   patch_mk_loader
   patch_mk_rootfs
@@ -970,6 +996,7 @@ run_platform_overlay() {
 sync_kernel_overlay_sources() {
   sync_kernel_display_dts
   sync_kernel_config_fragments
+  sync_kernel_firmware
 }
 
 if [[ "$platform_squash_only" == "1" ]]; then
@@ -1079,6 +1106,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-uart-dma.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-npu-vop.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-mpp-dmc.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi" \
@@ -1091,9 +1119,13 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$kernel_dts/ynh960-own-gpio.dtsi" \
         "$kernel_dts/ynh960-uart5-gmac.dtsi" \
         "$kernel_dts/ynh960-uart7-pwm.dtsi" \
+        "$kernel_dts/ynh960-uart-dma.dtsi" \
         "$kernel_dts/ynh960-npu-vop.dtsi" \
         "$kernel_dts/ynh960-mpp-dmc.dtsi" \
         "$kernel_dts/ynh960-panel-init.dtsi"
+    done
+    for kernel in "$SDK/kernel" "$SDK/kernel-6.1"; do
+      rm -f "$kernel/firmware/regulatory.db" "$kernel/firmware/regulatory.db.p7s"
     done
     restore_kernel_patches
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"

@@ -1738,10 +1738,18 @@ class _SettingsPageBlurPlate extends StatefulWidget {
 }
 
 class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
+  /// Owned clone of the scope's shared blurred capture. Must [dispose] — the
+  /// scope may free `_sharedBlurred` on the next acquire (IME frost / re-bake),
+  /// which would leave a non-cloned handle dead under [RawImage].
   ui.Image? _baked;
   bool _bakePending = false;
   int _bakeGen = 0;
   int _bakeRetries = 0;
+
+  void _dropBaked() {
+    _baked?.dispose();
+    _baked = null;
+  }
 
   @override
   void didChangeDependencies() {
@@ -1757,7 +1765,7 @@ class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
     if (widget.livePageBlur && !oldWidget.livePageBlur) {
       // Root became current again — drop static plate; live path owns blur.
       _bakeGen++;
-      _baked = null;
+      _dropBaked();
       _bakePending = false;
       _bakeRetries = 0;
       return;
@@ -1765,7 +1773,7 @@ class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
     if (!widget.livePageBlur &&
         (oldWidget.livePageBlur ||
             oldWidget.blurSigma != widget.blurSigma)) {
-      _baked = null;
+      _dropBaked();
       _bakeRetries = 0;
       _scheduleBake();
     }
@@ -1774,9 +1782,7 @@ class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
   @override
   void dispose() {
     _bakeGen++;
-    // [_baked] is a handle into [CyberBlurBackdropScope] shared capture —
-    // do not dispose here.
-    _baked = null;
+    _dropBaked();
     super.dispose();
   }
 
@@ -1827,9 +1833,9 @@ class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
           .clamp(0.25, dpr);
       // Sigma in capture-pixel space (same as CyberBackdropBlur firstFrame).
       final sigma = widget.blurSigma * scale;
-      ui.Image? image;
+      ui.Image? shared;
       try {
-        image = await scope.acquireBlurredCapture(
+        shared = await scope.acquireBlurredCapture(
           pixelRatio: scale,
           sigmaX: sigma,
           sigmaY: sigma,
@@ -1846,7 +1852,21 @@ class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
       if (!mounted || gen != _bakeGen || widget.livePageBlur) {
         return;
       }
-      if (image == null || image.width < 1 || image.height < 1) {
+      if (shared == null || shared.width < 1 || shared.height < 1) {
+        if (gen == _bakeGen && _bakeRetries < 12) {
+          _bakeRetries++;
+          _bakePending = false;
+          _scheduleBake(settlePasses: 1);
+        }
+        return;
+      }
+      // Own a clone so CyberBlurBackdropScope can dispose/replace its shared
+      // bitmap (nested IME frost, re-capture) without breaking this RawImage.
+      late final ui.Image owned;
+      try {
+        owned = shared.clone();
+      } catch (e) {
+        debugPrint('settings-blur-plate: clone failed: $e');
         if (gen == _bakeGen && _bakeRetries < 12) {
           _bakeRetries++;
           _bakePending = false;
@@ -1855,12 +1875,19 @@ class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
         return;
       }
       debugPrint(
-        'settings-blur-plate: baked ${image.width}x${image.height} '
+        'settings-blur-plate: baked ${owned.width}x${owned.height} '
         'sigma=${sigma.toStringAsFixed(1)} scale=${scale.toStringAsFixed(2)}',
       );
+      if (!mounted || gen != _bakeGen) {
+        owned.dispose();
+        return;
+      }
       setState(() {
-        _baked = image;
+        final previous = _baked;
+        _baked = owned;
         _bakeRetries = 0;
+        // RenderImage keeps its own clone handle; free our prior ownership.
+        previous?.dispose();
       });
     } catch (e) {
       debugPrint('settings-blur-plate: bake aborted: $e');

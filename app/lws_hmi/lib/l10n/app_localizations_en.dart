@@ -644,7 +644,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cloudServicesFooter =>
-      'Cloud services connect this device to LaserCyber Worker for remote binding, registration, uploads, and cloud commands when the network is available.';
+      'When enabled, this device can use LaserCyber cloud services for remote management and data sync whenever a network is available.';
 
   @override
   String get cloudServicesSummaryBoth => 'Cloud + LAN';
@@ -1357,7 +1357,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lanEnhancementFooter =>
-      'LAN enhancement runs local HTTP on port 5580 and mDNS discovery so phones and tools on the same network can find and manage this device.';
+      'When enabled, phones and computers on the same local network can find and manage this device.';
 
   @override
   String get lanEnhancementText => 'LAN Enhancement';

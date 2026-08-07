@@ -37,7 +37,7 @@ void main() {
   test('AppLocalizations exposes cloud services strings', () {
     expect(l10n.cloudServicesText, isNotEmpty);
     expect(l10n.lanEnhancementText, isNotEmpty);
-    expect(l10n.cloudServicesFooter, contains('Worker'));
-    expect(l10n.lanEnhancementFooter, contains('5580'));
+    expect(l10n.cloudServicesFooter, contains('LaserCyber'));
+    expect(l10n.lanEnhancementFooter, contains('local network'));
   });
 }

@@ -793,13 +793,19 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                               )
                             : Padding(
                                 padding: const EdgeInsets.fromLTRB(
-                                    16, 12, 16, 16),
+                                  ProcessModeDimens.engineerPanelHorizontalPad,
+                                  12,
+                                  ProcessModeDimens.engineerPanelHorizontalPad,
+                                  16,
+                                ),
                                 child: Row(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     Expanded(
-                                      flex: 1,
+                                      // 1 : φ ≈ 38.2% : 61.8% with the right panel.
+                                      flex: ProcessModeDimens
+                                          .engineerLeftPanelFlex,
                                       child: SizedBox(
                                         key: const ValueKey(
                                             'engineer-device-panel-container'),
@@ -818,9 +824,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                               ),
                                       ),
                                     ),
-                                    const SizedBox(width: 24),
+                                    const SizedBox(
+                                      width: ProcessModeDimens.engineerPanelGap,
+                                    ),
                                     Expanded(
-                                      flex: 2,
+                                      flex: ProcessModeDimens
+                                          .engineerRightPanelFlex,
                                       child: EngineerFrostPanel(
                                         key: const ValueKey(
                                             'engineer-parameters-panel'),

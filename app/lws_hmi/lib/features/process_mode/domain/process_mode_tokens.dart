@@ -322,8 +322,34 @@ abstract final class ProcessModeDimens {
   static const double engineerTabLabelSize = HmiTabMetrics.labelFontSize;
 
 
-  /// Left device panel — lws-ui `engineer_welding_left_panel_width`.
-  static const double engineerLeftPanelWidth = 460;
+  /// Horizontal inset around the Engineer device + parameters row.
+  static const double engineerPanelHorizontalPad = 16;
+
+  /// Gap between Engineer left device panel and right parameters panel.
+  static const double engineerPanelGap = 24;
+
+  /// Golden ratio φ ≈ 1.618 — Engineer left:right = 1:φ (≈ 38.2% : 61.8%).
+  static const double goldenRatio = 1.618;
+
+  /// Integer flex weights approximating 1 : [goldenRatio].
+  static const int engineerLeftPanelFlex = 1000;
+  static const int engineerRightPanelFlex = 1618;
+
+  /// Design-canvas left device panel width on 1280×800
+  /// (`1280 − 16×2 − 24` panel row × 1000/2618 ≈ 467.5).
+  ///
+  /// Alarm Log uses the same absolute width via [engineerLeftPanelWidthFor].
+  static const double engineerLeftPanelWidth = 467.5;
+
+  /// Engineer left (and Alarm Log) width for the current screen width.
+  static double engineerLeftPanelWidthFor(double screenWidth) {
+    final row = screenWidth -
+        engineerPanelHorizontalPad * 2 -
+        engineerPanelGap;
+    return row *
+        engineerLeftPanelFlex /
+        (engineerLeftPanelFlex + engineerRightPanelFlex);
+  }
 
   /// Flex weights for five engineer tabs (sum 1280, same as lws-ui `weightSum`).
   /// Cutting widened vs original Android art; the five `*_tab_bg` assets were

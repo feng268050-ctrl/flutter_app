@@ -8,24 +8,59 @@ import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
-  testWidgets('SettingsScaffold uses ProductPageStatusBar', (tester) async {
+  testWidgets('SettingsScaffold uses page title on Back and centered clock',
+      (tester) async {
+    // Push so canPop is true and CallBackHomeButton is shown.
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        locale: Locale('en'),
-        home: SettingsScaffold(
-          title: 'Wi‑Fi',
-          body: SizedBox.shrink(),
+        locale: const Locale('en'),
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      buildAppSlideRoute<void>(
+                        builder: (_) => const SettingsScaffold(
+                          title: 'Wi‑Fi',
+                          body: SizedBox.shrink(),
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('open'),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
     await tester.pump();
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(ProductPageStatusBar), findsOneWidget);
     expect(find.byType(SettingsStatusBarHairline), findsOneWidget);
     expect(find.byType(SettingsBlurredPageShell), findsOneWidget);
+
+    // Leading rail shows page title (not a fixed "Back" string).
+    final backBtn = tester.widget<CallBackHomeButton>(
+      find.byType(CallBackHomeButton),
+    );
+    expect(backBtn.label, 'Wi‑Fi');
+    expect(backBtn.useHomeIcon, isNull);
+    expect(backBtn.showEdgeAccent, isFalse);
+    expect(backBtn.expandWidth, isFalse);
+    expect(find.text('Back'), findsNothing);
+    // Full label visible (no ellipsis).
     expect(find.text('Wi‑Fi'), findsOneWidget);
+
+    // Clock is centered (title slot); only one clock in the bar.
     expect(find.byKey(const ValueKey('cyber-status-bar-clock')), findsOneWidget);
 
     // Match Quick / Engineer WorkModeStatusBarDimens.chromeLabelFontSize.

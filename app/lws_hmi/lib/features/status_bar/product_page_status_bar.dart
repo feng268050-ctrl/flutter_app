@@ -19,6 +19,8 @@ class ProductPageStatusBar extends StatelessWidget
     this.backEnabled = true,
     this.backLabel,
     this.backAccent = WorkModeAccent.weld,
+    this.useHomeIcon,
+    this.centerClock = false,
     this.actions,
     this.bottom,
     this.backgroundColor,
@@ -42,11 +44,19 @@ class ProductPageStatusBar extends StatelessWidget
   /// When set with [onBack], uses the product [CallBackHomeButton] (icon +
   /// label + accent press FX) instead of the Material arrow back.
   ///
-  /// Keep this label fixed (e.g. Home) when [title] changes with tabs.
+  /// Settings / Monitor pass the page or tab title here (not a fixed Back/Home
+  /// string) when [centerClock] is true.
   final String? backLabel;
 
   /// Press / edge accent for [CallBackHomeButton]. Defaults to product orange.
   final WorkModeAccent backAccent;
+
+  /// Forwarded to [CallBackHomeButton.useHomeIcon] (Settings/Monitor roots).
+  final bool? useHomeIcon;
+
+  /// Settings / Monitor: clock centered; trailing side is icons only.
+  final bool centerClock;
+
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
   final Color? backgroundColor;
@@ -79,23 +89,36 @@ class ProductPageStatusBar extends StatelessWidget
       bluetooth: bluetooth,
       builder: (context, items) {
         final useCallBackHome = onBack != null && backLabel != null;
+        // Settings / Monitor (centerClock): full title label, no orange edges.
+        final settingsMonitorBack = centerClock && useCallBackHome;
         final theme = Theme.of(context);
         final clockFg = foregroundColor ??
             theme.appBarTheme.foregroundColor ??
             theme.colorScheme.onSurface;
         CyberPageStatusBar buildBar() => CyberPageStatusBar(
-              title: title,
+              // When the clock is centered, AppBar title is the clock widget.
+              title: centerClock ? '' : title,
+              centerClock: centerClock,
               onBack: useCallBackHome ? null : onBack,
               leading: useCallBackHome
                   ? CallBackHomeButton(
                       accent: backAccent,
                       label: backLabel!,
                       enabled: backEnabled,
+                      useHomeIcon: useHomeIcon,
+                      expandWidth: !settingsMonitorBack,
+                      showEdgeAccent: !settingsMonitorBack,
                       onPressed: onBack!,
                     )
                   : null,
-              leadingWidth:
-                  useCallBackHome ? CallBackHomeButton.railWidth : null,
+              leadingWidth: useCallBackHome
+                  ? (settingsMonitorBack
+                      ? CallBackHomeButton.widthForLabel(
+                          backLabel!,
+                          textScaler: MediaQuery.textScalerOf(context),
+                        )
+                      : CallBackHomeButton.railWidth)
+                  : null,
               statusItems: items,
               actions: actions,
               bottom: bottom,

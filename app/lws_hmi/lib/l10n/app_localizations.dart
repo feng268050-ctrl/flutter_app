@@ -1931,6 +1931,18 @@ abstract class AppLocalizations {
   /// **'Engineer Mode Notice'**
   String get engineerModeEntryTitle;
 
+  /// No description provided for @engineerNumericValueInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid value'**
+  String get engineerNumericValueInvalid;
+
+  /// No description provided for @engineerNumericValueOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Value must be between {min} and {max}'**
+  String engineerNumericValueOutOfRange(String min, String max);
+
   /// No description provided for @environmentTemperatureAlarmContent.
   ///
   /// In en, this message translates to:
@@ -3467,11 +3479,29 @@ abstract class AppLocalizations {
   /// **'Gas Post-Flow'**
   String get paramGasPostFlow;
 
+  /// No description provided for @paramGasPostFlowDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Delay before shutting off gas after the laser turns off. Range: 0–10000 ms.'**
+  String get paramGasPostFlowDesc;
+
   /// No description provided for @paramGasPreFlow.
   ///
   /// In en, this message translates to:
   /// **'Gas Pre-Flow'**
   String get paramGasPreFlow;
+
+  /// No description provided for @paramGasPreFlowDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas pre-flow time before laser emission. Range: 0–10000 ms.'**
+  String get paramGasPreFlowDesc;
+
+  /// No description provided for @paramGenericRangeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Range: {min}–{max} {unit}.'**
+  String paramGenericRangeDesc(String min, String max, String unit);
 
   /// No description provided for @paramLaserDutyCycle.
   ///
@@ -3491,11 +3521,23 @@ abstract class AppLocalizations {
   /// **'Laser-Off Delay'**
   String get paramLaserOffDelay;
 
+  /// No description provided for @paramLaserOffDelayDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Delay between stopping wire feed and turning off the laser (for wire cutoff). Range: 0–1000 ms.'**
+  String get paramLaserOffDelayDesc;
+
   /// No description provided for @paramLaserPower.
   ///
   /// In en, this message translates to:
   /// **'Laser Power'**
   String get paramLaserPower;
+
+  /// No description provided for @paramLaserPowerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser output power. 100% equals the machine’s rated maximum (e.g. 1300 W). Range: 0–100%.'**
+  String get paramLaserPowerDesc;
 
   /// No description provided for @paramLightOffDelay.
   ///
@@ -3551,11 +3593,23 @@ abstract class AppLocalizations {
   /// **'Ramp-Down Time'**
   String get paramRampDownTime;
 
+  /// No description provided for @paramRampDownTimeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser ramp-down time in pulse mode. Range: 0–1000 ms.'**
+  String get paramRampDownTimeDesc;
+
   /// No description provided for @paramRampUpTime.
   ///
   /// In en, this message translates to:
   /// **'Ramp-Up Time'**
   String get paramRampUpTime;
+
+  /// No description provided for @paramRampUpTimeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser ramp-up time in pulse mode. Range: 0–1000 ms.'**
+  String get paramRampUpTimeDesc;
 
   /// No description provided for @paramRefeedDelay.
   ///
@@ -3563,11 +3617,23 @@ abstract class AppLocalizations {
   /// **'Re-Feed Delay'**
   String get paramRefeedDelay;
 
+  /// No description provided for @paramRefeedDelayDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Delay between retract and re-feed; helps prevent re-sticking. Range: 0–1000 ms.'**
+  String get paramRefeedDelayDesc;
+
   /// No description provided for @paramRefeedLength.
   ///
   /// In en, this message translates to:
   /// **'Re-Feed Length'**
   String get paramRefeedLength;
+
+  /// No description provided for @paramRefeedLengthDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-feed length to reach the optimal tip position. Range: {min}–{max} {unit}.'**
+  String paramRefeedLengthDesc(String min, String max, String unit);
 
   /// No description provided for @paramRetractLength.
   ///
@@ -3575,11 +3641,23 @@ abstract class AppLocalizations {
   /// **'Retract Length'**
   String get paramRetractLength;
 
+  /// No description provided for @paramRetractLengthDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire retract length after welding. Range: {min}–{max} {unit}.'**
+  String paramRetractLengthDesc(String min, String max, String unit);
+
   /// No description provided for @paramRetractSpeed.
   ///
   /// In en, this message translates to:
   /// **'Retract Speed'**
   String get paramRetractSpeed;
+
+  /// No description provided for @paramRetractSpeedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire retract speed; helps prevent re-sticking. Range: {min}–{max} {unit}.'**
+  String paramRetractSpeedDesc(String min, String max, String unit);
 
   /// No description provided for @paramScanFrequency.
   ///
@@ -3587,11 +3665,23 @@ abstract class AppLocalizations {
   /// **'Scan Frequency'**
   String get paramScanFrequency;
 
+  /// No description provided for @paramScanFrequencyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended scan frequency: {min}–{max} {unit}.'**
+  String paramScanFrequencyDesc(String min, String max, String unit);
+
   /// No description provided for @paramScanWidth.
   ///
   /// In en, this message translates to:
   /// **'Scan Width'**
   String get paramScanWidth;
+
+  /// No description provided for @paramScanWidthDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser scan width. Range: {min}–{max} {unit}.'**
+  String paramScanWidthDesc(String min, String max, String unit);
 
   /// No description provided for @paramSpotWeldDuration.
   ///
@@ -3599,11 +3689,23 @@ abstract class AppLocalizations {
   /// **'Spot Weld Duration'**
   String get paramSpotWeldDuration;
 
+  /// No description provided for @paramSpotWeldDurationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser-on duration for each spot weld. Range: 0–10000 ms.'**
+  String get paramSpotWeldDurationDesc;
+
   /// No description provided for @paramSpotWeldInterval.
   ///
   /// In en, this message translates to:
   /// **'Spot Weld Interval'**
   String get paramSpotWeldInterval;
+
+  /// No description provided for @paramSpotWeldIntervalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval between spot welds in burst mode. Range: 0–10000 ms.'**
+  String get paramSpotWeldIntervalDesc;
 
   /// No description provided for @paramSpotWeldingDurationCatalog.
   ///
@@ -3640,6 +3742,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wire Feed Speed'**
   String get paramWireFeedSpeed;
+
+  /// No description provided for @paramWireFeedSpeedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire feed speed. Range: {min}–{max} {unit}.'**
+  String paramWireFeedSpeedDesc(String min, String max, String unit);
 
   /// No description provided for @paramWireFeedingDelay.
   ///

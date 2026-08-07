@@ -980,6 +980,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get engineerModeEntryTitle => '工程师模式提示';
 
   @override
+  String get engineerNumericValueInvalid => '数值格式错误';
+
+  @override
+  String engineerNumericValueOutOfRange(String min, String max) {
+    return '取值必须在 $min–$max 之间';
+  }
+
+  @override
   String get environmentTemperatureAlarmContent =>
       '环境温度超出允许范围。请改善车间温控；若读数明显异常，请联系 LaserCyber 售后。';
 
@@ -1786,7 +1794,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paramGasPostFlow => '关气延时';
 
   @override
+  String get paramGasPostFlowDesc => '激光关闭后延时关气的时间，取值范围 0–10000 ms。';
+
+  @override
   String get paramGasPreFlow => '吹气延时';
+
+  @override
+  String get paramGasPreFlowDesc => '出光前提前送气的时间，取值范围 0–10000 ms。';
+
+  @override
+  String paramGenericRangeDesc(String min, String max, String unit) {
+    return '取值范围 $min–$max $unit。';
+  }
 
   @override
   String get paramLaserDutyCycle => '激光占空比';
@@ -1798,7 +1817,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paramLaserOffDelay => '关光延时';
 
   @override
+  String get paramLaserOffDelayDesc => '设置停止送丝与关闭激光之间的延时，用于切断焊丝。0–1000 ms';
+
+  @override
   String get paramLaserPower => '激光功率';
+
+  @override
+  String get paramLaserPowerDesc => '设置激光输出功率；100% 对应设备额定最大功率。焊接功率可在工艺允许范围内调节。';
 
   @override
   String get paramLightOffDelay => '关光延时';
@@ -1828,31 +1853,71 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paramRampDownTime => '功率缓降';
 
   @override
+  String get paramRampDownTimeDesc => '设置脉冲模式下的激光下降时间。0–1000 ms';
+
+  @override
   String get paramRampUpTime => '功率缓升';
+
+  @override
+  String get paramRampUpTimeDesc => '设置脉冲模式下的激光上升时间。0–1000 ms';
 
   @override
   String get paramRefeedDelay => '补丝延时';
 
   @override
+  String get paramRefeedDelayDesc => '设置补丝延时；回抽结束至再次送丝前的等待时间，可减少二次粘丝。0–1000 ms';
+
+  @override
   String get paramRefeedLength => '补丝长度';
+
+  @override
+  String paramRefeedLengthDesc(String min, String max, String unit) {
+    return '设置补丝长度；建议焊丝端部对齐红光指示位置，长度范围：$min–$max $unit。';
+  }
 
   @override
   String get paramRetractLength => '回抽长度';
 
   @override
+  String paramRetractLengthDesc(String min, String max, String unit) {
+    return '设置焊丝回抽长度；焊接完成后的回抽距离，可选范围：$min–$max $unit。';
+  }
+
+  @override
   String get paramRetractSpeed => '回抽速度';
+
+  @override
+  String paramRetractSpeedDesc(String min, String max, String unit) {
+    return '设置回抽速度；过慢不利于自动断丝，可选范围：$min–$max $unit。';
+  }
 
   @override
   String get paramScanFrequency => '摆动频率';
 
   @override
+  String paramScanFrequencyDesc(String min, String max, String unit) {
+    return '推荐的扫描频率范围：$min–$max $unit。';
+  }
+
+  @override
   String get paramScanWidth => '摆动宽度';
+
+  @override
+  String paramScanWidthDesc(String min, String max, String unit) {
+    return '设置激光扫描宽度，可选范围：$min–$max $unit。';
+  }
 
   @override
   String get paramSpotWeldDuration => '点焊持续';
 
   @override
+  String get paramSpotWeldDurationDesc => '设置单次点焊的出光持续时间，取值范围 0–10000 ms。';
+
+  @override
   String get paramSpotWeldInterval => '点焊间隔';
+
+  @override
+  String get paramSpotWeldIntervalDesc => '设置两次点焊之间的时间间隔，取值范围 0–10000 ms。';
 
   @override
   String get paramSpotWeldingDurationCatalog => '点焊时长';
@@ -1871,6 +1936,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get paramWireFeedSpeed => '送丝速度';
+
+  @override
+  String paramWireFeedSpeedDesc(String min, String max, String unit) {
+    return '送丝线速度可调范围：$min–$max $unit。';
+  }
 
   @override
   String get paramWireFeedingDelay => '送丝延时';
@@ -3839,6 +3909,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get engineerModeEntryTitle => '工程師模式提示';
 
   @override
+  String get engineerNumericValueInvalid => '數值格式錯誤';
+
+  @override
+  String engineerNumericValueOutOfRange(String min, String max) {
+    return '取值必須在 $min–$max 之間';
+  }
+
+  @override
   String get environmentTemperatureAlarmContent =>
       '環境溫度超出允許範圍。請改善車間溫控；若讀數明顯異常，請聯繫 LaserCyber 售後。';
 
@@ -4515,7 +4593,18 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get paramGasPostFlow => '延時關氣';
 
   @override
+  String get paramGasPostFlowDesc => '激光關閉後延時關氣的時間，取值範圍 0–10000 ms。';
+
+  @override
   String get paramGasPreFlow => '提前送氣';
+
+  @override
+  String get paramGasPreFlowDesc => '出光前提前送氣的時間，取值範圍 0–10000 ms。';
+
+  @override
+  String paramGenericRangeDesc(String min, String max, String unit) {
+    return '取值範圍 $min–$max $unit。';
+  }
 
   @override
   String get paramLaserDutyCycle => '激光佔空比';
@@ -4525,6 +4614,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get paramLaserOffDelay => '關光延時';
+
+  @override
+  String get paramLaserOffDelayDesc => '設置停止送絲與關閉激光之間的延時，用於切斷焊絲。0–1000 ms';
+
+  @override
+  String get paramLaserPowerDesc => '設置激光輸出功率；100% 對應設備額定最大功率。焊接功率可在工藝允許範圍內調節。';
 
   @override
   String get paramLightOffDelay => '關光延時';
@@ -4551,28 +4646,68 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get paramRampDownTime => '下降時間';
 
   @override
+  String get paramRampDownTimeDesc => '設置脈沖模式下的激光下降時間。0–1000 ms';
+
+  @override
   String get paramRampUpTime => '爬升時間';
+
+  @override
+  String get paramRampUpTimeDesc => '設置脈沖模式下的激光上升時間。0–1000 ms';
 
   @override
   String get paramRefeedDelay => '補絲延時';
 
   @override
+  String get paramRefeedDelayDesc => '設置補絲延時；回抽結束至再次送絲前的等待時間，可減少二次粘絲。0–1000 ms';
+
+  @override
   String get paramRefeedLength => '補絲長度';
+
+  @override
+  String paramRefeedLengthDesc(String min, String max, String unit) {
+    return '設置補絲長度；建議焊絲端部對齊紅光指示位置，長度範圍：$min–$max $unit。';
+  }
 
   @override
   String get paramRetractLength => '回抽長度';
 
   @override
+  String paramRetractLengthDesc(String min, String max, String unit) {
+    return '設置焊絲回抽長度；焊接完成後的回抽距離，可選範圍：$min–$max $unit。';
+  }
+
+  @override
+  String paramRetractSpeedDesc(String min, String max, String unit) {
+    return '設置回抽速度；過慢不利於自動斷絲，可選範圍：$min–$max $unit。';
+  }
+
+  @override
   String get paramScanFrequency => '掃描頻率';
+
+  @override
+  String paramScanFrequencyDesc(String min, String max, String unit) {
+    return '推薦的掃描頻率範圍：$min–$max $unit。';
+  }
 
   @override
   String get paramScanWidth => '掃描寬度';
 
   @override
+  String paramScanWidthDesc(String min, String max, String unit) {
+    return '設置激光掃描寬度，可選範圍：$min–$max $unit。';
+  }
+
+  @override
   String get paramSpotWeldDuration => '點焊時長';
 
   @override
+  String get paramSpotWeldDurationDesc => '設置單次點焊的出光持續時間，取值範圍 0–10000 ms。';
+
+  @override
   String get paramSpotWeldInterval => '點焊間隔';
+
+  @override
+  String get paramSpotWeldIntervalDesc => '設置兩次點焊之間的時間間隔，取值範圍 0–10000 ms。';
 
   @override
   String get paramSpotWeldingDurationCatalog => '點焊時長';
@@ -4591,6 +4726,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get paramWireFeedSpeed => '送絲速度';
+
+  @override
+  String paramWireFeedSpeedDesc(String min, String max, String unit) {
+    return '送絲線速度可調範圍：$min–$max $unit。';
+  }
 
   @override
   String get paramWireFeedingDelay => '送絲延時';

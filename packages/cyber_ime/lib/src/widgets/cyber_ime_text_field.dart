@@ -53,6 +53,7 @@ class CyberImeTextField extends StatefulWidget {
     this.action = CyberImeAction.done,
     this.onAction,
     this.style,
+    this.textAlign = TextAlign.start,
     this.backdropScope,
   });
 
@@ -69,6 +70,7 @@ class CyberImeTextField extends StatefulWidget {
   final CyberImeAction action;
   final VoidCallback? onAction;
   final TextStyle? style;
+  final TextAlign textAlign;
 
   /// Page scope to sample when this field is hosted by a dialog route.
   final CyberBlurBackdropScopeState? backdropScope;
@@ -290,6 +292,7 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
       autofocus: widget.autofocus,
       decoration: decoration,
       style: widget.style,
+      textAlign: widget.textAlign,
       onTap: () {
         if (_preferPhysical) {
           // Physical typing — do not TextInput.hide (keeps client / caret path).

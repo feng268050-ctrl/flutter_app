@@ -55,7 +55,7 @@ void main() {
         type,
         l10n,
       ).label,
-      'Gas pre-flow',
+      'Gas Pre-Flow',
     );
   });
 

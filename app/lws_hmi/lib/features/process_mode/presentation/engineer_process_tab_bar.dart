@@ -1,13 +1,15 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_primary_tab_content.dart';
 
 /// Engineer Mode process-type tab bar (lws-ui `EngineerTab`, five tabs).
 ///
-/// U2 skeleton: tab chrome + selection only; content panels are placeholders.
+/// Icon + label form one compact group centered in each flex cell; selection
+/// only changes color/weight and the cell underline.
 final class EngineerProcessTabBar extends StatelessWidget {
   const EngineerProcessTabBar({
     super.key,
@@ -78,10 +80,6 @@ final class _EngineerTabItem extends StatelessWidget {
     final activeColor = ProcessModeTokens.tabActiveColor(type);
     final labelColor =
         selected ? activeColor : ProcessModeTokens.tabInactiveText;
-    const iconSize = ProcessModeDimens.engineerTabIconSize;
-    // Left inset = top/bottom inset to the tab edge (same as ProductTopTabs).
-    final iconInset =
-        (ProcessModeDimens.engineerTabBarHeight - iconSize) / 2;
 
     return InkWell(
       key: ValueKey('engineer-tab-${type.name}'),
@@ -92,37 +90,19 @@ final class _EngineerTabItem extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: ProcessModeDimens.engineerTabUnderlineHeight,
-            child: Center(
-              child: Text(
-                ProcessModeLabels.engineerTabLabel(type, l10n),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: context.hmiTypography.processTabLabel.copyWith(
-                  color: labelColor,
-                  height: 1.0,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                ),
+          Center(
+            child: HmiPrimaryTabContent(
+              icon: Image.asset(
+                selected
+                    ? EngineerProcessTabs.iconOn(type)
+                    : EngineerProcessTabs.iconOff(type),
+                width: HmiTabMetrics.iconSize,
+                height: HmiTabMetrics.iconSize,
+                filterQuality: FilterQuality.medium,
               ),
-            ),
-          ),
-          Positioned(
-            left: iconInset,
-            top: iconInset,
-            width: iconSize,
-            height: iconSize,
-            child: Image.asset(
-              selected
-                  ? EngineerProcessTabs.iconOn(type)
-                  : EngineerProcessTabs.iconOff(type),
-              width: iconSize,
-              height: iconSize,
-              filterQuality: FilterQuality.medium,
+              label: ProcessModeLabels.engineerTabLabel(type, l10n),
+              color: labelColor,
+              selected: selected,
             ),
           ),
           Positioned(

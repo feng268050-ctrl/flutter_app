@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
@@ -311,15 +312,14 @@ abstract final class ProcessModeDimens {
 
   // --- Engineer tab bar (engineer_tab.xml, weightSum=1280) ---
 
-  static const double engineerTabBarHeight = 68;
-  /// Match Settings / Monitor / Product top tabs.
-  static const double engineerTabIconSize = 31;
-  static const double engineerTabIconGap = 13;
+  static const double engineerTabBarHeight = HmiTabMetrics.tabHeight;
+  static const double engineerTabIconSize = HmiTabMetrics.iconSize;
+  static const double engineerTabIconGap = HmiTabMetrics.iconLabelGap;
   static const double engineerTabUnderlineHeight = 1.5;
   static const double engineerTabUnderlineInset = 18;
 
-  /// Enlarged for the 1280×800 touch panel (lws-ui tabs used 12sp).
-  static const double engineerTabLabelSize = 20.0; // control / processTabLabel
+  /// Aliases [HmiTabMetrics.labelFontSize] (primary top-tab ladder).
+  static const double engineerTabLabelSize = HmiTabMetrics.labelFontSize;
 
 
   /// Left device panel — lws-ui `engineer_welding_left_panel_width`.

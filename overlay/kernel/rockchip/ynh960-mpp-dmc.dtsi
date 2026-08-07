@@ -1,0 +1,41 @@
+// ynh960: close EVB→product gaps for MPP rkvdec NIU resets, rkvenc OPP
+// leakage nvmem, and DMC vop-pn-msch-readlatency parse.
+// Git SoT: overlay/kernel/rockchip/ynh960-mpp-dmc.dtsi
+//
+// Live board (pre-fix):
+// - mpp_rkvdec2 logs shared_niu_a/h not found (SoC resets omit NIU;
+//   CRU has SRST_A/H_RKVDEC_NIU).
+// - mpp_rkvenc Failed to get leakage (rkvenc_opp_table has pvtm only;
+//   rkvdec_opp_table already wires log_leakage).
+// - rockchip-dmc failed to get vop pn to msch rl (always parses
+//   vop-pn-msch-readlatency; rk3568_dmc_init never sets
+//   set_msch_readlatency — table silences log only).
+//
+// Prefer exclusive niu_a/niu_h names (not shared_*) to match RK3328
+// and avoid reset-group machinery.
+
+&rkvdec {
+	resets = <&cru SRST_A_RKVDEC>, <&cru SRST_H_RKVDEC>,
+		 <&cru SRST_A_RKVDEC_NIU>, <&cru SRST_H_RKVDEC_NIU>,
+		 <&cru SRST_RKVDEC_CA>, <&cru SRST_RKVDEC_CORE>,
+		 <&cru SRST_RKVDEC_HEVC_CA>;
+	reset-names = "video_a", "video_h", "niu_a", "niu_h",
+		      "video_cabac", "video_core", "video_hevc_cabac";
+};
+
+&rkvenc_opp_table {
+	nvmem-cells = <&log_leakage>, <&core_pvtm>;
+	nvmem-cell-names = "leakage", "pvtm";
+	rockchip,leakage-voltage-sel = <
+		1   80    0
+		81  254   1
+	>;
+};
+
+&dmc {
+	/* Log silence only on RK3568 — no set_msch_readlatency callback. */
+	vop-pn-msch-readlatency = <
+		0	0x20
+		4	0x20
+	>;
+};

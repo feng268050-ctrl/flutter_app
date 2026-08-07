@@ -259,6 +259,7 @@ sync_kernel_display_dts() {
     "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-npu-vop.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-mpp-dmc.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-rtc.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-optee.dtsi"
   [[ -x "$gen_script" ]] || chmod +x "$gen_script"
@@ -279,6 +280,7 @@ sync_kernel_display_dts() {
     "$OVERLAY/kernel/rockchip/ynh960-uart5-gmac.dtsi" "ynh960-uart5-gmac.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-uart7-pwm.dtsi" "ynh960-uart7-pwm.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-npu-vop.dtsi" "ynh960-npu-vop.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-mpp-dmc.dtsi" "ynh960-mpp-dmc.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-rtc.dtsi" "ynh960-rtc.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-optee.dtsi" "ynh960-optee.dtsi"
 }
@@ -1078,6 +1080,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-npu-vop.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-mpp-dmc.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi" \
         "$kernel_dts/ynh960-display.dtsi" \
         "$kernel_dts/ynh960-linux-root.dtsi" \
@@ -1089,6 +1092,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$kernel_dts/ynh960-uart5-gmac.dtsi" \
         "$kernel_dts/ynh960-uart7-pwm.dtsi" \
         "$kernel_dts/ynh960-npu-vop.dtsi" \
+        "$kernel_dts/ynh960-mpp-dmc.dtsi" \
         "$kernel_dts/ynh960-panel-init.dtsi"
     done
     restore_kernel_patches

@@ -32,9 +32,9 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 | `rockchip,bus bus-npu … no regulator (pvtm)` / `failed to get OPP table` | EVB leaves `pvtm-supply` commented; driver asks OPP for consumer `pvtm` | **fixed P3.3** | Was: NPU **bus** OPP incomplete (`fde40000.npu` itself still ran) | [`ynh960-npu-vop.dtsi`](../overlay/kernel/rockchip/ynh960-npu-vop.dtsi): `pvtm-supply = <&vdd_cpu_1>` (not `vdd_npu`; that rail is already `rknpu-supply`). `Failed to get leakage` on bus-npu alone is expected (opp-table has no leakage cell) |
 | `RKNPU … IRQ npu_irq not found` | SoC `&rknpu` has `interrupts` but no `interrupt-names`; 6.1 driver tries by-name first | **fixed P3.3** | Was: error log then index fallback | [`ynh960-npu-vop.dtsi`](../overlay/kernel/rockchip/ynh960-npu-vop.dtsi): `interrupt-names = "npu_irq"` |
 | `RKNPU … can't request region` | IOMMU mode: `devm_ioremap_resource` EBUSY → driver remaps via `devm_ioremap` | — | Harmless noise when `iommu is enabled` | **Accepted**; do not “fix” via DT. Driver change only if we want quieter logs |
-| `mpp_rkvenc … Failed to get leakage` | Encoder OPP/leakage from EVB tables | **P5** (RTSP/record) | HW encode may be limited | Innohi/MPP dtsi for ynh960; enable when mediamtx path needs encode |
-| `mpp_rkvdec2 … shared_niu_a/h is not found` | Missing NIU reset lines in DT for rkvdec2 | **P5** | HW decode may fail | Add reset/clock resources per Rockchip MPP binding for ynh960 |
-| `rockchip-dmc … failed to get vop pn to msch rl` | DMC ↔ VOP bandwidth coupling (follows VOP regulator) | P2/P5 | DMC fixed freq still works | Re-check after P3.3 `vop-supply`; if still noisy, revisit DMC devfreq separately |
+| `mpp_rkvenc … Failed to get leakage` | `rkvenc_opp_table` had pvtm only; driver always looks up nvmem `"leakage"` | **fixed** | Was: OPP leakage binning incomplete | [`ynh960-mpp-dmc.dtsi`](../overlay/kernel/rockchip/ynh960-mpp-dmc.dtsi): `&rkvenc_opp_table` + `log_leakage` / `leakage-voltage-sel` (mirror rkvdec) |
+| `mpp_rkvdec2 … shared_niu_a/h is not found` | SoC `&rkvdec` resets omitted NIU; CRU has `SRST_A/H_RKVDEC_NIU` | **fixed** | Was: NIU reset skipped (`mpp_safe_*` no-op) | Same dtsi: `&rkvdec` full `resets`/`reset-names` with exclusive `niu_a`/`niu_h` |
+| `rockchip-dmc … failed to get vop pn to msch rl` | Probe always parses `vop-pn-msch-readlatency`; RK3399-era property | **fixed** (log only) | DMC already worked; **RK3568 has no `set_msch_readlatency`** so table does not apply MSCH RL | Same dtsi: `&dmc { vop-pn-msch-readlatency = <…>; }` — silence parse only |
 | `mdio_bus stmmac-1: MDIO device at address 0 is missing` / `__stmmac_open: Cannot attach to PHY` | EVB `phy@0` / wrong reset (UART5) | **P2.1** | `eth0` exists, cannot attach PHY | [`ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi): `gpio4 PB3` reset, `phy@1` `reg=<1>`; pin name with `10-gmac.link` |
 | `Failed to reset the dma` / `stmmac_hw_setup` after PHY `stmmac-1:01` OK | Still EVB **RGMII** (`init for RGMII`, 125 MHz); product is **RMII** like ynh512/518 | **P2.1** | PHY OK; `ip link set eth0 up` → Connection timed out | Same dtsi: `phy-mode="rmii"`, 50 MHz clocks, RMII pinctrl; drop `tx_delay`/`rx_delay` |
 | `pin gpio3-20 already requested by fe6b0000.serial; cannot claim for fe700020.pwm` | EVB `&uart7` (m1 on gpio3 PC4/PC5) vs customer LED `&pwm14`/`&pwm15` on same pads | **P2.1 fixed** | pwm14 probe failed (LED PWM only; panel BL is pwm4) | [`ynh960-uart7-pwm.dtsi`](../overlay/kernel/rockchip/ynh960-uart7-pwm.dtsi) disables unused `&uart7` |
@@ -76,6 +76,15 @@ dmesg | grep -E 'bus-npu|no regulator \(pvtm\)|no regulator \(vop\)|npu_irq'
 ls /sys/devices/platform/bus-npu/devfreq 2>/dev/null
 test -e /proc/device-tree/bus-npu/pvtm-supply && echo pvtm-supply=ok
 
+# MPP / DMC (after ynh960-mpp-dmc.dtsi):
+dmesg | grep -E 'Failed to get leakage|shared_niu|No niu|vop pn to msch'
+# Expect: empty for those three (bus-npu leakage alone may still appear)
+tr '\0' ' ' </proc/device-tree/rkvdec@fdf80200/reset-names; echo
+# Expect: … niu_a niu_h …
+tr '\0' ' ' </proc/device-tree/rkvenc-opp-table/nvmem-cell-names 2>/dev/null; echo
+# Expect: leakage pvtm
+test -e /proc/device-tree/dmc/vop-pn-msch-readlatency && echo dmc-vop-pn=ok
+
 # Other residual (until deferred row fixed):
 dmesg | grep -E 'fiq_debugger|own-gpio|stmmac-1'
 
@@ -88,6 +97,7 @@ verify-boot
 
 | Path | Role |
 |------|------|
+| `overlay/kernel/rockchip/ynh960-mpp-dmc.dtsi` | MPP: rkvdec NIU resets, rkvenc OPP leakage; DMC: `vop-pn-msch-readlatency` (log-only on RK3568) |
 | `overlay/kernel/rockchip/ynh960-npu-vop.dtsi` | P3.3: bus-npu `pvtm-supply`, VOP `vop-supply`, RKNPU `interrupt-names` |
 | `overlay/kernel/rockchip/ynh960-evb-trim.dtsi` | P1 EVB node disable + CPU `cpu-supply` |
 | `overlay/kernel/rockchip/ynh960-own-gpio.dtsi` | P2: own-gpio pinmux fix vs gmac1 |
@@ -105,6 +115,7 @@ verify-boot
 
 | Date | Change |
 |------|--------|
+| 2026-08-07 | `ynh960-mpp-dmc.dtsi` — rkvdec `niu_a`/`niu_h` resets, rkvenc OPP `log_leakage`, DMC `vop-pn-msch-readlatency` (RK3568 log-only) |
 | 2026-07-31 | P3.3: `ynh960-npu-vop.dtsi` — bus-npu `pvtm-supply`→`vdd_cpu_1`, VOP `vop-supply`→`vdd_logic`, RKNPU `interrupt-names=npu_irq`; document IOMMU mem-region noise as accepted |
 | 2026-07-15 | P2.1 USB keyboard userspace: xkeyboard-config + Compose stubs; flutter-pi patches 0001–0003 (arrows / NumLock LED / key-repeat); `FLUTTER_PI_APPLY_PACKAGE_PATCHES` for `SITE_METHOD=local` |
 | 2026-07-15 | P2.1 USB keyboard: re-enable `usbhost_dwc3` + `u2phy0_host` for 1 mm expansion; DWC3 dual-role; restore `USB_HOST_PWREN*` under RMII |

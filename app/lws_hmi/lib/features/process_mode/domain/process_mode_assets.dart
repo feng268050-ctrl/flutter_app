@@ -28,7 +28,6 @@ abstract final class ProcessModeAssets {
 
   /// Circular pick chrome used by gear / thickness (U3).
   static const circleBorder = 'assets/process/quick_model_circle_border.webp';
-  static const circleCenter = 'assets/process/quick_model_circle_center.webp';
   static const circleSplitBorder =
       'assets/process/quick_model_circle_split_border.webp';
   static const circleSplitBorderTop =
@@ -58,7 +57,6 @@ abstract final class ProcessModeAssets {
   static const cncConnectError = 'assets/process/connect_error.webp';
   static const cncBlueLink = 'assets/process/blue_link.webp';
   static const cncExitBtn = 'assets/process/cnc_exit_btn.webp';
-  static const cncDialogBtn = 'assets/process/cnc_dialog_btn.webp';
 
   /// Laser-enable Important Reminder (lws-ui open_laser / nozzle_* / fsr_*).
   static const laserReminderProtection =

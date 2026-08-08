@@ -15,6 +15,20 @@ void main() {
     expect(country, lessThan(language));
   });
 
+  test('Common Settings source lists Text Size between Display and Sound', () {
+    final src = File(
+      'lib/features/settings/presentation/tabs/common_settings_tab.dart',
+    ).readAsStringSync();
+    final display = src.indexOf('l10n.screenSettings');
+    final textSize = src.indexOf('l10n.textSizeSettingText');
+    final sound = src.indexOf('l10n.soundSettings');
+    expect(display, greaterThan(-1));
+    expect(textSize, greaterThan(-1));
+    expect(sound, greaterThan(-1));
+    expect(display, lessThan(textSize));
+    expect(textSize, lessThan(sound));
+  });
+
   test('full ISO catalog defaults to US with non-China NTP', () {
     expect(RegionCountryCatalog.defaultCountry, 'US');
     expect(RegionCountryCatalog.supportedCodes.length, greaterThanOrEqualTo(240));

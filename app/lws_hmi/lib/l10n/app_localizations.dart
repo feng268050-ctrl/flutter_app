@@ -4895,6 +4895,42 @@ abstract class AppLocalizations {
   /// **'Unit'**
   String get unitSettingText;
 
+  /// No description provided for @textSizeOptionLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get textSizeOptionLarge;
+
+  /// No description provided for @textSizeOptionMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get textSizeOptionMedium;
+
+  /// No description provided for @textSizeOptionSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get textSizeOptionSmall;
+
+  /// No description provided for @textSizePersistedFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how large text appears on this device. Display numbers and charts use a milder scale.'**
+  String get textSizePersistedFooter;
+
+  /// No description provided for @textSizePreferenceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size settings are temporarily unavailable.'**
+  String get textSizePreferenceUnavailable;
+
+  /// No description provided for @textSizeSettingText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Size'**
+  String get textSizeSettingText;
+
   /// No description provided for @uploadText.
   ///
   /// In en, this message translates to:

@@ -177,7 +177,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
           child: Text(
             title,
             textAlign: TextAlign.center,
-            style: context.hmiTypography.importantDialogTitle.copyWith(
+            style: context.hmiTypography.safetyTipTitle.copyWith(
               color: CyberColors.textPrimary,
               fontWeight: FontWeight.w700,
               height: 1.15,
@@ -208,7 +208,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
               child: WordBoundaryBody(
                 text: content,
                 sectionGap: 20,
-                style: context.hmiTypography.navigation.copyWith(
+                style: context.hmiTypography.safetyTipBody.copyWith(
                   color: CyberColors.textPrimary,
                   height: 1.4,
                   fontWeight: FontWeight.w400,

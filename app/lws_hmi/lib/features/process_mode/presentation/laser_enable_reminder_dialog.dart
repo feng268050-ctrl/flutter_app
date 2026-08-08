@@ -6,7 +6,6 @@ import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -86,7 +85,7 @@ final class _LaserEnableReminderBodyState
         Text(
           l10n.laserEnableReminderTitle,
           textAlign: TextAlign.center,
-          style: context.hmiTypography.navigation.copyWith(
+          style: context.hmiTypography.reminderTitle.copyWith(
             color: _titleDark,
             fontWeight: FontWeight.w700,
             height: 1.1,
@@ -158,8 +157,7 @@ final class _LaserEnableReminderBodyState
             label: Text(
               l10n.dontShowAgainThisSession,
               textAlign: TextAlign.center,
-              style: context.hmiTypography.sectionTitle.copyWith(
-                fontSize: 26,
+              style: context.hmiTypography.dialogOptionLabel.copyWith(
                 color: _labelMuted,
                 height: 1.0,
                 decoration: TextDecoration.none,
@@ -187,11 +185,6 @@ final class _ReminderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Title uses [HmiTypography.navigation]; tip copy is one ladder step below.
-    final tipSize = AppTypography.tipBodySizeForTitle(
-      context.hmiTypography.navigation.fontSize ??
-          AppTypography.navigationSize,
-    );
     return Column(
       children: [
         SizedBox(
@@ -220,8 +213,7 @@ final class _ReminderCard extends StatelessWidget {
             : Text(
                 tip!,
                 textAlign: TextAlign.center,
-                style: context.hmiTypography.caption.copyWith(
-                  fontSize: tipSize,
+                style: context.hmiTypography.reminderBody.copyWith(
                   color: _tipDark,
                   height: 1.25,
                   fontWeight: FontWeight.w500,

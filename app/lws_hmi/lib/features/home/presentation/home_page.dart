@@ -28,6 +28,7 @@ import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -368,7 +369,14 @@ class _HomePageState extends State<HomePage> with RouteAware {
           final sx = w / _kDesignW;
           final sy = h / _kDesignH;
           final qaScale = (sx + sy) / 2;
-          final qaLabelSize = homeQuickActionLabelFontSize(_kQaInner * qaScale);
+          final qaScaler = HmiTextScale.quickActionTextScalerOf(context);
+          final qaLabelSize = homeQuickActionLabelFontSize(
+            _kQaInner * qaScale,
+            textScaler: qaScaler,
+          );
+          final displayFactor = HmiTextScale.displayFactorForReading(
+            HmiTextScale.readingFactorOf(context),
+          );
           // Wallpaper/GIF stack stays inside CyberBlurBackdropTarget (sibling capture).
           return CyberBlurBackdropScope(
             child: Stack(
@@ -427,13 +435,21 @@ class _HomePageState extends State<HomePage> with RouteAware {
                   height: 225 * sy,
                   child: Align(
                     alignment: Alignment.topCenter,
-                    child: HomeClock(
-                      fontSize: HmiDisplayTypography.clockSize * sx,
-                      sampleMode: CyberBlurSampleMode.realtime,
-                      now: () => AppScope.of(context).wallClock.now,
-                      listenable: AppScope.of(context).wallClock,
-                      use24HourFormat:
-                          AppScope.of(context).wallClock.use24HourFormat,
+                    // Display chrome: apply clamped factor into fontSize; block
+                    // ambient reading TextScaler so date/glyph Text cannot re-scale.
+                    child: MediaQuery(
+                      data: MediaQuery.of(context).copyWith(
+                        textScaler: TextScaler.noScaling,
+                      ),
+                      child: HomeClock(
+                        fontSize:
+                            HmiDisplayTypography.clockSize * sx * displayFactor,
+                        sampleMode: CyberBlurSampleMode.realtime,
+                        now: () => AppScope.of(context).wallClock.now,
+                        listenable: AppScope.of(context).wallClock,
+                        use24HourFormat:
+                            AppScope.of(context).wallClock.use24HourFormat,
+                      ),
                     ),
                   ),
                 ),

@@ -217,23 +217,22 @@ class _CyberImeNumericInputDialogBodyState
     return true;
   }
 
-  static const _titleSize = 37.0;
-
   @override
   Widget build(BuildContext context) {
     final description = widget.description;
     final typography = context.hmiTypography;
-    final titleStyle = TextStyle(
+    final titleSize =
+        typography.numericDialogTitle.fontSize ??
+        HmiTypography.numericDialogTitleSize;
+    final titleStyle = typography.numericDialogTitle.copyWith(
       color: CyberColors.textPrimary,
-      fontSize: _titleSize,
       fontWeight: FontWeight.w700,
       height: 1.15,
-      letterSpacing: 0.02 * _titleSize,
+      letterSpacing: 0.02 * titleSize,
       decoration: TextDecoration.none,
     );
-    final descriptionStyle = typography.body.copyWith(
+    final descriptionStyle = typography.numericDialogDescription.copyWith(
       color: CyberColors.textSecondary,
-      fontSize: 29,
       height: 1.25,
       fontWeight: FontWeight.w400,
       decoration: TextDecoration.none,
@@ -292,9 +291,8 @@ class _CyberImeNumericInputDialogBodyState
                     session: widget.session,
                     backdropScope: widget.backdropScope,
                     textAlign: TextAlign.center,
-                    style: typography.sectionTitle.copyWith(
+                    style: typography.numericInputValue.copyWith(
                       color: CyberColors.textPrimary,
-                      fontSize: 33,
                       fontWeight: FontWeight.w500,
                     ),
                     decoration: InputDecoration(
@@ -360,8 +358,8 @@ final class _StepButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            fontSize: 41,
+          style: context.hmiTypography.numericStepperGlyph.copyWith(
+            color: CyberColors.textPrimary,
             fontWeight: FontWeight.w500,
             height: 1,
           ),

@@ -558,9 +558,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   /// When embedder DPR is ~1 (Weston path), scale the widget tree to match the
   /// existing simulator's physical density.
-  Widget _matchFlutterPiDensity(BuildContext context, Widget? child) {
+  ///
+  /// [mq] is the app [MediaQueryData] (24h + textScaler already applied).
+  /// Density may rewrite size / DPR only — never drop textScaler or 24h.
+  Widget _matchFlutterPiDensity(MediaQueryData mq, Widget? child) {
     final content = child ?? const SizedBox.shrink();
-    final mq = MediaQuery.of(context);
     final dpr = mq.devicePixelRatio;
     final isSimulator = widget.boardProfile.info.boardId == 'sim';
     final targetDpr = isSimulator
@@ -598,19 +600,23 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   Widget _appBuilder(BuildContext context, Widget? child) {
     return ListenableBuilder(
-      listenable: _services.wallClock,
+      listenable: Listenable.merge([
+        _services.wallClock,
+        _commonSettingsStore,
+      ]),
       builder: (context, _) {
-        final mq = MediaQuery.of(context);
+        final appMq = MediaQuery.of(context).copyWith(
+          alwaysUse24HourFormat: _services.wallClock.use24HourFormat,
+          textScaler: TextScaler.linear(_commonSettingsStore.textSize.scale),
+        );
         return MediaQuery(
-          data: mq.copyWith(
-            alwaysUse24HourFormat: _services.wallClock.use24HourFormat,
-          ),
+          data: appMq,
           child: SystemStatusOverlayHost(
             store: _miscSettingsStore,
             child: GpioLedOverlayHost(
               // P3.2 QEMU / sim OEM only — never on ynh960 (or other) hardware.
               enabled: widget.boardProfile.info.boardId == 'sim',
-              child: _matchFlutterPiDensity(context, child),
+              child: _matchFlutterPiDensity(appMq, child),
             ),
           ),
         );

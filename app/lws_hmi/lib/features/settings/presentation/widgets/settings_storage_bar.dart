@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/settings/application/storage_capacity.dart';
-import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// iOS-style segmented capacity bar for Device Information storage group.
@@ -36,9 +35,8 @@ class SettingsStorageBar extends StatelessWidget {
     final captionStyle = typography.settingsRowValue.copyWith(
       color: CyberColors.textSecondary,
     );
-    final legendStyle = typography.supporting.copyWith(
+    final legendStyle = typography.caption.copyWith(
       color: CyberColors.textSecondary,
-      fontSize: 14,
     );
 
     return Padding(

@@ -19,17 +19,24 @@ class WordBoundaryLabel extends StatelessWidget {
   /// Gap between word chips. Defaults to the painted width of `' '`.
   final double? spacing;
 
-  /// Painted width of a single space under [style] (LTR).
-  static double spaceWidth(TextStyle style) {
-    return _measureWidth(' ', style);
+  /// Painted width of a single space under [style] + [textScaler] (LTR).
+  static double spaceWidth(
+    TextStyle style, {
+    TextScaler textScaler = TextScaler.noScaling,
+  }) {
+    return _measureWidth(' ', style, textScaler);
   }
 
-  static double _measureWidth(String text, TextStyle style) {
+  static double _measureWidth(
+    String text,
+    TextStyle style,
+    TextScaler textScaler,
+  ) {
     final painter = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
       maxLines: 1,
-      textScaler: TextScaler.noScaling,
+      textScaler: textScaler,
     )..layout();
     return painter.width;
   }
@@ -47,12 +54,13 @@ class WordBoundaryLabel extends StatelessWidget {
     required TextStyle style,
     required double maxWidth,
     required int maxLines,
+    TextScaler textScaler = TextScaler.noScaling,
     double? spacing,
   }) {
     if (words.isEmpty || maxLines < 1) {
       return const [];
     }
-    final gap = spacing ?? spaceWidth(style);
+    final gap = spacing ?? spaceWidth(style, textScaler: textScaler);
     final lines = <List<String>>[];
     var current = <String>[];
     var currentWidth = 0.0;
@@ -67,7 +75,7 @@ class WordBoundaryLabel extends StatelessWidget {
     }
 
     for (final word in words) {
-      final wordW = _measureWidth(word, style);
+      final wordW = _measureWidth(word, style, textScaler);
       final addW = current.isEmpty ? wordW : gap + wordW;
       if (current.isNotEmpty && currentWidth + addW > maxWidth + 0.5) {
         pushCurrent();
@@ -112,6 +120,7 @@ class WordBoundaryLabel extends StatelessWidget {
       );
     }
 
+    final textScaler = MediaQuery.textScalerOf(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxW = constraints.maxWidth;
@@ -130,6 +139,7 @@ class WordBoundaryLabel extends StatelessWidget {
           style: style,
           maxWidth: maxW,
           maxLines: maxLines,
+          textScaler: textScaler,
           spacing: spacing,
         );
         return Column(
@@ -191,20 +201,23 @@ class WordBoundaryBody extends StatelessWidget {
       children: [
         for (var i = 0; i < sections.length; i++) ...[
           if (i > 0) SizedBox(height: sectionGap),
-          _section(sections[i], hardLineGap),
+          _section(context, sections[i], hardLineGap),
         ],
       ],
     );
   }
 
-  Widget _section(String section, double hardLineGap) {
+  Widget _section(BuildContext context, String section, double hardLineGap) {
     final lines = section
         .split('\n')
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)
         .toList(growable: false);
     if (lines.length <= 1) {
-      return _WordBoundaryLine(text: lines.isEmpty ? section : lines.first, style: style);
+      return _WordBoundaryLine(
+        text: lines.isEmpty ? section : lines.first,
+        style: style,
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -238,8 +251,9 @@ final class _WordBoundaryLine extends StatelessWidget {
     if (words.length == 1) {
       return Text(text, style: style);
     }
+    final textScaler = MediaQuery.textScalerOf(context);
     return Wrap(
-      spacing: WordBoundaryLabel.spaceWidth(style),
+      spacing: WordBoundaryLabel.spaceWidth(style, textScaler: textScaler),
       runSpacing: 0,
       children: [
         for (final word in words)

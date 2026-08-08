@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/features/settings/application/app_text_size.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 
 void main() {
@@ -16,12 +17,13 @@ void main() {
     expect(store.unit, CommonSettingsStore.defaultUnit);
     expect(store.country, CommonSettingsStore.defaultCountry);
     expect(store.country, 'US');
+    expect(store.textSize, AppTextSize.medium);
     expect(store.hadPersistedCountry, isFalse);
     expect(File('${dir.path}/common-settings.json').existsSync(), isFalse);
     await dir.delete(recursive: true);
   });
 
-  test('JSON round-trip for language unit and country', () async {
+  test('JSON round-trip for language unit country and textSize', () async {
     final dir = await Directory.systemTemp.createTemp('common-');
     final path = '${dir.path}/common-settings.json';
     final store = CommonSettingsStore(preferencePath: path);
@@ -29,19 +31,38 @@ void main() {
     await store.setLanguage(CommonSettingsStore.languageZhCn);
     await store.setUnit(CommonSettingsStore.unitImperial);
     await store.setCountry('DE');
+    await store.setTextSize(AppTextSize.large);
 
     final again = CommonSettingsStore(preferencePath: path);
     again.warmRead();
     expect(again.language, CommonSettingsStore.languageZhCn);
     expect(again.unit, CommonSettingsStore.unitImperial);
     expect(again.country, 'DE');
+    expect(again.textSize, AppTextSize.large);
     expect(again.hadPersistedCountry, isTrue);
 
     final decoded = jsonDecode(await File(path).readAsString()) as Map;
     expect(decoded['language'], 'zh-CN');
     expect(decoded['unit'], 'Imperial');
     expect(decoded['country'], 'DE');
+    expect(decoded['textSize'], 'large');
 
+    await dir.delete(recursive: true);
+  });
+
+  test('missing textSize key defaults to medium', () async {
+    final dir = await Directory.systemTemp.createTemp('common-');
+    final path = '${dir.path}/common-settings.json';
+    await File(path).writeAsString(
+      jsonEncode({
+        'language': 'en-US',
+        'unit': 'Metric',
+        'country': 'US',
+      }),
+    );
+    final store = CommonSettingsStore(preferencePath: path);
+    store.warmRead();
+    expect(store.textSize, AppTextSize.medium);
     await dir.delete(recursive: true);
   });
 
@@ -77,6 +98,7 @@ void main() {
     expect(store.language, CommonSettingsStore.defaultLanguage);
     expect(store.unit, CommonSettingsStore.defaultUnit);
     expect(store.country, CommonSettingsStore.defaultCountry);
+    expect(store.textSize, AppTextSize.medium);
     await dir.delete(recursive: true);
   });
 
@@ -84,13 +106,19 @@ void main() {
     final dir = await Directory.systemTemp.createTemp('common-');
     final path = '${dir.path}/common-settings.json';
     await File(path).writeAsString(
-      jsonEncode({'language': 'FR', 'unit': 'Stone', 'country': 'XX'}),
+      jsonEncode({
+        'language': 'FR',
+        'unit': 'Stone',
+        'country': 'XX',
+        'textSize': 'huge',
+      }),
     );
     final store = CommonSettingsStore(preferencePath: path);
     store.warmRead();
     expect(store.language, CommonSettingsStore.defaultLanguage);
     expect(store.unit, CommonSettingsStore.defaultUnit);
     expect(store.country, CommonSettingsStore.defaultCountry);
+    expect(store.textSize, AppTextSize.medium);
     expect(store.hadPersistedCountry, isTrue);
     await dir.delete(recursive: true);
   });
@@ -118,6 +146,14 @@ void main() {
     );
     expect(CommonSettingsStore.normalizeCountry('de'), 'DE');
     expect(CommonSettingsStore.normalizeCountry('nope'), 'US');
+    expect(
+      CommonSettingsStore.normalizeTextSize('large'),
+      AppTextSize.large,
+    );
+    expect(
+      CommonSettingsStore.normalizeTextSize('nope'),
+      AppTextSize.medium,
+    );
   });
 
   test('language endonyms are not locale-translated', () {

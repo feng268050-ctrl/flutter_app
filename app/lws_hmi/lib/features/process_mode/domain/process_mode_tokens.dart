@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
@@ -318,8 +319,8 @@ abstract final class ProcessModeDimens {
   static const double engineerTabUnderlineHeight = 1.5;
   static const double engineerTabUnderlineInset = 18;
 
-  /// Aliases [HmiTabMetrics.labelFontSize] (primary top-tab ladder).
-  static const double engineerTabLabelSize = HmiTabMetrics.labelFontSize;
+  /// Aliases [AppTypography.navigationSize] (primary top-tab label SoT).
+  static const double engineerTabLabelSize = AppTypography.navigationSize;
 
 
   /// Horizontal inset around the Engineer device + parameters row.

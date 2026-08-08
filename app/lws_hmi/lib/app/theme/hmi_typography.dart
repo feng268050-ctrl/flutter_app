@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 
 /// Role-oriented text styles for FrostUI 100% baseline ([ThemeExtension]).
 ///
@@ -39,16 +40,30 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     this.metricLabel = AppTypography.control,
     this.metricValue = AppTypography.metricValue,
     this.metricUnit = AppTypography.supporting,
-    this.dashboardValue = _dashboardValue,
-    this.clock = _clock,
+    this.dashboardValue = HmiDisplayTypography.dashboardValue,
+    this.clock = HmiDisplayTypography.clock,
     this.statusBarLabel = AppTypography.control,
     this.statusBarAction = AppTypography.navigation,
 
-    // Dialogs
+    // Dialogs / tips
     this.dialogTitle = AppTypography.dialogTitle,
+    this.dialogBody = AppTypography.pageTitle,
     this.importantDialogTitle = AppTypography.largeDialogTitle,
+    this.importantDialogBody = AppTypography.dialogTitle,
+    this.dialogOptionLabel = _dialogOptionLabel,
     this.criticalTitle = AppTypography.criticalTitle,
     this.criticalBody = AppTypography.pageTitle,
+    this.engineerTipTitle = AppTypography.criticalTitle,
+    this.engineerTipBody = AppTypography.largeDialogTitle,
+    this.safetyTipTitle = AppTypography.largeDialogTitle,
+    this.safetyTipBody = AppTypography.navigation,
+    this.reminderTitle = AppTypography.navigation,
+    this.reminderBody = AppTypography.sectionTitle,
+    this.formDialogTitle = _formDialogTitle,
+    this.numericDialogTitle = _numericDialogTitle,
+    this.numericDialogDescription = _numericDialogDescription,
+    this.numericInputValue = _numericInputValue,
+    this.numericStepperGlyph = _numericStepperGlyph,
 
     // Legacy aliases (map onto semantic roles)
     this.cardTitle = AppTypography.sectionTitle,
@@ -63,8 +78,20 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
   static const buttonSmallFontSize = AppTypography.supportingSize;
   static const buttonMediumFontSize = AppTypography.controlSize;
   static const buttonLargeFontSize = 24.0;
+
+  /// Frozen Medium 100% Hero label size (product baseline).
   static const buttonHeroFontSize = 24.0;
   static const buttonJumboFontSize = 32.0;
+
+  /// “Don't show again” / dialog option labels (off ladder).
+  static const dialogOptionLabelSize = 26.0;
+
+  /// Process-library / numeric frost dialog titles (off ladder).
+  static const formDialogTitleSize = 37.0;
+  static const numericDialogTitleSize = 37.0;
+  static const numericDialogDescriptionSize = 29.0;
+  static const numericInputValueSize = 33.0;
+  static const numericStepperGlyphSize = 41.0;
 
   static const _buttonMini = TextStyle(
     fontSize: buttonMiniFontSize,
@@ -106,17 +133,35 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     fontWeight: FontWeight.w600,
     height: 1.05,
   );
-  static const _dashboardValue = TextStyle(
-    fontSize: 68,
-    fontWeight: FontWeight.w500,
+  static const _dialogOptionLabel = TextStyle(
+    fontSize: dialogOptionLabelSize,
+    fontWeight: FontWeight.w400,
     height: 1.0,
-    fontFeatures: [FontFeature.tabularFigures()],
   );
-  static const _clock = TextStyle(
-    fontSize: 120,
+  static const _formDialogTitle = TextStyle(
+    fontSize: formDialogTitleSize,
+    fontWeight: FontWeight.w700,
+    height: 1.15,
+  );
+  static const _numericDialogTitle = TextStyle(
+    fontSize: numericDialogTitleSize,
+    fontWeight: FontWeight.w700,
+    height: 1.15,
+  );
+  static const _numericDialogDescription = TextStyle(
+    fontSize: numericDialogDescriptionSize,
+    fontWeight: FontWeight.w400,
+    height: 1.25,
+  );
+  static const _numericInputValue = TextStyle(
+    fontSize: numericInputValueSize,
+    fontWeight: FontWeight.w500,
+    height: 1.20,
+  );
+  static const _numericStepperGlyph = TextStyle(
+    fontSize: numericStepperGlyphSize,
     fontWeight: FontWeight.w500,
     height: 1.0,
-    fontFeatures: [FontFeature.tabularFigures()],
   );
 
   // Page and content
@@ -145,7 +190,7 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
   final TextStyle processAction;
   final TextStyle displayAction;
 
-  // Data
+  // Data — clock / dashboard SoT is [HmiDisplayTypography].
   final TextStyle metricLabel;
   final TextStyle metricValue;
   final TextStyle metricUnit;
@@ -154,11 +199,25 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
   final TextStyle statusBarLabel;
   final TextStyle statusBarAction;
 
-  // Dialogs
+  // Dialogs / tips
   final TextStyle dialogTitle;
+  final TextStyle dialogBody;
   final TextStyle importantDialogTitle;
+  final TextStyle importantDialogBody;
+  final TextStyle dialogOptionLabel;
   final TextStyle criticalTitle;
   final TextStyle criticalBody;
+  final TextStyle engineerTipTitle;
+  final TextStyle engineerTipBody;
+  final TextStyle safetyTipTitle;
+  final TextStyle safetyTipBody;
+  final TextStyle reminderTitle;
+  final TextStyle reminderBody;
+  final TextStyle formDialogTitle;
+  final TextStyle numericDialogTitle;
+  final TextStyle numericDialogDescription;
+  final TextStyle numericInputValue;
+  final TextStyle numericStepperGlyph;
 
   // Legacy
   final TextStyle cardTitle;
@@ -196,9 +255,23 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     TextStyle? statusBarLabel,
     TextStyle? statusBarAction,
     TextStyle? dialogTitle,
+    TextStyle? dialogBody,
     TextStyle? importantDialogTitle,
+    TextStyle? importantDialogBody,
+    TextStyle? dialogOptionLabel,
     TextStyle? criticalTitle,
     TextStyle? criticalBody,
+    TextStyle? engineerTipTitle,
+    TextStyle? engineerTipBody,
+    TextStyle? safetyTipTitle,
+    TextStyle? safetyTipBody,
+    TextStyle? reminderTitle,
+    TextStyle? reminderBody,
+    TextStyle? formDialogTitle,
+    TextStyle? numericDialogTitle,
+    TextStyle? numericDialogDescription,
+    TextStyle? numericInputValue,
+    TextStyle? numericStepperGlyph,
     TextStyle? cardTitle,
     TextStyle? button,
     TextStyle? alarmTitle,
@@ -233,9 +306,24 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
       statusBarLabel: statusBarLabel ?? this.statusBarLabel,
       statusBarAction: statusBarAction ?? this.statusBarAction,
       dialogTitle: dialogTitle ?? this.dialogTitle,
+      dialogBody: dialogBody ?? this.dialogBody,
       importantDialogTitle: importantDialogTitle ?? this.importantDialogTitle,
+      importantDialogBody: importantDialogBody ?? this.importantDialogBody,
+      dialogOptionLabel: dialogOptionLabel ?? this.dialogOptionLabel,
       criticalTitle: criticalTitle ?? this.criticalTitle,
       criticalBody: criticalBody ?? this.criticalBody,
+      engineerTipTitle: engineerTipTitle ?? this.engineerTipTitle,
+      engineerTipBody: engineerTipBody ?? this.engineerTipBody,
+      safetyTipTitle: safetyTipTitle ?? this.safetyTipTitle,
+      safetyTipBody: safetyTipBody ?? this.safetyTipBody,
+      reminderTitle: reminderTitle ?? this.reminderTitle,
+      reminderBody: reminderBody ?? this.reminderBody,
+      formDialogTitle: formDialogTitle ?? this.formDialogTitle,
+      numericDialogTitle: numericDialogTitle ?? this.numericDialogTitle,
+      numericDialogDescription:
+          numericDialogDescription ?? this.numericDialogDescription,
+      numericInputValue: numericInputValue ?? this.numericInputValue,
+      numericStepperGlyph: numericStepperGlyph ?? this.numericStepperGlyph,
       cardTitle: cardTitle ?? this.cardTitle,
       button: button ?? this.button,
       alarmTitle: alarmTitle ?? this.alarmTitle,
@@ -276,9 +364,24 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
       statusBarLabel: L(statusBarLabel, other.statusBarLabel),
       statusBarAction: L(statusBarAction, other.statusBarAction),
       dialogTitle: L(dialogTitle, other.dialogTitle),
+      dialogBody: L(dialogBody, other.dialogBody),
       importantDialogTitle: L(importantDialogTitle, other.importantDialogTitle),
+      importantDialogBody: L(importantDialogBody, other.importantDialogBody),
+      dialogOptionLabel: L(dialogOptionLabel, other.dialogOptionLabel),
       criticalTitle: L(criticalTitle, other.criticalTitle),
       criticalBody: L(criticalBody, other.criticalBody),
+      engineerTipTitle: L(engineerTipTitle, other.engineerTipTitle),
+      engineerTipBody: L(engineerTipBody, other.engineerTipBody),
+      safetyTipTitle: L(safetyTipTitle, other.safetyTipTitle),
+      safetyTipBody: L(safetyTipBody, other.safetyTipBody),
+      reminderTitle: L(reminderTitle, other.reminderTitle),
+      reminderBody: L(reminderBody, other.reminderBody),
+      formDialogTitle: L(formDialogTitle, other.formDialogTitle),
+      numericDialogTitle: L(numericDialogTitle, other.numericDialogTitle),
+      numericDialogDescription:
+          L(numericDialogDescription, other.numericDialogDescription),
+      numericInputValue: L(numericInputValue, other.numericInputValue),
+      numericStepperGlyph: L(numericStepperGlyph, other.numericStepperGlyph),
       cardTitle: L(cardTitle, other.cardTitle),
       button: L(button, other.button),
       alarmTitle: L(alarmTitle, other.alarmTitle),

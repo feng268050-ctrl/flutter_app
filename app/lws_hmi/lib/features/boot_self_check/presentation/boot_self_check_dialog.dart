@@ -106,8 +106,8 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                             },
                             label: Text(
                               l10n.bootSelfCheckDontShowAgain,
-                              style: context.hmiTypography.sectionTitle.copyWith(
-                                fontSize: 26,
+                              style: context.hmiTypography.dialogOptionLabel
+                                  .copyWith(
                                 color: CyberColors.textSecondary,
                               ),
                             ),

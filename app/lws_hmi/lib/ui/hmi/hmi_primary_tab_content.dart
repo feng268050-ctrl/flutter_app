@@ -27,7 +27,6 @@ final class HmiPrimaryTabContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = context.hmiTypography.primaryTabLabel.copyWith(
       color: color,
-      fontSize: HmiTabMetrics.labelFontSize,
       fontWeight: selected
           ? HmiTabMetrics.selectedLabelWeight
           : HmiTabMetrics.labelWeight,

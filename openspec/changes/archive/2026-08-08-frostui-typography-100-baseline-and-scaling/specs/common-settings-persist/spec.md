@@ -1,9 +1,4 @@
-# common-settings-persist Specification
-
-## Purpose
-
-App-owned Common Settings product preferences (Language, Unit, Country / Region, Text Size, and future non-HAL / non-Misc peers) persisted at `/var/lib/hmi/common-settings.json`, with Language driving the CyberIME language provider and Flutter UI locale (BCP-47 wire values).
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Common Settings product prefs use common-settings.json
 
@@ -61,22 +56,3 @@ Common Settings preferences that are neither HAL/platform-backed nor Misc-sectio
 - **WHEN** an operator changes Show System Status Overlay or Screen Brightness
 - **THEN** those values are written to `misc-settings.json` or HAL backlight persistence respectively
 - **AND** MUST NOT be written into `common-settings.json` solely because they appear under Common Settings
-
-### Requirement: Language selection drives CyberIME language provider
-
-After warm-read and whenever Language changes, the App SHALL register or update the CyberIME language provider so `en-US` maps to EnglishGlobal and `zh-CN` / `zh-TW` map to ChineseGlobal. Legacy stored `EN` / `ZH` MUST normalize before mapping. The App MUST NOT keep a hard-coded English-only fixed provider after this capability ships. Documented CyberIME Chinese asset gaps MAY still present EnglishGlobal for Text until ChineseGlobal is complete; persistence of Chinese locales MUST still succeed.
-
-#### Scenario: Cold start restores IME language
-
-- **WHEN** `common-settings.json` has `language` = `zh-CN` (or legacy `ZH`) and the App starts
-- **THEN** the CyberIME language provider reports Chinese (ChineseGlobal mapping) for subsequent Text focus
-
-#### Scenario: Changing Language updates provider without restart
-
-- **WHEN** the operator changes Language from `en-US` to `zh-CN` in Settings
-- **THEN** the CyberIME language provider updates for subsequent Text focus without requiring an App process restart
-
-#### Scenario: Traditional Chinese uses Chinese IME mapping
-
-- **WHEN** Language is `zh-TW`
-- **THEN** the CyberIME language provider reports Chinese (ChineseGlobal mapping) for subsequent Text focus

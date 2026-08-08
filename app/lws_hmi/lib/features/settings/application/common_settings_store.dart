@@ -2,13 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/settings/application/app_text_size.dart';
 import 'package:lws_hmi/features/settings/application/region_country_catalog.dart';
 import 'package:lws_hmi/l10n/app_locales.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
 /// App-owned Common Settings product prefs (`/var/lib/hmi/common-settings.json`).
 ///
-/// Language / Unit / Country (and future non-HAL, non-Misc peers). Not Misc JSON; not HAL.
+/// Language / Unit / Country / Text Size (and future non-HAL, non-Misc peers).
+/// Not Misc JSON; not HAL.
 final class CommonSettingsStore extends ChangeNotifier {
   CommonSettingsStore({String? preferencePath})
       : preferencePath =
@@ -17,6 +19,7 @@ final class CommonSettingsStore extends ChangeNotifier {
   static const keyLanguage = 'language';
   static const keyUnit = 'unit';
   static const keyCountry = 'country';
+  static const keyTextSize = 'textSize';
 
   /// BCP-47 wire values (persisted).
   static const languageEnUs = 'en-US';
@@ -33,6 +36,7 @@ final class CommonSettingsStore extends ChangeNotifier {
   static const defaultLanguage = languageEnUs;
   static const defaultUnit = unitMetric;
   static const defaultCountry = RegionCountryCatalog.defaultCountry;
+  static const defaultTextSize = AppTextSize.defaultSize;
 
   static const supportedLanguages = <String>[
     languageEnUs,
@@ -41,18 +45,21 @@ final class CommonSettingsStore extends ChangeNotifier {
   ];
   static const supportedUnits = <String>[unitMetric, unitImperial];
   static const supportedCountries = RegionCountryCatalog.supportedCodes;
+  static const supportedTextSizes = AppTextSize.supported;
 
   final String preferencePath;
 
   String _language = defaultLanguage;
   String _unit = defaultUnit;
   String _country = defaultCountry;
+  AppTextSize _textSize = defaultTextSize;
   bool _warmed = false;
   bool _countryKeyPresent = false;
 
   String get language => _language;
   String get unit => _unit;
   String get country => _country;
+  AppTextSize get textSize => _textSize;
 
   /// True when last read found a `country` key (false → default US, first migrate).
   bool get hadPersistedCountry => _countryKeyPresent;
@@ -154,6 +161,19 @@ final class CommonSettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setTextSize(AppTextSize value) async {
+    warmRead();
+    if (_textSize == value) {
+      return;
+    }
+    _textSize = value;
+    await _writeUnlocked();
+    notifyListeners();
+  }
+
+  Future<void> setTextSizeWire(String value) =>
+      setTextSize(normalizeTextSize(value));
+
   static String normalizeLanguage(String? value) {
     switch (value) {
       case languageZhCn:
@@ -182,10 +202,14 @@ final class CommonSettingsStore extends ChangeNotifier {
   static String normalizeCountry(String? value) =>
       RegionCountryCatalog.normalize(value);
 
+  static AppTextSize normalizeTextSize(String? value) =>
+      AppTextSize.parse(value);
+
   void _applyDefaults() {
     _language = defaultLanguage;
     _unit = defaultUnit;
     _country = defaultCountry;
+    _textSize = defaultTextSize;
     _countryKeyPresent = false;
   }
 
@@ -207,6 +231,9 @@ final class CommonSettingsStore extends ChangeNotifier {
         _country = normalizeCountry('${map[keyCountry]}');
         _countryKeyPresent = true;
       }
+      if (map.containsKey(keyTextSize)) {
+        _textSize = normalizeTextSize('${map[keyTextSize]}');
+      }
     } catch (e) {
       debugPrint('common-settings: corrupt JSON, using defaults: $e');
       _applyDefaults();
@@ -217,6 +244,7 @@ final class CommonSettingsStore extends ChangeNotifier {
         keyLanguage: _language,
         keyUnit: _unit,
         keyCountry: _country,
+        keyTextSize: _textSize.wire,
       };
 
   Future<void> _writeUnlocked() async {

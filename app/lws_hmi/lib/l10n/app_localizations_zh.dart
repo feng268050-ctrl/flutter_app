@@ -2550,6 +2550,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unitSettingText => '单位';
 
   @override
+  String get textSizeOptionLarge => '大';
+
+  @override
+  String get textSizeOptionMedium => '中';
+
+  @override
+  String get textSizeOptionSmall => '小';
+
+  @override
+  String get textSizePersistedFooter => '选择本机界面文字大小。时钟与仪表等显示数字使用更温和的缩放。';
+
+  @override
+  String get textSizePreferenceUnavailable => '文字大小设置暂时不可用。';
+
+  @override
+  String get textSizeSettingText => '文字大小';
+
+  @override
   String get uploadText => '上传';
 
   @override
@@ -5227,6 +5245,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get unitSettingText => '單位';
+
+  @override
+  String get textSizePersistedFooter => '選擇本機介面文字大小。時鐘與儀表等顯示數字使用更溫和的縮放。';
+
+  @override
+  String get textSizePreferenceUnavailable => '文字大小設定暫時不可用。';
 
   @override
   String get uploadText => '上傳';

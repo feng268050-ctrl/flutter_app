@@ -5,7 +5,9 @@ import 'dart:ui' as ui;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
@@ -33,8 +35,12 @@ abstract final class SettingsDimens {
   static const groupGap = inset;
 
   /// Shared min height for switch / value / nav / slider / control rows.
-  /// Device Info / General (+tabs nested lists).
+  /// Device Info / General (+tabs nested lists). Medium baseline; use
+  /// [rowMinHeightOf] when text size can differ from Medium.
   static const rowMinHeight = 70.0;
+
+  static double rowMinHeightOf(BuildContext context) =>
+      rowMinHeight * HmiTextScale.settingsRowFactorOf(context);
 
   /// Horizontal + vertical padding inside a settings row.
   static const rowPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 8);
@@ -124,7 +130,8 @@ final class SettingsTopTabs extends StatelessWidget
   static const tabHeight = HmiTabMetrics.tabHeight;
   static const dividerThickness = 1.0;
   static const iconSize = HmiTabMetrics.iconSize;
-  static const labelSize = HmiTabMetrics.labelFontSize;
+  /// Alias of primary-tab label size ([AppTypography.navigationSize]).
+  static const labelSize = AppTypography.navigationSize;
   static const iconTextGap = HmiTabMetrics.iconLabelGap;
   static const indicatorHeight = HmiTabMetrics.indicatorHeight;
   static const unselected = Color(0xFF94A3B8);
@@ -953,7 +960,7 @@ class SettingsNavRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final chevron = showChevron ?? (onTap != null);
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
       child: ListTile(
         contentPadding: SettingsDimens.rowPadding,
         minVerticalPadding: 0,
@@ -1064,7 +1071,7 @@ class SettingsValueRow extends StatelessWidget {
             },
     );
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
       child: clickFeedback || onTap == null
           ? tile
           : Theme(
@@ -1121,7 +1128,7 @@ class SettingsSwitchRow extends StatelessWidget {
       fontWeight: FontWeight.w400,
     );
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
       child: ListTile(
         contentPadding: SettingsDimens.rowPadding,
         minVerticalPadding: 0,
@@ -1161,7 +1168,7 @@ class SettingsControlRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
       child: Padding(
         padding: SettingsDimens.rowPadding,
         child: Row(
@@ -1222,7 +1229,7 @@ class SettingsSliderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
       child: Padding(
         padding: SettingsDimens.rowPadding,
         child: Row(

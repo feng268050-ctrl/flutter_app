@@ -24,6 +24,7 @@ import 'package:lws_hmi/features/settings/presentation/pages/lan_ssh_debug_setti
 import 'package:lws_hmi/features/settings/presentation/pages/led_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/mouse_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/sound_settings_page.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/text_size_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/unit_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/usb_otg_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.dart';
@@ -402,6 +403,33 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 await _refreshBrightness();
               },
             ),
+            // Text Size — between Display and Sound.
+            if (store == null)
+              SettingsNavRow(
+                title: l10n.textSizeSettingText,
+                value: l10n.textSizeOptionMedium,
+                onTap: () => pushSettingsPage(
+                  context,
+                  const TextSizeSettingsPage(),
+                ),
+              )
+            else
+              ListenableBuilder(
+                listenable: store,
+                builder: (context, _) {
+                  return SettingsNavRow(
+                    title: l10n.textSizeSettingText,
+                    value: TextSizeSettingsPage.labelFor(
+                      l10n,
+                      store.textSize,
+                    ),
+                    onTap: () => pushSettingsPage(
+                      context,
+                      const TextSizeSettingsPage(),
+                    ),
+                  );
+                },
+              ),
             SettingsNavRow(
               title: l10n.soundSettings,
               value: _volumeValue.isEmpty ? null : _volumeValue,

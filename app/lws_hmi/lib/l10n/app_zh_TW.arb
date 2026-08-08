@@ -691,6 +691,8 @@
   "systemVersion": "系統版本",
   "tempBoardRefrigerationCommAlarmContent": "請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。",
   "tempBoardRefrigerationCommAlarmTitle": "溫控板與製冷系統通訊故障",
+  "textSizePersistedFooter": "選擇本機介面文字大小。時鐘與儀表等顯示數字使用更溫和的縮放。",
+  "textSizePreferenceUnavailable": "文字大小設定暫時不可用。",
   "timezoneSearchHint": "按名稱或 UTC 偏移搜索",
   "totalLaserOnTime": "激光開啓總時長",
   "totalWireConsumption": "焊絲總消耗",

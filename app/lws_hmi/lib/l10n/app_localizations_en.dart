@@ -2658,6 +2658,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unitSettingText => 'Unit';
 
   @override
+  String get textSizeOptionLarge => 'Large';
+
+  @override
+  String get textSizeOptionMedium => 'Medium';
+
+  @override
+  String get textSizeOptionSmall => 'Small';
+
+  @override
+  String get textSizePersistedFooter =>
+      'Choose how large text appears on this device. Display numbers and charts use a milder scale.';
+
+  @override
+  String get textSizePreferenceUnavailable =>
+      'Text size settings are temporarily unavailable.';
+
+  @override
+  String get textSizeSettingText => 'Text Size';
+
+  @override
   String get uploadText => 'Upload';
 
   @override

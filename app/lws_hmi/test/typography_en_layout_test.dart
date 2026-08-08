@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -257,13 +258,18 @@ void main() {
     );
   });
 
-  test('tipBodySizeForTitle is one ladder step below the title', () {
-    expect(AppTypography.tipBodySizeForTitle(52), 44);
-    expect(AppTypography.tipBodySizeForTitle(37), 32);
-    expect(AppTypography.tipBodySizeForTitle(36), 32);
-    expect(AppTypography.tipBodySizeForTitle(32), 28);
-    expect(AppTypography.tipBodySizeForTitle(24), 22);
-    expect(AppTypography.tipBodySizeForTitle(22), lessThan(22));
+  test('Medium 100% dialog/tip body roles are explicit (not ladder-derived)', () {
+    const t = HmiTypography();
+    expect(t.dialogBody.fontSize, AppTypography.pageTitleSize); // 28
+    expect(t.importantDialogBody.fontSize, AppTypography.dialogTitleSize); // 32
+    expect(t.dialogOptionLabel.fontSize, HmiTypography.dialogOptionLabelSize);
+    expect(t.engineerTipTitle.fontSize, AppTypography.criticalTitleSize);
+    expect(t.engineerTipBody.fontSize, AppTypography.largeDialogTitleSize);
+    expect(t.safetyTipBody.fontSize, AppTypography.navigationSize);
+    expect(t.reminderBody.fontSize, AppTypography.sectionTitleSize);
+    expect(HmiTypography.buttonHeroFontSize, 24);
+    expect(t.clock.fontSize, HmiDisplayTypography.clockSize);
+    expect(t.dashboardValue.fontSize, HmiDisplayTypography.dashboardValueSize);
   });
 
   testWidgets('EN HmiDialogActions medium Cancel/Confirm fit equal 196',

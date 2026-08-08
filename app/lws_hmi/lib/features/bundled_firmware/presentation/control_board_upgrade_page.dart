@@ -331,9 +331,8 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
       color: CyberColors.textSecondary,
       height: 1.4,
     );
-    final headlineStyle = context.hmiTypography.settingsRowTitle.copyWith(
+    final headlineStyle = context.hmiTypography.sectionTitle.copyWith(
       color: CyberColors.textPrimary,
-      fontSize: 22,
     );
 
     return UpgradeCheckCard(
@@ -460,7 +459,6 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
             statusLabel: statusLabel,
             titleStyle: context.hmiTypography.settingsRowTitle.copyWith(
               color: CyberColors.textPrimary,
-              fontSize: 20,
             ),
             percentStyle: context.hmiTypography.settingsRowValue.copyWith(
               color: CyberColors.textSecondary,

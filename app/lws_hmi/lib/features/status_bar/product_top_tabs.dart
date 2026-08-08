@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_primary_tab_content.dart';
 
 /// Item layout for [ProductTopTabs].
@@ -132,17 +133,15 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
   }
 
   double _tabWidthFor(String label) {
+    final labelStyle = context.hmiTypography.primaryTabLabel.copyWith(
+      fontWeight: HmiTabMetrics.labelWeight,
+      height: 1.0,
+    );
     final painter = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: TextStyle(
-          fontSize: HmiTabMetrics.labelFontSize,
-          fontWeight: HmiTabMetrics.labelWeight,
-          height: 1.0,
-        ),
-      ),
+      text: TextSpan(text: label, style: labelStyle),
       maxLines: 1,
       textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
     )..layout();
     final contentWidth = HmiTabMetrics.horizontalPadding * 2 +
         HmiTabMetrics.iconSize +

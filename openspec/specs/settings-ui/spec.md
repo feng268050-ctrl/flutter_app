@@ -72,7 +72,7 @@ Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `z
 
 Common Settings SHALL expose:
 
-- Display & Sound (untitled card): **Country/Region**, Language, and Unit as persisted controls backed by `/var/lib/hmi/common-settings.json`; Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then Sound.
+- Display & Sound (untitled card): **Country/Region**, Language, Unit, and **Text Size** as persisted controls backed by `/var/lib/hmi/common-settings.json`; Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings`; Language drives Flutter UI locale and CyberIME for three locales; Text Size drives App-wide reading UI scale (`small` / `medium` / `large`) per `frostui-typography`; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then **Text Size**, then Sound.
 - RGB LED + Camera (untitled card, after Display & Sound, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
 - Date & Time (untitled card): Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController` (lws-ui parity).
 - Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera + RGB LED group requirement).
@@ -109,6 +109,18 @@ Common Settings SHALL expose:
 - **WHEN** the user selects a Unit option other than the current value
 - **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json`
 
+#### Scenario: Text Size appears between Display and Sound
+
+- **WHEN** the operator opens Common Settings
+- **THEN** the Display & Sound card lists Text Size after Display and before Sound
+- **AND** Text Size summary reflects the persisted text size preference
+
+#### Scenario: Text Size is persisted and applies without restart
+
+- **WHEN** the user selects Text Size `large` (or other non-current value)
+- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json`
+- **AND** reading UI scale updates for the current session without requiring an App process restart
+
 #### Scenario: Date and time sync actions invoke controllers
 
 - **WHEN** the user enables Automatic or applies a manual date/time/zone change
@@ -129,6 +141,20 @@ Common Settings SHALL expose:
 
 - **WHEN** Language is `zh-CN` and the operator opens Common Settings
 - **THEN** migrated row titles and control labels render in Simplified Chinese via App localization
+
+### Requirement: Text Size selection lists Small Medium Large
+
+Text Size Settings SHALL offer three options—Small, Medium, Large—mapped to wire values `small`, `medium`, and `large`. Selecting an option SHALL persist via `CommonSettingsStore` and update the App root `MediaQuery.textScaler` for reading UI. Common Settings Text Size summary MUST show the selected option label. Default when unset is Medium.
+
+#### Scenario: Text Size page lists three options
+
+- **WHEN** the operator opens Text Size settings
+- **THEN** Small, Medium, and Large are available
+
+#### Scenario: Default summary is Medium
+
+- **WHEN** Text Size preference is unset or `medium` and the operator opens Common Settings
+- **THEN** Text Size summary indicates Medium (or localized equivalent)
 
 ### Requirement: Country/Region selection lists all markets and applies region effects
 

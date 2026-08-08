@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_primary_tab_content.dart';
@@ -39,9 +40,11 @@ void main() {
     expect(await gapFor('Advanced'), HmiTabMetrics.iconLabelGap);
   });
 
-  test('metrics match primary tab ladder', () {
+  test('metrics match primary tab layout ladder', () {
     expect(HmiTabMetrics.iconSize, 28);
-    expect(HmiTabMetrics.labelFontSize, 24);
+    // labelFontSize is a const alias of navigation; paint SoT is primaryTabLabel.
+    expect(HmiTabMetrics.labelFontSize, AppTypography.navigationSize);
+    expect(const HmiTypography().primaryTabLabel.fontSize, 24);
     expect(HmiTabMetrics.iconLabelGap, 8);
     expect(HmiTabMetrics.labelWeight, FontWeight.w500);
     expect(HmiTabMetrics.selectedLabelWeight, FontWeight.w600);

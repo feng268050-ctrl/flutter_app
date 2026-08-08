@@ -130,6 +130,7 @@ flutter:
     # are rewritten by prepare-hmi-ship-assets.sh between the markers below.
     # BEGIN generated-ship-assets
     - assets/.generated/firmware/control-board/
+    - assets/.generated/firmware/camera/
     - assets/.generated/process-library/
     - assets/.generated/process-library/L1_Pro/
     # END generated-ship-assets

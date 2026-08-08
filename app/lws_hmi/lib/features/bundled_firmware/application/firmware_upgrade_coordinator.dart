@@ -1,4 +1,4 @@
-/// Serializes control-board Modbus flash between bundled-home and future OTA.
+/// Serializes control-board Modbus flash, camera CGI flash, and whole-device OTA.
 abstract final class FirmwareUpgradeCoordinator {
   static bool _bundledInProgress = false;
   static bool _otaInProgress = false;
@@ -9,7 +9,7 @@ abstract final class FirmwareUpgradeCoordinator {
 
   static bool canStartFirmwareUpgrade() => !isBusy;
 
-  /// Control-board Modbus flash — blocked while whole-device OTA is active.
+  /// Control-board / camera bundled flash — blocked while whole-device OTA is active.
   static bool canStartBundledFirmwareUpgrade() => canStartFirmwareUpgrade();
 
   /// Future OTA path: blocked only while bundled is active.

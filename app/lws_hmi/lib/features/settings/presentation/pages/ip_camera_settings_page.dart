@@ -7,6 +7,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
+import 'package:lws_hmi/features/camera_update/presentation/camera_program_upgrade_page.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_demo_recording_paths.dart';
@@ -317,9 +318,15 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
                 title: l10n.cameraType,
                 value: typeLabel,
               ),
-              SettingsValueRow(
+              SettingsNavRow(
                 title: l10n.cameraVersion,
                 value: _cameraVersion,
+                onTap: () => unawaited(
+                  pushSettingsPage(
+                    context,
+                    const CameraProgramUpgradePage(),
+                  ),
+                ),
               ),
             ],
           ),

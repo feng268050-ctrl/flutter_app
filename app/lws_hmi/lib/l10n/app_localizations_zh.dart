@@ -411,6 +411,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get autoControlBoardUpdateDialogTitle => '控制板固件更新可用';
 
   @override
+  String autoCameraProgramUpdateDialogMessage(String version) {
+    return '检测到摄像头固件 $version。请到设置中查看并安装更新。';
+  }
+
+  @override
+  String get autoCameraProgramUpdateDialogTitle => '摄像头固件更新可用';
+
+  @override
   String get goToSettings => '前往设置';
 
   @override
@@ -556,6 +564,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cameraVersion => '摄像头版本';
+
+  @override
+  String cameraProgramAlreadyUpToDate(String version) {
+    return '摄像头固件 $version 已是最新。';
+  }
+
+  @override
+  String get cameraProgramCheckFailed => '无法检查摄像头固件，请确认摄像头网络连接。';
+
+  @override
+  String get cameraProgramCheckUnavailable => '当前无法检查摄像头固件。';
+
+  @override
+  String cameraProgramDialogMessage(String currentVersion, String newVersion) {
+    return '检测到新摄像头固件（当前 $currentVersion → $newVersion）。\n请保持设备通电，升级过程中请勿操作。';
+  }
+
+  @override
+  String get cameraProgramFailedMessage => '摄像头固件升级失败，请稍后重试。';
+
+  @override
+  String get cameraProgramFailedTitle => '摄像头升级失败';
+
+  @override
+  String cameraProgramNewVersionHeadline(String version) {
+    return '新摄像头固件 $version';
+  }
+
+  @override
+  String get cameraProgramRebootTitle => '正在重启摄像头';
+
+  @override
+  String get cameraProgramSuccessMessage => '摄像头固件已更新完成。';
+
+  @override
+  String get cameraProgramSuccessTitle => '摄像头升级成功';
+
+  @override
+  String get cameraProgramTransferTitle => '正在传输摄像头固件';
+
+  @override
+  String get cameraProgramUpgradeIdleHint => '检查本机 App 内是否有更新的摄像头固件。';
+
+  @override
+  String get cameraProgramUpgradeTitle => '摄像头升级';
+
+  @override
+  String get cameraProgramUpgradingMessage => '请保持设备通电，升级过程中请勿操作。';
+
+  @override
+  String get cameraProgramWaitOnlineTitle => '等待摄像头恢复';
 
   @override
   String get cancelText => '取消';
@@ -3358,6 +3417,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String autoCameraProgramUpdateDialogMessage(String version) {
+    return '檢測到攝像頭固件 $version。請到設置中查看並安裝更新。';
+  }
+
+  @override
+  String get autoCameraProgramUpdateDialogTitle => '攝像頭固件更新可用';
+
+  @override
   String get goToSettings => '前往設置';
 
   @override
@@ -3483,6 +3550,57 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get cameraVersion => '攝像頭版本';
+
+  @override
+  String cameraProgramAlreadyUpToDate(String version) {
+    return '攝像頭固件 $version 已是最新。';
+  }
+
+  @override
+  String get cameraProgramCheckFailed => '無法檢查攝像頭固件，請確認攝像頭網絡連接。';
+
+  @override
+  String get cameraProgramCheckUnavailable => '當前無法檢查攝像頭固件。';
+
+  @override
+  String cameraProgramDialogMessage(String currentVersion, String newVersion) {
+    return '檢測到新攝像頭固件（當前 $currentVersion → $newVersion）。\n請保持設備通電，升級過程中請勿操作。';
+  }
+
+  @override
+  String get cameraProgramFailedMessage => '攝像頭固件升級失敗，請稍後重試。';
+
+  @override
+  String get cameraProgramFailedTitle => '攝像頭升級失敗';
+
+  @override
+  String cameraProgramNewVersionHeadline(String version) {
+    return '新攝像頭固件 $version';
+  }
+
+  @override
+  String get cameraProgramRebootTitle => '正在重啓攝像頭';
+
+  @override
+  String get cameraProgramSuccessMessage => '攝像頭固件已更新完成。';
+
+  @override
+  String get cameraProgramSuccessTitle => '攝像頭升級成功';
+
+  @override
+  String get cameraProgramTransferTitle => '正在傳輸攝像頭固件';
+
+  @override
+  String get cameraProgramUpgradeIdleHint => '檢查本機 App 內是否有更新的攝像頭固件。';
+
+  @override
+  String get cameraProgramUpgradeTitle => '攝像頭升級';
+
+  @override
+  String get cameraProgramUpgradingMessage => '請保持設備通電，升級過程中請勿操作。';
+
+  @override
+  String get cameraProgramWaitOnlineTitle => '等待攝像頭恢復';
 
   @override
   String get cellularNetworkText => '蜂窩網絡';

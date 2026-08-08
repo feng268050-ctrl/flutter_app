@@ -10,6 +10,7 @@ import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
+import 'package:lws_hmi/features/camera_update/presentation/camera_program_upgrade_page.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/settings/application/storage_capacity.dart';
@@ -92,6 +93,13 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     await pushSettingsPage(
       context,
       const ControlBoardUpgradePage(),
+    );
+  }
+
+  Future<void> _openCameraProgramUpgrade() async {
+    await pushSettingsPage(
+      context,
+      const CameraProgramUpgradePage(),
     );
   }
 
@@ -278,9 +286,10 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               value: _systemVersion,
               onTap: () => unawaited(_openSystemUpgrade()),
             ),
-            SettingsValueRow(
+            SettingsNavRow(
               title: l10n.cameraVersion,
               value: _cameraVersion,
+              onTap: () => unawaited(_openCameraProgramUpgrade()),
             ),
             SettingsNavRow(
               title: l10n.firmwareVersion,

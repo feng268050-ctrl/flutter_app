@@ -215,6 +215,15 @@
     }
   },
   "autoControlBoardUpdateDialogTitle": "Control Board Firmware Available",
+  "autoCameraProgramUpdateDialogMessage": "Camera firmware {version} is available. Go to Settings to review and install the update.",
+  "@autoCameraProgramUpdateDialogMessage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "autoCameraProgramUpdateDialogTitle": "Camera Firmware Available",
   "goToSettings": "Go to Settings",
   "autoWireFeed": "Auto Wire Feed",
   "blowOnLabel": "Gas Flow",
@@ -279,6 +288,45 @@
   "cameraTypeBlueLight": "Blue Light",
   "cameraTypeRedLight": "Red Light",
   "cameraVersion": "Camera Version",
+  "cameraProgramAlreadyUpToDate": "Camera firmware {version} is up to date.",
+  "@cameraProgramAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "cameraProgramCheckFailed": "Could not check camera firmware. Verify camera network connection.",
+  "cameraProgramCheckUnavailable": "Camera firmware check is not available right now.",
+  "cameraProgramDialogMessage": "A newer camera firmware is available ({currentVersion} → {newVersion}).\nKeep power connected and don’t operate the device during the upgrade.",
+  "@cameraProgramDialogMessage": {
+    "placeholders": {
+      "currentVersion": {
+        "type": "String"
+      },
+      "newVersion": {
+        "type": "String"
+      }
+    }
+  },
+  "cameraProgramFailedMessage": "Camera firmware update failed. Try again later.",
+  "cameraProgramFailedTitle": "Camera Update Failed",
+  "cameraProgramNewVersionHeadline": "New camera firmware {version}",
+  "@cameraProgramNewVersionHeadline": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "cameraProgramRebootTitle": "Rebooting Camera",
+  "cameraProgramSuccessMessage": "Camera firmware has been updated.",
+  "cameraProgramSuccessTitle": "Camera Updated",
+  "cameraProgramTransferTitle": "Transferring Camera Firmware",
+  "cameraProgramUpgradeIdleHint": "Check for newer camera firmware bundled with this App.",
+  "cameraProgramUpgradeTitle": "Camera Upgrade",
+  "cameraProgramUpgradingMessage": "Keep power connected and don’t operate the device during the upgrade.",
+  "cameraProgramWaitOnlineTitle": "Waiting for Camera",
   "cancelText": "Cancel",
   "cellularNetworkText": "Cellular",
   "celsiusUnit": "°C",

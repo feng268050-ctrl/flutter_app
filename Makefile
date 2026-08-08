@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only ota-release-keys ota-package upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only ota-release-keys ota-package upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -178,6 +178,7 @@ help:
 	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
 	@echo "  make push-app              # scp APP over SSH (*_hmi→/opt/hmi+hmi restart; else /opt/<id>)"
 	@echo "  make upgrade-control-board # push latest control-board bin and trigger upgrade (no version gate)"
+	@echo "  make upgrade-camera        # push latest camera firmware zip and trigger upgrade (no version gate)"
 	@echo "  make upgrade-process-library # push process-library for device model; force import (no version gate)"
 	@echo "  make reset-process-library # clear process-library DB via HMI watcher; re-import bundled (no restart)"
 	@echo "  make migrate-secrets       # re-seal software Wi‑Fi vault + cloud key → OP-TEE (SCOPE=all|wifi|cloud)"
@@ -626,6 +627,12 @@ push-app:
 # without confirm / without version gate.
 upgrade-control-board:
 	@$(call WITH_DOTENV,FIRMWARE_BIN='$(FIRMWARE_BIN)' bash scripts/upgrade-control-board.sh)
+
+# Push latest bundled camera firmware ZIP (host helper).
+# Device-side: app watches /run/hmi/upgrade-camera.cmd and runs CGI flash
+# without confirm / without version gate.
+upgrade-camera:
+	@$(call WITH_DOTENV,FIRMWARE_ZIP='$(FIRMWARE_ZIP)' bash scripts/upgrade-camera.sh)
 
 # Push process-library matched to device Vendor Storage model (host helper).
 # Device-side: app watches /run/hmi/upgrade-process-library.cmd and force-imports.

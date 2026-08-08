@@ -400,6 +400,7 @@ make build-rootfs               # → output/firmware/<APP>/rootfs.img (default 
 make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img
 make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= override
 make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
+make upgrade-camera             # push latest camera firmware zip; force upgrade (HMI running)
 make upgrade-process-library    # push process-library for device model; force import (HMI running)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make migrate-secrets            # re-seal software Wi‑Fi vault + cloud Ed25519 → OP-TEE (SCOPE=all|wifi|cloud)
@@ -734,6 +735,7 @@ App deploy without reflash:
 make build-app
 make push-app                  # SN=... or IP=... when multiple devices
 make upgrade-control-board    # push latest control-board bin and trigger upgrade (no version gate)
+make upgrade-camera           # push latest camera firmware zip and trigger upgrade (no version gate)
 make upgrade-process-library  # push process-library for device Vendor Storage model; force import
 make reset-process-library    # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make migrate-secrets          # re-seal software Wi‑Fi vault + cloud key → OP-TEE (SCOPE=all|wifi|cloud)

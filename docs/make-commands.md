@@ -404,6 +404,12 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **何时用：** 推最新控制板固件并触发升级（无版本门禁）。
 - **前提：** 板端 HMI 含 watcher。
 
+### `make upgrade-camera`
+
+- **怎么用：** `make upgrade-camera`；指定包 `FIRMWARE_ZIP=/path/to.zip make upgrade-camera`
+- **何时用：** 推最新摄像头固件 ZIP 并触发 CGI 升级（无版本门禁；成功需相机重启并重新上线）。
+- **前提：** 板端 HMI 含 `upgrade-camera.cmd` watcher；源包在 `app/lws_hmi/assets/firmware/camera/`。
+
 ### `make upgrade-process-library` / `make reset-process-library`
 
 - **怎么用：** `make upgrade-process-library`；指定包目录 `PACKAGE_DIR=…`；重置：`make reset-process-library`

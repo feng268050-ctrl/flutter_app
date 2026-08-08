@@ -435,6 +435,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Control Board Firmware Available';
 
   @override
+  String autoCameraProgramUpdateDialogMessage(String version) {
+    return 'Camera firmware $version is available. Go to Settings to review and install the update.';
+  }
+
+  @override
+  String get autoCameraProgramUpdateDialogTitle => 'Camera Firmware Available';
+
+  @override
   String get goToSettings => 'Go to Settings';
 
   @override
@@ -583,6 +591,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cameraVersion => 'Camera Version';
+
+  @override
+  String cameraProgramAlreadyUpToDate(String version) {
+    return 'Camera firmware $version is up to date.';
+  }
+
+  @override
+  String get cameraProgramCheckFailed =>
+      'Could not check camera firmware. Verify camera network connection.';
+
+  @override
+  String get cameraProgramCheckUnavailable =>
+      'Camera firmware check is not available right now.';
+
+  @override
+  String cameraProgramDialogMessage(String currentVersion, String newVersion) {
+    return 'A newer camera firmware is available ($currentVersion → $newVersion).\nKeep power connected and don’t operate the device during the upgrade.';
+  }
+
+  @override
+  String get cameraProgramFailedMessage =>
+      'Camera firmware update failed. Try again later.';
+
+  @override
+  String get cameraProgramFailedTitle => 'Camera Update Failed';
+
+  @override
+  String cameraProgramNewVersionHeadline(String version) {
+    return 'New camera firmware $version';
+  }
+
+  @override
+  String get cameraProgramRebootTitle => 'Rebooting Camera';
+
+  @override
+  String get cameraProgramSuccessMessage => 'Camera firmware has been updated.';
+
+  @override
+  String get cameraProgramSuccessTitle => 'Camera Updated';
+
+  @override
+  String get cameraProgramTransferTitle => 'Transferring Camera Firmware';
+
+  @override
+  String get cameraProgramUpgradeIdleHint =>
+      'Check for newer camera firmware bundled with this App.';
+
+  @override
+  String get cameraProgramUpgradeTitle => 'Camera Upgrade';
+
+  @override
+  String get cameraProgramUpgradingMessage =>
+      'Keep power connected and don’t operate the device during the upgrade.';
+
+  @override
+  String get cameraProgramWaitOnlineTitle => 'Waiting for Camera';
 
   @override
   String get cancelText => 'Cancel';

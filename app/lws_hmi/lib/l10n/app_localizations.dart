@@ -827,6 +827,18 @@ abstract class AppLocalizations {
   /// **'Control Board Firmware Available'**
   String get autoControlBoardUpdateDialogTitle;
 
+  /// No description provided for @autoCameraProgramUpdateDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera firmware {version} is available. Go to Settings to review and install the update.'**
+  String autoCameraProgramUpdateDialogMessage(String version);
+
+  /// No description provided for @autoCameraProgramUpdateDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Firmware Available'**
+  String get autoCameraProgramUpdateDialogTitle;
+
   /// No description provided for @goToSettings.
   ///
   /// In en, this message translates to:
@@ -1108,6 +1120,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Camera Version'**
   String get cameraVersion;
+
+  /// No description provided for @cameraProgramAlreadyUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera firmware {version} is up to date.'**
+  String cameraProgramAlreadyUpToDate(String version);
+
+  /// No description provided for @cameraProgramCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check camera firmware. Verify camera network connection.'**
+  String get cameraProgramCheckFailed;
+
+  /// No description provided for @cameraProgramCheckUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera firmware check is not available right now.'**
+  String get cameraProgramCheckUnavailable;
+
+  /// No description provided for @cameraProgramDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A newer camera firmware is available ({currentVersion} → {newVersion}).\nKeep power connected and don’t operate the device during the upgrade.'**
+  String cameraProgramDialogMessage(String currentVersion, String newVersion);
+
+  /// No description provided for @cameraProgramFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera firmware update failed. Try again later.'**
+  String get cameraProgramFailedMessage;
+
+  /// No description provided for @cameraProgramFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Update Failed'**
+  String get cameraProgramFailedTitle;
+
+  /// No description provided for @cameraProgramNewVersionHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'New camera firmware {version}'**
+  String cameraProgramNewVersionHeadline(String version);
+
+  /// No description provided for @cameraProgramRebootTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebooting Camera'**
+  String get cameraProgramRebootTitle;
+
+  /// No description provided for @cameraProgramSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera firmware has been updated.'**
+  String get cameraProgramSuccessMessage;
+
+  /// No description provided for @cameraProgramSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Updated'**
+  String get cameraProgramSuccessTitle;
+
+  /// No description provided for @cameraProgramTransferTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transferring Camera Firmware'**
+  String get cameraProgramTransferTitle;
+
+  /// No description provided for @cameraProgramUpgradeIdleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for newer camera firmware bundled with this App.'**
+  String get cameraProgramUpgradeIdleHint;
+
+  /// No description provided for @cameraProgramUpgradeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Upgrade'**
+  String get cameraProgramUpgradeTitle;
+
+  /// No description provided for @cameraProgramUpgradingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep power connected and don’t operate the device during the upgrade.'**
+  String get cameraProgramUpgradingMessage;
+
+  /// No description provided for @cameraProgramWaitOnlineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Camera'**
+  String get cameraProgramWaitOnlineTitle;
 
   /// No description provided for @cancelText.
   ///

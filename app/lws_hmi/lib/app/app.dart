@@ -77,6 +77,10 @@ import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upg
 import 'package:lws_hmi/features/camera_update/application/camera_program_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/camera_update/infrastructure/upgrade_camera_command_watcher.dart';
 import 'package:lws_hmi/features/camera_update/presentation/camera_program_upgrade_page.dart';
+import 'package:lws_hmi/features/hmi_app_ota/application/hmi_app_upgrade_coordinator.dart';
+import 'package:lws_hmi/features/hmi_app_ota/infrastructure/hmi_app_manifest_url.dart';
+import 'package:lws_hmi/features/hmi_app_ota/infrastructure/upgrade_app_command_watcher.dart';
+import 'package:lws_hmi/features/hmi_app_ota/presentation/hmi_upgrade_page.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/upgrade_process_library_command_watcher.dart';
 import 'package:lws_hmi/features/secrets/infrastructure/migrate_secrets_command_watcher.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
@@ -259,6 +263,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     navigatorContext: () => _navKey.currentContext,
   );
 
+  late final UpgradeAppCommandWatcher _upgradeAppCommandWatcher =
+      UpgradeAppCommandWatcher(
+    services: _services,
+    navigatorContext: () => _navKey.currentContext,
+  );
+
   late final UpgradeProcessLibraryCommandWatcher
       _upgradeProcessLibraryCommandWatcher =
       UpgradeProcessLibraryCommandWatcher(
@@ -369,8 +379,14 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         cloudManifestUrlResolver: () =>
             PeripheralFirmwareManifestUrl.resolveCamera(),
       );
+      HmiAppUpgradeCoordinator.instance.configure(
+        navigatorKey: _navKey,
+        services: _services,
+        manifestUrlResolver: () => HmiAppManifestUrl.resolve(),
+      );
       _syncFirmwareCommandWatcher.start();
       _upgradeCameraCommandWatcher.start();
+      _upgradeAppCommandWatcher.start();
       _upgradeProcessLibraryCommandWatcher.start();
       _upgradeOtaCommandWatcher.start();
       _migrateSecretsCommandWatcher.start();
@@ -534,6 +550,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_warnAlarm.dispose());
     unawaited(_syncFirmwareCommandWatcher.dispose());
     unawaited(_upgradeCameraCommandWatcher.dispose());
+    unawaited(_upgradeAppCommandWatcher.dispose());
     unawaited(_upgradeProcessLibraryCommandWatcher.dispose());
     unawaited(_upgradeOtaCommandWatcher.dispose());
     unawaited(_migrateSecretsCommandWatcher.dispose());
@@ -857,6 +874,10 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         page = _demoPage();
       case AppRoutes.systemUpgrade:
         page = const SystemUpgradePage(
+          progressOnly: true,
+        );
+      case AppRoutes.hmiUpgrade:
+        page = const HmiUpgradePage(
           progressOnly: true,
         );
       case AppRoutes.controlBoardUpgrade:

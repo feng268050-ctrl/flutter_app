@@ -169,6 +169,29 @@ void main() {
       expect(events.map((e) => e.phase), contains(OtaPhase.checking));
     });
 
+    test('checkForUpdate ignores empty current version', () async {
+      final result = await session.checkForUpdate(
+        manifestUrl: 'https://cdn.example/manifest.json',
+        currentVersion: '',
+      );
+
+      expect(result.hasUpdate, isFalse);
+    });
+
+    test('checkForUpdate strips v prefix before compare', () async {
+      http.manifestJson = <String, dynamic>{
+        'version': 'v1.0.0',
+        'url': 'https://cdn.example/lws-hmi/v1.0.0.tar.gz',
+      };
+
+      final result = await session.checkForUpdate(
+        manifestUrl: 'https://cdn.example/manifest.json',
+        currentVersion: '1.0.0',
+      );
+
+      expect(result.hasUpdate, isFalse);
+    });
+
     test('checkForUpdate accepts publish-shaped url channel JSON', () async {
       http.manifestJson = <String, dynamic>{
         'version': '1.0.41',

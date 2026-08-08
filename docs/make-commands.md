@@ -179,7 +179,7 @@ USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockch
 | `FLUTTER_SDK` | 主机 SDK |
 | `REQUIRE_AI=1` | AI 预编译缺失则失败（发版门禁） |
 
-**注意：** 不重建 rootfs；板端已有可推送 HMI 时用 `push-app`，无需 `build-rootfs`。
+**注意：** 不重建 rootfs；板端已有可推送 HMI 时用 `upgrade-app`（`push-app` 别名），无需 `build-rootfs`。
 
 ### `make prepare-app-assets`
 
@@ -196,17 +196,19 @@ USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockch
 ### `make version` / `make version-bump`
 
 - **怎么用：**
-  - `make version`
-  - `make version-bump VERSION=1.0.40`（可选 `APP=`）
-- **何时用：** 查/改 `app/<APP>/pubspec.yaml`（及可选 `app_version.dart`）。
-- **参数：** `VERSION`（bump 必填）、`APP`。
-- **后续上板：** `build-app` + `push-app`。
+  - `make version` → 打印 **OS Version**（`/etc/os-release` 的 `VERSION=`，Cyber OS）
+  - `APP=lws_hmi make version` → 打印 Flutter pubspec `name+build`
+  - `make version-bump VERSION=1.0.1` →  bump OS（同步 `VERSION=` / `VERSION_ID=` / `PRETTY_NAME=`）
+  - `APP=lws_hmi make version-bump VERSION=1.0.42` → bump Flutter（同步 `kHmiVersion`）
+- **何时用：** 查/改 OS 或 HMI 版本。默认无 `APP=` 时操作 OS；显式 `APP=` 时操作 Flutter。
+- **参数：** `VERSION`（bump 必填）、`APP`（可选，选 Flutter）。
+- **后续上板：** OS 需 `apply-overlay` + `build-rootfs` + `upgrade`；HMI 用 `build-app` + `upgrade-app`。
 
 ### `make l10n` / `l10n-sync` / `l10n-gen` / `l10n-verify`
 
 - **怎么用：** 改父 ARB（`app_en.arb` / `app_zh.arb`）后 `make l10n`；CI/自检 `make l10n-verify`。
 - **何时用：** 文案/多语言；`l10n-sync` 只重生子 ARB；`l10n-gen` 只 `flutter gen-l10n`。
-- **后续上板：** `build-app` + `push-app`。
+- **后续上板：** `build-app` + `upgrade-app`。
 
 ### `make check-typography`
 
@@ -391,12 +393,14 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `KERNEL_ONLY=1` | 仅内核日志 |
 | `SN` / `IP` | 选板 |
 
-### `make push-app`
+### `make upgrade-app` / `make push-app` / `make package-app` / `make apply-app-overlay`
 
-- **怎么用：** `make build-app` 后 `make push-app`
-- **何时用：** App 日更（不刷 rootfs）。
-- **参数：** `APP`、设备选择。
-- **行为：** `*_hmi` → `/opt/hmi` 并重启 `hmi.service`；其它 App → `/opt/<id>`。
+- **怎么用：** `make build-app` 后 `make upgrade-app`（`make push-app` 为同名别名）
+- **何时用：** App 日更（不刷 rootfs）；签名后经主机临时 HTTP 下发，设备拉取 + Ed25519 验签后安装 `/opt/hmi` 并重启 `hmi.service`。
+- **行为：** `package-app` → `ota-sign.sh` → HTTP 提供 `v*.tar.gz`+`.sig` → SSH 写 `/run/hmi/upgrade-app.cmd` 为 `download <url>`（**无** unsigned SCP）。
+- **参数：** `APP`、`APP_PACKAGE=`（可选已打包路径）、`OTA_SIGNING_KEY`、设备选择。
+- **前提：** `OTA_SIGNING_KEY`；板端 HMI 含 `UpgradeAppCommandWatcher`。
+- **恢复：** 板端安装器坏掉/过旧导致 `upgrade-app` 装不上时，`make build-app` 后跑 `make apply-app-overlay`（SSH 推 overlay + shell 安装 + 重启；绕过 App 内安装器）。
 
 ### `make upgrade-control-board`
 
@@ -538,16 +542,23 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
   - 仅上传已有包：`make publish-only`
   - 其它 HMI：`APP=cnc_hmi make publish`（R2 前缀 `cnc-hmi/`；需 `app/cnc_hmi`）
   - 测试 API：`CLOUD_API_BASE=https://api-test.lasercyber.workers.dev make publish`
-- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新 **`release.json`**，供设备云端拉取。
+- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新 **`release.json`**，供设备云端拉取 **整机 / OS** 通道。
 - **上传路径：** 与 `lws-ui` / `make login` 同源——默认 **`CLOUD_API_BASE=https://api-prod.lasercyber.workers.dev`**，`GET /v1/storage/r2/presigned-url` 取凭证后 Python **直传 R2**（不走 `PUT /upload/…`）。
-- **渠道：** **仅 release**（始终写 `release.json`；无 `staging.json`、无 `RELEASE=`、无 `-beta`/`-alpha`）。版本取自 `app/<APP>/pubspec.yaml`（去 `+build`）。
-- **设备比较：** Settings / 云检查用运行中 HMI 版本与 channel `version` 做 semver 比较；设备始终拉取 **`https://cdn.lasercyber.com/{artifact}/release.json`**（R2 CDN 直连，与云服务 / API pin 无关）。
+- **渠道：** **仅 release**（始终写 `release.json`；无 `staging.json`、无 `RELEASE=`、无 `-beta`/`-alpha`）。版本取自 **OS Version** SoT（`/etc/os-release` `VERSION=`），**不是** Flutter pubspec。
+- **设备比较：** Settings System Upgrade 用运行中 **OS Version** 与 channel `version` 做 semver 比较；设备始终拉取 **`https://cdn.lasercyber.com/{artifact}/release.json`**（R2 CDN 直连，与云服务 / API pin 无关）。HMI app 通道见 `make publish-app`。
 - **Manifest 字段：** `version`、`filename`、`published_at`、`url`（**无 `sha512`**；完整性靠旁路 `.sig`，设备侧 `url`/`package_url` + `".sig"`）。
 - **鉴权：** `PUBLISH_API_TOKEN`（优先）→ `CLOUD_ACCESS_TOKEN` → `make login` 的 `output/cloud/credentials.json`。
-- **产出对象（默认 APP）：** `lws-hmi/v{ver}.tar.gz`、同名 `.sig`、`lws-hmi/release.json`。
+- **产出对象（默认 APP）：** `lws-hmi/v{OS}.tar.gz`、同名 `.sig`、`lws-hmi/release.json`。
 - **参数：** `APP`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
 - **前提：** `make ota-release-keys` / `OTA_SIGNING_KEY`；`make login` 或静态 token。
-- **注意：** 勿再设 `RELEASE=`（已移除；设置会报错退出）。
+- **注意：** 勿再设 `RELEASE=`（已移除；设置会报错退出）。App-only 发布用 `make publish-app`。
+
+### `make publish-app` / `make publish-app-only`
+
+- **怎么用：** `make publish-app`；仅上传已有包：`make publish-app-only`（需 `APP_PACKAGE=` 或默认 `output/firmware/<APP>/v*.tar.gz` + `.sig`）
+- **何时用：** 把 HMI app `tar.gz` + `.sig` + **`release.json`** 发到 R2 **`lws-hmi/app/`**，供设备 HMI Upgrade 云端检查。
+- **渠道版本：** Flutter pubspec SemVer，manifest `version` = `v{semver}`。
+- **鉴权 / API 基址：** 与 `make publish` 相同。
 
 ### `make publish-control-board-firmware` / `make publish-camera-firmware`
 
@@ -616,7 +627,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 
 | 场景 | 命令（自上而下） |
 |------|------------------|
-| App 日更 | `make build-app` → `make push-app` |
+| App 日更 | `make build-app` → `make upgrade-app`（`push-app` 别名） |
 | Overlay / systemd | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
 | Kernel / DTS | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `make build-kernel` → `make upgrade` |
 | 仅 OEM | `make build-oem` → `OEM_ONLY=1 make upgrade` |

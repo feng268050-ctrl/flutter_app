@@ -164,7 +164,7 @@ AppServices _testServices() {
       snapshotData: const SysInfoSnapshot(
         serialNumber: 'test-sn',
         kernelRelease: '6.1.0-test',
-        appVersion: kSystemVersion,
+        appVersion: kHmiVersion,
       ),
     ),
     modbusClient: _OfflineModbus(),

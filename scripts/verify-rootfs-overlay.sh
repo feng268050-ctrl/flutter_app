@@ -277,13 +277,19 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/hmi (App/UI only) ---"
-	for f in hmi-launch.sh hmi-stop-and-wait.sh push-app-apply-and-restart.sh \
+	for f in hmi-launch.sh hmi-stop-and-wait.sh \
 		debug-app-apply.sh debug-app-run.sh debug-runtime-install.sh \
 		diagnose-hmi.sh extract-video-frame; do
 		if [[ -x "$libexec_hmi/$f" ]]; then
 			echo "OK:  hmi/$f"
 		else
 			echo "FAIL: hmi/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+	for stale in push-app-apply-and-restart.sh upgrade-app-apply-and-restart.sh; do
+		if [[ -e "$libexec_hmi/$stale" ]]; then
+			echo "FAIL: removed helper still under hmi/$stale (App owns install+restart)" >&2
 			missing=1
 		fi
 	done
@@ -1308,10 +1314,19 @@ EOF
 	# full target root (BR output), require it; overlay-only checks skip.
 	if [[ -x "$target/usr/bin/openssl" ]]; then
 		echo "OK:  /usr/bin/openssl present (OTA verify via cyber_ota)"
-	elif [[ -d "$target/usr/libexec/ab" && ! -e "$target/etc/os-release" ]]; then
+	elif [[ -d "$target/usr/libexec/ab" ]] && \
+		[[ ! -x "$target/usr/bin/systemctl" && ! -x "$target/bin/systemctl" ]]; then
 		echo "OK:  openssl CLI deferred (fs-overlay check; ensure BR2_PACKAGE_LIBOPENSSL_BIN in rootfs)"
 	else
 		echo "FAIL: missing /usr/bin/openssl (enable BR2_PACKAGE_LIBOPENSSL_BIN; dirclean rebuild libopenssl)" >&2
+		missing=1
+	fi
+	if [[ -f "$target/etc/os-release" ]] && \
+		grep -q '^ID=cyberos$' "$target/etc/os-release" && \
+		grep -q '^NAME="Cyber OS"$' "$target/etc/os-release"; then
+		echo "OK:  /etc/os-release is Cyber OS"
+	else
+		echo "FAIL: /etc/os-release must identify Cyber OS (NAME/ID)" >&2
 		missing=1
 	fi
 	if grep -q 'enable ab-boot-confirm.service' \

@@ -1245,6 +1245,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get holdToEnableLaser => 'Hold To Enable Laser';
 
   @override
+  String get hmiUpgradeTitle => 'HMI Upgrade';
+
+  @override
+  String get hmiVersion => 'HMI Version';
+
+  @override
   String get homeAiVisionLabel => 'AI Vision';
 
   @override
@@ -1804,6 +1810,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onLabel => 'On';
 
   @override
+  String get osVersion => 'OS Version';
+
+  @override
   String get otaCheckUnavailable =>
       'Software update check is not available on this build.';
 
@@ -1880,6 +1889,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get otaUpgradeStatusApk => 'Installing app…';
+
+  @override
+  String get otaUpgradeStatusRestarting => 'Restarting application…';
 
   @override
   String get otaUpgradeStatusDownloading => 'Downloading update…';
@@ -2598,7 +2610,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncNow => 'Sync Now';
 
   @override
-  String get systemVersion => 'System Version';
+  String get systemVersion => 'OS Version';
 
   @override
   String get tempBoardRefrigerationCommAlarmContent =>

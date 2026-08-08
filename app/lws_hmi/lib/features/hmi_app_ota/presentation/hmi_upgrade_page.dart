@@ -1,31 +1,31 @@
 import 'dart:async';
 
-import 'package:cyber_hal/sys_info.dart';
 import 'package:cyber_ota/cyber_ota.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:cyber_upgrade_ui/cyber_upgrade_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
-import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/features/hmi_app_ota/application/hmi_app_upgrade_coordinator.dart';
+import 'package:lws_hmi/features/hmi_app_ota/application/hmi_app_upgrade_mapping.dart';
+import 'package:lws_hmi/features/hmi_app_ota/infrastructure/hmi_app_manifest_url.dart';
+import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
-import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
-import 'package:lws_hmi/features/system_ota/application/system_ota_upgrade_mapping.dart';
-import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
-/// System Upgrade — Settings chrome; one content card fills remaining height.
+/// HMI Upgrade — Settings chrome; HMI Version + Process Library Version.
 ///
-/// - From Device Information (OS Version): check + apply (auto-check master
+/// - From Device Information (HMI Version): check + apply (auto-check master
 ///   switch lives on Device Info → Version).
-/// - Host `make upgrade` / cleared-stack: [progressOnly] with
-///   [SystemOtaUpgradeMapping.hostForcePolicy] (no version check).
-class SystemUpgradePage extends StatefulWidget {
-  const SystemUpgradePage({
+/// - Host `make upgrade-app` / cleared-stack: [progressOnly] with
+///   [HmiAppUpgradeMapping.hostForcePolicy] (no version check).
+class HmiUpgradePage extends StatefulWidget {
+  const HmiUpgradePage({
     super.key,
     this.autoCheckOnOpen = false,
     this.initialManifest,
@@ -35,124 +35,127 @@ class SystemUpgradePage extends StatefulWidget {
   final bool autoCheckOnOpen;
   final OtaManifest? initialManifest;
 
-  /// Host / WS apply — skip check chrome; uses [UpgradePolicy.hostForce].
+  /// Host / force apply — skip check chrome; uses [UpgradePolicy.hostForce].
   final bool progressOnly;
 
   @override
-  State<SystemUpgradePage> createState() => _SystemUpgradePageState();
+  State<HmiUpgradePage> createState() => _HmiUpgradePageState();
 }
 
-class _SystemUpgradePageState extends State<SystemUpgradePage> {
-  StreamSubscription<OtaProgress>? _sub;
-  StreamSubscription<SysInfoUpdate>? _sysSub;
-  OtaProgress? _progress;
+class _HmiUpgradePageState extends State<HmiUpgradePage> {
+  StreamSubscription<HmiAppUpgradeProgress>? _sub;
+  HmiAppUpgradeProgress _progress = HmiAppUpgradeProgress.idle;
   OtaManifest? _availableManifest;
   UpgradeCheckUiState _checkUi = UpgradeCheckUiState.idle;
   bool _applyUi = false;
-  String _osVersion = kUnavailableDisplay;
-  String _kernelVersion = kUnavailableDisplay;
+  String _processLibVersion = kUnavailableDisplay;
 
-  /// Effective policy for this page entry.
   UpgradePolicy get _policy => widget.progressOnly
-      ? SystemOtaUpgradeMapping.hostForcePolicy
-      : SystemOtaUpgradeMapping.operatorPolicy;
+      ? HmiAppUpgradeMapping.hostForcePolicy
+      : HmiAppUpgradeMapping.operatorPolicy;
 
   bool get _showProgress {
     if (widget.progressOnly || _applyUi) {
       return true;
     }
-    if (SystemOtaCoordinator.instance.isSessionActive) {
+    if (HmiAppUpgradeCoordinator.instance.isSessionActive) {
       return true;
     }
-    final phase = _progress?.phase;
-    if (phase == null) {
-      return false;
-    }
-    return phase == OtaPhase.preparing ||
-        phase == OtaPhase.transferring ||
-        phase == OtaPhase.verifying ||
-        phase == OtaPhase.extracting ||
-        phase == OtaPhase.writing ||
-        phase == OtaPhase.arming ||
-        phase == OtaPhase.ok;
+    return _progress.isRunning ||
+        _progress.isTerminalOk ||
+        _progress.isTerminalFail;
   }
 
   @override
   void initState() {
     super.initState();
-    final coordinator = SystemOtaCoordinator.instance;
-    _progress = coordinator.lastProgress;
+    final coordinator = HmiAppUpgradeCoordinator.instance;
+    final last = coordinator.lastProgress;
+    if (coordinator.isSessionActive || last.isRunning) {
+      _progress = last;
+      _applyUi = true;
+    } else {
+      if (last.isTerminalOk || last.isTerminalFail) {
+        coordinator.clearProgress();
+      }
+      _progress = HmiAppUpgradeProgress.idle;
+    }
     if (widget.progressOnly) {
       _applyUi = true;
-      // Host force: version check must not gate apply.
       assert(!shouldRunVersionCheck(_policy));
     }
     if (widget.initialManifest != null) {
       _availableManifest = widget.initialManifest;
       _checkUi = UpgradeCheckUiState.available;
     }
-    _sub = coordinator.uiProgress.listen((p) {
+    _sub = coordinator.progress.listen((p) {
       if (!mounted) {
         return;
       }
       setState(() {
         _progress = p;
-        if (p.phase == OtaPhase.transferring ||
-            p.phase == OtaPhase.preparing ||
-            p.phase == OtaPhase.verifying ||
-            p.phase == OtaPhase.extracting ||
-            p.phase == OtaPhase.writing ||
-            p.phase == OtaPhase.arming ||
-            p.phase == OtaPhase.ok ||
-            p.phase == OtaPhase.fail) {
+        if (p.isRunning || p.isTerminalOk || p.isTerminalFail) {
           _applyUi = true;
         }
       });
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!widget.progressOnly) {
-        _startVersionWatch();
-      }
-      if (!widget.progressOnly &&
-          widget.initialManifest == null &&
-          (widget.autoCheckOnOpen ||
-              (MiscSettingsScope.maybeOf(context)?.autoCheckOtaUpdate ??
-                  false))) {
-        unawaited(_runCheck());
-      }
+      unawaited(_bootstrap());
     });
   }
 
-  void _startVersionWatch() {
+  Future<void> _bootstrap() async {
+    if (!widget.progressOnly) {
+      _refreshProcessLib();
+    }
+    if (widget.progressOnly) {
+      // Host `make upgrade-app` starts download from the coordinator after nav.
+      return;
+    }
+    if (widget.initialManifest == null &&
+        (widget.autoCheckOnOpen ||
+            (MiscSettingsScope.maybeOf(context)?.autoCheckOtaUpdate ??
+                false))) {
+      await _runCheck();
+    }
+  }
+
+  void _refreshProcessLib() {
     try {
-      final services = AppScope.of(context);
-      _sysSub = services.sysInfo
-          .watch(interval: const Duration(seconds: 5))
-          .listen((update) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _osVersion = update.snapshot.osVersion ?? kUnavailableDisplay;
-          _kernelVersion =
-              update.snapshot.kernelRelease ?? kUnavailableDisplay;
-        });
-      }, onError: (_) {});
+      final lib = ProcessLibraryScope.of(context);
+      final fromPreset = lib.presets
+          .map((p) => p.libraryVersion)
+          .whereType<String>()
+          .where((v) => v.trim().isNotEmpty)
+          .cast<String?>()
+          .firstWhere((_) => true, orElse: () => null);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _processLibVersion =
+            (fromPreset == null || fromPreset.isEmpty)
+                ? kUnavailableDisplay
+                : fromPreset;
+      });
     } catch (_) {}
   }
 
   @override
   void dispose() {
     unawaited(_sub?.cancel());
-    unawaited(_sysSub?.cancel());
+    _sub = null;
+    if (!_progress.isRunning) {
+      HmiAppUpgradeCoordinator.instance.clearProgress();
+    }
     super.dispose();
   }
 
-  String? _resolveManifestUrl() => OtaManifestUrl.resolve();
+  String? _resolveManifestUrl() => HmiAppManifestUrl.resolve();
 
   Future<void> _runCheck() async {
     if (_checkUi == UpgradeCheckUiState.checking ||
-        SystemOtaCoordinator.instance.isSessionActive) {
+        HmiAppUpgradeCoordinator.instance.isSessionActive) {
       return;
     }
     if (!shouldRunVersionCheck(_policy)) {
@@ -171,7 +174,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       _availableManifest = null;
     });
     try {
-      final result = await SystemOtaCoordinator.instance.checkForUpdate(
+      final result = await HmiAppUpgradeCoordinator.instance.checkForUpdate(
         manifestUrl: url,
       );
       if (!mounted) {
@@ -189,7 +192,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
         });
       }
     } catch (e, st) {
-      debugPrint('SystemUpgradePage: check failed: $e\n$st');
+      debugPrint('HmiUpgradePage: check failed: $e\n$st');
       if (!mounted) {
         return;
       }
@@ -202,17 +205,23 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
 
   Future<void> _startUpdate(OtaManifest manifest) async {
     CyberClickSoundRegistry.playClick();
-    if (SystemOtaCoordinator.instance.isSessionActive) {
+    if (HmiAppUpgradeCoordinator.instance.isSessionActive) {
       return;
     }
     setState(() => _applyUi = true);
+    final fileName = _fileNameFromUrl(manifest.packageUrl) ??
+        'v${OtaManifest.coreVersion(manifest.version) ?? manifest.version}.tar.gz';
     try {
-      await SystemOtaCoordinator.instance.startCloudUpdateFlow(
-        manifest,
-        alreadyOnUpgradePage: true,
+      await HmiAppUpgradeCoordinator.instance.runOfferUpgrade(
+        HmiAppUpgradeOffer(
+          version: manifest.version,
+          fileName: fileName,
+          packageUrl: manifest.packageUrl,
+        ),
+        policy: _policy,
       );
     } catch (e) {
-      debugPrint('SystemUpgradePage: start update failed: $e');
+      debugPrint('HmiUpgradePage: start update failed: $e');
       if (mounted) {
         setState(() {
           _applyUi = false;
@@ -222,18 +231,27 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     }
   }
 
+  static String? _fileNameFromUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.pathSegments.isEmpty) {
+      return null;
+    }
+    final name = Uri.decodeComponent(uri.pathSegments.last);
+    return name.isEmpty ? null : name;
+  }
+
   bool get _canPop {
-    final phase = _progress?.phase ?? OtaPhase.idle;
-    if (SystemOtaCoordinator.isNonCancelablePhase(phase)) {
+    if (_progress.isRunning) {
       return false;
     }
-    if (phase == OtaPhase.ok) {
+    if (_progress.isTerminalOk) {
       return false;
     }
     return true;
   }
 
   void _goHome() {
+    HmiAppUpgradeCoordinator.instance.clearProgress();
     Navigator.of(context).pushNamedAndRemoveUntil(
       AppRoutes.home,
       (route) => false,
@@ -248,7 +266,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     return PopScope(
       canPop: _canPop,
       child: SettingsScaffold(
-        title: l10n.systemUpgradeTitle,
+        title: l10n.hmiUpgradeTitle,
         backEnabled: _canPop,
         body: Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -269,8 +287,8 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                     children: [
                       if (!inProgress) ...[
                         SettingsValueRow(
-                          title: l10n.osVersion,
-                          value: _osVersion,
+                          title: l10n.hmiVersion,
+                          value: kHmiVersion,
                         ),
                         const Divider(
                           height: SettingsDimens.sectionDividerHeight,
@@ -280,8 +298,8 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                           color: SettingsDimens.sectionDividerColor,
                         ),
                         SettingsValueRow(
-                          title: l10n.kernelVersion,
-                          value: _kernelVersion,
+                          title: l10n.processLibVersion,
+                          value: _processLibVersion,
                         ),
                         const Divider(
                           height: SettingsDimens.sectionDividerHeight,
@@ -320,14 +338,12 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       color: CyberColors.textPrimary,
       fontSize: 22,
     );
-    final currentLabel =
-        _osVersion == kUnavailableDisplay ? '' : _osVersion;
 
     return UpgradeCheckCard(
       state: _checkUi,
       idleHint: l10n.otaUpgradeIdleHint,
       checkingLabel: l10n.checkingStatus,
-      upToDateMessage: l10n.otaAlreadyUpToDate(currentLabel),
+      upToDateMessage: l10n.otaAlreadyUpToDate(kHmiVersion),
       unavailableMessage: l10n.otaCheckUnavailable,
       failedMessage: l10n.otaCheckFailed,
       availableHeadline: available == null
@@ -338,7 +354,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
           : ((available.content?.trim().isNotEmpty ?? false)
               ? available.content!.trim()
               : l10n.otaUpdateAvailableMessage(
-                  currentLabel,
+                  kHmiVersion,
                   available.version,
                 )),
       statusStyle: style,
@@ -411,10 +427,8 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
   }
 
   Widget _buildProgressBody(AppLocalizations l10n) {
-    final otaProgress =
-        _progress ?? const OtaProgress(phase: OtaPhase.preparing);
     final updateProgress =
-        SystemOtaUpgradeMapping.toUpgradeProgress(otaProgress);
+        HmiAppUpgradeMapping.toUpgradeProgress(_progress);
     final failed = updateProgress.isTerminalFail;
     final complete = updateProgress.isTerminalOk;
 
@@ -423,10 +437,10 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       children: [
         Expanded(
           child: UpgradePhaseProgressView(
-            phases: SystemOtaUpgradeMapping.phases(l10n),
+            phases: HmiAppUpgradeMapping.phases(l10n),
             progress: updateProgress,
             statusLabel:
-                SystemOtaUpgradeMapping.statusLabel(l10n, otaProgress),
+                HmiAppUpgradeMapping.statusLabel(l10n, _progress),
             titleStyle: context.hmiTypography.settingsRowTitle.copyWith(
               color: CyberColors.textPrimary,
               fontSize: 20,
@@ -449,13 +463,18 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                 : null,
           ),
         ),
-        if (complete)
+        if (complete || failed)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: UpgradeCompletionTip(
               progress: updateProgress,
-              config: UpgradeCompletionConfig.autoReboot(
-                rebootNotice: l10n.otaUpgradeRebootHint,
+              config: UpgradeCompletionConfig.noReboot(
+                successBody: complete ? l10n.settingsMayRestartApp : null,
+                failureBody: failed
+                    ? (_progress.errorMessage?.isNotEmpty == true
+                        ? _progress.errorMessage
+                        : l10n.otaUpgradeStatusFailed)
+                    : null,
               ),
               style: context.hmiTypography.settingsRowValue.copyWith(
                 color: CyberColors.textSecondary,

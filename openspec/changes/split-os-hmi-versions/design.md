@@ -28,11 +28,22 @@ This change introduces a durable split: **OS Version** owns the rootfs / whole-d
 
 ### D1 — OS Version stamp location
 
-**Choice:** Bake a single-line SemVer file into rootfs, e.g. `/etc/os-version` (or `/usr/share/hmi/os-version` if we prefer product-owned path under existing conventions), written from a repo SoT such as `board/os-version.txt` or `overlay/.../etc/os-version` during `apply-overlay` / `build-rootfs`.
+**Choice:** Product OS identity lives in standard **`/etc/os-release`** (repo SoT: `overlay/.../rootfs-overlay/etc/os-release`):
 
-**Rationale:** Simple for shell, HAL, and App to read; survives independently of Flutter assets; visible in rootfs images without parsing Buildroot `/etc/os-release` PRETTY_NAME.
+```
+NAME="Cyber OS"
+ID=cyberos
+ID_LIKE="buildroot"
+VERSION="1.0.0"
+VERSION_ID=1.0
+PRETTY_NAME="Cyber OS 1.0.0"
+```
 
-**Alternatives:** Embed only in `/etc/os-release` `VERSION_ID` (collides with distro semantics); keep version only in cloud `release.json` (device cannot show local OS version offline).
+`VERSION=` is full SemVer (Settings + whole-device OTA channel). `VERSION_ID=` is `major.minor` (distro series). `make version` / `version-bump` rewrite this file.
+
+**Rationale:** Treat Cyber OS like a Linux distribution; standard tooling (`hostnamectl`, shell, support) expects `/etc/os-release`.
+
+**Alternatives:** Separate `/usr/share/hmi/os-version` (rejected — user wants distro-shaped identity).
 
 ### D2 — HMI Version constants rename
 
@@ -50,13 +61,13 @@ This change introduces a durable split: **OS Version** owns the rootfs / whole-d
 
 **Choice:** `tar.gz` of the installable `/opt/hmi` payload (same logical tree `build-app` stages: `libapp.so`, `flutter_assets`, optional `bin/` / `lib/`, `runtime-mode.json`, etc.), sibling Ed25519 `.sig` via existing `ota-sign.sh` / device pubkey `/etc/ota/ed25519.pub`.
 
-**Rationale:** Mirrors whole-device and peripheral signing; install path can reuse / evolve `push-app-apply-and-restart.sh` behind verify.
+**Rationale:** Mirrors whole-device and peripheral signing; device App owns extract/install (`OtaExtract` + tree install) and `systemd-run … systemctl restart hmi`.
 
 **Alternatives:** rsync-only unsigned push (rejected — user requires signed path); squashfs (heavier, no existing tooling).
 
 ### D5 — Cloud layout
 
-**Choice:** Publish under **`lws-hmi/app/`** with `release.json` shape `{ version, filename, published_at, url }` (same as peripherals). Manifest version = `v{semver}` from HMI pubspec. Filename e.g. `app-v{semver}.tar.gz` (exact pattern fixed in implementation to match publish script conventions).
+**Choice:** Publish under **`lws-hmi/app/`** with `release.json` shape `{ version, filename, published_at, url }` (same as peripherals). Manifest version = `v{semver}` from HMI pubspec. Filename e.g. `v{semver}.tar.gz` (same basename shape as whole-device OTA; channel distinguished by `lws-hmi/app/` prefix).
 
 **Rationale:** User-specified directory; consistent with `lws-hmi/control-board/` and `lws-hmi/camera/`.
 
@@ -104,7 +115,7 @@ This change introduces a durable split: **OS Version** owns the rootfs / whole-d
 
 - **[Risk] OS and HMI versions diverge; support confusion** → Show both clearly on Device Info; document that full rootfs OTA resets `/opt/hmi` to the baked app.
 - **[Risk] HMI tar.gz omits native companions (AI/mediamtx) and breaks runtime** → Package MUST include the same companion set `build-app` installs under `/opt/hmi`; verify in packaging script.
-- **[Risk] Apply + restart kills the process mid-watcher** → Reuse detached apply/restart pattern from push-app (`setsid` / stop-wait-start) so install completes after Flutter exits.
+- **[Risk] Apply + restart kills the process mid-watcher** → After Dart install, launch `systemd-run … systemctl restart hmi` **outside** `hmi.service` cgroup (`KillMode=control-group`); do not `systemctl restart` from inside the HMI process.
 - **[Risk] CDN cutover: old `lws-hmi/release.json` still keyed to app semver** → Publish first OS `1.0.0` system package explicitly; document that devices must understand OS vs HMI checks before relying on split.
 - **[Risk] Unsigned push-app removal slows local iteration** → `push-app` / `upgrade-app` still work over USB-SSH with local sign key; accept signing cost as the security baseline.
 
@@ -120,6 +131,5 @@ This change introduces a durable split: **OS Version** owns the rootfs / whole-d
 
 ## Open Questions
 
-- Exact on-disk path for OS Version (`/etc/os-version` vs `/usr/share/hmi/os-version`) — prefer product-owned path if `/etc/os-release` tooling is noisy; finalize during apply.
-- Whether OS Version needs a numeric `versionCode` for cloud compare, or SemVer string compare only (system OTA today uses SemVer string vs `kSystemVersion`).
-- Final filename pattern for app artifacts (`app-v1.0.41.tar.gz` vs including APP id).
+- Whether OS Version needs a numeric `versionCode` for cloud compare, or SemVer string compare only (system OTA today uses SemVer string vs `VERSION=`).
+- Final filename pattern for app artifacts (`v1.0.41.tar.gz` under `lws-hmi/app/` vs including APP id).

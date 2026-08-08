@@ -76,7 +76,7 @@ Whole-device OTA progress SHALL be shown on the **System Upgrade** page driven b
 
 ### Requirement: Safe shutdown navigates to the dedicated upgrade page
 
-Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at download start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and ensure the **System Upgrade** page is showing progress. After package download and signature verify succeed (and before extract/partition writes), the HMI SHALL also turn off the Wi‑Fi radio and Bluetooth adapter (Ethernet / USB-SSH networking MAY remain). When the OTA session ends without reboot-after-arm (failure/cancel), the HMI SHALL restore radios that were enabled before quiesce; on successful reboot-armed completion, radio restore MAY be skipped. When the operator is already on System Upgrade (Update Now), navigation MUST NOT remount a separate progress route unnecessarily. When started from host `make upgrade` / cleared stack, the HMI SHALL navigate **directly** to System Upgrade (progress-only) and MUST NOT use Home as an intermediate destination. Partition writes MUST NOT begin until this safe shutdown and upgrade-page presentation have completed (or the session fails closed without writing).
+Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at download start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and ensure the **System Upgrade** page is showing progress. After package download and signature verify succeed (and before extract/partition writes), the HMI SHALL also turn off the Wi‑Fi radio and Bluetooth adapter (Ethernet / USB-SSH networking MAY remain). When the OTA session ends (failure, cancel, **or** successful reboot-armed completion), the HMI SHALL restore radios that were enabled before quiesce. Radio restore MUST NOT be skipped on reboot-armed success: Wi‑Fi/BT are operator-wanted (not systemd `wants`), and quiesce clears their wanted markers — reboot alone will not re-enable them. When the operator is already on System Upgrade (Update Now), navigation MUST NOT remount a separate progress route unnecessarily. When started from host `make upgrade` / cleared stack, the HMI SHALL navigate **directly** to System Upgrade (progress-only) and MUST NOT use Home as an intermediate destination. Partition writes MUST NOT begin until this safe shutdown and upgrade-page presentation have completed (or the session fails closed without writing).
 
 #### Scenario: make upgrade trigger stops work and opens upgrade page
 
@@ -96,12 +96,12 @@ Before starting whole-device transfer or verify-and-apply (including when trigge
 - **THEN** before extract or partition writes begin, the HMI turns off Wi‑Fi and Bluetooth
 - **AND** soft-fails radio disable when the board has no radio stack
 
-#### Scenario: Radios restored when OTA ends without reboot
+#### Scenario: Radios restored when OTA session ends
 
 - **WHEN** Wi‑Fi and/or Bluetooth were enabled before the pre-extract radio quiesce
-- **AND** the whole-device OTA session ends in failure or cancel (no reboot-after-arm)
-- **THEN** the HMI SHALL restore those radios that were previously enabled
-- **AND** when the session completes successfully with reboot armed, radio restore MAY be skipped (post-reboot wanted restore applies)
+- **AND** the whole-device OTA session ends (failure, cancel, or success with reboot armed)
+- **THEN** the HMI SHALL restore those radios that were previously enabled (rewriting wanted markers and re-enabling)
+- **AND** MUST NOT skip restore solely because reboot-after-arm was requested
 
 ### Requirement: Whole-device OTA excludes concurrent control-board flash
 

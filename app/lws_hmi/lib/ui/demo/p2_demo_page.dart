@@ -120,11 +120,11 @@ class _P2DemoPageState extends State<P2DemoPage> {
     _sysInfo = widget.sysInfo ??
         (bindings?.sysInfo(
               deviceSnReader: widget.deviceSnReader,
-              appVersion: kSystemVersion,
+              appVersion: kHmiVersion,
             ) ??
             LinuxSysInfo(
               deviceSnReader: widget.deviceSnReader,
-              appVersion: kSystemVersion,
+              appVersion: kHmiVersion,
             ));
     _modbus = widget.modbusClient ??
         ModbusRtuClient(

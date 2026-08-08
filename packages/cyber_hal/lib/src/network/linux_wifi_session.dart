@@ -298,6 +298,9 @@ class LinuxWifiSession implements WifiController {
     _stopWantedWatch();
     if (enabled) {
       _emitRadio(WifiRadioState.starting);
+      // Persist wanted before stack bring-up so OTA reboot-after-arm still
+      // restores Wi‑Fi on the next boot if reboot races the enable path.
+      await _writeWanted(true);
       try {
         await wifiRadio.setEnabled(true);
       } catch (e) {
@@ -313,7 +316,6 @@ class LinuxWifiSession implements WifiController {
         return;
       }
       _emitRadio(WifiRadioState.on);
-      await _writeWanted(true);
       await _startStatusWatch();
       if (await _isIeee80211()) {
         await _prepareVaultAndInject();

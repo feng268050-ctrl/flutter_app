@@ -306,6 +306,15 @@ fi
 echo "127.0.1.1	$HOSTNAME_PRODUCT" >>"$TARGET_DIR/etc/hosts"
 echo "post-build: hostname=$HOSTNAME_PRODUCT (override Rockchip \$RK_CHIP-buildroot)"
 
+# Cyber OS identity (must survive BR target-finalize + Rockchip hooks).
+if [ ! -f "$TARGET_DIR/etc/os-release" ] || \
+	! grep -q '^ID=cyberos$' "$TARGET_DIR/etc/os-release" || \
+	! grep -q '^NAME="Cyber OS"$' "$TARGET_DIR/etc/os-release"; then
+	echo "post-build: ERROR /etc/os-release must be Cyber OS (overlay etc/os-release)" >&2
+	exit 1
+fi
+echo "post-build: /etc/os-release is Cyber OS"
+
 # P3.2 emulator GLES: do NOT bake Mesa into device rootfs. Host qemu-virgl +
 # 9p mount of prebuilt/emulator-swgl (see run-emulator.sh / hmi-launch.sh).
 if [ -d "$TARGET_DIR/opt/lws-swgl" ]; then

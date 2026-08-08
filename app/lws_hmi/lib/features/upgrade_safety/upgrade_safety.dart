@@ -30,7 +30,9 @@ final class UpgradeRadioSnapshot {
 /// 2. download + verify (may need Wi‑Fi / Ethernet)
 /// 3. [quiesceRadios] — before flash/burn (Wi‑Fi + BT off; Ethernet stays)
 /// 4. apply
-/// 5. [restoreRadios] — after apply ends (skip when whole-device reboot is armed)
+/// 5. [restoreRadios] — after apply ends (including whole-device reboot-armed
+///    success: Wi‑Fi/BT are not systemd wants, so reboot will not re-enable them;
+///    restore also rewrites wanted markers cleared by quiesce)
 ///
 /// When the payload is already local (bundled / host file), call
 /// [prepareForApply] once before Modbus/CGI/partition apply.

@@ -41,7 +41,7 @@ Daily iteration examples (one command per line; run in order):
 ```bash
 # Flutter app only (board already has a working rootfs)
 make build-app
-make push-app
+make upgrade-app
 
 # Kernel / DTS / boot logo
 make build-boot-logo
@@ -65,7 +65,7 @@ More detail: [`docs/build-optimization.md`](docs/build-optimization.md), [`app/R
 **Pipeline rules (do not get wrong):**
 
 - `make build-app` updates the selected app’s overlay install tree and runs `apply-overlay`; it does **not** rebuild rootfs. Default `APP=lws_hmi`. **Convention:** Flutter dirs ending in `_hmi` install to `/opt/hmi` (for `hmi.service`); one rootfs has at most one HMI app plus optional `factory_test` at `/opt/factory_test`.
-- App-only daily iteration: `make build-app` then `make push-app` (SSH hot-swap `/opt/hmi`). Do **not** require `build-rootfs` / `upgrade` unless baking the app into a release image or the board lacks a pushable HMI.
+- App-only daily iteration: `make build-app` then `make upgrade-app` (alias `push-app`; signed HTTP + device download into `/opt/hmi`). Do **not** require `build-rootfs` / `upgrade` unless baking the app into a release image or the board lacks a pushable HMI.
 - `make build-rootfs` ensures the selected `APP` is in overlay; if `app/factory_test` exists it also ensures `/opt/factory_test` (no `APP=` needed for that auto-include). Selecting `APP=cnc_hmi` (etc.) replaces `/opt/hmi` with that product.
 - `make build-kernel` builds two hash-valid FITs containing the same Linux kernel: `boot.img` selects `rootfs_a`; `boot_b.img` selects `rootfs_b`. FITs are **multi-configuration** (W5): conf name = `board_id` from `board/rk356x-fit-boards.txt` (default `ynh960`). Publishes bare `Image` alongside for P3.2 emulator. Artifacts go to `output/firmware/` (macOS Docker volume auto-export). Inspect: `bash scripts/verify-boot-fit.sh output/firmware`.
 - `make build-rootfs` bakes fs-overlay (including `/opt/hmi`) into rootfs and publishes `output/firmware/<APP>/rootfs.img` (boot FITs remain shared under `output/firmware/`).
@@ -81,10 +81,10 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 
 | What changed | Commands |
 |--------------|----------|
-| `app/lws_hmi/**`, `scripts/build-app.sh`, `scripts/hmi-bundle-common.sh`, `scripts/push-app.sh`, `scripts/app-select.sh` | `make build-app`, `make push-app` (other apps: `APP=<id> make build-app` / `push-app`) |
-| `app/factory_test/**` | interactive: `APP=factory_test make build-app` (+ `push-app`); rootfs auto-includes when source exists: `make build-rootfs` |
+| `app/lws_hmi/**`, `scripts/build-app.sh`, `scripts/hmi-bundle-common.sh`, `scripts/upgrade-app.sh`, `scripts/package-app.sh`, `scripts/push-app.sh`, `scripts/apply-app-overlay-remote.sh`, `scripts/app-select.sh` | `make build-app`, `make upgrade-app` (alias `push-app`; other apps: `APP=<id> make build-app` / `upgrade-app`). If on-device installer is stale/broken: `make apply-app-overlay` once after `build-app` |
+| `app/factory_test/**` | interactive: `APP=factory_test make build-app` (+ `upgrade-app` if applicable); rootfs auto-includes when source exists: `make build-rootfs` |
 | `app/lws_hmi/assets/process-library/**`, `app/lws_hmi/assets/firmware/control-board/**`, `app/lws_hmi/assets/firmware/camera/**`, `scripts/prepare-hmi-ship-assets.sh`, `scripts/convert-process-library.py` | `make build-app` (runs prepare); or host-only `make prepare-app-assets` before local flutter test/IDE |
-| `app/lws_hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make push-app` to ship) |
+| `app/lws_hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make upgrade-app` to ship) |
 | `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
 | `scripts/flutter/check_no_bare_font_size.sh` | none for firmware; exercise `make check-typography` (bare `fontSize: N` + business `AppTypography.*Size`) |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` (same `APP=`) |
@@ -145,7 +145,9 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | Vendor Storage identity (`scripts/write-identity.sh`, Makefile `write-identity`, board helpers `read/write-product-identity`, `board/vendor-storage-ids.txt`, `board/parameter-buildroot-fit.txt` vendor0–3) | GPT adopt: `make build-oem`, `make build-img`, `make flash`; rootfs tool: `make apply-overlay`, `bash scripts/br-make-packages.sh rktoolkit rktoolkit`, `make build-rootfs`, `make upgrade`; then `make write-identity BRAND=… MODEL=… PRODUCT_SN=…` |
 | Host cloud login / device register (`scripts/cloud-login.sh`, `scripts/register-device.sh`, `scripts/cloud-credentials.sh`, Makefile `login` / `register-device`) | none (host-only); exercise `make login` then `SN=… make register-device` (selection only; identity from board `read-identity`); token at `output/cloud/credentials.json` |
 | Host cloud OTA publish (`scripts/publish-ota.sh`, `scripts/publish_ota.py`, Makefile `publish` / `publish-only`) | none (host-only); needs signed `ota-package` + token; exercise `make login` (or `PUBLISH_API_TOKEN=`), then `OTA_SIGNING_KEY=… make publish` / `make publish-only` (always `release.json`; `APP=`, `CLOUD_API_BASE=` optional; do not set `RELEASE=`) |
-| Host app version (`scripts/app-version.sh`, Makefile `version` / `version-bump`) | none (host-only; edits `app/<APP>/pubspec.yaml` and optional `lib/app_version.dart`); exercise `make version` / `make version-bump VERSION=x.y.z` (`APP=` optional); ship via `make build-app` / `push-app` when needed |
+| Host app/OS version (`scripts/app-version.sh`, Makefile `version` / `version-bump`, overlay `etc/os-release`) | none for Flutter bump; OS stamp bake: `make apply-overlay`, `make build-rootfs`, `make upgrade`. Default `make version` / `version-bump` → OS `VERSION=`; `APP=<id> make version` / `version-bump VERSION=…` → Flutter HMI (`kHmiVersion`). Ship HMI via `make build-app` / `upgrade-app` when needed |
+| Host HMI app OTA (`scripts/upgrade-app.sh`, `package-app.sh`, `publish-app.sh`, `apply-app-overlay-remote.sh`, App `hmi_app_ota/**`) | daily: `make build-app`, `make upgrade-app` (alias `push-app`); recovery: `make apply-app-overlay`; CDN: `make publish-app` |
+| `packages/cyber_ota` / App system OTA UI (`app/lws_hmi/lib/features/system_ota/**`) | `make build-app`, `make upgrade-app` (whole-device channel gates on OS Version) |
 | Demo alarm host tooling (`scripts/trigger-alarm.sh`, Makefile `alarm` / `alarm-clean`) | none (host SSH writes `/run/hmi/demo-alarm.cmd`); board needs HMI with watcher (`make build-app` + `make push-app` once if app is stale); exercise `make alarm CODE=L001` / `make alarm-clean` |
 | AI offline RKNN smoke (`scripts/smoke-ai-offline-infer.sh`, Makefile `smoke-ai`, `native/lws_ai/assets/img/stain_demo*.jpg`, `native/lws_ai/tools/smoke/`) | none (host uploads demo JPG + talks to `/run/hmi/ai/cmd.sock`); board needs AI daemon (`make build-app` + `make push-app` once if stale); exercise `make smoke-ai` |
 | Alarm history SQLite (`SqliteAlarmLogRepository`, `/var/lib/hmi/alarm-logs.db`) | none beyond shipping App (`make build-app` / `make push-app`); board needs rootfs `libsqlite3` (already via platform packages) |
@@ -161,7 +163,7 @@ Example:
 ```text
 重新构建（本次改动了 app）：
 make build-app
-make push-app
+make upgrade-app
 ```
 
 When unsure or on a clean tree: `make build`.

@@ -2315,6 +2315,18 @@ abstract class AppLocalizations {
   /// **'Hold To Enable Laser'**
   String get holdToEnableLaser;
 
+  /// No description provided for @hmiUpgradeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'HMI Upgrade'**
+  String get hmiUpgradeTitle;
+
+  /// No description provided for @hmiVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'HMI Version'**
+  String get hmiVersion;
+
   /// No description provided for @homeAiVisionLabel.
   ///
   /// In en, this message translates to:
@@ -3347,6 +3359,12 @@ abstract class AppLocalizations {
   /// **'On'**
   String get onLabel;
 
+  /// No description provided for @osVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'OS Version'**
+  String get osVersion;
+
   /// No description provided for @otaCheckUnavailable.
   ///
   /// In en, this message translates to:
@@ -3484,6 +3502,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Installing app…'**
   String get otaUpgradeStatusApk;
+
+  /// No description provided for @otaUpgradeStatusRestarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Restarting application…'**
+  String get otaUpgradeStatusRestarting;
 
   /// No description provided for @otaUpgradeStatusDownloading.
   ///
@@ -4808,7 +4832,7 @@ abstract class AppLocalizations {
   /// No description provided for @systemVersion.
   ///
   /// In en, this message translates to:
-  /// **'System Version'**
+  /// **'OS Version'**
   String get systemVersion;
 
   /// No description provided for @tempBoardRefrigerationCommAlarmContent.

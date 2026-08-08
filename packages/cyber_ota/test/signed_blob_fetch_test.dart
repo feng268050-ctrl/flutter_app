@@ -75,5 +75,6 @@ void main() {
   test('staging constants live under /userdata/ota/', () {
     expect(kControlBoardStagingDir, '/userdata/ota/control-board/');
     expect(kCameraStagingDir, '/userdata/ota/camera/');
+    expect(kAppStagingDir, '/userdata/ota/app/');
   });
 }

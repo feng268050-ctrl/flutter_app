@@ -44,3 +44,4 @@ final class SignedBlobFetch {
 /// Staging dirs for peripheral signed downloads (under [kDefaultStagingDir]).
 const kControlBoardStagingDir = '${kDefaultStagingDir}control-board/';
 const kCameraStagingDir = '${kDefaultStagingDir}camera/';
+const kAppStagingDir = '${kDefaultStagingDir}app/';

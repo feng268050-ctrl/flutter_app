@@ -1190,6 +1190,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get holdToEnableLaser => '长按开启激光';
 
   @override
+  String get hmiUpgradeTitle => 'HMI 升级';
+
+  @override
+  String get hmiVersion => 'HMI 版本';
+
+  @override
   String get homeAiVisionLabel => 'AI 视觉';
 
   @override
@@ -1726,6 +1732,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onLabel => '开启';
 
   @override
+  String get osVersion => '操作系统版本';
+
+  @override
   String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
 
   @override
@@ -1799,6 +1808,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get otaUpgradeStatusApk => '正在安装应用';
+
+  @override
+  String get otaUpgradeStatusRestarting => '正在重启应用…';
 
   @override
   String get otaUpgradeStatusDownloading => '正在下载升级包';
@@ -2496,7 +2508,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get syncNow => '立即同步';
 
   @override
-  String get systemVersion => '系统版本';
+  String get systemVersion => '操作系统版本';
 
   @override
   String get tempBoardRefrigerationCommAlarmContent =>
@@ -4103,6 +4115,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get holdToEnableLaser => '長按開啓激光';
 
   @override
+  String get hmiUpgradeTitle => 'HMI 升級';
+
+  @override
   String get homeAiVisionLabel => 'AI 視覺';
 
   @override
@@ -4536,6 +4551,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get onLabel => '開啓';
 
   @override
+  String get osVersion => '操作系統版本';
+
+  @override
   String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
 
   @override
@@ -4609,6 +4627,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get otaUpgradeStatusApk => '正在安裝應用';
+
+  @override
+  String get otaUpgradeStatusRestarting => '正在重啟應用…';
 
   @override
   String get otaUpgradeStatusDownloading => '正在下載升級包';
@@ -5192,7 +5213,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get swingWidthLabel => '擺動寬度';
 
   @override
-  String get systemVersion => '系統版本';
+  String get systemVersion => '作業系統版本';
 
   @override
   String get tempBoardRefrigerationCommAlarmContent =>

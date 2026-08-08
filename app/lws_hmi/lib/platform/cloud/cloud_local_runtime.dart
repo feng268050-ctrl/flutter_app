@@ -1208,7 +1208,7 @@ final class CloudLocalRuntime {
       deviceSn: product.sn,
       brand: product.brand,
       model: product.model,
-      systemVersion: kSystemVersion,
+      systemVersion: kHmiVersion,
       cameraIp: cameraIp,
       cameraVersion: cameraVersion,
       hostIp: hostIp,
@@ -1257,7 +1257,7 @@ final class CloudLocalRuntime {
       await mdns.publish(
         sn: product.sn,
         model: model.isEmpty ? product.model : model,
-        systemVersion: kSystemVersion,
+        systemVersion: kHmiVersion,
       );
     } catch (e) {
       debugPrint('cloud-runtime: mdns publish failed: $e');

@@ -69,7 +69,7 @@ final class AppServices {
       _frameTimingSampler = frameTimingSampler ?? FlutterFrameTimingSampler();
       this.sysInfo = b.sysInfo(
         deviceSnReader: deviceSnReader,
-        appVersion: kSystemVersion,
+        appVersion: kHmiVersion,
         frameTimingSampler: _frameTimingSampler,
         productInfo: productInfo,
       );

@@ -4,7 +4,6 @@ import 'package:cyber_ota/cyber_ota.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/upgrade_safety/upgrade_safety.dart';
 
@@ -83,6 +82,8 @@ final class SystemOtaCoordinator {
   }
 
   /// Manifest check only — no partition writes.
+  ///
+  /// Compares cloud OS channel version to [SysInfoSnapshot.osVersion].
   Future<CheckUpdateResult> checkForUpdate({String? manifestUrl}) async {
     final url = manifestUrl ?? _manifestUrlResolver?.call();
     if (url == null || url.trim().isEmpty) {
@@ -91,8 +92,23 @@ final class SystemOtaCoordinator {
     final session = _ensureSession();
     return session.checkForUpdate(
       manifestUrl: url,
-      currentVersion: kSystemVersion,
+      currentVersion: await _currentOsVersion(),
     );
+  }
+
+  Future<String> _currentOsVersion() async {
+    final services = _services;
+    if (services == null) {
+      return '';
+    }
+    try {
+      final snap = await services.sysInfo.snapshot();
+      final v = snap.osVersion?.trim();
+      if (v != null && v.isNotEmpty) {
+        return v;
+      }
+    } catch (_) {}
+    return '';
   }
 
   /// Cloud OTA after safe shutdown + upgrade page (Settings / WS).
@@ -230,8 +246,9 @@ final class SystemOtaCoordinator {
       final services = _services;
       final radios = _radioSnapshot;
       _radioSnapshot = UpgradeRadioSnapshot.none;
-      // Reboot arms wipe radios; on failure / cancel restore what was on.
-      if (!rebootPending && services != null) {
+      // Always restore: quiesce clears wifi/bt wanted markers, and those
+      // radios are not systemd wants — reboot alone will not bring them back.
+      if (services != null) {
         await UpgradeSafety.restoreRadios(services, radios);
       }
       _tearDownSession(keepOtaFlag: rebootPending);

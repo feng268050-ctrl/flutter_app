@@ -81,7 +81,15 @@ final class OtaSession {
 
     final json = await _http.getJson(manifestUrl);
     final manifest = OtaManifest.fromJson(json);
-    final hasUpdate = isNewer(manifest.version, currentVersion);
+    // Compare core SemVer only (`v` / pre-release stripped). Empty local
+    // (unreadable OS stamp) must not look "older" than every remote.
+    final local = OtaManifest.coreVersion(currentVersion);
+    final remote =
+        OtaManifest.coreVersion(manifest.version) ?? manifest.version.trim();
+    final hasUpdate = local != null &&
+        local.isNotEmpty &&
+        remote.isNotEmpty &&
+        isNewer(remote, local);
 
     await _emit(
       OtaProgress(

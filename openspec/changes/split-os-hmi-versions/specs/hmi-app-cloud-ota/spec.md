@@ -62,5 +62,5 @@ The App SHALL watch **`/run/hmi/upgrade-app.cmd`** for at least **`download <url
 
 #### Scenario: download url triggers fetch
 
-- **WHEN** the cmd file receives `download http://192.168.55.2:PORT/app-v1.0.42.tar.gz`
+- **WHEN** the cmd file receives `download http://192.168.55.2:PORT/v1.0.42.tar.gz`
 - **THEN** the App downloads that URL and `url + ".sig"`, verifies, installs, and restarts `hmi.service`

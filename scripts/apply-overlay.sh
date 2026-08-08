@@ -147,7 +147,9 @@ sync_fs_overlay() {
   rm -f \
     "$BR_OVERLAY_ROOT/usr/libexec/hmi/debug-boot.sh" \
     "$BR_OVERLAY_ROOT/usr/libexec/hmi/boot-kpi-watch.sh" \
-    "$BR_OVERLAY_ROOT/usr/libexec/hmi/configure-camera-eth0.sh"
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/configure-camera-eth0.sh" \
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/push-app-apply-and-restart.sh" \
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/upgrade-app-apply-and-restart.sh"
 }
 
 sync_purge_retired_script() {

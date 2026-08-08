@@ -1212,6 +1212,9 @@ class LinuxBluezBluetoothController implements BluetoothController {
         _stopWantedWatch();
         if (enabled) {
           _emitState(BluetoothAdapterState.starting);
+          // Persist wanted before stack bring-up so OTA reboot-after-arm still
+          // restores BT on the next boot if reboot races the enable path.
+          await _writeWanted(true);
           // Claim Agent1 before stack-up so bt-ensure-agent skips the shell agent.
           await _writeHmiAgentMarker(true);
           // Drop any stale D-Bus session left after a bluetoothd core-dump.
@@ -1226,7 +1229,6 @@ class LinuxBluezBluetoothController implements BluetoothController {
             return;
           }
           _lastError = null;
-          await _writeWanted(true);
           try {
             await _attachBluezSession();
             _emitState(BluetoothAdapterState.on);

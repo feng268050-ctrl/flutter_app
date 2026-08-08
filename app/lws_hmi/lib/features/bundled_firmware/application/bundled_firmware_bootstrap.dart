@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/camera_update/application/camera_program_upgrad
 import 'package:lws_hmi/features/camera_update/presentation/camera_program_upgrade_page.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -49,18 +50,24 @@ abstract final class BundledFirmwareBootstrap {
       return;
     }
 
+    final misc = MiscSettingsScope.maybeOf(context);
+    if (misc == null || !misc.autoCheckOtaUpdate) {
+      return;
+    }
+
     final queue = GlobalPromptScope.maybeOf(context);
     if (queue == null) {
       return;
     }
 
-    // Prefer control-board tip first.
+    // Prefer control-board tip first (once per process when master auto-check is on).
     if (!_homeAutoPromptConsumed && services.modbusLiveAllowed) {
-      final offer =
+      final eval =
           await ControlBoardUpgradeCoordinator.instance.evaluateOffer(
         policy: operatorPolicy,
       );
       _homeAutoPromptConsumed = true;
+      final offer = eval.offer;
       if (offer != null && context.mounted) {
         await queue.enqueue(
           id: GlobalPromptIds.bundledFirmware,
@@ -103,11 +110,12 @@ abstract final class BundledFirmwareBootstrap {
       return;
     }
 
-    final cameraOffer =
+    final cameraEval =
         await CameraProgramUpgradeCoordinator.instance.evaluateOffer(
       policy: operatorPolicy,
     );
     _homeCameraAutoPromptConsumed = true;
+    final cameraOffer = cameraEval.offer;
     if (cameraOffer == null || !context.mounted) {
       return;
     }

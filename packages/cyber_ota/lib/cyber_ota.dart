@@ -15,4 +15,5 @@ export 'src/ota_progress.dart';
 export 'src/ota_session.dart';
 export 'src/ota_verify.dart';
 export 'src/process_runner.dart';
+export 'src/signed_blob_fetch.dart';
 export 'src/version_compare.dart';

@@ -9,6 +9,7 @@ final class _FakeVerify extends OtaVerify {
 
   int calls = 0;
   Object? error;
+  void Function()? onCall;
 
   @override
   Future<void> verifyPackage({
@@ -16,6 +17,7 @@ final class _FakeVerify extends OtaVerify {
     required String sigPath,
   }) async {
     calls++;
+    onCall?.call();
     final err = error;
     if (err != null) {
       throw err;
@@ -27,6 +29,7 @@ final class _FakeExtract extends OtaExtract {
   _FakeExtract() : super(processRunner: ProcessRunner());
 
   int calls = 0;
+  void Function()? onCall;
 
   @override
   Future<void> extractArchive({
@@ -35,6 +38,7 @@ final class _FakeExtract extends OtaExtract {
     ExtractProgress? onProgress,
   }) async {
     calls++;
+    onCall?.call();
     onProgress?.call(0, 1);
     onProgress?.call(1, 1);
   }
@@ -212,6 +216,30 @@ void main() {
       expect(apply.fullCalls, 1);
       expect(http.downloads, contains('https://cdn.example/ota.tar.gz'));
       expect(http.downloads, contains('https://cdn.example/ota.tar.gz.sig'));
+    });
+
+    test('beforeExtract runs after verify and before extract', () async {
+      final order = <String>[];
+      verify.onCall = () => order.add('verify');
+      extract.onCall = () => order.add('extract');
+      final hooked = OtaSession(
+        stagingDir: '${staging.path}/hooked/',
+        httpClient: http,
+        verify: verify,
+        extract: extract,
+        apply: apply,
+        beforeExtract: () async {
+          order.add('beforeExtract');
+        },
+      );
+      await hooked.runCloudUpdate(
+        manifest: OtaManifest.fromJson(<String, dynamic>{
+          'version': '2.0.0',
+          'package_url': 'https://cdn.example/ota.tar.gz',
+        }),
+      );
+      await hooked.close();
+      expect(order, ['verify', 'beforeExtract', 'extract']);
     });
 
     test('cloud verify failure refuses apply', () async {

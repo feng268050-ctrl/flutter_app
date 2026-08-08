@@ -800,7 +800,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoCheckOtaUpdate.
   ///
   /// In en, this message translates to:
-  /// **'Automatically check for updates'**
+  /// **'Auto-Check for Updates'**
   String get autoCheckOtaUpdate;
 
   /// No description provided for @autoOtaUpdateDialogMessage.

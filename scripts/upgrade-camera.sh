@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Push latest bundled camera firmware ZIP to device for immediate upgrade
+# Sign + host-HTTP serve camera firmware ZIP; device downloads, verifies, applies
 # (no confirm, no version gate; operator `make upgrade-camera` helper).
 #
-# Device-side: app watches `/run/hmi/upgrade-camera.cmd` and loads the
-# pushed `.zip` to run CGI flash + reboot + wait-online.
+# Device-side: app watches `/run/hmi/upgrade-camera.cmd` for:
+#   download <http://host:port/<zip>>
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/usb-ssh-session.sh
 source "$ROOT/scripts/usb-ssh-session.sh"
+# shellcheck source=scripts/peripheral-ota-http.sh
+source "$ROOT/scripts/peripheral-ota-http.sh"
 
 usage() {
   cat <<EOF
@@ -17,34 +19,24 @@ Usage: make upgrade-camera [FIRMWARE_ZIP=/abs/path/to/MODEL-vX.Y.Z\\ buildYYYYMM
 By default picks the newest SemVer then build under:
   app/lws_hmi/assets/firmware/camera/*.zip
 
-Then uploads to:
-  /run/hmi/camera-upgrade/<basename>
-and writes:
-  /run/hmi/upgrade-camera.cmd
+Signs with OTA_SIGNING_KEY (default keys/ota/ed25519.pem), serves over
+ephemeral host HTTP, and writes:
+  /run/hmi/upgrade-camera.cmd  →  download <url>
+
+Env: OTA_HTTP_HOST / OTA_HTTP_PORT / OTA_SIGNING_KEY / SN= / IP=
 
 Prereq: HMI app is running (hmi.service) so the command watcher can react.
 EOF
 }
 
-die() {
-  echo "ERROR: $*" >&2
-  exit 1
-}
+die() { peripheral_ota_die "$@"; }
 
 remote() {
   usb_ssh_session_run_ssh "$ROOT" "$IFACE" "$@"
 }
 
-upload_with_progress() {
-  local src="$1"
-  local dest="$2"
-  python3 "$ROOT/scripts/stream-file-progress.py" "$src" |
-    remote "cat >'$dest'"
-}
-
 ASSET_DIR="$ROOT/app/lws_hmi/assets/firmware/camera"
 CMD_PATH="/run/hmi/upgrade-camera.cmd"
-UPGRADE_DIR="/run/hmi/camera-upgrade"
 export ASSET_DIR
 
 [[ -d "$ASSET_DIR" ]] || die "missing asset dir: $ASSET_DIR"
@@ -81,7 +73,16 @@ fi
 [[ -f "$FIRMWARE_ZIP" ]] || die "firmware file not found: $FIRMWARE_ZIP"
 
 BASE="$(basename "$FIRMWARE_ZIP")"
-REMOTE_ZIP="${UPGRADE_DIR}/${BASE}"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/lws-cam-fw.XXXXXX")"
+WORK_ZIP="$WORK_DIR/$BASE"
+WORK_SIG="$WORK_DIR/${BASE}.sig"
+cp -f "$FIRMWARE_ZIP" "$WORK_ZIP"
+
+cleanup() {
+  peripheral_ota_stop_http_server
+  rm -rf "$WORK_DIR"
+}
+trap cleanup EXIT
 
 usb_ssh_session_load_env "$ROOT"
 usb_ssh_session_select "$ROOT"
@@ -89,13 +90,22 @@ usb_ssh_session_configure_link
 usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
 echo "INFO: selected firmware: $FIRMWARE_ZIP"
-echo "INFO: pushing to: $REMOTE_ZIP"
+peripheral_ota_sign "$WORK_ZIP" "$WORK_SIG"
 
-remote "mkdir -p '$UPGRADE_DIR' && rm -f '$REMOTE_ZIP'"
-upload_with_progress "$FIRMWARE_ZIP" "$REMOTE_ZIP"
+peripheral_ota_resolve_http_bind
+echo "INFO: serving on $OTA_HTTP_BIND (device will HTTP GET)..."
+peripheral_ota_start_http_server "$WORK_ZIP" "$WORK_SIG" "$BASE"
+echo "INFO: package_url=$PACKAGE_URL"
 
-echo "INFO: writing upgrade command: $CMD_PATH"
-remote "mkdir -p /run/hmi && printf 'upgrade %s\\n' '$REMOTE_ZIP' > '${CMD_PATH}.tmp' && mv -f '${CMD_PATH}.tmp' '${CMD_PATH}'"
+echo "INFO: writing download command: $CMD_PATH"
+remote "mkdir -p /run/hmi && printf 'download %s\\n' '$PACKAGE_URL' > '${CMD_PATH}.tmp' && mv -f '${CMD_PATH}.tmp' '${CMD_PATH}'"
 
-echo "OK: camera upgrade command sent (no confirm, no version gate)"
+echo "INFO: waiting for device HTTP GET of zip + .sig..."
+peripheral_ota_wait_transfer_complete 600
+
+peripheral_ota_stop_http_server
+trap - EXIT
+rm -rf "$WORK_DIR"
+
+echo "OK: transfer complete — device will verify and CGI-flash (no confirm, no version gate)"
 echo "INFO: filter device logs with: make logs GREP=CameraProgram"

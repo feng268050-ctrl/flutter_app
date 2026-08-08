@@ -22,6 +22,12 @@ final class MiscSettingsStore extends ChangeNotifier {
   static const keyShowGroundLockAlarm = 'showGroundLockAlarm';
   static const keyAutoCheckOtaUpdate = 'autoCheckOtaUpdate';
 
+  /// Obsolete per-channel keys (migrated into [keyAutoCheckOtaUpdate]).
+  static const _legacyKeyAutoCheckControlBoardUpdate =
+      'autoCheckControlBoardUpdate';
+  static const _legacyKeyAutoCheckCameraProgramUpdate =
+      'autoCheckCameraProgramUpdate';
+
   static const defaultShowStartupSelfCheck = true;
   static const defaultShowSystemStatusOverlay = false;
   static const defaultShowGroundLockAlarm = false;
@@ -40,6 +46,9 @@ final class MiscSettingsStore extends ChangeNotifier {
   bool get showStartupSelfCheck => _showStartupSelfCheck;
   bool get showSystemStatusOverlay => _showSystemStatusOverlay;
   bool get showGroundLockAlarm => _showGroundLockAlarm;
+
+  /// Master switch: Home tips + Settings upgrade-page auto-check for system OTA,
+  /// control-board, and camera program firmware.
   bool get autoCheckOtaUpdate => _autoCheckOtaUpdate;
 
   /// Synchronous warm-read for bootstrap.
@@ -190,6 +199,23 @@ final class MiscSettingsStore extends ChangeNotifier {
       } else if (_importLegacyAutoCheckOtaSync()) {
         migrated = true;
       }
+      // Fold obsolete per-channel auto-check flags into the master switch.
+      final hadPerChannel = map.containsKey(_legacyKeyAutoCheckControlBoardUpdate) ||
+          map.containsKey(_legacyKeyAutoCheckCameraProgramUpdate);
+      if (hadPerChannel) {
+        migrated = true;
+        final cb = _asBool(
+          map[_legacyKeyAutoCheckControlBoardUpdate],
+          false,
+        );
+        final cam = _asBool(
+          map[_legacyKeyAutoCheckCameraProgramUpdate],
+          false,
+        );
+        if (cb || cam) {
+          _autoCheckOtaUpdate = true;
+        }
+      }
       // Drop obsolete hideEngineerModeEntryTip if present (session-only now).
       if (map.containsKey('hideEngineerModeEntryTip')) {
         migrated = true;
@@ -311,17 +337,23 @@ final class MiscSettingsStore extends ChangeNotifier {
       return value != 0;
     }
     if (value is String) {
-      return _parseLegacyEnabled(value);
+      final t = value.trim().toLowerCase();
+      if (t == '1' || t == 'true' || t == 'yes' || t == 'on') {
+        return true;
+      }
+      if (t == '0' || t == 'false' || t == 'no' || t == 'off') {
+        return false;
+      }
     }
     return fallback;
   }
 
   static bool _parseLegacyEnabled(String raw) {
-    final v = raw.toLowerCase();
-    if (v == '0' || v == 'false' || v == 'off') {
+    final t = raw.trim().toLowerCase();
+    if (t == '0' || t == 'false' || t == 'no' || t == 'off') {
       return false;
     }
-    if (v == '1' || v == 'true' || v == 'on') {
+    if (t == '1' || t == 'true' || t == 'yes' || t == 'on') {
       return true;
     }
     return defaultShowStartupSelfCheck;

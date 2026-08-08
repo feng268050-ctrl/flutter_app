@@ -196,7 +196,7 @@
   "alarmTitle": "Alarms",
   "anyMaterialLabel": "Any Material",
   "applyToDevice": "Apply To Device",
-  "autoCheckOtaUpdate": "Automatically check for updates",
+  "autoCheckOtaUpdate": "Auto-Check for Updates",
   "autoOtaUpdateDialogMessage": "Version {version} is available. Go to Settings to review and install the update.",
   "@autoOtaUpdateDialogMessage": {
     "placeholders": {

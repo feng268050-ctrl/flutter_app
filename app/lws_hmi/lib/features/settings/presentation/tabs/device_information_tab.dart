@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upg
 import 'package:lws_hmi/features/camera_update/presentation/camera_program_upgrade_page.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/storage_capacity.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_storage_bar.dart';
@@ -276,7 +277,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             ),
           ],
         ),
-        // Versions: System, Camera, Control Board, Laser, Wire Feeder
+        // Versions: System, Camera, Control Board, Laser, Wire Feeder + auto-check
         SettingsGroup(
           borderGradientCenter:
               CyberBorderGradientCenter.bottomLeftTopRight,
@@ -303,6 +304,31 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             SettingsValueRow(
               title: l10n.wireFeederVersion,
               value: _wireFeederVersion,
+            ),
+            Builder(
+              builder: (context) {
+                final misc = MiscSettingsScope.maybeOf(context);
+                if (misc == null) {
+                  return SettingsSwitchRow(
+                    title: l10n.autoCheckOtaUpdate,
+                    subtitle: l10n.unavailable,
+                    value: false,
+                    onChanged: null,
+                  );
+                }
+                return ListenableBuilder(
+                  listenable: misc,
+                  builder: (context, _) {
+                    return SettingsSwitchRow(
+                      title: l10n.autoCheckOtaUpdate,
+                      value: misc.autoCheckOtaUpdate,
+                      onChanged: (v) {
+                        unawaited(misc.setAutoCheckOtaUpdate(v));
+                      },
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),

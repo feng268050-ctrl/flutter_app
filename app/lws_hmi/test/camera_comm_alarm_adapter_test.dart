@@ -62,6 +62,42 @@ void main() {
       await adapter.dispose();
     });
 
+    test('setSuppressed clears active C002 and ignores unhealthy', () async {
+      final adapter = CameraCommAlarmAdapter();
+      final events = <AlarmSignalEvent>[];
+      final sub = adapter.events.listen(events.add);
+      final now = DateTime.utc(2026, 8, 8);
+
+      adapter.debugApplyHealth(
+        IpCameraHealth(phase: IpCameraHealthPhase.healthy, updatedAt: now),
+      );
+      adapter.debugApplyHealth(
+        IpCameraHealth(phase: IpCameraHealthPhase.unhealthy, updatedAt: now),
+      );
+      expect(events, hasLength(1));
+      expect(events.single.kind, AlarmSignalKind.rising);
+
+      adapter.setSuppressed(true);
+      expect(events, hasLength(2));
+      expect(events.last.kind, AlarmSignalKind.falling);
+      expect(adapter.isSuppressed, isTrue);
+
+      adapter.debugApplyHealth(
+        IpCameraHealth(phase: IpCameraHealthPhase.unhealthy, updatedAt: now),
+      );
+      expect(events, hasLength(2), reason: 'suppressed ignores unhealthy');
+
+      adapter.setSuppressed(false);
+      // No camera bound — nothing re-applied until bind/debugApply.
+      adapter.debugApplyHealth(
+        IpCameraHealth(phase: IpCameraHealthPhase.healthy, updatedAt: now),
+      );
+      expect(events, hasLength(2), reason: 'healthy only primes after clear');
+
+      await sub.cancel();
+      await adapter.dispose();
+    });
+
     test('bind listens to stub camera health Stream only', () async {
       final cam = StubIpCameraController(cameraHost: '192.168.1.100');
       final adapter = CameraCommAlarmAdapter();

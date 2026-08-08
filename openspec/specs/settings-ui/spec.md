@@ -176,17 +176,18 @@ Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory
 Device Information SHALL display device identity and version rows in **untitled CyberUI card groups** (no section header text; same Settings chrome vocabulary as Common Settings), in this order:
 
 1. **Identity:** Device Model (with device QR affordance), Device SN  
-2. **Versions:** System Version (navigation into System Upgrade), Camera Version, Firmware Version (control-card / firmware Modbus display, navigation into Control Board Upgrade), Laser Version, Wire Feeder Version  
+2. **Versions:** System Version (navigation into System Upgrade), Camera Version, Firmware Version (control-card / firmware Modbus display, navigation into Control Board Upgrade), Laser Version, Wire Feeder Version, **Auto-Check for Updates** (master switch, last row)  
 3. **Storage:** used/available capacity with an iOS-style segmented bar (see Device Information storage requirement)  
 4. **Accessory:** Welding Gun SN, Focus Scale Reference  
 
-Device Model SHALL be `brand + " " + model` from HAL product identity (Vendor Storage via `ProductInfo`), with each missing part shown as `-`; if both parts are missing (computed value `- -`), the row SHALL display a single `-`. Device SN SHALL use product identity SN resolution (non-empty Vendor Storage SN, else chip/board serial). Focus Scale Reference SHALL come from App-resolved `focus_scale_ref` (`ProductInfo.get` + product default `0`) (empty after defaults still → `-` only if intentionally blanked). Camera Version SHALL use the same normalized camera software version as Camera settings (shared cache / bounded device-info read), or `-` when unavailable. Camera Type MUST NOT appear on this tab. Kernel Version and Process Library Version MUST NOT appear on this tab (they SHALL appear on System Upgrade). The tab MUST NOT show a Modbus Link row. Missing or empty values SHALL show `-`. OTA check-update controls SHALL appear per the Device Information card-set requirement (on System Upgrade, not as a Device Information footer).
+Device Model SHALL be `brand + " " + model` from HAL product identity (Vendor Storage via `ProductInfo`), with each missing part shown as `-`; if both parts are missing (computed value `- -`), the row SHALL display a single `-`. Device SN SHALL use product identity SN resolution (non-empty Vendor Storage SN, else chip/board serial). Focus Scale Reference SHALL come from App-resolved `focus_scale_ref` (`ProductInfo.get` + product default `0`) (empty after defaults still → `-` only if intentionally blanked). Camera Version SHALL use the same normalized camera software version as Camera settings (shared cache / bounded device-info read), or `-` when unavailable. Camera Type MUST NOT appear on this tab. Kernel Version and Process Library Version MUST NOT appear on this tab (they SHALL appear on System Upgrade). The tab MUST NOT show a Modbus Link row. Missing or empty values SHALL show `-`. Manual **Check for Updates** SHALL live on System Upgrade / peripheral upgrade pages; the **Auto-Check for Updates** master switch SHALL live on Device Information Versions (not as checkboxes on those upgrade pages).
 
 #### Scenario: Device Information lists regrouped core rows
 
 - **WHEN** the user opens the Device Information tab
 - **THEN** Device Model and Device SN appear in the first card
 - **AND** System Version and Camera Version appear in the versions card
+- **AND** Auto-Check for Updates is the last row of the versions card
 - **AND** Kernel Version and Process Library Version are not shown on Device Information
 - **AND** a storage card with a capacity bar is visible after the versions card
 - **AND** Welding Gun SN and Focus Scale Reference appear together in the last card
@@ -223,6 +224,12 @@ Device Model SHALL be `brand + " " + model` from HAL product identity (Vendor St
 - **WHEN** the camera device-info read returns a normalized app version
 - **THEN** Device Information Camera Version SHALL display that value
 - **AND** Camera Type is still not listed on Device Information
+
+#### Scenario: Auto-Check for Updates is last Versions row
+
+- **WHEN** the operator opens Device Information
+- **THEN** the Versions card ends with an Auto-Check for Updates switch
+- **AND** System Upgrade / control-board / camera upgrade pages MUST NOT show a separate auto-check checkbox
 
 ### Requirement: Advanced and Custom Home tabs are structurally present
 
@@ -580,11 +587,11 @@ Common Settings SHALL present **Camera** in the same untitled card as **RGB LED*
 Device Information SHALL show CyberUI untitled cards with:
 
 1. Identity: Device Model (QR), Device SN  
-2. Versions: System Version, Camera Version, Firmware Version (existing control-card / firmware Modbus value), Laser Version, Wire Feeder Version  
+2. Versions: System Version, Camera Version, Firmware Version (existing control-card / firmware Modbus value), Laser Version, Wire Feeder Version, **Auto-Check for Updates** (switch, last)  
 3. Storage: iOS-style capacity bar with `{used} of {total} used` summary and HAL `SysInfo.storage` (System = GPT system partitions; Available = `/userdata` free)  
 4. Accessory (last): Welding Gun SN, Focus Scale Reference  
 
-Device Information MUST NOT show Camera Type. Device Information MUST NOT show Kernel Version or Process Library Version. Device Information SHALL expose **System Version** as a navigation row into **System Upgrade**. Check for Updates and Automatically check for updates SHALL live on System Upgrade (not as a Device Information footer). Auto-check may open System Upgrade when a newer package exists but MUST NOT auto-apply. When cloud services are disabled or the API origin is not pinned, Check for Updates MUST show an unavailable outcome on System Upgrade (not a false “up to date”). They MUST NOT report a false success, and MUST NOT remain permanently deferred/unavailable once whole-device OTA is implemented on the device image. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
+Device Information MUST NOT show Camera Type. Device Information MUST NOT show Kernel Version or Process Library Version. Device Information SHALL expose **System Version** as a navigation row into **System Upgrade**. Manual Check for Updates SHALL live on System Upgrade (and peripheral upgrade pages). **Auto-Check for Updates** SHALL be the Device Information Versions master switch and SHALL gate Product Home auto tips plus auto-check-on-open for System / control-board / camera upgrade pages. Auto-check MUST NOT auto-apply. When cloud services are disabled or the API origin is not pinned, Check for Updates MUST show an unavailable outcome on System Upgrade (not a false “up to date”). They MUST NOT report a false success, and MUST NOT remain permanently deferred/unavailable once whole-device OTA is implemented on the device image. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
 
 #### Scenario: No Camera Type on Device Information
 
@@ -623,7 +630,7 @@ Device Information MUST NOT show Camera Type. Device Information MUST NOT show K
 
 ### Requirement: System Upgrade uses CyberUI Settings chrome
 
-System Upgrade SHALL use the shared **Settings scaffold** and a content **SettingsPanel** that fills the remaining viewport height below the status bar (same blur / transparency / margins as other Settings pages). When not in progress-only / apply mode, the card SHALL include current system version, **Kernel Version**, **Process Library Version** (value or `-`), Check for Updates, and Automatically check for updates; check outcomes and Update Now / Later SHALL render in the card (not dialogs). Apply progress SHALL use the same full-height card. Host `make upgrade` SHALL use progress-only (no check footer); progress-only mode is not required to show Kernel / Process Library rows.
+System Upgrade SHALL use the shared **Settings scaffold** and a content **SettingsPanel** that fills the remaining viewport height below the status bar (same blur / transparency / margins as other Settings pages). When not in progress-only / apply mode, the card SHALL include current system version, **Kernel Version**, **Process Library Version** (value or `-`), and **Check for Updates**; check outcomes and Update Now / Later SHALL render in the card (not dialogs). The Auto-Check for Updates switch MUST NOT appear on System Upgrade (it lives on Device Information). Apply progress SHALL use the same full-height card. Host `make upgrade` SHALL use progress-only (no check footer); progress-only mode is not required to show Kernel / Process Library rows.
 
 #### Scenario: Upgrade scaffold matches Settings
 
@@ -654,7 +661,7 @@ When the operator opens the Common Settings RGB LED page, the App SHALL suppress
 
 ### Requirement: Device Information changes cloud environment tier via Device SN 5×-tap
 
-Device Information SHALL NOT show a permanent Cloud Environment row. The operator SHALL open the app environment tier picker by tapping the **Device SN** value five times within five seconds (lws-ui `SecretTapTracker` parity). The picker SHALL offer at least Test and Prod, and MAY offer Dev. Choosing a tier MUST persist the selection and trigger a fresh API-origin probe / WebSocket reconnect when cloud runtime is active. OTA footer controls call `cyber_ota` (see Device Information card-set requirement) and are unchanged by this cloud/LAN change.
+Device Information SHALL NOT show a permanent Cloud Environment row. The operator SHALL open the app environment tier picker by tapping the **Device SN** value five times within five seconds (lws-ui `SecretTapTracker` parity). The picker SHALL offer at least Test and Prod, and MAY offer Dev. Choosing a tier MUST persist the selection and trigger a fresh API-origin probe / WebSocket reconnect when cloud runtime is active. Manual Check for Updates on System Upgrade / peripheral pages call `cyber_ota` (or peripheral checkers) and are unchanged by this cloud/LAN change; Auto-Check for Updates remains the Device Information Versions master switch.
 
 #### Scenario: Five taps on Device SN opens tier picker
 

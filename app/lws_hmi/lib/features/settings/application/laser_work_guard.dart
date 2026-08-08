@@ -49,6 +49,9 @@ abstract final class LaserWorkGuard {
     }
   }
 
+  /// Active Quick/Engineer bridge when a process page owns Laser Enable.
+  static LaserWorkGuardHost? get registeredHost => _host;
+
   @visibleForTesting
   static LaserWorkGuardHost? get debugHost => _host;
 

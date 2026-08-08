@@ -98,3 +98,19 @@ While C002 fault is active in the warn episode map, existing `LaserWorkGuard` / 
 - **AND** `allowWorkAfterCameraAlarm` is true
 - **AND** no other blocking coded alarms are active
 - **THEN** camera-alone policy SHALL NOT block ready/work for C002
+
+### Requirement: Camera program firmware upgrade quiets C002
+
+While a camera program firmware apply session is flashing, rebooting the camera, or waiting for the camera to come back online, the App SHALL suspend IP-camera communication health probes used for C002 and SHALL suppress C002 alarm edges for that window (including clearing any active C002 raised for the upgrade path). When the session ends (success or failure), the App SHALL resume probes and end C002 suppression.
+
+#### Scenario: Flash window does not raise C002
+
+- **WHEN** camera CGI flash / reboot / wait-online is in progress
+- **THEN** IP-camera health probes used for C002 SHALL be suspended
+- **AND** unhealthy health MUST NOT raise or retain C002 for that quiet window
+
+#### Scenario: Quiet ends after session
+
+- **WHEN** the camera program firmware session completes or fails
+- **THEN** health probes SHALL resume
+- **AND** C002 suppression SHALL end

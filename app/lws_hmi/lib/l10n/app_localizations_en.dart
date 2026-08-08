@@ -415,7 +415,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get applyToDevice => 'Apply To Device';
 
   @override
-  String get autoCheckOtaUpdate => 'Automatically check for updates';
+  String get autoCheckOtaUpdate => 'Auto-Check for Updates';
 
   @override
   String autoOtaUpdateDialogMessage(String version) {

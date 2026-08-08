@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cyber_ota/cyber_ota.dart';
 import 'package:cyber_upgrade_ui/cyber_upgrade_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,10 +11,13 @@ import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgr
 import 'package:lws_hmi/features/bundled_firmware/application/controller_upgrade_handler.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/bundled_firmware/domain/bundled_firmware_version_gate.dart';
+import 'package:lws_hmi/features/bundled_firmware/domain/control_board_cloud_manifest.dart';
 import 'package:lws_hmi/features/bundled_firmware/domain/firmware_upgrade_constants.dart';
+import 'package:lws_hmi/features/bundled_firmware/domain/peripheral_firmware_newest_wins.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/bundled_firmware_assets.dart';
+import 'package:lws_hmi/features/upgrade_safety/upgrade_safety.dart';
 
-/// Bundled or host-pushed control-board firmware candidate.
+/// Bundled, cloud, or host-pushed control-board firmware candidate.
 final class ControlBoardFirmwareOffer {
   const ControlBoardFirmwareOffer({
     required this.fileName,
@@ -21,10 +25,13 @@ final class ControlBoardFirmwareOffer {
     required this.bundledSw,
     this.assetKey,
     this.hostFile,
+    this.packageUrl,
   });
 
   final String fileName;
   final int deviceSw;
+
+  /// Candidate software version (bundled or cloud filename SW).
   final int bundledSw;
 
   /// Flutter asset key when upgrading from ship tree.
@@ -33,7 +40,11 @@ final class ControlBoardFirmwareOffer {
   /// Absolute path when upgrading from host `make upgrade-control-board`.
   final File? hostFile;
 
+  /// Cloud / host-HTTP package URL (download + verify before apply).
+  final String? packageUrl;
+
   bool get isHostPush => hostFile != null;
+  bool get isCloud => packageUrl != null && hostFile == null && assetKey == null;
 }
 
 /// Progress snapshot for the dedicated control-board upgrade page.
@@ -64,6 +75,9 @@ final class ControlBoardUpgradeCoordinator {
 
   GlobalKey<NavigatorState>? _navKey;
   AppServices? _services;
+  String? Function()? _cloudManifestUrlResolver;
+  OtaHttpClient _http = HttpOtaClient();
+  SignedBlobFetch _signedFetch = SignedBlobFetch();
 
   final _progressController =
       StreamController<ControlBoardUpgradeProgress>.broadcast();
@@ -80,9 +94,19 @@ final class ControlBoardUpgradeCoordinator {
   void configure({
     required GlobalKey<NavigatorState> navigatorKey,
     required AppServices services,
+    String? Function()? cloudManifestUrlResolver,
+    OtaHttpClient? httpClient,
+    SignedBlobFetch? signedFetch,
   }) {
     _navKey = navigatorKey;
     _services = services;
+    _cloudManifestUrlResolver = cloudManifestUrlResolver;
+    if (httpClient != null) {
+      _http = httpClient;
+    }
+    if (signedFetch != null) {
+      _signedFetch = signedFetch;
+    }
   }
 
   /// Drop terminal / stale UI progress so a later page open starts clean.
@@ -119,17 +143,18 @@ final class ControlBoardUpgradeCoordinator {
     );
   }
 
-  Future<ControlBoardFirmwareOffer?> evaluateOffer({
+  Future<PeripheralFirmwareOfferEvaluation<ControlBoardFirmwareOffer>>
+      evaluateOffer({
     UpgradePolicy policy = UpgradePolicy.operator,
   }) async {
     final services = _services;
     if (services == null || !services.modbusLiveAllowed) {
-      return null;
+      return const PeripheralFirmwareOfferEvaluation();
     }
     final deviceHw = await _readU16(FirmwareUpgradeConstants.deviceHw);
     final deviceSw = await _readU16(FirmwareUpgradeConstants.deviceSw);
     if (deviceHw == null || deviceSw == null) {
-      return null;
+      return const PeripheralFirmwareOfferEvaluation();
     }
 
     final checker = ControlBoardUpgradeChecker(
@@ -140,23 +165,91 @@ final class ControlBoardUpgradeCoordinator {
       currentVersion: '$deviceSw',
       policy: policy,
     );
-    if (result is! UpgradeCheckAvailable) {
-      return null;
+
+    ControlBoardFirmwareOffer? bundled;
+    if (result is UpgradeCheckAvailable) {
+      final fileName = result.offer.payload;
+      if (fileName is String) {
+        final bundledSw = BundledFirmwareVersionGate.softwareVersion(fileName);
+        if (bundledSw != null) {
+          bundled = ControlBoardFirmwareOffer(
+            assetKey: '${BundledFirmwareAssets.assetPrefix}$fileName',
+            fileName: fileName,
+            deviceSw: deviceSw,
+            bundledSw: bundledSw,
+          );
+        }
+      }
     }
-    final fileName = result.offer.payload;
-    if (fileName is! String) {
-      return null;
-    }
-    final bundledSw = BundledFirmwareVersionGate.softwareVersion(fileName);
-    if (bundledSw == null) {
-      return null;
-    }
-    return ControlBoardFirmwareOffer(
-      assetKey: '${BundledFirmwareAssets.assetPrefix}$fileName',
-      fileName: fileName,
+
+    final cloudLeg = await _evaluateCloudOffer(
+      deviceHw: deviceHw,
       deviceSw: deviceSw,
-      bundledSw: bundledSw,
+      policy: policy,
     );
+
+    final selected = PeripheralFirmwareNewestWins.select(
+      bundled: bundled,
+      cloud: cloudLeg.offer,
+      compare: (a, b) => PeripheralFirmwareNewestWins.compareControlBoardSw(
+        a.bundledSw,
+        b.bundledSw,
+      ),
+    );
+    return PeripheralFirmwareOfferEvaluation(
+      offer: selected,
+      cloudCheckFailed: cloudLeg.failed,
+    );
+  }
+
+  Future<({ControlBoardFirmwareOffer? offer, bool failed})> _evaluateCloudOffer({
+    required int deviceHw,
+    required int deviceSw,
+    required UpgradePolicy policy,
+  }) async {
+    if (!shouldRunVersionCheck(policy)) {
+      return (offer: null, failed: false);
+    }
+    final manifestUrl = _cloudManifestUrlResolver?.call();
+    if (manifestUrl == null) {
+      return (offer: null, failed: false);
+    }
+    try {
+      final json = await _http.getJson(manifestUrl);
+      final candidate = ControlBoardCloudManifest.tryParseOffer(
+        json: json,
+        deviceHw: deviceHw,
+        deviceSw: deviceSw,
+      );
+      if (candidate == null) {
+        return (offer: null, failed: false);
+      }
+      final channelVersion = (json['version'] as String?)?.trim();
+      if (channelVersion != null &&
+          channelVersion.isNotEmpty &&
+          !ControlBoardCloudManifest.channelVersionMatchesSw(
+            channelVersion,
+            candidate.softwareVersion,
+          )) {
+        debugPrint(
+          'ControlBoardUpgrade: cloud version "$channelVersion" '
+          'does not match filename SW ${candidate.softwareVersion}; '
+          'using filename',
+        );
+      }
+      return (
+        offer: ControlBoardFirmwareOffer(
+          fileName: candidate.fileName,
+          deviceSw: deviceSw,
+          bundledSw: candidate.softwareVersion,
+          packageUrl: candidate.packageUrl,
+        ),
+        failed: false,
+      );
+    } catch (e, st) {
+      debugPrint('ControlBoardUpgrade: cloud check soft-fail: $e\n$st');
+      return (offer: null, failed: true);
+    }
   }
 
   /// Host `make upgrade-control-board`: stash file, open page, skip version gate.
@@ -166,6 +259,10 @@ final class ControlBoardUpgradeCoordinator {
     }
     if (!await firmwareFile.exists()) {
       return;
+    }
+    final services = _services;
+    if (services != null) {
+      await UpgradeSafety.stopWork(services, reason: 'control-board-host');
     }
     _pendingHostFile = firmwareFile;
     await navigateToUpgradePage();
@@ -192,22 +289,53 @@ final class ControlBoardUpgradeCoordinator {
       throw StateError('upgrade_busy');
     }
 
-    late final Uint8List bytes;
-    if (offer.hostFile != null) {
-      bytes = await offer.hostFile!.readAsBytes();
-    } else if (offer.assetKey != null) {
-      final data = await BundledFirmwareAssets.loadBytes(offer.assetKey!);
-      if (data == null) {
-        throw StateError('asset_missing');
-      }
-      bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    } else {
-      throw StateError('no_firmware_source');
-    }
-
     await _beginRun(() async {
       FirmwareUpgradeCoordinator.markBundledUpgradeStarted();
+      var radios = UpgradeRadioSnapshot.none;
       try {
+        await UpgradeSafety.stopWork(
+          services,
+          reason: 'control-board-upgrade',
+        );
+
+        late final Uint8List bytes;
+        if (offer.hostFile != null) {
+          bytes = await offer.hostFile!.readAsBytes();
+        } else if (offer.packageUrl != null) {
+          _emit(
+            const ControlBoardUpgradeProgress(isRunning: true, percent: 0),
+          );
+          try {
+            final verified = await _signedFetch.downloadAndVerify(
+              packageUrl: offer.packageUrl!,
+              stagingDir: kControlBoardStagingDir,
+              fileName: offer.fileName,
+            );
+            bytes = await verified.readAsBytes();
+          } catch (e) {
+            _emit(
+              ControlBoardUpgradeProgress(
+                isTerminalFail: true,
+                errorMessage: '$e',
+              ),
+            );
+            return;
+          }
+        } else if (offer.assetKey != null) {
+          final data = await BundledFirmwareAssets.loadBytes(offer.assetKey!);
+          if (data == null) {
+            throw StateError('asset_missing');
+          }
+          bytes = data.buffer.asUint8List(
+            data.offsetInBytes,
+            data.lengthInBytes,
+          );
+        } else {
+          throw StateError('no_firmware_source');
+        }
+
+        radios = await UpgradeSafety.quiesceRadios(services);
+
         _emit(
           const ControlBoardUpgradeProgress(isRunning: true, percent: 0),
         );
@@ -251,6 +379,7 @@ final class ControlBoardUpgradeCoordinator {
           );
         }
       } finally {
+        await UpgradeSafety.restoreRadios(services, radios);
         FirmwareUpgradeCoordinator.markBundledUpgradeEnded();
       }
     });

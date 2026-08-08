@@ -71,6 +71,7 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.da
 import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgrade_coordinator.dart';
+import 'package:lws_hmi/features/bundled_firmware/infrastructure/peripheral_firmware_manifest_url.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/sync_firmware_command_watcher.dart';
 import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
 import 'package:lws_hmi/features/camera_update/application/camera_program_upgrade_coordinator.dart';
@@ -360,11 +361,22 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       ControlBoardUpgradeCoordinator.instance.configure(
         navigatorKey: _navKey,
         services: _services,
+        cloudManifestUrlResolver: () =>
+            PeripheralFirmwareManifestUrl.resolveControlBoard(
+          cloudSettings: _cloudSettingsStore,
+          pinnedApiBase: _cloudLocalRuntime.pinnedApiBase,
+        ),
       );
       CameraProgramUpgradeCoordinator.instance.configure(
         navigatorKey: _navKey,
         services: _services,
         deviceInfoCache: _cameraDeviceInfoCache,
+        warnAlarm: _warnAlarm,
+        cloudManifestUrlResolver: () =>
+            PeripheralFirmwareManifestUrl.resolveCamera(
+          cloudSettings: _cloudSettingsStore,
+          pinnedApiBase: _cloudLocalRuntime.pinnedApiBase,
+        ),
       );
       _syncFirmwareCommandWatcher.start();
       _upgradeCameraCommandWatcher.start();

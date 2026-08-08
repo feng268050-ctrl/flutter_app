@@ -14,13 +14,15 @@ import 'package:lws_hmi/features/camera_update/application/camera_program_upgrad
 import 'package:lws_hmi/features/camera_update/domain/bundled_camera_firmware_version_gate.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Camera program upgrade — Settings chrome like control-board upgrade.
 ///
-/// - Device Information / IP Camera (Camera Version): check + Update Now.
+/// - Device Information / IP Camera (Camera Version): check + Update Now
+///   (auto-check master switch lives on Device Info → Version).
 /// - Home auto-detect: [initialOffer] available state.
 /// - Host `make upgrade-camera`: [progressOnly] + [UpgradePolicy.hostForce].
 class CameraProgramUpgradePage extends StatefulWidget {
@@ -120,7 +122,10 @@ class _CameraProgramUpgradePageState extends State<CameraProgramUpgradePage> {
       }
       return;
     }
-    if (widget.autoCheckOnOpen && widget.initialOffer == null) {
+    if (widget.initialOffer == null &&
+        (widget.autoCheckOnOpen ||
+            (MiscSettingsScope.maybeOf(context)?.autoCheckOtaUpdate ??
+                false))) {
       await _runCheck();
     }
   }
@@ -180,21 +185,27 @@ class _CameraProgramUpgradePageState extends State<CameraProgramUpgradePage> {
       _availableOffer = null;
     });
     try {
-      final offer =
+      final eval =
           await CameraProgramUpgradeCoordinator.instance.evaluateOffer(
         policy: _policy,
       );
       if (!mounted) {
         return;
       }
+      final offer = eval.offer;
       if (offer != null) {
         setState(() {
           _checkUi = UpgradeCheckUiState.available;
           _availableOffer = offer;
           _currentVersionLabel = offer.deviceVersionLabel;
         });
+      } else if (eval.cloudCheckFailed) {
+        setState(() {
+          _checkUi = UpgradeCheckUiState.unavailable;
+          _availableOffer = null;
+        });
       } else {
-        // Distinguish unreachable vs up-to-date via a second probe.
+        // Distinguish unreachable host vs up-to-date via a second probe.
         final services = AppScope.maybeOf(context);
         if (services != null) {
           final product = await services.ensureProductInfo();

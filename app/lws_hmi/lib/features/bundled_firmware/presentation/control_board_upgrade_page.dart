@@ -12,13 +12,15 @@ import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgr
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/bundled_firmware/domain/bundled_firmware_version_gate.dart';
 import 'package:lws_hmi/features/bundled_firmware/domain/firmware_upgrade_constants.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Control-board firmware upgrade — Settings chrome like System Upgrade.
 ///
-/// - Device Information (Control Board Version): check + Update Now.
+/// - Device Information (Control Board Version): check + Update Now
+///   (auto-check master switch lives on Device Info → Version).
 /// - Home auto-detect: [initialOffer] available state.
 /// - Host `make upgrade-control-board`: [progressOnly] + [UpgradePolicy.hostForce].
 class ControlBoardUpgradePage extends StatefulWidget {
@@ -118,7 +120,10 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
       }
       return;
     }
-    if (widget.autoCheckOnOpen && widget.initialOffer == null) {
+    if (widget.initialOffer == null &&
+        (widget.autoCheckOnOpen ||
+            (MiscSettingsScope.maybeOf(context)?.autoCheckOtaUpdate ??
+                false))) {
       await _runCheck();
     }
   }
@@ -179,18 +184,24 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
       _availableOffer = null;
     });
     try {
-      final offer =
+      final eval =
           await ControlBoardUpgradeCoordinator.instance.evaluateOffer(
         policy: _policy,
       );
       if (!mounted) {
         return;
       }
+      final offer = eval.offer;
       if (offer != null) {
         setState(() {
           _checkUi = UpgradeCheckUiState.available;
           _availableOffer = offer;
           _currentSwLabel = '${offer.deviceSw}';
+        });
+      } else if (eval.cloudCheckFailed) {
+        setState(() {
+          _checkUi = UpgradeCheckUiState.unavailable;
+          _availableOffer = null;
         });
       } else {
         setState(() {

@@ -5,7 +5,9 @@ Dedicated whole-device upgrade page: safe shutdown, download/verify/extract/burn
 ## Requirements
 ### Requirement: Settings check-for-updates uses cyber_ota
 
-Device Information SHALL expose **System Version** as navigation into **System Upgrade**. System Upgrade SHALL host **Check for Updates** and **Automatically check for updates**, invoke `cyber_ota` against the **cloud channel manifest** for the active environment tier, and render check outcomes **in the content card** using **`cyber_upgrade_ui` check-card primitives** — not as dialogs. When not in progress-only / apply mode, System Upgrade SHALL also display read-only **Kernel Version** and **Process Library Version** rows (value or `-`) alongside the current System Version, so upgrade-related version detail lives on this page rather than Device Information. When a newer package exists, the card SHALL present an **Update Now** (and dismiss/later) gate (version / optional notes). **Update Now** SHALL start cloud download+apply via safe-shutdown with progress on the **same** System Upgrade page (`runCloudUpdate`, no remount required). Controls MUST NOT report a false success when cloud services or API origin are unavailable, MUST NOT report “up to date” when the check could not run, and MUST NOT remain permanently deferred once this capability is implemented. Auto-check MUST NOT apply an update without operator confirmation via Update Now (or equivalent confirm); when auto-check finds a newer package it MAY open System Upgrade already in the available state.
+Device Information SHALL expose **System Version** as navigation into **System Upgrade**. System Upgrade SHALL host **Check for Updates** (manual), invoke `cyber_ota` against the **cloud channel manifest** for the active environment tier, and render check outcomes **in the content card** using **`cyber_upgrade_ui` check-card primitives** — not as dialogs. When not in progress-only / apply mode, System Upgrade SHALL also display read-only **Kernel Version** and **Process Library Version** rows (value or `-`) alongside the current System Version, so upgrade-related version detail lives on this page rather than Device Information. When a newer package exists, the card SHALL present an **Update Now** (and dismiss/later) gate (version / optional notes). **Update Now** SHALL start cloud download+apply via safe-shutdown with progress on the **same** System Upgrade page (`runCloudUpdate`, no remount required). Controls MUST NOT report a false success when cloud services or API origin are unavailable, MUST NOT report “up to date” when the check could not run, and MUST NOT remain permanently deferred once this capability is implemented.
+
+**Auto-Check for Updates** SHALL be a single master switch on Device Information (Versions group, last row)—not a checkbox on System Upgrade / control-board / camera upgrade pages. When that switch is on, Product Home tips and opening those upgrade pages MAY auto-run a version check; Auto-check MUST NOT apply an update without operator confirmation via Update Now (or equivalent confirm).
 
 #### Scenario: Check for Updates runs manifest check
 
@@ -27,8 +29,8 @@ Device Information SHALL expose **System Version** as navigation into **System U
 
 #### Scenario: Auto-check never auto-applies
 
-- **WHEN** Automatically check for updates is enabled and a newer manifest is found
-- **THEN** the HMI may open System Upgrade with the available state
+- **WHEN** Auto-Check for Updates is enabled on Device Information and a newer manifest is found
+- **THEN** the HMI may open System Upgrade with the available state (or an equivalent confirm tip)
 - **AND** MUST NOT start partition writes until the operator confirms with Update Now (or equivalent)
 
 #### Scenario: Kernel and process library versions on System Upgrade
@@ -67,7 +69,7 @@ Whole-device OTA progress SHALL be shown on the **System Upgrade** page driven b
 
 ### Requirement: Safe shutdown navigates to the dedicated upgrade page
 
-Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at download start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and ensure the **System Upgrade** page is showing progress. When the operator is already on System Upgrade (Update Now), navigation MUST NOT remount a separate progress route unnecessarily. When started from host `make upgrade` / cleared stack, the HMI SHALL navigate **directly** to System Upgrade (progress-only) and MUST NOT use Home as an intermediate destination. Partition writes MUST NOT begin until this safe shutdown and upgrade-page presentation have completed (or the session fails closed without writing).
+Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at download start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and ensure the **System Upgrade** page is showing progress. After package download and signature verify succeed (and before extract/partition writes), the HMI SHALL also turn off the Wi‑Fi radio and Bluetooth adapter (Ethernet / USB-SSH networking MAY remain). When the OTA session ends without reboot-after-arm (failure/cancel), the HMI SHALL restore radios that were enabled before quiesce; on successful reboot-armed completion, radio restore MAY be skipped. When the operator is already on System Upgrade (Update Now), navigation MUST NOT remount a separate progress route unnecessarily. When started from host `make upgrade` / cleared stack, the HMI SHALL navigate **directly** to System Upgrade (progress-only) and MUST NOT use Home as an intermediate destination. Partition writes MUST NOT begin until this safe shutdown and upgrade-page presentation have completed (or the session fails closed without writing).
 
 #### Scenario: make upgrade trigger stops work and opens upgrade page
 
@@ -80,6 +82,19 @@ Before starting whole-device transfer or verify-and-apply (including when trigge
 
 - **WHEN** the operator activates Update Now on System Upgrade while a work session is active
 - **THEN** the HMI performs the same safe shutdown and shows apply progress on System Upgrade before download/apply proceeds
+
+#### Scenario: Radios off before extract/burn
+
+- **WHEN** a cloud or host HTTP OTA package has been downloaded and Ed25519-verified
+- **THEN** before extract or partition writes begin, the HMI turns off Wi‑Fi and Bluetooth
+- **AND** soft-fails radio disable when the board has no radio stack
+
+#### Scenario: Radios restored when OTA ends without reboot
+
+- **WHEN** Wi‑Fi and/or Bluetooth were enabled before the pre-extract radio quiesce
+- **AND** the whole-device OTA session ends in failure or cancel (no reboot-after-arm)
+- **THEN** the HMI SHALL restore those radios that were previously enabled
+- **AND** when the session completes successfully with reboot armed, radio restore MAY be skipped (post-reboot wanted restore applies)
 
 ### Requirement: Whole-device OTA excludes concurrent control-board flash
 

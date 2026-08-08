@@ -37,11 +37,15 @@ final class OtaSession {
     OtaExtract? extract,
     OtaApply? apply,
     OtaLog? log,
+    /// Invoked after package verify (or when verify is skipped) and before
+    /// extract/apply — App uses this for Wi‑Fi/BT quiesce after download.
+    Future<void> Function()? beforeExtract,
   })  : _http = httpClient ?? HttpOtaClient(),
         _verify = verify ?? OtaVerify(),
         _extract = extract ?? OtaExtract(),
         _apply = apply ?? OtaApply(),
-        _log = log ?? OtaLog(stagingDir);
+        _log = log ?? OtaLog(stagingDir),
+        _beforeExtract = beforeExtract;
 
   final String stagingDir;
   final OtaHttpClient _http;
@@ -49,6 +53,7 @@ final class OtaSession {
   final OtaExtract _extract;
   final OtaApply _apply;
   final OtaLog _log;
+  final Future<void> Function()? _beforeExtract;
 
   final _progressController = StreamController<OtaProgress>.broadcast();
   OtaProgress? _lastProgress;
@@ -200,6 +205,11 @@ final class OtaSession {
             message: 'Signature verified',
           ),
         );
+      }
+
+      final beforeExtract = _beforeExtract;
+      if (beforeExtract != null) {
+        await beforeExtract();
       }
 
       if (hasArchive) {

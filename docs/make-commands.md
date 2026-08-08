@@ -401,14 +401,16 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 ### `make upgrade-control-board`
 
 - **怎么用：** `make upgrade-control-board`；指定包 `FIRMWARE_BIN=/path/to.bin make upgrade-control-board`
-- **何时用：** 推最新控制板固件并触发升级（无版本门禁）。
-- **前提：** 板端 HMI 含 watcher。
+- **何时用：** 签名并经主机临时 HTTP 下发最新控制板固件，设备拉取 + Ed25519 验签后强制 Modbus 升级（无版本门禁 / 无 Home 确认）。
+- **行为：** `ota-sign.sh` → `ota-http-serve.py` 提供 `.bin`+`.sig` → SSH 写 `/run/hmi/upgrade-control-board.cmd` 为 `download <url>`（不再 SSH 上传固件本体）。
+- **前提：** `OTA_SIGNING_KEY`（或 `keys/ota/ed25519.pem`）；板端 HMI 含 watcher 且能访问主机 HTTP（`OTA_HTTP_HOST` / `OTA_HTTP_PORT` 可选）。
 
 ### `make upgrade-camera`
 
 - **怎么用：** `make upgrade-camera`；指定包 `FIRMWARE_ZIP=/path/to.zip make upgrade-camera`
-- **何时用：** 推最新摄像头固件 ZIP 并触发 CGI 升级（无版本门禁；成功需相机重启并重新上线）。
-- **前提：** 板端 HMI 含 `upgrade-camera.cmd` watcher；源包在 `app/lws_hmi/assets/firmware/camera/`。
+- **何时用：** 签名并经主机临时 HTTP 下发最新摄像头固件 ZIP，设备拉取 + 验签后强制 CGI 升级（无版本门禁；成功需相机重启并重新上线）。
+- **行为：** 同控制板：HTTP + `download <url>` 写 `/run/hmi/upgrade-camera.cmd`。
+- **前提：** `OTA_SIGNING_KEY`；板端 HMI 含 watcher；源包在 `app/lws_hmi/assets/firmware/camera/`。
 
 ### `make upgrade-process-library` / `make reset-process-library`
 
@@ -545,6 +547,19 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **产出对象（默认 APP）：** `lws-hmi/v{ver}[-beta].tar.gz`、同名 `.sig`、`lws-hmi/staging.json|release.json`。
 - **参数：** `APP`、`RELEASE`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
 - **前提：** `make ota-release-keys` / `OTA_SIGNING_KEY`；`make login` 或静态 token。
+
+### `make publish-control-board-firmware` / `make publish-camera-firmware`
+
+- **怎么用：**
+  - 控制板：`make publish-control-board-firmware`（默认选最新 `LSW01H*.bin`；`FIRMWARE_BIN=` 覆盖）
+  - 摄像头：`make publish-camera-firmware`（默认选最新 ZIP；`FIRMWARE_ZIP=` 覆盖）
+  - 仅上传已签名对：`make publish-control-board-firmware-only` / `make publish-camera-firmware-only`
+- **何时用：** 把最新控制板 / 摄像头固件 + `.sig` + **`release.json`** 发到 R2，供设备云端检查（与系统 OTA 相同的 presign PUT）。
+- **渠道：** **仅 release**（始终写 `release.json`，无 staging / `-beta`）。
+- **R2 前缀（默认 APP）：** `lws-hmi/control-board/`、`lws-hmi/camera/`（对象：固件文件、同名 `.sig`、`release.json`）。
+- **鉴权 / API 基址：** 与 `make publish` 相同。
+- **注意：** sibling api-server 可能需放行上述 R2 key 前缀。
+- **参数：** `APP`、`FIRMWARE_BIN` / `FIRMWARE_ZIP`、`OTA_SIGNING_KEY`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`PUBLISH_ARTIFACT`
 
 ---
 

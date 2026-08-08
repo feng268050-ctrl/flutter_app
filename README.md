@@ -399,8 +399,8 @@ make version-bump VERSION=1.0.40  # bump pubspec (+ app_version.dart when presen
 make build-rootfs               # → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)
 make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img
 make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= override
-make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
-make upgrade-camera             # push latest camera firmware zip; force upgrade (HMI running)
+make upgrade-control-board      # sign+HTTP serve control-board bin; device download/verify (HMI running)
+make upgrade-camera             # sign+HTTP serve camera zip; device download/verify (HMI running)
 make upgrade-process-library    # push process-library for device model; force import (HMI running)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make migrate-secrets            # re-seal software Wi‑Fi vault + cloud Ed25519 → OP-TEE (SCOPE=all|wifi|cloud)
@@ -427,6 +427,8 @@ UPGRADE_TRANSPORT=rockusb make upgrade  # force RockUSB path after make reboot-l
 make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign on api-prod; staging.json)
 RELEASE=1 make publish              # same → release.json (no -beta)
 make publish-only                   # upload existing output/firmware/<APP>/ota-package.tar.gz +.sig
+make publish-control-board-firmware # sign+upload newest CB bin → lws-hmi/control-board/release.json
+make publish-camera-firmware        # sign+upload newest camera zip → lws-hmi/camera/release.json
 ```
 
 Device selection: use **`SN=`** (matches `make devices` **SN**). Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** / **`UPGRADE_TRANSPORT=`** in `.env` for IDE / daily use.
@@ -734,8 +736,8 @@ App deploy without reflash:
 ```bash
 make build-app
 make push-app                  # SN=... or IP=... when multiple devices
-make upgrade-control-board    # push latest control-board bin and trigger upgrade (no version gate)
-make upgrade-camera           # push latest camera firmware zip and trigger upgrade (no version gate)
+make upgrade-control-board    # sign+HTTP serve control-board bin; device download/verify (no version gate)
+make upgrade-camera           # sign+HTTP serve camera zip; device download/verify (no version gate)
 make upgrade-process-library  # push process-library for device Vendor Storage model; force import
 make reset-process-library    # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make migrate-secrets          # re-seal software Wi‑Fi vault + cloud key → OP-TEE (SCOPE=all|wifi|cloud)

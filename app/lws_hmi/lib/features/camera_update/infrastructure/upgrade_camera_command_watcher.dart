@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cyber_ota/cyber_ota.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/camera_update/application/camera_program_upgrade_coordinator.dart';
+import 'package:lws_hmi/features/upgrade_safety/upgrade_safety.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
 /// Host helper (`make upgrade-camera`) command watcher.
 ///
 /// File format (one command per line):
-/// - `upgrade /run/hmi/camera-upgrade/<zip>`
+/// - `download http://host:port/<zip>`
+/// - `upgrade /run/hmi/camera-upgrade/<zip>` (legacy)
 /// - `clean`
 final class UpgradeCameraCommandWatcher {
   UpgradeCameraCommandWatcher({
@@ -18,7 +21,8 @@ final class UpgradeCameraCommandWatcher {
     required this.navigatorContext,
     this.path = defaultPath,
     this.pollInterval = const Duration(milliseconds: 400),
-  });
+    SignedBlobFetch? signedFetch,
+  }) : _signedFetch = signedFetch ?? SignedBlobFetch();
 
   static const defaultPath = '${OsPaths.runHmi}/upgrade-camera.cmd';
 
@@ -29,6 +33,7 @@ final class UpgradeCameraCommandWatcher {
 
   final String path;
   final Duration pollInterval;
+  final SignedBlobFetch _signedFetch;
 
   Timer? _timer;
   bool _busy = false;
@@ -85,6 +90,11 @@ final class UpgradeCameraCommandWatcher {
     }
     final op = parts.first.toLowerCase();
     switch (op) {
+      case 'download':
+        if (parts.length < 2) return;
+        // ZIP basenames may contain spaces (URL-encoded); join remainder.
+        await _downloadAndUpgrade(parts.sublist(1).join(' '));
+        break;
       case 'upgrade':
         if (parts.length < 2) return;
         await _sync(parts.sublist(1).join(' '));
@@ -93,6 +103,35 @@ final class UpgradeCameraCommandWatcher {
         break;
       default:
         break;
+    }
+  }
+
+  Future<void> _downloadAndUpgrade(String packageUrl) async {
+    try {
+      if (!FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
+        return;
+      }
+      final uri = Uri.tryParse(packageUrl);
+      if (uri == null ||
+          !(uri.scheme == 'http' || uri.scheme == 'https') ||
+          uri.host.isEmpty) {
+        return;
+      }
+      var fileName = uri.pathSegments.isEmpty
+          ? ''
+          : Uri.decodeComponent(uri.pathSegments.last);
+      if (fileName.isEmpty || !fileName.toLowerCase().endsWith('.zip')) {
+        return;
+      }
+      await UpgradeSafety.stopWork(services, reason: 'camera-host');
+      final verified = await _signedFetch.downloadAndVerify(
+        packageUrl: packageUrl,
+        stagingDir: kCameraStagingDir,
+        fileName: fileName,
+      );
+      await CameraProgramUpgradeCoordinator.instance.startHostUpgrade(verified);
+    } catch (_) {
+      // Keep watcher alive; host will retry if needed.
     }
   }
 

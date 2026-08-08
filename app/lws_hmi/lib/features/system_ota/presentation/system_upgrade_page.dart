@@ -24,7 +24,8 @@ import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// System Upgrade — Settings chrome; one content card fills remaining height.
 ///
-/// - From Device Information (System Version): check + auto-check + apply.
+/// - From Device Information (System Version): check + apply (auto-check master
+///   switch lives on Device Info → Version).
 /// - Host `make upgrade` / cleared-stack: [progressOnly] with
 ///   [SystemOtaUpgradeMapping.hostForcePolicy] (no version check).
 class SystemUpgradePage extends StatefulWidget {
@@ -117,9 +118,11 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
         _startVersionWatch();
         _refreshProcessLib();
       }
-      if (widget.autoCheckOnOpen &&
+      if (!widget.progressOnly &&
           widget.initialManifest == null &&
-          !widget.progressOnly) {
+          (widget.autoCheckOnOpen ||
+              (MiscSettingsScope.maybeOf(context)?.autoCheckOtaUpdate ??
+                  false))) {
         unawaited(_runCheck());
       }
     });
@@ -446,33 +449,6 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
               ),
             ),
           ],
-          const SizedBox(height: 14),
-          Center(
-            child: Builder(
-              builder: (context) {
-                final misc = MiscSettingsScope.maybeOf(context);
-                if (misc == null) {
-                  return SettingsCheckboxRow(
-                    title: l10n.autoCheckOtaUpdate,
-                    value: false,
-                    onChanged: null,
-                  );
-                }
-                return ListenableBuilder(
-                  listenable: misc,
-                  builder: (context, _) {
-                    return SettingsCheckboxRow(
-                      title: l10n.autoCheckOtaUpdate,
-                      value: misc.autoCheckOtaUpdate,
-                      onChanged: (v) {
-                        unawaited(misc.setAutoCheckOtaUpdate(v ?? false));
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
         ],
       ),
     );

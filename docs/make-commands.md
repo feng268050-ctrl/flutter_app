@@ -334,7 +334,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `build-platform-packages` | libmodbus/yaml-cpp/sqlite/avahi | `FORCE` |
 | `build-mediamtx` | MediaMTX 二进制 | → prebuilt；随 `build-app` 进 `/opt/hmi` |
 | `build-opencv` / `fetch-opencv` / `fetch-opencv-ximgproc` | AI 依赖 | OpenCV 源码/产物 |
-| `build-ai` | `lws_ai_daemon` | `AI_VERSION`、`FORCE` |
+| `build-ai` | 一等产品代码：增量编译 `lws_ai_daemon` → `prebuilt/ai`（日常改 `native/lws_ai` 后用此命令，再 `build-app`） | `AI_VERSION`；保留 cmake 于 `.cache/lws_ai/` |
+| `rebuild-ai` | 强制清 cmake 后全量重编（与其它 `rebuild-*` / `FORCE=1` 同习惯；非日常源码改动） | `FORCE=1`；指纹不匹配时 `build-ai` 也会 wipe |
 | `build-umtprd` | USB MTP | → prebuilt + overlay |
 | `build-extract-video-frame` | MP4→JPEG helper | → prebuilt + libexec |
 | `build-secrets-seal` | OP-TEE seal TA + CA | → prebuilt + overlay |

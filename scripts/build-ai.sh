@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Cross-compile native/lws_ai → prebuilt/ai/linux-arm64 (lws_ai_daemon + libs).
+# First-party product build (app-like): plain make build-ai is always incremental;
+# FORCE=1 / make rebuild-ai wipes the CMake tree then full configure + build + restage.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -8,10 +10,14 @@ source "$ROOT/scripts/prebuilt-common.sh"
 
 SRC="$ROOT/native/lws_ai"
 OUT_DIR="$ROOT/prebuilt/ai/linux-arm64"
-BUILD_DIR="$ROOT/.cache/lws_ai/build-linux-arm64"
+CACHE_ROOT="$ROOT/.cache/lws_ai"
+BUILD_DIR="$CACHE_ROOT/build-linux-arm64"
+CMAKE_DIR="$BUILD_DIR/cmake"
+FINGERPRINT_FILE="$CACHE_ROOT/configure.fingerprint"
 OPENCV_DIR="$ROOT/prebuilt/opencv/linux-arm64"
 RKNN_SO="$ROOT/prebuilt/rknn-rt/aarch64/librknnrt.so"
 RKNN_INC="$ROOT/prebuilt/rknn-rt/include"
+RKNN_RT_PATH="$ROOT/prebuilt/rknn-rt/aarch64"
 XIMG="$ROOT/.cache/opencv/ximgproc-ed"
 FORCE="${FORCE:-0}"
 AI_VERSION="${AI_VERSION:-0.0.0-dev}"
@@ -40,10 +46,33 @@ find_cross_gcc() {
   return 1
 }
 
-if prebuilt_ready "$OUT_DIR" && [[ -x "$OUT_DIR/lws_ai_daemon" ]] && [[ "$FORCE" != "1" ]]; then
-  echo "build-ai: prebuilt ready at $OUT_DIR"
-  exit 0
-fi
+# Configure fingerprint: toolchain + OpenCV/RKNN inputs + key -D options.
+# Written under .cache/lws_ai/ after a successful configure/build/restage.
+ai_configure_fingerprint() {
+  cat <<EOF
+CC=${CC}
+CXX=${CXX}
+OBJCOPY=${OBJCOPY}
+STRIP=${STRIP}
+SYSROOT=${SYSROOT:-}
+OPENCV_CMAKE=${OPENCV_CMAKE}
+RKNN_SO=${RKNN_SO}
+RKNN_RT_PATH=${RKNN_RT_PATH}
+XIMG=${XIMG}
+AI_VERSION=${AI_VERSION}
+CMAKE_BUILD_TYPE=Release
+BUILD_LIBAI=OFF
+BUILD_LWS_AI_DAEMON=ON
+ENABLE_STREAM_DETECT_NDK_FALLBACK=OFF
+BUILD_RKNN_STAIN_DETECT_PP_SMOKE_TEST=OFF
+BUILD_OPENCV_DETECT_CODES_SMOKE_TEST=OFF
+BUILD_RKNN_INFER=OFF
+BUILD_OPENCV_STAIN_DETECT_INFER=OFF
+BUILD_ZERO_POINT_INFER=OFF
+BUILD_EDGEDRAWING_INFER=OFF
+BUILD_RKNN_MEM_DEMO=OFF
+EOF
+}
 
 if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
   # docker-run only forwards selected -e vars; pass FORCE/AI_VERSION on the remote argv.
@@ -95,8 +124,26 @@ if [[ -z "$SYSROOT" || ! -d "$SYSROOT" ]]; then
   SYSROOT="$(cd "$(dirname "$CC")/../aarch64-linux-gnu/libc" 2>/dev/null && pwd || true)"
 fi
 
+wipe_cmake=0
+if [[ "$FORCE" == "1" ]]; then
+  wipe_cmake=1
+  echo "build-ai: FORCE=1 — wiping CMake tree at $CMAKE_DIR"
+elif [[ -d "$CMAKE_DIR" ]]; then
+  if [[ ! -f "$FINGERPRINT_FILE" ]]; then
+    wipe_cmake=1
+    echo "build-ai: missing configure fingerprint — wiping CMake tree"
+  elif ! cmp -s <(ai_configure_fingerprint) "$FINGERPRINT_FILE"; then
+    wipe_cmake=1
+    echo "build-ai: configure fingerprint mismatch — wiping CMake tree"
+  fi
+fi
+
+if [[ "$wipe_cmake" == "1" ]]; then
+  rm -rf "$CMAKE_DIR"
+fi
+
 TOOLCHAIN_FILE="$BUILD_DIR/aarch64-toolchain.cmake"
-mkdir -p "$BUILD_DIR"
+mkdir -p "$BUILD_DIR" "$CMAKE_DIR" "$OUT_DIR/lib"
 cat >"$TOOLCHAIN_FILE" <<EOF
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR aarch64)
@@ -116,16 +163,14 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 EOF
 fi
 
-echo "build-ai: CC=$CC AI_VERSION=$AI_VERSION"
-rm -rf "$BUILD_DIR/cmake"
-mkdir -p "$BUILD_DIR/cmake" "$OUT_DIR/lib"
+echo "build-ai: CC=$CC AI_VERSION=$AI_VERSION (incremental cmake under $CMAKE_DIR)"
 
-cmake -S "$SRC" -B "$BUILD_DIR/cmake" \
+cmake -S "$SRC" -B "$CMAKE_DIR" \
   -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN_FILE" \
   -DCMAKE_BUILD_TYPE=Release \
   -DLIB_VERSION="$AI_VERSION" \
   -DOPENCV_PATH="$OPENCV_CMAKE" \
-  -DRKNN_RT_PATH="$ROOT/prebuilt/rknn-rt/aarch64" \
+  -DRKNN_RT_PATH="$RKNN_RT_PATH" \
   -DRKNN_RT_LIB="$RKNN_SO" \
   -DOPENCV_XIMGPROC_ED_DIR="$XIMG" \
   -DBUILD_LIBAI=OFF \
@@ -140,9 +185,9 @@ cmake -S "$SRC" -B "$BUILD_DIR/cmake" \
   -DBUILD_RKNN_MEM_DEMO=OFF \
   -DFETCHCONTENT_FULLY_DISCONNECTED=OFF
 
-cmake --build "$BUILD_DIR/cmake" -j"${BUILD_JOBS:-8}" --target lws_ai_daemon
+cmake --build "$CMAKE_DIR" -j"${BUILD_JOBS:-8}" --target lws_ai_daemon
 
-DAEMON_BIN="$BUILD_DIR/cmake/lws_ai_daemon"
+DAEMON_BIN="$CMAKE_DIR/lws_ai_daemon"
 [[ -x "$DAEMON_BIN" ]] || {
   echo "ERROR: lws_ai_daemon missing after build" >&2
   exit 1
@@ -165,13 +210,17 @@ for f in "$OPENCV_DIR"/lib/libopencv_*.so*; do
   copy_so "$f"
 done
 # yaml-cpp is often static via FetchContent; if a .so appears, stage it.
-for f in "$BUILD_DIR/cmake"/_deps/yaml-cpp-build/libyaml-cpp.so*; do
+for f in "$CMAKE_DIR"/_deps/yaml-cpp-build/libyaml-cpp.so*; do
   copy_so "$f"
 done
 shopt -u nullglob
 rm -f "$OUT_DIR"/lib/librknnrt.so*
+# Leftover third-party stamp (if any) is not a control plane for AI.
+rm -f "$OUT_DIR/.lws-prebuilt"
 
-prebuilt_stamp "$OUT_DIR" "lws_ai-${AI_VERSION}-linux-arm64"
+mkdir -p "$CACHE_ROOT"
+ai_configure_fingerprint >"$FINGERPRINT_FILE"
+
 bash "$ROOT/scripts/sync-prebuilt-manifest.sh" 2>/dev/null || true
 file "$OUT_DIR/lws_ai_daemon" || true
 echo "build-ai: done → $OUT_DIR/lws_ai_daemon"

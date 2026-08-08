@@ -538,7 +538,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
 | OpenCV + ximgproc | `.cache/opencv/` sources → `make build-opencv` → `prebuilt/opencv/linux-arm64/` | 链进 `lws_ai_daemon` |
-| AI daemon | `native/lws_ai` → `make build-ai` → `prebuilt/ai/` → **`build-app` → `/opt/hmi`** | App 经 `cyber_pm` 监护 |
+| AI daemon | `native/lws_ai` → **增量** `make build-ai` → `prebuilt/ai/` → **`build-app` → `/opt/hmi`**（日常）；`make rebuild-ai` / `FORCE=1` 清 cmake 全量重编 | App 经 `cyber_pm` 监护 |
 | RKNN runtime | `prebuilt/rknn-rt/` + SDK rknpu2 | NPU 推理（rootfs + AI 链接） |
 | **P2/P3/P5 平台库** | `prebuilt/platform-packages/` | libmodbus、yaml-cpp、sqlite、avahi |
 
@@ -550,7 +550,8 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | `make build-platform-packages` | libmodbus + yaml-cpp + sqlite + avahi |
 | `make fetch-opencv` / `fetch-opencv-ximgproc` | OpenCV 源码 |
 | `make build-opencv` | aarch64 OpenCV → `prebuilt/opencv/linux-arm64` |
-| `make build-ai` | `lws_ai_daemon` → `prebuilt/ai/linux-arm64`（需 opencv + rknn-rt） |
+| `make build-ai` | 增量编译 `lws_ai_daemon` → `prebuilt/ai/linux-arm64`（需 opencv + rknn-rt；日常改 AI 源码用此命令） |
+| `make rebuild-ai` | `FORCE=1`：wipe `.cache/lws_ai` cmake 后全量重编（非日常） |
 | `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
 | `make fetch-btop` | aarch64 musl `btop` → prebuilt + fs-overlay |
 | `make build-umtprd` | aarch64 static `umtprd` → prebuilt + fs-overlay（MTP） |

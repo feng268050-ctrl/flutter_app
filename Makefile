@@ -155,7 +155,7 @@ help:
 	@echo "  make build-flutter-embedded-linux  # Weston image: eLinux Wayland client → prebuilt/"
 	@echo "  make build-mediamtx        # runtime: mediamtx arm64 → prebuilt/ (App /opt/hmi)"
 	@echo "  make build-opencv          # runtime: OpenCV aarch64 → prebuilt/opencv (for lws_ai)"
-	@echo "  make build-ai              # runtime: lws_ai_daemon → prebuilt/ai (App /opt/hmi)"
+	@echo "  make build-ai              # runtime: incremental lws_ai_daemon → prebuilt/ai (daily; rebuild-ai / FORCE=1 wipe cmake)"
 	@echo "  make build-umtprd          # runtime: umtprd aarch64 → prebuilt/ + fs-overlay (MTP)"
 	@echo "  make build-extract-video-frame  # runtime: MP4→JPEG helper → prebuilt/ + libexec (GStreamer)"
 	@echo "  make build-secrets-seal    # OP-TEE seal TA + CA (signs with keys/oem/vendor_ta.pem; TA_SIGN_KEY= overrides)"

@@ -222,15 +222,15 @@ hmi_bundle_install_mediamtx() {
 }
 
 # Install App-owned AI daemon (+ companion libs) into /opt/hmi.
-# Soft-skips when prebuilt missing so daily App iteration is not blocked; set
-# REQUIRE_AI=1 to fail the bundle (release gate).
+# Soft-skips when the staged daemon binary is missing so daily App iteration is
+# not blocked; set REQUIRE_AI=1 to fail the bundle (release gate).
+# Gate is executable lws_ai_daemon only — no .lws-prebuilt stamp.
 hmi_bundle_install_ai() {
 	local dest="$1"
 	local src_dir="$ROOT/prebuilt/ai/linux-arm64"
 	local src="$src_dir/lws_ai_daemon"
-	local stamp="$src_dir/.lws-prebuilt"
 
-	if [[ ! -f "$stamp" || ! -x "$src" ]]; then
+	if [[ ! -x "$src" ]]; then
 		if [[ "${REQUIRE_AI:-0}" == "1" ]]; then
 			die "AI prebuilt missing ($src). Run: make build-opencv && make build-ai"
 		fi

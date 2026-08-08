@@ -16,6 +16,19 @@ make build-opencv
 make build-ai
 ```
 
+Daily iteration after editing sources under this tree:
+
+```text
+make build-ai
+make build-app
+make push-app
+```
+
+`make build-ai` is **incremental** (keeps the CMake tree under `.cache/lws_ai/`). Use
+`make rebuild-ai` or `FORCE=1 make build-ai` only when the cache/toolchain/OpenCV
+inputs are wrong — same habit as other `rebuild-*` targets. Packaging gates on the
+executable `prebuilt/ai/linux-arm64/lws_ai_daemon` (no `.lws-prebuilt` stamp).
+
 Outputs:
 
 - `prebuilt/opencv/linux-arm64/` — aarch64 OpenCV install

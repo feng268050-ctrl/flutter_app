@@ -5,7 +5,6 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart'
 import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
-import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 
@@ -26,7 +25,8 @@ class ProductPageStatusBar extends StatelessWidget
     this.backgroundColor,
     this.foregroundColor,
     this.cameraStatus,
-    this.iconSize = 24,
+    // Settings / Monitor (+ nested) trailing icons — match Back glyph (34).
+    this.iconSize = 34,
     this.wifi,
     this.bluetooth,
     this.toolbarHeight = kToolbarHeight,
@@ -127,10 +127,10 @@ class ProductPageStatusBar extends StatelessWidget
               toolbarHeight: toolbarHeight,
               clockNow: nowFn,
               use24HourFormat: services?.wallClock.use24HourFormat ?? true,
-              // Match Quick / Engineer [WorkModeStatusBar] clock size.
+              // Match Settings / Monitor Back label size.
               clockStyle: TextStyle(
                 color: clockFg,
-                fontSize: WorkModeStatusBarDimens.chromeLabelFontSize,
+                fontSize: CallBackHomeButton.labelFontSize,
                 height: 1,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),

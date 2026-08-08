@@ -63,11 +63,11 @@ void main() {
     // Clock is centered (title slot); only one clock in the bar.
     expect(find.byKey(const ValueKey('cyber-status-bar-clock')), findsOneWidget);
 
-    // Match Quick / Engineer WorkModeStatusBarDimens.chromeLabelFontSize.
+    // Match CallBackHomeButton label (Settings / Monitor Back).
     final clock = tester.widget<Text>(
       find.byKey(const ValueKey('cyber-status-bar-clock')),
     );
-    expect(clock.style?.fontSize, 20);
+    expect(clock.style?.fontSize, CallBackHomeButton.labelFontSize);
     // Page chrome shows weekday + date left of time (Quick/Engineer stay time-only).
     expect(clock.data, isNotNull);
     expect(clock.data!.split(' ').length, greaterThanOrEqualTo(2));

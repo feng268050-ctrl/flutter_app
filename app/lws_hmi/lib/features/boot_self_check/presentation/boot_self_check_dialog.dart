@@ -6,6 +6,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Max height for the item list before it scrolls (lws-ui `maxHeight="420dp"`).
 const double _kItemListMaxHeight = 420;
@@ -91,7 +92,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                   ),
                   if (session.showFooter) ...[
                     const SizedBox(height: 16),
-                    const Divider(height: 1, color: Color(0x44FFFFFF)),
+                    const TipFrostDivider(),
                     const SizedBox(height: 16),
                     Row(
                       children: [

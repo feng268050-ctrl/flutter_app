@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Host App Upgrade Specification
+
+## Purpose
+
+Host `make upgrade-app` (alias `push-app`): sign and HTTP-serve the app `tar.gz`, device `download <url>` + Ed25519 verify + install to `/opt/hmi` + restart `hmi.service`. Recovery: `make apply-app-overlay` when the in-app installer is stale.
+
+## Requirements
 
 ### Requirement: make upgrade-app signs and serves app tar.gz for device download
 
@@ -27,10 +33,20 @@ The repository SHALL provide **`make upgrade-app`** that packages (or consumes) 
 
 ### Requirement: upgrade-app and push-app are documented
 
-`make help`, README Make commands, `docs/make-commands.md`, and AGENTS.md rebuild guidance SHALL document `make upgrade-app` as the canonical remote app update and SHALL state that **`push-app` is an alias** of `upgrade-app` (signed path; no unsigned push). Daily app iteration SHALL recommend `make build-app` then `make upgrade-app` or `make push-app`. Docs MUST NOT list `upgrade-hmi` as a Make target or alias, and MUST NOT document an unsigned push workflow.
+`make help`, README Make commands, `docs/make-commands.md`, and AGENTS.md rebuild guidance SHALL document `make upgrade-app` as the canonical remote app update and SHALL state that **`push-app` is an alias** of `upgrade-app` (signed path; no unsigned push). Daily app iteration SHALL recommend `make build-app` then `make upgrade-app` or `make push-app`. Docs SHALL also document **`make apply-app-overlay`** as the recovery path when the in-app installer is stale or broken. Docs MUST NOT list `upgrade-hmi` as a Make target or alias, and MUST NOT document an unsigned push workflow.
 
 #### Scenario: help lists upgrade-app and push-app alias
 
 - **WHEN** the operator runs `make help`
 - **THEN** output mentions `upgrade-app` and that `push-app` is its alias
 - **AND** MUST NOT advertise unsigned SCP hot-swap as a supported path
+
+### Requirement: make apply-app-overlay recovers when in-app installer is stale
+
+The repository SHALL provide **`make apply-app-overlay`** as an SSH recovery path when the on-device HMI app installer is stale or broken and `make upgrade-app` cannot complete. It SHALL stream the selected app’s overlay install tree to the board and shell-install into **`/opt/hmi`** (or `/opt/<APP>` for non-HMI), then restart **`hmi.service`** for `*_hmi` apps. This path bypasses the in-app `SignedBlobFetch` / `upgrade-app.cmd` installer. Daily iteration SHALL still prefer `make upgrade-app`; `apply-app-overlay` is recovery only (typically once after `make build-app`).
+
+#### Scenario: Recovery installs overlay without in-app installer
+
+- **WHEN** the operator runs `make build-app` then `make apply-app-overlay` with a reachable board because the in-app installer cannot apply a signed package
+- **THEN** the host streams the overlay tree, shell-installs to `/opt/hmi`, and restarts `hmi.service`
+- **AND** the path does not require a working on-device upgrade-app watcher

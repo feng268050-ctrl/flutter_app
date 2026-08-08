@@ -36,6 +36,6 @@
 ## 6. Verification
 
 - [x] 6.1 Host: `make version`, `APP=lws_hmi make version`, `make version-bump` OS vs app paths
-- [ ] 6.2 Host: `make build-app` + `make upgrade-app` (and `make push-app` alias) on a board (signed download + service restart; no unsigned SCP)
+- [x] 6.2 Host: `make build-app` + `make upgrade-app` (and `make push-app` alias) on a board (signed download + service restart; no unsigned SCP)
 - [x] 6.3 App: `flutter analyze` / targeted tests for version display and HMI upgrade coordinator
 - [x] 6.4 Confirm System Upgrade no longer shows Process Library; HMI Upgrade shows HMI + Process Library

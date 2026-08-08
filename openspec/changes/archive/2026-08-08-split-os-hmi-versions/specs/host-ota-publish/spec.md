@@ -1,6 +1,6 @@
 ## MODIFIED Requirements
 
-### Requirement: Publish version is the HMI app version
+### Requirement: Publish version is the OS Version
 
 Cloud **whole-device / system** publish versioning SHALL use the product **OS Version** only: read the OS Version SoT SemVer (e.g. `1.0.0`) and use that as the channel manifest **`version`** field and archive basename (with a leading `v` on the filename only). The system MUST NOT use the Flutter HMI `pubspec.yaml` as the whole-device cloud OTA channel version. The system MUST NOT invent kernel, git-tag, or ad-hoc host labels as the channel version. The system MUST NOT append prerelease suffixes such as **`-beta`** or **`-alpha`**. Device update checks that consume **`{artifact}/release.json`** SHALL compare against the running **OS Version**. Independent HMI app publishes use **`{artifact}/app/release.json`** per `host-app-publish` (out of scope for this requirement’s channel).
 

@@ -68,14 +68,17 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   row.item.labelFor(l10n),
-                                  style: context.hmiTypography.body.copyWith(
+                                  style:
+                                      context.hmiTypography.buttonLarge.copyWith(
                                     color: CyberColors.textPrimary,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ),
                               Text(
                                 row.status.labelFor(l10n),
-                                style: context.hmiTypography.supporting.copyWith(
+                                style: context.hmiTypography.sectionTitle
+                                    .copyWith(
                                   color: _statusColor(row.status),
                                   fontWeight: FontWeight.w500,
                                 ),

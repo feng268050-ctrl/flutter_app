@@ -18,8 +18,6 @@ import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.d
 import 'package:lws_hmi/features/system_ota/application/system_ota_upgrade_mapping.dart';
 import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
-import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// System Upgrade — Settings chrome; one content card fills remaining height.
@@ -173,17 +171,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     super.dispose();
   }
 
-  String? _resolveManifestUrl() {
-    final cloudStore = CloudSettingsScope.maybeOf(context);
-    if (cloudStore == null) {
-      return null;
-    }
-    final runtime = CloudLocalRuntimeScope.maybeOf(context);
-    return OtaManifestUrl.resolve(
-      cloudSettings: cloudStore,
-      pinnedApiBase: runtime?.pinnedApiBase,
-    );
-  }
+  String? _resolveManifestUrl() => OtaManifestUrl.resolve();
 
   Future<void> _runCheck() async {
     if (_checkUi == UpgradeCheckUiState.checking ||
@@ -194,7 +182,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       return;
     }
     final url = _resolveManifestUrl();
-    if (url == null) {
+    if (url == null || url.isEmpty) {
       setState(() {
         _checkUi = UpgradeCheckUiState.unavailable;
         _availableManifest = null;

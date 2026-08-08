@@ -1,10 +1,4 @@
-# host-ota-publish Specification
-
-## Purpose
-
-Host `make publish` / `publish-only`: upload signed `ota-package` `tar.gz` (+ `.sig`) and **`release.json`** to R2 via production-cloud presigned PUT (same API base as `make login`). Devices discover packages at the public CDN (`https://cdn.lasercyber.com/{artifact}/release.json`).
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: make publish uploads OTA tar.gz and channel manifest to R2
 
@@ -54,21 +48,6 @@ Cloud publish versioning SHALL use the **selected HMI Flutter app version** only
 - **WHEN** the operator runs `APP=cnc_hmi make publish` and `app/cnc_hmi/pubspec.yaml` has `version: 2.1.0+2100`
 - **THEN** pack/manifest versioning is based on `2.1.0` from that app, not from `lws_hmi`
 
-### Requirement: Publish is release-only
-
-`make publish` / `make publish-only` SHALL always write **`release.json`** and use the plain HMI pubspec semver (no `-beta` / `-alpha`). The host MUST NOT accept a **`RELEASE=`** channel toggle; if `RELEASE` is set in the environment, publish SHALL fail fast with a migration hint.
-
-#### Scenario: Plain publish writes release.json
-
-- **WHEN** the operator runs `make publish` and the HMI app pubspec semver is `1.0.38`
-- **THEN** the uploaded object basename and manifest `version` use `1.0.38` without prerelease suffix and the written manifest key is `{artifact}/release.json`
-
-#### Scenario: RELEASE env is rejected
-
-- **WHEN** the operator runs `RELEASE=1 make publish` (or otherwise sets `RELEASE` in the environment)
-- **THEN** the command exits non-zero before uploading
-- **AND** the error SHALL state that publish is always `release.json`
-
 ### Requirement: R2 artifact prefix derives from APP
 
 The R2 directory (publish **artifact** segment) SHALL be derived from Make/env **`APP`**: replace underscores with hyphens (default `APP=lws_hmi` → artifact **`lws-hmi`**). Objects SHALL live under **`{artifact}/`** in the app bucket (`tar.gz`, `.sig`, + **`release.json`**). Archive basename SHALL be **`v{semver}.tar.gz`** (version segment only — MUST NOT prefix with `{artifact}_`, MUST NOT include `-beta` / `-alpha`).
@@ -85,24 +64,9 @@ The R2 directory (publish **artifact** segment) SHALL be derived from Make/env *
 - **WHEN** the operator runs `APP=cnc_hmi make publish` and `app/cnc_hmi` is a valid app
 - **THEN** upload paths use the `cnc-hmi` artifact prefix
 
-### Requirement: Cloud manifest schema omits sha512; trust is detached sig
-
-The channel manifest written by the host publish client SHALL be a JSON object including at least **`version`** (string), **`filename`** (string), **`published_at`** (UTC ISO 8601 with `Z`), and **`url`** (HTTPS URL of the uploaded OTA `tar.gz`, typically under the public CDN). The manifest MUST NOT include **`sha512`**. This cloud manifest describes the downloadable archive location and channel version; **integrity, authenticity, and anti-tamper for write authorization SHALL be the whole-archive Ed25519 detached `.sig`** per `unified-ota-cyber-ota` / `ota-package-signing`. Devices MUST verify the `.sig` against the downloaded `tar.gz` before applying; a matching channel `url` alone MUST NOT authorize partition writes.
-
-#### Scenario: Manifest points at archive URL without sha512
-
-- **WHEN** publish completes successfully
-- **THEN** the channel manifest `url` equals the public HTTPS URL of the uploaded OTA `tar.gz` under `{artifact}/`
-- **AND** the manifest JSON does not contain a `sha512` field
-
-#### Scenario: Signature object is published with the archive
-
-- **WHEN** publish uploads the OTA `tar.gz`
-- **THEN** the detached `.sig` is also uploaded under the documented key convention for that artifact so devices can fetch and verify it
-
 ### Requirement: Host documents publish Make surface
 
-Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table as needed) SHALL document `make publish` / `publish-only`, `APP=`, and auth/env (`PUBLISH_API_TOKEN`, **`CLOUD_API_BASE`** defaulting to production api-prod like login/register-device, and `make login` fallback). Docs SHALL state that publish is **release-only** (`release.json`, no `staging.json`, no `RELEASE=`, no `-beta`/`-alpha`), and that devices fetch manifests from **`https://cdn.lasercyber.com/{artifact}/release.json`**. Docs SHALL describe the **presigned-url + direct R2 PUT** flow (aligned with `lws-ui`), MUST NOT prescribe `PUT /upload/{artifact}/…` as the HMI publish path, and MUST state that channel manifests omit `sha512` because `.sig` covers integrity.
+Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table as needed) SHALL document `make publish` / `publish-only`, `APP=`, and auth/env (`PUBLISH_API_TOKEN`, **`CLOUD_API_BASE`** defaulting to production api-prod like login/register-device, and `make login` fallback). Docs SHALL state that publish is **release-only** (`release.json`, no `staging.json`, no `RELEASE=1`, no `-beta`/`-alpha`), and that devices fetch manifests from **`https://cdn.lasercyber.com/{artifact}/release.json`**. Docs SHALL describe the **presigned-url + direct R2 PUT** flow (aligned with `lws-ui`), MUST NOT prescribe `PUT /upload/{artifact}/…` as the HMI publish path, and MUST state that channel manifests omit `sha512` because `.sig` covers integrity.
 
 #### Scenario: Operator finds publish in help
 
@@ -122,3 +86,28 @@ The intended production upload path SHALL match **`lws-ui`** and SHALL use the *
 
 - **WHEN** the publish client requests upload credentials
 - **THEN** the HTTP request URL host/path prefix is `{cloud_api_base()}/v1/storage/r2/presigned-url` (not a hardcoded alternate publish-only host)
+
+## ADDED Requirements
+
+### Requirement: Publish is release-only
+
+`make publish` / `make publish-only` SHALL always write **`release.json`** and use the plain HMI pubspec semver (no `-beta` / `-alpha`). The host MUST NOT accept a **`RELEASE=`** channel toggle; if `RELEASE` is set in the environment, publish SHALL fail fast with a migration hint.
+
+#### Scenario: Plain publish writes release.json
+
+- **WHEN** the operator runs `make publish` and the HMI app pubspec semver is `1.0.38`
+- **THEN** the uploaded object basename and manifest `version` use `1.0.38` without prerelease suffix and the written manifest key is `{artifact}/release.json`
+
+#### Scenario: RELEASE env is rejected
+
+- **WHEN** the operator runs `RELEASE=1 make publish` (or otherwise sets `RELEASE` in the environment)
+- **THEN** the command exits non-zero before uploading
+- **AND** the error SHALL state that publish is always `release.json`
+
+## REMOVED Requirements
+
+### Requirement: Publish channel follows RELEASE flag like lws-ui
+
+**Reason:** System OTA is simplified to a single release channel on CDN; staging/`-beta` and `RELEASE=1` are retired.
+
+**Migration:** Run plain `make publish` / `make publish-only`. Do not set `RELEASE`. Ensure CDN has current `{artifact}/release.json`.

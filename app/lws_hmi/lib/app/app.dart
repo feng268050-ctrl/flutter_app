@@ -348,10 +348,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       SystemOtaCoordinator.instance.configure(
         navigatorKey: _navKey,
         services: _services,
-        manifestUrlResolver: () => OtaManifestUrl.resolve(
-          cloudSettings: _cloudSettingsStore,
-          pinnedApiBase: _cloudLocalRuntime.pinnedApiBase,
-        ),
+        manifestUrlResolver: () => OtaManifestUrl.resolve(),
         progressSink: (progress) {
           unawaited(
             _cloudLocalRuntime.emitOtaProgress(progress.toJson()),
@@ -362,10 +359,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         navigatorKey: _navKey,
         services: _services,
         cloudManifestUrlResolver: () =>
-            PeripheralFirmwareManifestUrl.resolveControlBoard(
-          cloudSettings: _cloudSettingsStore,
-          pinnedApiBase: _cloudLocalRuntime.pinnedApiBase,
-        ),
+            PeripheralFirmwareManifestUrl.resolveControlBoard(),
       );
       CameraProgramUpgradeCoordinator.instance.configure(
         navigatorKey: _navKey,
@@ -373,10 +367,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         deviceInfoCache: _cameraDeviceInfoCache,
         warnAlarm: _warnAlarm,
         cloudManifestUrlResolver: () =>
-            PeripheralFirmwareManifestUrl.resolveCamera(
-          cloudSettings: _cloudSettingsStore,
-          pinnedApiBase: _cloudLocalRuntime.pinnedApiBase,
-        ),
+            PeripheralFirmwareManifestUrl.resolveCamera(),
       );
       _syncFirmwareCommandWatcher.start();
       _upgradeCameraCommandWatcher.start();

@@ -1,10 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/bundled_firmware/domain/peripheral_firmware_newest_wins.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/peripheral_firmware_manifest_url.dart';
-import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
-import 'package:lws_hmi/platform/cloud/cloud_settings_store.dart';
 
 void main() {
   group('PeripheralFirmwareNewestWins', () {
@@ -78,60 +74,14 @@ void main() {
   });
 
   group('PeripheralFirmwareManifestUrl', () {
-    late Directory tempDir;
-    late String prefsPath;
-
-    setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('peripheral-manifest-');
-      prefsPath = '${tempDir.path}/cloud-settings.json';
-    });
-
-    tearDown(() async {
-      try {
-        await tempDir.delete(recursive: true);
-      } catch (_) {}
-    });
-
-    CloudSettingsStore storeWith({
-      required bool enabled,
-      required CloudEnvironmentTier tier,
-    }) {
-      File(prefsPath).writeAsStringSync(
-        '{"environmentTier":"${tier.wireName}",'
-        '"cloudServicesEnabled":$enabled,'
-        '"lanEnhancementEnabled":false}\n',
-      );
-      final store = CloudSettingsStore(preferencePath: prefsPath);
-      store.warmRead();
-      return store;
-    }
-
-    test('always uses release.json even on test tier', () {
-      final store = storeWith(enabled: true, tier: CloudEnvironmentTier.test);
+    test('uses CDN release.json paths', () {
       expect(
-        PeripheralFirmwareManifestUrl.resolveControlBoard(
-          cloudSettings: store,
-          pinnedApiBase: Uri.parse('https://api-test.example'),
-        ),
-        'https://api-test.example/r2/lws-hmi/control-board/release.json',
+        PeripheralFirmwareManifestUrl.resolveControlBoard(),
+        'https://cdn.lasercyber.com/lws-hmi/control-board/release.json',
       );
       expect(
-        PeripheralFirmwareManifestUrl.resolveCamera(
-          cloudSettings: store,
-          pinnedApiBase: Uri.parse('https://api-test.example'),
-        ),
-        'https://api-test.example/r2/lws-hmi/camera/release.json',
-      );
-    });
-
-    test('returns null when cloud disabled', () {
-      final store = storeWith(enabled: false, tier: CloudEnvironmentTier.prod);
-      expect(
-        PeripheralFirmwareManifestUrl.resolveControlBoard(
-          cloudSettings: store,
-          pinnedApiBase: Uri.parse('https://api-prod.example'),
-        ),
-        isNull,
+        PeripheralFirmwareManifestUrl.resolveCamera(),
+        'https://cdn.lasercyber.com/lws-hmi/camera/release.json',
       );
     });
   });

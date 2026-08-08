@@ -1729,7 +1729,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
 
   @override
-  String get otaCheckFailed => '无法检查更新，请确认网络和云服务设置。';
+  String get otaCheckFailed => '无法检查更新，请确认网络连接。';
 
   @override
   String get otaSessionActive => '系统升级正在进行中。';
@@ -4539,7 +4539,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
 
   @override
-  String get otaCheckFailed => '無法檢查更新，請確認網絡和雲服務設置。';
+  String get otaCheckFailed => '無法檢查更新，請確認網絡連接。';
 
   @override
   String get otaSessionActive => '系統升級正在進行中。';

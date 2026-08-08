@@ -3356,7 +3356,7 @@ abstract class AppLocalizations {
   /// No description provided for @otaCheckFailed.
   ///
   /// In en, this message translates to:
-  /// **'Could not check for updates. Verify network and cloud settings.'**
+  /// **'Could not check for updates. Verify network connectivity.'**
   String get otaCheckFailed;
 
   /// No description provided for @otaSessionActive.

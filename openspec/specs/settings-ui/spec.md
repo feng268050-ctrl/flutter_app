@@ -591,7 +591,7 @@ Device Information SHALL show CyberUI untitled cards with:
 3. Storage: iOS-style capacity bar with `{used} of {total} used` summary and HAL `SysInfo.storage` (System = GPT system partitions; Available = `/userdata` free)  
 4. Accessory (last): Welding Gun SN, Focus Scale Reference  
 
-Device Information MUST NOT show Camera Type. Device Information MUST NOT show Kernel Version or Process Library Version. Device Information SHALL expose **System Version** as a navigation row into **System Upgrade**. Manual Check for Updates SHALL live on System Upgrade (and peripheral upgrade pages). **Auto-Check for Updates** SHALL be the Device Information Versions master switch and SHALL gate Product Home auto tips plus auto-check-on-open for System / control-board / camera upgrade pages. Auto-check MUST NOT auto-apply. When cloud services are disabled or the API origin is not pinned, Check for Updates MUST show an unavailable outcome on System Upgrade (not a false “up to date”). They MUST NOT report a false success, and MUST NOT remain permanently deferred/unavailable once whole-device OTA is implemented on the device image. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
+Device Information MUST NOT show Camera Type. Device Information MUST NOT show Kernel Version or Process Library Version. Device Information SHALL expose **System Version** as a navigation row into **System Upgrade**. Manual Check for Updates SHALL live on System Upgrade (and peripheral upgrade pages). **Auto-Check for Updates** SHALL be the Device Information Versions master switch and SHALL gate Product Home auto tips plus auto-check-on-open for System / control-board / camera upgrade pages. Auto-check MUST NOT auto-apply. Check for Updates SHALL fetch public CDN `release.json` manifests and MUST NOT require cloud services enabled or a pinned Worker API origin; when the CDN is unreachable, the check outcome MUST show failed/unavailable (not a false “up to date”). They MUST NOT report a false success, and MUST NOT remain permanently deferred/unavailable once whole-device OTA is implemented on the device image. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
 
 #### Scenario: No Camera Type on Device Information
 
@@ -611,11 +611,11 @@ Device Information MUST NOT show Camera Type. Device Information MUST NOT show K
 - **WHEN** the operator activates the System Version row on Device Information
 - **THEN** System Upgrade is shown (shared Settings scaffold)
 
-#### Scenario: Check unavailable when cloud off
+#### Scenario: Check works when cloud services off
 
-- **WHEN** cloud services are disabled and the operator activates Check for Updates on System Upgrade
-- **THEN** System Upgrade indicates the check is unavailable in the content card
-- **AND** MUST NOT claim the system is up to date
+- **WHEN** cloud services are disabled and the operator activates Check for Updates on System Upgrade and the CDN manifest is reachable
+- **THEN** System Upgrade runs the check against `https://cdn.lasercyber.com/{artifact}/release.json`
+- **AND** MUST NOT claim the check is unavailable solely because cloud services are off
 
 #### Scenario: No permanent cloud environment row
 
@@ -661,7 +661,7 @@ When the operator opens the Common Settings RGB LED page, the App SHALL suppress
 
 ### Requirement: Device Information changes cloud environment tier via Device SN 5×-tap
 
-Device Information SHALL NOT show a permanent Cloud Environment row. The operator SHALL open the app environment tier picker by tapping the **Device SN** value five times within five seconds (lws-ui `SecretTapTracker` parity). The picker SHALL offer at least Test and Prod, and MAY offer Dev. Choosing a tier MUST persist the selection and trigger a fresh API-origin probe / WebSocket reconnect when cloud runtime is active. Manual Check for Updates on System Upgrade / peripheral pages call `cyber_ota` (or peripheral checkers) and are unchanged by this cloud/LAN change; Auto-Check for Updates remains the Device Information Versions master switch.
+Device Information SHALL NOT show a permanent Cloud Environment row. The operator SHALL open the app environment tier picker by tapping the **Device SN** value five times within five seconds (lws-ui `SecretTapTracker` parity). The picker SHALL offer at least Test and Prod, and MAY offer Dev. Choosing a tier MUST persist the selection and trigger a fresh API-origin probe / WebSocket reconnect when cloud runtime is active. Manual Check for Updates on System Upgrade / peripheral pages uses public CDN `release.json` URLs and is independent of this tier picker (tier affects Worker API for 云服务 only); Auto-Check for Updates remains the Device Information Versions master switch.
 
 #### Scenario: Five taps on Device SN opens tier picker
 

@@ -732,7 +732,7 @@
   "okText": "OK",
   "onLabel": "On",
   "otaCheckUnavailable": "Software update check is not available on this build.",
-  "otaCheckFailed": "Could not check for updates. Verify network and cloud settings.",
+  "otaCheckFailed": "Could not check for updates. Verify network connectivity.",
   "otaSessionActive": "A system upgrade is already in progress.",
   "otaAlreadyUpToDate": "System version {version} is up to date.",
   "@otaAlreadyUpToDate": {

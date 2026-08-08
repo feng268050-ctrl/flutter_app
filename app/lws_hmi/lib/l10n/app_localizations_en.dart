@@ -1809,7 +1809,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get otaCheckFailed =>
-      'Could not check for updates. Verify network and cloud settings.';
+      'Could not check for updates. Verify network connectivity.';
 
   @override
   String get otaSessionActive => 'A system upgrade is already in progress.';

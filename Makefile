@@ -202,8 +202,8 @@ help:
 	@echo "  make ota-release-keys      # release Ed25519 keypair → keys/ota/ + overlay /etc/ota/ed25519.pub"
 	@echo "  make ota-package           # pack existing boot/boot_b/rootfs[+oem] + manifest → tar.gz [+.sig]; does not build"
 	@echo "  make upgrade               # SSH: ota-package (or UPGRADE_PACKAGE=+.sig) host-HTTP → device pull; RockUSB: di (or extract UPGRADE_PACKAGE); OEM_ONLY=1"
-	@echo "  make publish               # ota-package + upload tar.gz+.sig + staging/release.json to R2 (presign)"
-	@echo "  make publish-only          # upload existing ota-package.tar.gz+.sig (no pack); RELEASE=1 → release.json"
+	@echo "  make publish               # ota-package + upload tar.gz+.sig + release.json to R2 (presign; release-only)"
+	@echo "  make publish-only          # upload existing ota-package.tar.gz+.sig (no pack) → release.json"
 	@echo "  make publish-control-board-firmware  # sign+upload newest CB bin → lws-hmi/control-board/release.json"
 	@echo "  make publish-camera-firmware         # sign+upload newest camera zip → lws-hmi/camera/release.json"
 	@echo ""
@@ -235,7 +235,6 @@ help:
 	@echo "  CLOUD_ACCESS_TOKEN=<jwt>   # override saved login token (else output/cloud/credentials.json)"
 	@echo "  CLOUD_ACCOUNT= / PASSWORD= # non-interactive make login (do not commit password)"
 	@echo "  PUBLISH_API_TOKEN=<tok>    # make publish presign Bearer (STATIC_API_TOKENS); else login token"
-	@echo "  RELEASE=1                  # make publish → release.json (no -beta); default staging.json + -beta"
 	@echo "  PUBLISH_ARTIFACT=<slug>    # override R2 prefix (default APP with _→-); allows non-*_hmi"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  UPGRADE_TRANSPORT=auto|ssh|rockusb  # make upgrade transport (default auto)"
@@ -721,13 +720,13 @@ ota-package:
 	@chmod +x scripts/ota-package.sh scripts/ota-sign.sh
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/ota-package.sh)
 
-# Cloud publish: signed ota-package then upload tar.gz + .sig + staging/release.json (R2 presign on CLOUD_API_BASE).
+# Cloud publish: signed ota-package then upload tar.gz + .sig + release.json (R2 presign on CLOUD_API_BASE).
 publish:
 	@chmod +x scripts/ota-package.sh scripts/ota-sign.sh scripts/publish-ota.sh scripts/cloud-credentials.sh
 	@$(call WITH_DOTENV,APP='$(APP)' REQUIRE_OTA_SIG=1 bash scripts/ota-package.sh)
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/publish-ota.sh)
 
-# Upload existing signed OTA package (no pack). RELEASE=1 → release.json; default staging.json + -beta.
+# Upload existing signed OTA package (no pack). Always release.json (no staging / RELEASE=).
 publish-only:
 	@chmod +x scripts/publish-ota.sh scripts/cloud-credentials.sh
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/publish-ota.sh)

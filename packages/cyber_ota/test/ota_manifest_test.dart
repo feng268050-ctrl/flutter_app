@@ -29,20 +29,20 @@ void main() {
 
     test('parses publish-shaped channel JSON with url', () {
       final manifest = OtaManifest.fromJson(<String, dynamic>{
-        'version': 'v1.0.41-beta',
-        'filename': 'v1.0.41-beta.tar.gz',
+        'version': '1.0.41',
+        'filename': 'v1.0.41.tar.gz',
         'published_at': '2026-08-06T08:00:00Z',
-        'url': 'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+        'url': 'https://cdn.example/lws-hmi/v1.0.41.tar.gz',
       });
 
-      expect(manifest.version, 'v1.0.41-beta');
+      expect(manifest.version, '1.0.41');
       expect(
         manifest.packageUrl,
-        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+        'https://cdn.example/lws-hmi/v1.0.41.tar.gz',
       );
       expect(
         manifest.sigUrlResolved,
-        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz.sig',
+        'https://cdn.example/lws-hmi/v1.0.41.tar.gz.sig',
       );
       expect(manifest.sha512, isNull);
     });

@@ -534,19 +534,20 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 ### `make publish` / `make publish-only`
 
 - **怎么用：**
-  - 打包并发布（staging）：`make publish`（内部 `REQUIRE_OTA_SIG=1 make ota-package` 再上传）
+  - 打包并发布：`make publish`（内部 `REQUIRE_OTA_SIG=1 make ota-package` 再上传）
   - 仅上传已有包：`make publish-only`
-  - 正式渠道：`RELEASE=1 make publish`
   - 其它 HMI：`APP=cnc_hmi make publish`（R2 前缀 `cnc-hmi/`；需 `app/cnc_hmi`）
-- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新渠道 manifest，供设备云端拉取。
+  - 测试 API：`CLOUD_API_BASE=https://api-test.lasercyber.workers.dev make publish`
+- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新 **`release.json`**，供设备云端拉取。
 - **上传路径：** 与 `lws-ui` / `make login` 同源——默认 **`CLOUD_API_BASE=https://api-prod.lasercyber.workers.dev`**，`GET /v1/storage/r2/presigned-url` 取凭证后 Python **直传 R2**（不走 `PUT /upload/…`）。
-- **渠道：** 默认 `staging.json`，版本 `{pubspec-semver}-beta`；`RELEASE=1` → `release.json`，无 `-beta`。版本取自 `app/<APP>/pubspec.yaml`（去 `+build`）。
-- **设备比较：** Settings / 云检查用运行中 HMI 版本与 channel `version` 做 semver 比较；**同数字基线的 `-beta` 视为低于正式版**（设备已是 `1.0.40` 时，`1.0.40-beta` **不会**提示更新——请发布更高基线如 `1.0.41-beta`，或降低设备版本后再测）。
+- **渠道：** **仅 release**（始终写 `release.json`；无 `staging.json`、无 `RELEASE=`、无 `-beta`/`-alpha`）。版本取自 `app/<APP>/pubspec.yaml`（去 `+build`）。
+- **设备比较：** Settings / 云检查用运行中 HMI 版本与 channel `version` 做 semver 比较；设备始终拉取 **`https://cdn.lasercyber.com/{artifact}/release.json`**（R2 CDN 直连，与云服务 / API pin 无关）。
 - **Manifest 字段：** `version`、`filename`、`published_at`、`url`（**无 `sha512`**；完整性靠旁路 `.sig`，设备侧 `url`/`package_url` + `".sig"`）。
 - **鉴权：** `PUBLISH_API_TOKEN`（优先）→ `CLOUD_ACCESS_TOKEN` → `make login` 的 `output/cloud/credentials.json`。
-- **产出对象（默认 APP）：** `lws-hmi/v{ver}[-beta].tar.gz`、同名 `.sig`、`lws-hmi/staging.json|release.json`。
-- **参数：** `APP`、`RELEASE`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
+- **产出对象（默认 APP）：** `lws-hmi/v{ver}.tar.gz`、同名 `.sig`、`lws-hmi/release.json`。
+- **参数：** `APP`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
 - **前提：** `make ota-release-keys` / `OTA_SIGNING_KEY`；`make login` 或静态 token。
+- **注意：** 勿再设 `RELEASE=`（已移除；设置会报错退出）。
 
 ### `make publish-control-board-firmware` / `make publish-camera-firmware`
 
@@ -554,8 +555,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
   - 控制板：`make publish-control-board-firmware`（默认选最新 `LSW01H*.bin`；`FIRMWARE_BIN=` 覆盖）
   - 摄像头：`make publish-camera-firmware`（默认选最新 ZIP；`FIRMWARE_ZIP=` 覆盖）
   - 仅上传已签名对：`make publish-control-board-firmware-only` / `make publish-camera-firmware-only`
-- **何时用：** 把最新控制板 / 摄像头固件 + `.sig` + **`release.json`** 发到 R2，供设备云端检查（与系统 OTA 相同的 presign PUT）。
-- **渠道：** **仅 release**（始终写 `release.json`，无 staging / `-beta`）。
+- **何时用：** 把最新控制板 / 摄像头固件 + `.sig` + **`release.json`** 发到 R2，供设备云端检查（与系统 OTA 相同的 presign PUT；系统与外设均为 release-only）。
+- **渠道：** **仅 release**（始终写 `release.json`，无 staging / `-beta`；与 `make publish` 一致）。
 - **R2 前缀（默认 APP）：** `lws-hmi/control-board/`、`lws-hmi/camera/`（对象：固件文件、同名 `.sig`、`release.json`）。
 - **鉴权 / API 基址：** 与 `make publish` 相同。
 - **注意：** sibling api-server 可能需放行上述 R2 key 前缀。

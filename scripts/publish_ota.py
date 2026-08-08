@@ -185,9 +185,14 @@ def main() -> None:
     parser.add_argument("--artifact", required=True, help="R2 prefix, e.g. lws-hmi")
     parser.add_argument("--archive-path", required=True)
     parser.add_argument("--sig-path", required=True)
-    parser.add_argument("--pack-name", required=True, help="Remote basename, e.g. v1.0.38-beta.tar.gz")
-    parser.add_argument("--pack-version", required=True, help="Channel version without leading v, e.g. 1.0.38-beta")
-    parser.add_argument("--manifest-name", required=True, choices=("staging.json", "release.json"))
+    parser.add_argument("--pack-name", required=True, help="Remote basename, e.g. v1.0.38.tar.gz")
+    parser.add_argument("--pack-version", required=True, help="Channel version without leading v, e.g. 1.0.38")
+    parser.add_argument(
+        "--manifest-name",
+        required=True,
+        choices=("release.json",),
+        help="Channel manifest filename (release-only; staging.json removed)",
+    )
     parser.add_argument(
         "--content-type",
         default="application/gzip",

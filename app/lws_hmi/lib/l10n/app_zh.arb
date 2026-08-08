@@ -588,7 +588,7 @@
   "okText": "OK",
   "onLabel": "开启",
   "otaCheckUnavailable": "当前版本暂不支持软件更新检查。",
-  "otaCheckFailed": "无法检查更新，请确认网络和云服务设置。",
+  "otaCheckFailed": "无法检查更新，请确认网络连接。",
   "otaSessionActive": "系统升级正在进行中。",
   "otaAlreadyUpToDate": "系统版本 {version} 已是最新。",
   "@otaAlreadyUpToDate": {

@@ -424,8 +424,7 @@ make ota-release-keys               # release Ed25519 keys → keys/ota/ + overl
 make ota-package                    # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig]
 make upgrade                        # ota-package + host HTTP; device downloads tar.gz+.sig → verify/apply; or RockUSB di
 UPGRADE_TRANSPORT=rockusb make upgrade  # force RockUSB path after make reboot-loader / Maskrom
-make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign on api-prod; staging.json)
-RELEASE=1 make publish              # same → release.json (no -beta)
+make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign; release.json)
 make publish-only                   # upload existing output/firmware/<APP>/ota-package.tar.gz +.sig
 make publish-control-board-firmware # sign+upload newest CB bin → lws-hmi/control-board/release.json
 make publish-camera-firmware        # sign+upload newest camera zip → lws-hmi/camera/release.json

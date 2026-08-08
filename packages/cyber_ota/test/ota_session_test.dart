@@ -171,26 +171,26 @@ void main() {
 
     test('checkForUpdate accepts publish-shaped url channel JSON', () async {
       http.manifestJson = <String, dynamic>{
-        'version': 'v1.0.41-beta',
-        'filename': 'v1.0.41-beta.tar.gz',
+        'version': '1.0.41',
+        'filename': 'v1.0.41.tar.gz',
         'published_at': '2026-08-06T08:00:00Z',
-        'url': 'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+        'url': 'https://cdn.example/lws-hmi/v1.0.41.tar.gz',
       };
 
       final result = await session.checkForUpdate(
-        manifestUrl: 'https://api.example/view/lws-hmi/staging.json',
+        manifestUrl: 'https://api.example/r2/lws-hmi/release.json',
         currentVersion: '1.0.40',
       );
 
       expect(result.hasUpdate, isTrue);
-      expect(result.manifest?.version, 'v1.0.41-beta');
+      expect(result.manifest?.version, '1.0.41');
       expect(
         result.manifest?.packageUrl,
-        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+        'https://cdn.example/lws-hmi/v1.0.41.tar.gz',
       );
       expect(
         result.manifest?.sigUrlResolved,
-        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz.sig',
+        'https://cdn.example/lws-hmi/v1.0.41.tar.gz.sig',
       );
     });
 

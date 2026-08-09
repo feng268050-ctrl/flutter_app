@@ -49,9 +49,9 @@ abstract final class SettingsDimens {
   /// Preceding [SettingsGroup] must use `bottomInset: 0` so this is the only gap.
   static const helpGap = 8.0;
 
-/// Device Info / General list title & value → [HmiTypography.settingsRowTitle].
-/// Kept as layout token only; prefer semantic TextStyle at call sites.
-static const titleSize = 20.0;
+  /// Device Info / General list title & value → [HmiTypography.settingsRowTitle].
+  /// Kept as layout token only; prefer semantic TextStyle at call sites.
+  static const titleSize = 20.0;
 
   /// Secondary / subtitle / help → [HmiTypography.supporting].
   static const subtitleSize = 16.0;
@@ -61,6 +61,7 @@ static const titleSize = 20.0;
   static const borderWidth = 1.0;
   static const cardBorder = Color(0x66FFFFFF);
   static const cardHighlightGlow = Color(0x33FFFFFF);
+
   /// Crisp equal-brightness plate contour (was `0x38` — too soft on frost).
   static const panelRim = Color(0x77FFFFFF);
   static const panelHighlight = Color(0x54FFFFFF);
@@ -130,6 +131,7 @@ final class SettingsTopTabs extends StatelessWidget
   static const tabHeight = HmiTabMetrics.tabHeight;
   static const dividerThickness = 1.0;
   static const iconSize = HmiTabMetrics.iconSize;
+
   /// Alias of primary-tab label size ([AppTypography.navigationSize]).
   static const labelSize = AppTypography.navigationSize;
   static const iconTextGap = HmiTabMetrics.iconLabelGap;
@@ -935,6 +937,71 @@ class SettingsGroup extends StatelessWidget {
   }
 }
 
+/// Single layout authority for a Settings list item.
+///
+/// The frame owns the text-scale-aware row height and centers its content
+/// vertically. Individual rows supply only their horizontal [child] layout,
+/// preventing Material [ListTile] metrics from drifting from the HMI scale.
+class SettingsRowFrame extends StatelessWidget {
+  const SettingsRowFrame({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.clickSoundEnabled = true,
+    this.padding = SettingsDimens.rowPadding,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final bool clickSoundEnabled;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: SettingsDimens.rowMinHeightOf(context),
+      ),
+      child: Padding(
+        padding: padding,
+        child: SizedBox(
+          width: double.infinity,
+          child: Align(
+            alignment: Alignment.center,
+            heightFactor: 1,
+            child: child,
+          ),
+        ),
+      ),
+    );
+    if (onTap == null) {
+      return content;
+    }
+
+    final ink = InkWell(
+      onTap: () {
+        if (clickSoundEnabled) {
+          CyberClickSoundRegistry.playClick();
+        }
+        onTap!();
+      },
+      child: content,
+    );
+    if (clickSoundEnabled) {
+      return Material(color: Colors.transparent, child: ink);
+    }
+    return Theme(
+      data: Theme.of(context).copyWith(
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+      ),
+      child: Material(color: Colors.transparent, child: ink),
+    );
+  }
+}
+
 class SettingsNavRow extends StatelessWidget {
   const SettingsNavRow({
     super.key,
@@ -959,51 +1026,42 @@ class SettingsNavRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chevron = showChevron ?? (onTap != null);
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
-      child: ListTile(
-        contentPadding: SettingsDimens.rowPadding,
-        minVerticalPadding: 0,
-        leading: leading,
-        title: Text(
-          title,
-          style: context.hmiTypography.settingsRowTitle.copyWith(
-            color: CyberColors.textPrimary,
+    return SettingsRowFrame(
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (leading != null) ...[leading!, const SizedBox(width: 16)],
+          Expanded(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: context.hmiTypography.settingsRowTitle.copyWith(
+                color: CyberColors.textPrimary,
+              ),
+            ),
           ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (trailingExtra != null) ...[
-              trailingExtra!,
-              const SizedBox(width: 8),
-            ],
-            if (value != null && value!.isNotEmpty)
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 220),
-                child: Text(
-                  value!,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.hmiTypography.settingsRowValue.copyWith(
-                    color: CyberColors.textSecondary,
-                  ),
+          const SizedBox(width: 12),
+          if (trailingExtra != null) ...[
+            trailingExtra!,
+            const SizedBox(width: 8),
+          ],
+          if (value != null && value!.isNotEmpty)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220),
+              child: Text(
+                value!,
+                overflow: TextOverflow.ellipsis,
+                style: context.hmiTypography.settingsRowValue.copyWith(
+                  color: CyberColors.textSecondary,
                 ),
               ),
-            if (chevron) ...[
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right,
-                color: CyberColors.textSecondary,
-              ),
-            ],
+            ),
+          if (chevron) ...[
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: CyberColors.textSecondary),
           ],
-        ),
-        onTap: onTap == null
-            ? null
-            : () {
-                CyberClickSoundRegistry.playClick();
-                onTap!();
-              },
+        ],
       ),
     );
   }
@@ -1031,19 +1089,23 @@ class SettingsValueRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tile = ListTile(
-      contentPadding: SettingsDimens.rowPadding,
-      minVerticalPadding: 0,
-      title: Text(
-        title,
-        style: context.hmiTypography.settingsRowTitle.copyWith(
-          color: CyberColors.textPrimary,
-        ),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+    return SettingsRowFrame(
+      onTap: onTap,
+      clickSoundEnabled: clickFeedback,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (value != null && value!.isNotEmpty)
+          Expanded(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: context.hmiTypography.settingsRowTitle.copyWith(
+                color: CyberColors.textPrimary,
+              ),
+            ),
+          ),
+          if (value != null && value!.isNotEmpty) ...[
+            const SizedBox(width: 12),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 220),
               child: Text(
@@ -1055,34 +1117,13 @@ class SettingsValueRow extends StatelessWidget {
                 ),
               ),
             ),
+          ],
           if (trailing != null) ...[
             const SizedBox(width: 4),
             trailing!,
           ],
         ],
       ),
-      onTap: onTap == null
-          ? null
-          : () {
-              if (clickFeedback) {
-                CyberClickSoundRegistry.playClick();
-              }
-              onTap!();
-            },
-    );
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
-      child: clickFeedback || onTap == null
-          ? tile
-          : Theme(
-              data: Theme.of(context).copyWith(
-                splashFactory: NoSplash.splashFactory,
-                highlightColor: Colors.transparent,
-                splashColor: Colors.transparent,
-                hoverColor: Colors.transparent,
-              ),
-              child: tile,
-            ),
     );
   }
 }
@@ -1127,26 +1168,30 @@ class SettingsSwitchRow extends StatelessWidget {
       height: 1.35,
       fontWeight: FontWeight.w400,
     );
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
-      child: ListTile(
-        contentPadding: SettingsDimens.rowPadding,
-        minVerticalPadding: 0,
-        title: Text(
-          title,
-          style: titleStyle,
-        ),
-        subtitle: subtitle == null
-            ? null
-            : WordBoundaryLabel(
-                text: subtitle!,
-                maxLines: 8,
-                style: subtitleStyle,
-              ),
-        trailing: CyberSwitch(
-          value: value,
-          onChanged: onChanged,
-        ),
+    return SettingsRowFrame(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: titleStyle),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  WordBoundaryLabel(
+                    text: subtitle!,
+                    maxLines: 8,
+                    style: subtitleStyle,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          CyberSwitch(value: value, onChanged: onChanged),
+        ],
       ),
     );
   }
@@ -1167,47 +1212,40 @@ class SettingsControlRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
-      child: Padding(
-        padding: SettingsDimens.rowPadding,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
+    return SettingsRowFrame(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: context.hmiTypography.settingsRowTitle.copyWith(
+                    color: CyberColors.textPrimary,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
                   Text(
-                    title,
-                    style: context.hmiTypography.settingsRowTitle.copyWith(
-                      color: CyberColors.textPrimary,
+                    subtitle!,
+                    style: context.hmiTypography.supporting.copyWith(
+                      color: CyberColors.textSecondary,
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle!,
-                      style: context.hmiTypography.supporting.copyWith(
-                        color: CyberColors.textSecondary,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 3,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: control,
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
+            child: Align(alignment: Alignment.centerRight, child: control),
+          ),
+        ],
       ),
     );
   }
@@ -1228,41 +1266,37 @@ class SettingsSliderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: SettingsDimens.rowMinHeightOf(context)),
-      child: Padding(
-        padding: SettingsDimens.rowPadding,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
+    return SettingsRowFrame(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: context.hmiTypography.settingsRowTitle.copyWith(
+                    color: CyberColors.textPrimary,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
                   Text(
-                    title,
-                    style: context.hmiTypography.settingsRowTitle.copyWith(
-                      color: CyberColors.textPrimary,
+                    subtitle!,
+                    style: context.hmiTypography.supporting.copyWith(
+                      color: CyberColors.textSecondary,
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle!,
-                      style: context.hmiTypography.supporting.copyWith(
-                        color: CyberColors.textSecondary,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(flex: 3, child: child),
-          ],
-        ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(flex: 3, child: child),
+        ],
       ),
     );
   }
@@ -1317,25 +1351,28 @@ class SettingsOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      title: Text(
-        title,
-        style: context.hmiTypography.settingsRowTitle.copyWith(
-          color: CyberColors.textPrimary,
-        ),
+    return SettingsRowFrame(
+      onTap: onTap,
+      clickSoundEnabled: clickSoundEnabled,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: context.hmiTypography.settingsRowTitle.copyWith(
+                color: CyberColors.textPrimary,
+              ),
+            ),
+          ),
+          if (selected) ...[
+            const SizedBox(width: 12),
+            const Icon(Icons.check, color: CyberColors.buttonPrimaryAccent),
+          ],
+        ],
       ),
-      trailing: selected
-          ? const Icon(Icons.check, color: CyberColors.buttonPrimaryAccent)
-          : null,
-      onTap: onTap == null
-          ? null
-          : () {
-              if (clickSoundEnabled) {
-                CyberClickSoundRegistry.playClick();
-              }
-              onTap!();
-            },
     );
   }
 }
@@ -1716,8 +1753,7 @@ class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
       return;
     }
     if (!widget.livePageBlur &&
-        (oldWidget.livePageBlur ||
-            oldWidget.blurSigma != widget.blurSigma)) {
+        (oldWidget.livePageBlur || oldWidget.blurSigma != widget.blurSigma)) {
       _dropBaked();
       _bakeRetries = 0;
       _scheduleBake();
@@ -1774,8 +1810,8 @@ class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
       // Do NOT read [RenderObject.debugNeedsPaint] here: in profile/release
       // that getter throws LateInitializationError (assert-stripped late local).
       final dpr = MediaQuery.devicePixelRatioOf(context);
-      final scale = (dpr / SettingsBlurredPageShell.captureScaleFactor)
-          .clamp(0.25, dpr);
+      final scale =
+          (dpr / SettingsBlurredPageShell.captureScaleFactor).clamp(0.25, dpr);
       // Sigma in capture-pixel space (same as CyberBackdropBlur firstFrame).
       final sigma = widget.blurSigma * scale;
       ui.Image? shared;

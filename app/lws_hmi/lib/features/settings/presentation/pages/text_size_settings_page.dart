@@ -18,7 +18,7 @@ class TextSizeSettingsPage extends StatelessWidget {
       case AppTextSize.large:
         return l10n.textSizeOptionLarge;
       case AppTextSize.medium:
-        return l10n.textSizeOptionMedium;
+        return l10n.defaultLabel;
     }
   }
 
@@ -43,7 +43,8 @@ class TextSizeSettingsPage extends StatelessWidget {
                     SettingsGroup(
                       bottomInset: 0,
                       children: [
-                        for (final size in CommonSettingsStore.supportedTextSizes)
+                        for (final size
+                            in CommonSettingsStore.supportedTextSizes)
                           SettingsOptionTile(
                             title: labelFor(l10n, size),
                             selected: selected == size,

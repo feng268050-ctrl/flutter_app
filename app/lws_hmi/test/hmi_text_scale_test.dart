@@ -18,7 +18,7 @@ void main() {
   test('Class B settings row and tab height track reading tiers', () {
     expect(HmiTextScale.settingsRowFactorForReading(0.90), 0.95);
     expect(HmiTextScale.settingsRowFactorForReading(1.0), 1.0);
-    expect(HmiTextScale.settingsRowFactorForReading(1.12), 1.10);
+    expect(HmiTextScale.settingsRowFactorForReading(1.12), 1.12);
     expect(HmiTextScale.tabHeightForReading(0.90), 64);
     expect(HmiTextScale.tabHeightForReading(1.0), 68);
     expect(HmiTextScale.tabHeightForReading(1.12), 76);

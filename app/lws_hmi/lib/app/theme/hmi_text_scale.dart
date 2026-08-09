@@ -20,7 +20,7 @@ abstract final class HmiTextScale {
   /// Class B settings row minHeight multipliers (vs Medium baseline).
   static const settingsRowSmall = 0.95;
   static const settingsRowMedium = 1.00;
-  static const settingsRowLarge = 1.10;
+  static const settingsRowLarge = 1.12;
 
   /// Class B primary tab heights (logical px).
   static const tabHeightSmall = 64.0;

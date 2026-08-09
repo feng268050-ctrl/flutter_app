@@ -1,1757 +1,1757 @@
 // GENERATED — ISO 3166-1 alpha-2 (+ XK) country / territory catalog.
 // Do not hand-edit large blocks; regenerate via scripts if needed.
 
-import 'package:lws_hmi/features/settings/application/region_country_catalog.dart';
+import 'package:cyber_hal/src/locale/region_catalog.dart';
 
-/// Full product Country catalog data (names + default timezone).
-abstract final class RegionCountryData {
+/// Full product Region catalog data (names + default timezone).
+abstract final class RegionCatalogData {
   static const preferredNtp = 'pool.ntp.org';
 
-  static const entries = <RegionCountryEntry>[
-    RegionCountryEntry(
+  static const entries = <RegionCatalogEntry>[
+    RegionCatalogEntry(
       code: 'AD',
       nameEn: 'Andorra',
       nameZh: '安道尔',
       defaultTimezone: 'Europe/Andorra',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AE',
       nameEn: 'United Arab Emirates',
       nameZh: '阿拉伯联合酋长国',
       defaultTimezone: 'Asia/Dubai',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AF',
       nameEn: 'Afghanistan',
       nameZh: '阿富汗',
       defaultTimezone: 'Asia/Kabul',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AG',
       nameEn: 'Antigua and Barbuda',
       nameZh: '安提瓜和巴布达',
       defaultTimezone: 'America/Antigua',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AI',
       nameEn: 'Anguilla',
       nameZh: '安圭拉',
       defaultTimezone: 'America/Anguilla',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AL',
       nameEn: 'Albania',
       nameZh: '阿尔巴尼亚',
       defaultTimezone: 'Europe/Tirane',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AM',
       nameEn: 'Armenia',
       nameZh: '亚美尼亚',
       defaultTimezone: 'Asia/Yerevan',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AO',
       nameEn: 'Angola',
       nameZh: '安哥拉',
       defaultTimezone: 'Africa/Luanda',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AQ',
       nameEn: 'Antarctica',
       nameZh: '南极洲',
       defaultTimezone: 'Antarctica/McMurdo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AR',
       nameEn: 'Argentina',
       nameZh: '阿根廷',
       defaultTimezone: 'America/Argentina/Buenos_Aires',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AS',
       nameEn: 'American Samoa',
       nameZh: '美属萨摩亚',
       defaultTimezone: 'Pacific/Pago_Pago',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AT',
       nameEn: 'Austria',
       nameZh: '奥地利',
       defaultTimezone: 'Europe/Vienna',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AU',
       nameEn: 'Australia',
       nameZh: '澳大利亚',
       defaultTimezone: 'Australia/Sydney',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AW',
       nameEn: 'Aruba',
       nameZh: '阿鲁巴',
       defaultTimezone: 'America/Aruba',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AX',
       nameEn: 'Åland Islands',
       nameZh: '奥兰群岛',
       defaultTimezone: 'Europe/Mariehamn',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'AZ',
       nameEn: 'Azerbaijan',
       nameZh: '阿塞拜疆',
       defaultTimezone: 'Asia/Baku',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BA',
       nameEn: 'Bosnia and Herzegovina',
       nameZh: '波斯尼亚和黑塞哥维那',
       defaultTimezone: 'Europe/Sarajevo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BB',
       nameEn: 'Barbados',
       nameZh: '巴巴多斯',
       defaultTimezone: 'America/Barbados',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BD',
       nameEn: 'Bangladesh',
       nameZh: '孟加拉国',
       defaultTimezone: 'Asia/Dhaka',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BE',
       nameEn: 'Belgium',
       nameZh: '比利时',
       defaultTimezone: 'Europe/Brussels',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BF',
       nameEn: 'Burkina Faso',
       nameZh: '布基纳法索',
       defaultTimezone: 'Africa/Ouagadougou',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BG',
       nameEn: 'Bulgaria',
       nameZh: '保加利亚',
       defaultTimezone: 'Europe/Sofia',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BH',
       nameEn: 'Bahrain',
       nameZh: '巴林',
       defaultTimezone: 'Asia/Bahrain',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BI',
       nameEn: 'Burundi',
       nameZh: '布隆迪',
       defaultTimezone: 'Africa/Bujumbura',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BJ',
       nameEn: 'Benin',
       nameZh: '贝宁',
       defaultTimezone: 'Africa/Porto-Novo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BL',
       nameEn: 'Saint Barthélemy',
       nameZh: '圣巴泰勒米',
       defaultTimezone: 'America/St_Barthelemy',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BM',
       nameEn: 'Bermuda',
       nameZh: '百慕大',
       defaultTimezone: 'Atlantic/Bermuda',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BN',
       nameEn: 'Brunei',
       nameZh: '文莱',
       defaultTimezone: 'Asia/Brunei',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BO',
       nameEn: 'Bolivia',
       nameZh: '玻利维亚',
       defaultTimezone: 'America/La_Paz',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BQ',
       nameEn: 'Caribbean Netherlands',
       nameZh: '荷兰加勒比区',
       defaultTimezone: 'America/Kralendijk',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BR',
       nameEn: 'Brazil',
       nameZh: '巴西',
       defaultTimezone: 'America/Sao_Paulo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BS',
       nameEn: 'Bahamas',
       nameZh: '巴哈马',
       defaultTimezone: 'America/Nassau',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BT',
       nameEn: 'Bhutan',
       nameZh: '不丹',
       defaultTimezone: 'Asia/Thimphu',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BV',
       nameEn: 'Bouvet Island',
       nameZh: '布韦岛',
       defaultTimezone: 'UTC',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BW',
       nameEn: 'Botswana',
       nameZh: '博茨瓦纳',
       defaultTimezone: 'Africa/Gaborone',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BY',
       nameEn: 'Belarus',
       nameZh: '白俄罗斯',
       defaultTimezone: 'Europe/Minsk',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'BZ',
       nameEn: 'Belize',
       nameZh: '伯利兹',
       defaultTimezone: 'America/Belize',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CA',
       nameEn: 'Canada',
       nameZh: '加拿大',
       defaultTimezone: 'America/Toronto',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CC',
       nameEn: 'Cocos (Keeling) Islands',
       nameZh: '科科斯（基林）群岛',
       defaultTimezone: 'Indian/Cocos',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CD',
       nameEn: 'Congo (DRC)',
       nameZh: '刚果（金）',
       defaultTimezone: 'Africa/Kinshasa',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CF',
       nameEn: 'Central African Republic',
       nameZh: '中非共和国',
       defaultTimezone: 'Africa/Bangui',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CG',
       nameEn: 'Congo (Republic)',
       nameZh: '刚果（布）',
       defaultTimezone: 'Africa/Brazzaville',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CH',
       nameEn: 'Switzerland',
       nameZh: '瑞士',
       defaultTimezone: 'Europe/Zurich',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CI',
       nameEn: 'Côte d\'Ivoire',
       nameZh: '科特迪瓦',
       defaultTimezone: 'Africa/Abidjan',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CK',
       nameEn: 'Cook Islands',
       nameZh: '库克群岛',
       defaultTimezone: 'Pacific/Rarotonga',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CL',
       nameEn: 'Chile',
       nameZh: '智利',
       defaultTimezone: 'America/Santiago',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CM',
       nameEn: 'Cameroon',
       nameZh: '喀麦隆',
       defaultTimezone: 'Africa/Douala',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CN',
       nameEn: 'China',
       nameZh: '中国',
       defaultTimezone: 'Asia/Shanghai',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CO',
       nameEn: 'Colombia',
       nameZh: '哥伦比亚',
       defaultTimezone: 'America/Bogota',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CR',
       nameEn: 'Costa Rica',
       nameZh: '哥斯达黎加',
       defaultTimezone: 'America/Costa_Rica',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CU',
       nameEn: 'Cuba',
       nameZh: '古巴',
       defaultTimezone: 'America/Havana',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CV',
       nameEn: 'Cabo Verde',
       nameZh: '佛得角',
       defaultTimezone: 'Atlantic/Cape_Verde',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CW',
       nameEn: 'Curaçao',
       nameZh: '库拉索',
       defaultTimezone: 'America/Curacao',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CX',
       nameEn: 'Christmas Island',
       nameZh: '圣诞岛',
       defaultTimezone: 'Indian/Christmas',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CY',
       nameEn: 'Cyprus',
       nameZh: '塞浦路斯',
       defaultTimezone: 'Asia/Nicosia',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'CZ',
       nameEn: 'Czechia',
       nameZh: '捷克',
       defaultTimezone: 'Europe/Prague',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'DE',
       nameEn: 'Germany',
       nameZh: '德国',
       defaultTimezone: 'Europe/Berlin',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'DJ',
       nameEn: 'Djibouti',
       nameZh: '吉布提',
       defaultTimezone: 'Africa/Djibouti',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'DK',
       nameEn: 'Denmark',
       nameZh: '丹麦',
       defaultTimezone: 'Europe/Copenhagen',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'DM',
       nameEn: 'Dominica',
       nameZh: '多米尼克',
       defaultTimezone: 'America/Dominica',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'DO',
       nameEn: 'Dominican Republic',
       nameZh: '多米尼加共和国',
       defaultTimezone: 'America/Santo_Domingo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'DZ',
       nameEn: 'Algeria',
       nameZh: '阿尔及利亚',
       defaultTimezone: 'Africa/Algiers',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'EC',
       nameEn: 'Ecuador',
       nameZh: '厄瓜多尔',
       defaultTimezone: 'America/Guayaquil',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'EE',
       nameEn: 'Estonia',
       nameZh: '爱沙尼亚',
       defaultTimezone: 'Europe/Tallinn',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'EG',
       nameEn: 'Egypt',
       nameZh: '埃及',
       defaultTimezone: 'Africa/Cairo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'EH',
       nameEn: 'Western Sahara',
       nameZh: '西撒哈拉',
       defaultTimezone: 'Africa/El_Aaiun',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ER',
       nameEn: 'Eritrea',
       nameZh: '厄立特里亚',
       defaultTimezone: 'Africa/Asmara',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ES',
       nameEn: 'Spain',
       nameZh: '西班牙',
       defaultTimezone: 'Europe/Madrid',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ET',
       nameEn: 'Ethiopia',
       nameZh: '埃塞俄比亚',
       defaultTimezone: 'Africa/Addis_Ababa',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'FI',
       nameEn: 'Finland',
       nameZh: '芬兰',
       defaultTimezone: 'Europe/Helsinki',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'FJ',
       nameEn: 'Fiji',
       nameZh: '斐济',
       defaultTimezone: 'Pacific/Fiji',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'FK',
       nameEn: 'Falkland Islands',
       nameZh: '福克兰群岛',
       defaultTimezone: 'Atlantic/Stanley',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'FM',
       nameEn: 'Micronesia',
       nameZh: '密克罗尼西亚',
       defaultTimezone: 'Pacific/Pohnpei',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'FO',
       nameEn: 'Faroe Islands',
       nameZh: '法罗群岛',
       defaultTimezone: 'Atlantic/Faroe',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'FR',
       nameEn: 'France',
       nameZh: '法国',
       defaultTimezone: 'Europe/Paris',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GA',
       nameEn: 'Gabon',
       nameZh: '加蓬',
       defaultTimezone: 'Africa/Libreville',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GB',
       nameEn: 'United Kingdom',
       nameZh: '英国',
       defaultTimezone: 'Europe/London',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GD',
       nameEn: 'Grenada',
       nameZh: '格林纳达',
       defaultTimezone: 'America/Grenada',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GE',
       nameEn: 'Georgia',
       nameZh: '格鲁吉亚',
       defaultTimezone: 'Asia/Tbilisi',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GF',
       nameEn: 'French Guiana',
       nameZh: '法属圭亚那',
       defaultTimezone: 'America/Cayenne',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GG',
       nameEn: 'Guernsey',
       nameZh: '根西',
       defaultTimezone: 'Europe/Guernsey',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GH',
       nameEn: 'Ghana',
       nameZh: '加纳',
       defaultTimezone: 'Africa/Accra',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GI',
       nameEn: 'Gibraltar',
       nameZh: '直布罗陀',
       defaultTimezone: 'Europe/Gibraltar',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GL',
       nameEn: 'Greenland',
       nameZh: '格陵兰',
       defaultTimezone: 'America/Nuuk',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GM',
       nameEn: 'Gambia',
       nameZh: '冈比亚',
       defaultTimezone: 'Africa/Banjul',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GN',
       nameEn: 'Guinea',
       nameZh: '几内亚',
       defaultTimezone: 'Africa/Conakry',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GP',
       nameEn: 'Guadeloupe',
       nameZh: '瓜德罗普',
       defaultTimezone: 'America/Guadeloupe',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GQ',
       nameEn: 'Equatorial Guinea',
       nameZh: '赤道几内亚',
       defaultTimezone: 'Africa/Malabo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GR',
       nameEn: 'Greece',
       nameZh: '希腊',
       defaultTimezone: 'Europe/Athens',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GS',
       nameEn: 'South Georgia & South Sandwich Islands',
       nameZh: '南乔治亚和南桑威奇群岛',
       defaultTimezone: 'Atlantic/South_Georgia',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GT',
       nameEn: 'Guatemala',
       nameZh: '危地马拉',
       defaultTimezone: 'America/Guatemala',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GU',
       nameEn: 'Guam',
       nameZh: '关岛',
       defaultTimezone: 'Pacific/Guam',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GW',
       nameEn: 'Guinea-Bissau',
       nameZh: '几内亚比绍',
       defaultTimezone: 'Africa/Bissau',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'GY',
       nameEn: 'Guyana',
       nameZh: '圭亚那',
       defaultTimezone: 'America/Guyana',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'HK',
       nameEn: 'Hong Kong',
       nameZh: '中国香港',
       defaultTimezone: 'Asia/Hong_Kong',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'HM',
       nameEn: 'Heard & McDonald Islands',
       nameZh: '赫德岛和麦克唐纳群岛',
       defaultTimezone: 'UTC',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'HN',
       nameEn: 'Honduras',
       nameZh: '洪都拉斯',
       defaultTimezone: 'America/Tegucigalpa',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'HR',
       nameEn: 'Croatia',
       nameZh: '克罗地亚',
       defaultTimezone: 'Europe/Zagreb',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'HT',
       nameEn: 'Haiti',
       nameZh: '海地',
       defaultTimezone: 'America/Port-au-Prince',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'HU',
       nameEn: 'Hungary',
       nameZh: '匈牙利',
       defaultTimezone: 'Europe/Budapest',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ID',
       nameEn: 'Indonesia',
       nameZh: '印度尼西亚',
       defaultTimezone: 'Asia/Jakarta',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IE',
       nameEn: 'Ireland',
       nameZh: '爱尔兰',
       defaultTimezone: 'Europe/Dublin',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IL',
       nameEn: 'Israel',
       nameZh: '以色列',
       defaultTimezone: 'Asia/Jerusalem',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IM',
       nameEn: 'Isle of Man',
       nameZh: '马恩岛',
       defaultTimezone: 'Europe/Isle_of_Man',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IN',
       nameEn: 'India',
       nameZh: '印度',
       defaultTimezone: 'Asia/Kolkata',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IO',
       nameEn: 'British Indian Ocean Territory',
       nameZh: '英属印度洋领地',
       defaultTimezone: 'Indian/Chagos',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IQ',
       nameEn: 'Iraq',
       nameZh: '伊拉克',
       defaultTimezone: 'Asia/Baghdad',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IR',
       nameEn: 'Iran',
       nameZh: '伊朗',
       defaultTimezone: 'Asia/Tehran',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IS',
       nameEn: 'Iceland',
       nameZh: '冰岛',
       defaultTimezone: 'Atlantic/Reykjavik',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'IT',
       nameEn: 'Italy',
       nameZh: '意大利',
       defaultTimezone: 'Europe/Rome',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'JE',
       nameEn: 'Jersey',
       nameZh: '泽西',
       defaultTimezone: 'Europe/Jersey',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'JM',
       nameEn: 'Jamaica',
       nameZh: '牙买加',
       defaultTimezone: 'America/Jamaica',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'JO',
       nameEn: 'Jordan',
       nameZh: '约旦',
       defaultTimezone: 'Asia/Amman',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'JP',
       nameEn: 'Japan',
       nameZh: '日本',
       defaultTimezone: 'Asia/Tokyo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KE',
       nameEn: 'Kenya',
       nameZh: '肯尼亚',
       defaultTimezone: 'Africa/Nairobi',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KG',
       nameEn: 'Kyrgyzstan',
       nameZh: '吉尔吉斯斯坦',
       defaultTimezone: 'Asia/Bishkek',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KH',
       nameEn: 'Cambodia',
       nameZh: '柬埔寨',
       defaultTimezone: 'Asia/Phnom_Penh',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KI',
       nameEn: 'Kiribati',
       nameZh: '基里巴斯',
       defaultTimezone: 'Pacific/Tarawa',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KM',
       nameEn: 'Comoros',
       nameZh: '科摩罗',
       defaultTimezone: 'Indian/Comoro',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KN',
       nameEn: 'Saint Kitts and Nevis',
       nameZh: '圣基茨和尼维斯',
       defaultTimezone: 'America/St_Kitts',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KP',
       nameEn: 'North Korea',
       nameZh: '朝鲜',
       defaultTimezone: 'Asia/Pyongyang',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KR',
       nameEn: 'South Korea',
       nameZh: '韩国',
       defaultTimezone: 'Asia/Seoul',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KW',
       nameEn: 'Kuwait',
       nameZh: '科威特',
       defaultTimezone: 'Asia/Kuwait',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KY',
       nameEn: 'Cayman Islands',
       nameZh: '开曼群岛',
       defaultTimezone: 'America/Cayman',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'KZ',
       nameEn: 'Kazakhstan',
       nameZh: '哈萨克斯坦',
       defaultTimezone: 'Asia/Almaty',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LA',
       nameEn: 'Laos',
       nameZh: '老挝',
       defaultTimezone: 'Asia/Vientiane',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LB',
       nameEn: 'Lebanon',
       nameZh: '黎巴嫩',
       defaultTimezone: 'Asia/Beirut',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LC',
       nameEn: 'Saint Lucia',
       nameZh: '圣卢西亚',
       defaultTimezone: 'America/St_Lucia',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LI',
       nameEn: 'Liechtenstein',
       nameZh: '列支敦士登',
       defaultTimezone: 'Europe/Vaduz',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LK',
       nameEn: 'Sri Lanka',
       nameZh: '斯里兰卡',
       defaultTimezone: 'Asia/Colombo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LR',
       nameEn: 'Liberia',
       nameZh: '利比里亚',
       defaultTimezone: 'Africa/Monrovia',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LS',
       nameEn: 'Lesotho',
       nameZh: '莱索托',
       defaultTimezone: 'Africa/Maseru',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LT',
       nameEn: 'Lithuania',
       nameZh: '立陶宛',
       defaultTimezone: 'Europe/Vilnius',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LU',
       nameEn: 'Luxembourg',
       nameZh: '卢森堡',
       defaultTimezone: 'Europe/Luxembourg',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LV',
       nameEn: 'Latvia',
       nameZh: '拉脱维亚',
       defaultTimezone: 'Europe/Riga',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'LY',
       nameEn: 'Libya',
       nameZh: '利比亚',
       defaultTimezone: 'Africa/Tripoli',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MA',
       nameEn: 'Morocco',
       nameZh: '摩洛哥',
       defaultTimezone: 'Africa/Casablanca',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MC',
       nameEn: 'Monaco',
       nameZh: '摩纳哥',
       defaultTimezone: 'Europe/Monaco',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MD',
       nameEn: 'Moldova',
       nameZh: '摩尔多瓦',
       defaultTimezone: 'Europe/Chisinau',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ME',
       nameEn: 'Montenegro',
       nameZh: '黑山',
       defaultTimezone: 'Europe/Podgorica',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MF',
       nameEn: 'Saint Martin',
       nameZh: '法属圣马丁',
       defaultTimezone: 'America/Marigot',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MG',
       nameEn: 'Madagascar',
       nameZh: '马达加斯加',
       defaultTimezone: 'Indian/Antananarivo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MH',
       nameEn: 'Marshall Islands',
       nameZh: '马绍尔群岛',
       defaultTimezone: 'Pacific/Majuro',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MK',
       nameEn: 'North Macedonia',
       nameZh: '北马其顿',
       defaultTimezone: 'Europe/Skopje',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ML',
       nameEn: 'Mali',
       nameZh: '马里',
       defaultTimezone: 'Africa/Bamako',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MM',
       nameEn: 'Myanmar',
       nameZh: '缅甸',
       defaultTimezone: 'Asia/Yangon',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MN',
       nameEn: 'Mongolia',
       nameZh: '蒙古',
       defaultTimezone: 'Asia/Ulaanbaatar',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MO',
       nameEn: 'Macao',
       nameZh: '中国澳门',
       defaultTimezone: 'Asia/Macau',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MP',
       nameEn: 'Northern Mariana Islands',
       nameZh: '北马里亚纳群岛',
       defaultTimezone: 'Pacific/Saipan',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MQ',
       nameEn: 'Martinique',
       nameZh: '马提尼克',
       defaultTimezone: 'America/Martinique',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MR',
       nameEn: 'Mauritania',
       nameZh: '毛里塔尼亚',
       defaultTimezone: 'Africa/Nouakchott',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MS',
       nameEn: 'Montserrat',
       nameZh: '蒙特塞拉特',
       defaultTimezone: 'America/Montserrat',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MT',
       nameEn: 'Malta',
       nameZh: '马耳他',
       defaultTimezone: 'Europe/Malta',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MU',
       nameEn: 'Mauritius',
       nameZh: '毛里求斯',
       defaultTimezone: 'Indian/Mauritius',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MV',
       nameEn: 'Maldives',
       nameZh: '马尔代夫',
       defaultTimezone: 'Indian/Maldives',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MW',
       nameEn: 'Malawi',
       nameZh: '马拉维',
       defaultTimezone: 'Africa/Blantyre',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MX',
       nameEn: 'Mexico',
       nameZh: '墨西哥',
       defaultTimezone: 'America/Mexico_City',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MY',
       nameEn: 'Malaysia',
       nameZh: '马来西亚',
       defaultTimezone: 'Asia/Kuala_Lumpur',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'MZ',
       nameEn: 'Mozambique',
       nameZh: '莫桑比克',
       defaultTimezone: 'Africa/Maputo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NA',
       nameEn: 'Namibia',
       nameZh: '纳米比亚',
       defaultTimezone: 'Africa/Windhoek',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NC',
       nameEn: 'New Caledonia',
       nameZh: '新喀里多尼亚',
       defaultTimezone: 'Pacific/Noumea',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NE',
       nameEn: 'Niger',
       nameZh: '尼日尔',
       defaultTimezone: 'Africa/Niamey',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NF',
       nameEn: 'Norfolk Island',
       nameZh: '诺福克岛',
       defaultTimezone: 'Pacific/Norfolk',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NG',
       nameEn: 'Nigeria',
       nameZh: '尼日利亚',
       defaultTimezone: 'Africa/Lagos',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NI',
       nameEn: 'Nicaragua',
       nameZh: '尼加拉瓜',
       defaultTimezone: 'America/Managua',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NL',
       nameEn: 'Netherlands',
       nameZh: '荷兰',
       defaultTimezone: 'Europe/Amsterdam',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NO',
       nameEn: 'Norway',
       nameZh: '挪威',
       defaultTimezone: 'Europe/Oslo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NP',
       nameEn: 'Nepal',
       nameZh: '尼泊尔',
       defaultTimezone: 'Asia/Kathmandu',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NR',
       nameEn: 'Nauru',
       nameZh: '瑙鲁',
       defaultTimezone: 'Pacific/Nauru',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NU',
       nameEn: 'Niue',
       nameZh: '纽埃',
       defaultTimezone: 'Pacific/Niue',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'NZ',
       nameEn: 'New Zealand',
       nameZh: '新西兰',
       defaultTimezone: 'Pacific/Auckland',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'OM',
       nameEn: 'Oman',
       nameZh: '阿曼',
       defaultTimezone: 'Asia/Muscat',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PA',
       nameEn: 'Panama',
       nameZh: '巴拿马',
       defaultTimezone: 'America/Panama',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PE',
       nameEn: 'Peru',
       nameZh: '秘鲁',
       defaultTimezone: 'America/Lima',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PF',
       nameEn: 'French Polynesia',
       nameZh: '法属波利尼西亚',
       defaultTimezone: 'Pacific/Tahiti',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PG',
       nameEn: 'Papua New Guinea',
       nameZh: '巴布亚新几内亚',
       defaultTimezone: 'Pacific/Port_Moresby',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PH',
       nameEn: 'Philippines',
       nameZh: '菲律宾',
       defaultTimezone: 'Asia/Manila',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PK',
       nameEn: 'Pakistan',
       nameZh: '巴基斯坦',
       defaultTimezone: 'Asia/Karachi',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PL',
       nameEn: 'Poland',
       nameZh: '波兰',
       defaultTimezone: 'Europe/Warsaw',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PM',
       nameEn: 'Saint Pierre and Miquelon',
       nameZh: '圣皮埃尔和密克隆',
       defaultTimezone: 'America/Miquelon',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PN',
       nameEn: 'Pitcairn Islands',
       nameZh: '皮特凯恩群岛',
       defaultTimezone: 'Pacific/Pitcairn',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PR',
       nameEn: 'Puerto Rico',
       nameZh: '波多黎各',
       defaultTimezone: 'America/Puerto_Rico',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PS',
       nameEn: 'Palestine',
       nameZh: '巴勒斯坦',
       defaultTimezone: 'Asia/Gaza',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PT',
       nameEn: 'Portugal',
       nameZh: '葡萄牙',
       defaultTimezone: 'Europe/Lisbon',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PW',
       nameEn: 'Palau',
       nameZh: '帕劳',
       defaultTimezone: 'Pacific/Palau',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'PY',
       nameEn: 'Paraguay',
       nameZh: '巴拉圭',
       defaultTimezone: 'America/Asuncion',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'QA',
       nameEn: 'Qatar',
       nameZh: '卡塔尔',
       defaultTimezone: 'Asia/Qatar',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'RE',
       nameEn: 'Réunion',
       nameZh: '留尼汪',
       defaultTimezone: 'Indian/Reunion',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'RO',
       nameEn: 'Romania',
       nameZh: '罗马尼亚',
       defaultTimezone: 'Europe/Bucharest',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'RS',
       nameEn: 'Serbia',
       nameZh: '塞尔维亚',
       defaultTimezone: 'Europe/Belgrade',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'RU',
       nameEn: 'Russia',
       nameZh: '俄罗斯',
       defaultTimezone: 'Europe/Moscow',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'RW',
       nameEn: 'Rwanda',
       nameZh: '卢旺达',
       defaultTimezone: 'Africa/Kigali',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SA',
       nameEn: 'Saudi Arabia',
       nameZh: '沙特阿拉伯',
       defaultTimezone: 'Asia/Riyadh',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SB',
       nameEn: 'Solomon Islands',
       nameZh: '所罗门群岛',
       defaultTimezone: 'Pacific/Guadalcanal',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SC',
       nameEn: 'Seychelles',
       nameZh: '塞舌尔',
       defaultTimezone: 'Indian/Mahe',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SD',
       nameEn: 'Sudan',
       nameZh: '苏丹',
       defaultTimezone: 'Africa/Khartoum',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SE',
       nameEn: 'Sweden',
       nameZh: '瑞典',
       defaultTimezone: 'Europe/Stockholm',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SG',
       nameEn: 'Singapore',
       nameZh: '新加坡',
       defaultTimezone: 'Asia/Singapore',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SH',
       nameEn: 'Saint Helena',
       nameZh: '圣赫勒拿',
       defaultTimezone: 'Atlantic/St_Helena',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SI',
       nameEn: 'Slovenia',
       nameZh: '斯洛文尼亚',
       defaultTimezone: 'Europe/Ljubljana',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SJ',
       nameEn: 'Svalbard and Jan Mayen',
       nameZh: '斯瓦尔巴和扬马延',
       defaultTimezone: 'Arctic/Longyearbyen',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SK',
       nameEn: 'Slovakia',
       nameZh: '斯洛伐克',
       defaultTimezone: 'Europe/Bratislava',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SL',
       nameEn: 'Sierra Leone',
       nameZh: '塞拉利昂',
       defaultTimezone: 'Africa/Freetown',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SM',
       nameEn: 'San Marino',
       nameZh: '圣马力诺',
       defaultTimezone: 'Europe/San_Marino',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SN',
       nameEn: 'Senegal',
       nameZh: '塞内加尔',
       defaultTimezone: 'Africa/Dakar',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SO',
       nameEn: 'Somalia',
       nameZh: '索马里',
       defaultTimezone: 'Africa/Mogadishu',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SR',
       nameEn: 'Suriname',
       nameZh: '苏里南',
       defaultTimezone: 'America/Paramaribo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SS',
       nameEn: 'South Sudan',
       nameZh: '南苏丹',
       defaultTimezone: 'Africa/Juba',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ST',
       nameEn: 'São Tomé and Príncipe',
       nameZh: '圣多美和普林西比',
       defaultTimezone: 'Africa/Sao_Tome',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SV',
       nameEn: 'El Salvador',
       nameZh: '萨尔瓦多',
       defaultTimezone: 'America/El_Salvador',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SX',
       nameEn: 'Sint Maarten',
       nameZh: '荷属圣马丁',
       defaultTimezone: 'America/Lower_Princes',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SY',
       nameEn: 'Syria',
       nameZh: '叙利亚',
       defaultTimezone: 'Asia/Damascus',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'SZ',
       nameEn: 'Eswatini',
       nameZh: '斯威士兰',
       defaultTimezone: 'Africa/Mbabane',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TC',
       nameEn: 'Turks and Caicos Islands',
       nameZh: '特克斯和凯科斯群岛',
       defaultTimezone: 'America/Grand_Turk',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TD',
       nameEn: 'Chad',
       nameZh: '乍得',
       defaultTimezone: 'Africa/Ndjamena',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TF',
       nameEn: 'French Southern Territories',
       nameZh: '法属南部领地',
       defaultTimezone: 'Indian/Kerguelen',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TG',
       nameEn: 'Togo',
       nameZh: '多哥',
       defaultTimezone: 'Africa/Lome',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TH',
       nameEn: 'Thailand',
       nameZh: '泰国',
       defaultTimezone: 'Asia/Bangkok',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TJ',
       nameEn: 'Tajikistan',
       nameZh: '塔吉克斯坦',
       defaultTimezone: 'Asia/Dushanbe',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TK',
       nameEn: 'Tokelau',
       nameZh: '托克劳',
       defaultTimezone: 'Pacific/Fakaofo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TL',
       nameEn: 'Timor-Leste',
       nameZh: '东帝汶',
       defaultTimezone: 'Asia/Dili',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TM',
       nameEn: 'Turkmenistan',
       nameZh: '土库曼斯坦',
       defaultTimezone: 'Asia/Ashgabat',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TN',
       nameEn: 'Tunisia',
       nameZh: '突尼斯',
       defaultTimezone: 'Africa/Tunis',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TO',
       nameEn: 'Tonga',
       nameZh: '汤加',
       defaultTimezone: 'Pacific/Tongatapu',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TR',
       nameEn: 'Türkiye',
       nameZh: '土耳其',
       defaultTimezone: 'Europe/Istanbul',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TT',
       nameEn: 'Trinidad and Tobago',
       nameZh: '特立尼达和多巴哥',
       defaultTimezone: 'America/Port_of_Spain',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TV',
       nameEn: 'Tuvalu',
       nameZh: '图瓦卢',
       defaultTimezone: 'Pacific/Funafuti',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TW',
       nameEn: 'Taiwan',
       nameZh: '中国台湾',
       defaultTimezone: 'Asia/Taipei',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'TZ',
       nameEn: 'Tanzania',
       nameZh: '坦桑尼亚',
       defaultTimezone: 'Africa/Dar_es_Salaam',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'UA',
       nameEn: 'Ukraine',
       nameZh: '乌克兰',
       defaultTimezone: 'Europe/Kyiv',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'UG',
       nameEn: 'Uganda',
       nameZh: '乌干达',
       defaultTimezone: 'Africa/Kampala',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'UM',
       nameEn: 'U.S. Outlying Islands',
       nameZh: '美国本土外小岛屿',
       defaultTimezone: 'Pacific/Wake',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'US',
       nameEn: 'United States',
       nameZh: '美国',
       defaultTimezone: 'America/New_York',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'UY',
       nameEn: 'Uruguay',
       nameZh: '乌拉圭',
       defaultTimezone: 'America/Montevideo',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'UZ',
       nameEn: 'Uzbekistan',
       nameZh: '乌兹别克斯坦',
       defaultTimezone: 'Asia/Tashkent',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'VA',
       nameEn: 'Vatican City',
       nameZh: '梵蒂冈',
       defaultTimezone: 'Europe/Vatican',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'VC',
       nameEn: 'Saint Vincent and the Grenadines',
       nameZh: '圣文森特和格林纳丁斯',
       defaultTimezone: 'America/St_Vincent',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'VE',
       nameEn: 'Venezuela',
       nameZh: '委内瑞拉',
       defaultTimezone: 'America/Caracas',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'VG',
       nameEn: 'British Virgin Islands',
       nameZh: '英属维尔京群岛',
       defaultTimezone: 'America/Tortola',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'VI',
       nameEn: 'U.S. Virgin Islands',
       nameZh: '美属维尔京群岛',
       defaultTimezone: 'America/St_Thomas',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'VN',
       nameEn: 'Vietnam',
       nameZh: '越南',
       defaultTimezone: 'Asia/Ho_Chi_Minh',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'VU',
       nameEn: 'Vanuatu',
       nameZh: '瓦努阿图',
       defaultTimezone: 'Pacific/Efate',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'WF',
       nameEn: 'Wallis and Futuna',
       nameZh: '瓦利斯和富图纳',
       defaultTimezone: 'Pacific/Wallis',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'WS',
       nameEn: 'Samoa',
       nameZh: '萨摩亚',
       defaultTimezone: 'Pacific/Apia',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'XK',
       nameEn: 'Kosovo',
       nameZh: '科索沃',
       defaultTimezone: 'Europe/Belgrade',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'YE',
       nameEn: 'Yemen',
       nameZh: '也门',
       defaultTimezone: 'Asia/Aden',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'YT',
       nameEn: 'Mayotte',
       nameZh: '马约特',
       defaultTimezone: 'Indian/Mayotte',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ZA',
       nameEn: 'South Africa',
       nameZh: '南非',
       defaultTimezone: 'Africa/Johannesburg',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ZM',
       nameEn: 'Zambia',
       nameZh: '赞比亚',
       defaultTimezone: 'Africa/Lusaka',
       preferredNtp: preferredNtp,
     ),
-    RegionCountryEntry(
+    RegionCatalogEntry(
       code: 'ZW',
       nameEn: 'Zimbabwe',
       nameZh: '津巴布韦',

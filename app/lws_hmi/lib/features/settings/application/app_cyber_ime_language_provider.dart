@@ -1,16 +1,16 @@
+import 'package:cyber_hal/locale.dart';
 import 'package:cyber_ime/cyber_ime.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 
-/// CyberIME language provider driven by [CommonSettingsStore].
+/// CyberIME language provider driven by HAL [LocaleSettings].
 ///
 /// Reads live from the store so Language changes apply without re-registering.
 final class AppCyberImeLanguageProvider implements CyberImeLanguageProvider {
   AppCyberImeLanguageProvider(this._store);
 
-  final CommonSettingsStore _store;
+  final LocaleSettings _store;
 
   @override
-  CyberImeGlobalKind get globalKind => _store.isChineseLanguage
+  CyberImeGlobalKind get globalKind => _store.language.isChinese
       ? CyberImeGlobalKind.chinese
       : CyberImeGlobalKind.english;
 }

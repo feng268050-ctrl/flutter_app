@@ -1,137 +1,58 @@
-import 'dart:convert';
 import 'dart:io';
 
+import 'package:cyber_hal/locale.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:lws_hmi/l10n/app_locales.dart';
 
 void main() {
-  test('defaults when JSON missing', () async {
-    final dir = await Directory.systemTemp.createTemp('common-');
-    final store = CommonSettingsStore(
-      preferencePath: '${dir.path}/common-settings.json',
-    );
-    store.warmRead();
-    expect(store.language, CommonSettingsStore.defaultLanguage);
-    expect(store.language, CommonSettingsStore.languageEnUs);
-    expect(store.unit, CommonSettingsStore.defaultUnit);
-    expect(store.country, CommonSettingsStore.defaultCountry);
-    expect(store.country, 'US');
-    expect(store.hadPersistedCountry, isFalse);
-    expect(File('${dir.path}/common-settings.json').existsSync(), isFalse);
-    await dir.delete(recursive: true);
+  late Directory tmp;
+
+  setUp(() {
+    tmp = Directory.systemTemp.createTempSync('locale_settings_app_');
   });
 
-  test('JSON round-trip for language unit and country', () async {
-    final dir = await Directory.systemTemp.createTemp('common-');
-    final path = '${dir.path}/common-settings.json';
-    final store = CommonSettingsStore(preferencePath: path);
-    store.warmRead();
-    await store.setLanguage(CommonSettingsStore.languageZhCn);
-    await store.setUnit(CommonSettingsStore.unitImperial);
-    await store.setCountry('DE');
+  tearDown(() {
+    if (tmp.existsSync()) {
+      tmp.deleteSync(recursive: true);
+    }
+  });
 
-    final again = CommonSettingsStore(preferencePath: path);
+  test('defaults when file absent', () {
+    final store = LocaleSettings(
+      preferencePath: '${tmp.path}/locale.conf',
+    );
+    store.warmRead();
+    expect(store.language, PreferredLanguage.defaultValue);
+    expect(store.language, PreferredLanguage.enUs);
+    expect(store.unit, UnitSystem.defaultValue);
+    expect(store.region, RegionCatalog.defaultRegion);
+    expect(store.hadPersistedRegion, isFalse);
+  });
+
+  test('persist language unit region round-trip', () async {
+    final path = '${tmp.path}/locale.conf';
+    final store = LocaleSettings(preferencePath: path);
+    await store.setLanguage(PreferredLanguage.zhCn);
+    await store.setUnit(UnitSystem.imperial);
+    await store.setRegion('DE');
+
+    final again = LocaleSettings(preferencePath: path);
     again.warmRead();
-    expect(again.language, CommonSettingsStore.languageZhCn);
-    expect(again.unit, CommonSettingsStore.unitImperial);
-    expect(again.country, 'DE');
-    expect(again.hadPersistedCountry, isTrue);
-
-    final decoded = jsonDecode(await File(path).readAsString()) as Map;
-    expect(decoded['language'], 'zh-CN');
-    expect(decoded['unit'], 'Imperial');
-    expect(decoded['country'], 'DE');
-
-    await dir.delete(recursive: true);
+    expect(again.language, PreferredLanguage.zhCn);
+    expect(again.unit, UnitSystem.imperial);
+    expect(again.region, 'DE');
+    expect(again.hadPersistedRegion, isTrue);
+    expect(localeFromLanguageTag(again.languageWire).languageCode, 'zh');
   });
 
-  test('legacy EN/ZH normalize on read', () async {
-    final dir = await Directory.systemTemp.createTemp('common-');
-    final path = '${dir.path}/common-settings.json';
-    await File(path).writeAsString(
-      jsonEncode({'language': 'ZH', 'unit': 'Metric'}),
-    );
-    final store = CommonSettingsStore(preferencePath: path);
+  test('corrupt conf soft-fails to defaults', () {
+    final path = '${tmp.path}/locale.conf';
+    File(path).writeAsStringSync('{{{not-kv');
+    final store = LocaleSettings(preferencePath: path);
     store.warmRead();
-    expect(store.language, CommonSettingsStore.languageZhCn);
-    expect(store.isChineseLanguage, isTrue);
-    expect(store.country, 'US');
-    expect(store.hadPersistedCountry, isFalse);
-
-    await File(path).writeAsString(
-      jsonEncode({'language': 'EN', 'unit': 'Metric'}),
-    );
-    final enStore = CommonSettingsStore(preferencePath: path);
-    enStore.warmRead();
-    expect(enStore.language, CommonSettingsStore.languageEnUs);
-
-    await dir.delete(recursive: true);
-  });
-
-  test('corrupt JSON soft-fails to defaults', () async {
-    final dir = await Directory.systemTemp.createTemp('common-');
-    final path = '${dir.path}/common-settings.json';
-    await File(path).writeAsString('not-json{{{');
-    final store = CommonSettingsStore(preferencePath: path);
-    store.warmRead();
-    expect(store.language, CommonSettingsStore.defaultLanguage);
-    expect(store.unit, CommonSettingsStore.defaultUnit);
-    expect(store.country, CommonSettingsStore.defaultCountry);
-    await dir.delete(recursive: true);
-  });
-
-  test('invalid values normalize to defaults', () async {
-    final dir = await Directory.systemTemp.createTemp('common-');
-    final path = '${dir.path}/common-settings.json';
-    await File(path).writeAsString(
-      jsonEncode({'language': 'FR', 'unit': 'Stone', 'country': 'XX'}),
-    );
-    final store = CommonSettingsStore(preferencePath: path);
-    store.warmRead();
-    expect(store.language, CommonSettingsStore.defaultLanguage);
-    expect(store.unit, CommonSettingsStore.defaultUnit);
-    expect(store.country, CommonSettingsStore.defaultCountry);
-    expect(store.hadPersistedCountry, isTrue);
-    await dir.delete(recursive: true);
-  });
-
-  test('normalize helpers clamp unknown codes', () {
-    expect(
-      CommonSettingsStore.normalizeLanguage('ZH'),
-      CommonSettingsStore.languageZhCn,
-    );
-    expect(
-      CommonSettingsStore.normalizeLanguage('zh-TW'),
-      CommonSettingsStore.languageZhTw,
-    );
-    expect(
-      CommonSettingsStore.normalizeLanguage('nope'),
-      CommonSettingsStore.defaultLanguage,
-    );
-    expect(
-      CommonSettingsStore.normalizeUnit('Imperial'),
-      CommonSettingsStore.unitImperial,
-    );
-    expect(
-      CommonSettingsStore.normalizeUnit('nope'),
-      CommonSettingsStore.defaultUnit,
-    );
-    expect(CommonSettingsStore.normalizeCountry('de'), 'DE');
-    expect(CommonSettingsStore.normalizeCountry('nope'), 'US');
-  });
-
-  test('language endonyms are not locale-translated', () {
-    expect(
-      CommonSettingsStore.languageEndonym(CommonSettingsStore.languageEnUs),
-      'English',
-    );
-    expect(
-      CommonSettingsStore.languageEndonym(CommonSettingsStore.languageZhCn),
-      '简体中文',
-    );
-    expect(
-      CommonSettingsStore.languageEndonym(CommonSettingsStore.languageZhTw),
-      '繁體中文',
-    );
+    // Unparseable lines ignored → empty map → defaults.
+    expect(store.language, PreferredLanguage.defaultValue);
+    expect(store.unit, UnitSystem.defaultValue);
+    expect(store.region, RegionCatalog.defaultRegion);
   });
 }

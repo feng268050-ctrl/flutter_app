@@ -19,7 +19,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 /// Binds to the single-row [StatsAggregate] (same store as Custom Home).
 /// Refreshes on first show, when [visible] becomes true, on route resume, and
 /// on a light poll while visible (job-runtime flush ~30s). Unit changes rebuild
-/// via [ListenableBuilder] on [CommonSettingsStore].
+/// via [ListenableBuilder] on HAL [LocaleSettings].
 class WorkInformationTab extends StatefulWidget {
   const WorkInformationTab({
     super.key,
@@ -164,7 +164,7 @@ class _WorkInformationTabState extends State<WorkInformationTab>
     }
     return ListenableBuilder(
       listenable: settings,
-      builder: (context, _) => bodyForUnit(settings.unit),
+      builder: (context, _) => bodyForUnit(settings.unitWire),
     );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:cyber_hal/locale.dart';
 
 /// Length display helpers for Common Settings unit (Metric = mm, Imperial = in).
 ///
@@ -10,7 +10,7 @@ abstract final class LengthUnitConvert {
   static const double mmPerFoot = mmPerInch * 12;
 
   static bool isMetric(String? unitWire) =>
-      unitWire == null || unitWire == CommonSettingsStore.unitMetric;
+      unitWire == null || unitWire == UnitSystem.metric.wire;
 
   static String suffix(String? unitWire) => isMetric(unitWire) ? 'mm' : 'in';
 

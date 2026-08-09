@@ -4,7 +4,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_wheel.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 
@@ -452,8 +452,8 @@ final class QuickModeDimensionPick extends StatelessWidget {
     return LengthUnitConvert.formatMm(
       valueMm,
       unitWire: useMmUnit
-          ? CommonSettingsStore.unitMetric
-          : CommonSettingsStore.unitImperial,
+          ? UnitSystem.metric.wire
+          : UnitSystem.imperial.wire,
     );
   }
 }

@@ -89,7 +89,7 @@ class CustomHomeStatisticsPanelState extends State<CustomHomeStatisticsPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final unitWire = CommonSettingsScope.maybeOf(context)?.unit;
+    final unitWire = CommonSettingsScope.maybeOf(context)?.unitWire;
     final cards = _metrics
         .map((metric) => _HomeStatisticCard(
               key: ValueKey('home-stat-${metric.name}'),

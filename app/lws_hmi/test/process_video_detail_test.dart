@@ -8,7 +8,7 @@ import 'package:lws_hmi/features/process_video/domain/process_video_models.dart'
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_detail_page.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
@@ -69,7 +69,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       late final _MemRepo repo;
-      late final CommonSettingsStore store;
+      late final LocaleSettings store;
       await tester.runAsync(() async {
         repo = _MemRepo()
           ..seed(
@@ -98,10 +98,10 @@ void main() {
             tmpDir.deleteSync(recursive: true);
           } catch (_) {}
         });
-        store = CommonSettingsStore(
-          preferencePath: '${tmpDir.path}/common-settings.json',
+        store = LocaleSettings(
+          preferencePath: '${tmpDir.path}/locale.conf',
         );
-        await store.setUnit(CommonSettingsStore.unitImperial);
+        await store.setUnit(UnitSystem.imperial);
       });
 
       await tester.pumpWidget(

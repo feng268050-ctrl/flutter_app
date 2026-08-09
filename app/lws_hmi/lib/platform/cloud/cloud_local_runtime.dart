@@ -24,7 +24,7 @@ import 'package:lws_hmi/features/process_video/domain/process_video_models.dart'
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/platform/cloud/cloud_http_client.dart';
@@ -152,7 +152,7 @@ final class CloudLocalRuntime {
   final DeviceRemoteLockStore lockStore;
   final ProcessLibraryController? processLibrary;
   final ProcessVideoRepository? processVideoRepository;
-  final CommonSettingsStore? commonSettings;
+  final LocaleSettings? commonSettings;
   final MiscSettingsStore? miscSettings;
   final SoundEffectStore? soundEffectStore;
 
@@ -1230,9 +1230,10 @@ final class CloudLocalRuntime {
       wifi: wifi,
       deviceInfo: deviceInfo,
       commonSettings: {
-        'language': common?.language ?? CommonSettingsStore.defaultLanguage,
-        'unit': common?.unit ?? CommonSettingsStore.defaultUnit,
-        'country': common?.country ?? CommonSettingsStore.defaultCountry,
+        'language':
+            common?.languageWire ?? PreferredLanguage.defaultValue.wire,
+        'unit': common?.unitWire ?? UnitSystem.defaultValue.wire,
+        'region': common?.region ?? RegionCatalog.defaultRegion,
         'soundEffect': sound?.index ?? SoundEffectStore.defaultIndex,
         'showBootSelfCheck': misc?.showStartupSelfCheck ?? true,
         'showSafetyGroundLockAlarm': misc?.showGroundLockAlarm ?? true,

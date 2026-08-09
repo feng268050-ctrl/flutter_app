@@ -493,7 +493,7 @@ final class _ParameterList extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final snap = record.snapshot;
     final unitStore = CommonSettingsScope.maybeOf(context);
-    final unitWire = unitStore?.unit;
+    final unitWire = unitStore?.unitWire;
     final isMetric = LengthUnitConvert.isMetric(unitWire);
     final rows = <({String label, String value, String? unit})>[
       (

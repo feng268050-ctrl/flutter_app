@@ -53,7 +53,7 @@ import 'package:lws_hmi/features/ai/application/live_weld_stream_detect_coordina
 import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dart';
 import 'package:lws_hmi/features/settings/application/app_cyber_ime_language_provider.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/features/settings/application/load_profile_controller.dart';
 import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
@@ -129,7 +129,7 @@ class LwsHmiApp extends StatefulWidget {
   final MiscSettingsStore? miscSettingsStore;
 
   /// Optional override for tests (inject fake Common JSON path / store).
-  final CommonSettingsStore? commonSettingsStore;
+  final LocaleSettings? commonSettingsStore;
 
   /// Optional override for tests (inject fake Advanced JSON path / store).
   final AdvancedSettingsStore? advancedSettingsStore;
@@ -160,8 +160,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   late final MiscSettingsStore _miscSettingsStore =
       widget.miscSettingsStore ?? MiscSettingsStore();
 
-  late final CommonSettingsStore _commonSettingsStore =
-      widget.commonSettingsStore ?? CommonSettingsStore();
+  late final LocaleSettings _commonSettingsStore =
+      widget.commonSettingsStore ?? LocaleSettings();
 
   late final LoadProfileController _loadProfileController =
       LoadProfileController(backend: _services.loadProfile);
@@ -736,7 +736,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                     title: 'HMI',
                                     theme: buildAppTheme(),
                                     scrollBehavior: const AppScrollBehavior(),
-                                    locale: _commonSettingsStore.locale,
+                                    locale: localeFromLanguageTag(
+                                      _commonSettingsStore.languageWire,
+                                    ),
                                     supportedLocales: kAppSupportedLocales,
                                     localeListResolutionCallback:
                                         (locales, supported) {

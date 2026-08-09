@@ -54,7 +54,7 @@ LAN SSH debug SHALL control on-demand LAN/WLAN SSH via `SshDebug` (not persisted
 
 ### Requirement: Language selection applies UI locale and lists supported endonyms
 
-Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `zh-TW` with endonym labels (English / 简体中文 / 繁體中文). Selecting a locale SHALL persist via `CommonSettingsStore` and apply both Flutter UI locale and CyberIME language mapping. Language Settings and Common Settings Language summary MUST NOT claim that Language applies only to the soft keyboard once UI localization for that surface has shipped.
+Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `zh-TW` with endonym labels (English / 简体中文 / 繁體中文). Selecting a locale SHALL persist via **HAL locale PreferredLanguage** (`package:cyber_hal/locale.dart`, key `language` in `/var/lib/hal/locale.conf`) and apply both Flutter UI locale and CyberIME language mapping. Language Settings and General (Common Settings) Language summary MUST NOT claim that Language applies only to the soft keyboard once UI localization for that surface has shipped.
 
 #### Scenario: Language page lists three locales
 
@@ -64,16 +64,16 @@ Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `z
 #### Scenario: Selecting Simplified Chinese updates UI and summary
 
 - **WHEN** the operator selects 简体中文
-- **THEN** the choice is persisted
-- **AND** Common Settings Language summary shows the matching endonym
+- **THEN** the choice is persisted in `locale.conf`
+- **AND** General Settings Language summary shows the matching endonym
 - **AND** migrated Settings chrome uses Simplified Chinese strings
 
 ### Requirement: Common Settings exposes display, sound, date-time, and input controls
 
-Common Settings SHALL expose:
+General Settings (Common Settings; en label **General**) SHALL expose:
 
-- Display & Sound (untitled card): **Country/Region**, Language, and Unit as persisted controls backed by `/var/lib/hmi/common-settings.json`; Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then Sound.
-- **Power Mode** (untitled card, **own group**, after Display & Sound and before RGB LED + Camera): a single nav row (same chrome pattern as **Unit**) with trailing summary of the current mode; tapping opens a Power Mode sub-page (see Power Mode requirement). Persistence remains `/var/lib/hal/power.conf` via HAL (not `common-settings.json`).
+- Display & Sound (untitled card): **Country/Region**, Language, and Unit as persisted controls backed by **`/var/lib/hal/locale.conf`** through HAL locale (`Region` / `region`, `PreferredLanguage` / `language`, `UnitSystem` / `unit`); Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings` / `hal-locale`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then Sound.
+- **Power Mode** (untitled card, **own group**, after Display & Sound and before RGB LED + Camera): a single nav row (same chrome pattern as **Unit**) with trailing summary of the current mode; tapping opens a Power Mode sub-page (see Power Mode requirement). Persistence remains `/var/lib/hal/power.conf` via HAL (not `common-settings.json` / not `locale.conf` for power).
 - RGB LED + Camera (untitled card, after Power Mode, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
 - Date & Time (untitled card): Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController` (lws-ui parity).
 - Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera + RGB LED group requirement).
@@ -104,17 +104,17 @@ Common Settings SHALL expose:
 
 - **WHEN** the operator opens Common Settings
 - **THEN** the Display & Sound card lists Country/Region above Language
-- **AND** Country/Region summary reflects the persisted Country preference
+- **AND** Country/Region summary reflects the persisted Region preference
 
 #### Scenario: Language is persisted
 
 - **WHEN** the user selects a Language option other than the current value
-- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json` and Common Settings shows the matching Language summary or segment
+- **THEN** the choice is persisted in `/var/lib/hal/locale.conf` via HAL locale and Common Settings shows the matching Language summary or segment
 
 #### Scenario: Unit is persisted
 
 - **WHEN** the user selects a Unit option other than the current value
-- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json`
+- **THEN** the choice is persisted in `/var/lib/hal/locale.conf` via HAL locale UnitSystem
 
 #### Scenario: Date and time sync actions invoke controllers
 
@@ -156,18 +156,18 @@ Common Settings SHALL present **Power Mode** (localized; en: Power Mode; zh-CN: 
 
 ### Requirement: Country/Region selection lists all markets and applies region effects
 
-Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory catalog (plus `XK`) with human-readable labels (English / Simplified Chinese by UI locale) and search. Selecting a country SHALL persist via `CommonSettingsStore` and trigger region apply (wireless regulatory and Country-linked timezone/NTP defaults). Common Settings Country/Region summary MUST show the selected country label (or code). Country/Region MUST appear as a nav row before Language on the Common Settings Display & Sound card. Operator-visible title SHALL be Country/Region (zh: 国家/地区).
+Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory catalog (plus `XK`) with human-readable labels (English / Simplified Chinese by UI locale) and search. Selecting a country SHALL persist via **HAL locale Region** (`region=` in `locale.conf`) and trigger HAL Region apply (wireless regulatory and Region-linked timezone/NTP defaults). General Settings Country/Region summary MUST show the selected country label (or code). Country/Region MUST appear as a nav row before Language on the Display & Sound card. Operator-visible title SHALL be Country/Region (zh: 国家/地区).
 
 #### Scenario: Country page lists options with US default summary
 
-- **WHEN** Country preference is `US` and the operator opens Common Settings
+- **WHEN** Region preference is `US` and the operator opens Common Settings
 - **THEN** Country/Region summary indicates United States (or localized equivalent)
 - **AND** opening Country/Region Settings shows `US` among the selectable options
 
 #### Scenario: Selecting Germany updates summary and apply path
 
 - **WHEN** the operator selects Germany (`DE`) on Country/Region Settings
-- **THEN** the choice is persisted
+- **THEN** the choice is persisted as `region=DE` via HAL locale
 - **AND** Common Settings Country/Region summary shows the matching label
 - **AND** region apply runs for regulatory / linked clock defaults
 

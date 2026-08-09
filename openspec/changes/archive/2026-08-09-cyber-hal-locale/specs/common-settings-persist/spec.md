@@ -1,9 +1,5 @@
-# common-settings-persist Specification
+## MODIFIED Requirements
 
-## Purpose
-
-App-owned Common Settings product preferences (Language, Unit, Country / Region, and future non-HAL / non-Misc peers) persisted at `/var/lib/hmi/common-settings.json`, with Language driving the CyberIME language provider and Flutter UI locale (BCP-47 wire values).
-## Requirements
 ### Requirement: Common Settings product prefs use common-settings.json
 
 `/var/lib/hmi/common-settings.json` SHALL remain available for future App-owned Common Settings peers that are neither HAL-backed nor Misc toggles. **Language, Unit, and Country / Region MUST NOT be stored in this file.** Those three preferences SHALL persist only via `cyber_hal` locale at `/var/lib/hal/locale.conf` (`language`, `unit`, `region`). The App and HAL MUST NOT implement a migration that imports `common-settings.json` locale keys into `locale.conf`. Leftover `language` / `unit` / `country` keys in an old JSON file MUST be ignored. The App SHALL NOT introduce additional per-preference files under `/var/lib/hmi/` for Language, Unit, or Region. Misc toggles MUST remain in `misc-settings.json`. Other HAL-backed Common Settings (brightness, AutoSleep, volume, ButtonFeedback sound-effect, network, datetime, mouse, keyboard, USB OTG, locale, etc.) MUST NOT be relocated into `common-settings.json`.
@@ -57,4 +53,3 @@ After warm-read and whenever PreferredLanguage changes (via HAL locale / `locale
 
 - **WHEN** Language is `zh-TW`
 - **THEN** the CyberIME language provider reports Chinese (ChineseGlobal mapping) for subsequent Text focus
-

@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:cyber_hal/locale.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
@@ -30,13 +30,12 @@ class LanguageSettingsPage extends StatelessWidget {
                     SettingsGroup(
                       bottomInset: 0,
                       children: [
-                        for (final code
-                            in CommonSettingsStore.supportedLanguages)
+                        for (final option in PreferredLanguage.supported)
                           SettingsOptionTile(
-                            title: CommonSettingsStore.languageEndonym(code),
-                            selected: lang == code,
+                            title: option.endonym,
+                            selected: lang == option,
                             onTap: () {
-                              unawaited(store.setLanguage(code));
+                              unawaited(store.setLanguage(option));
                             },
                           ),
                       ],

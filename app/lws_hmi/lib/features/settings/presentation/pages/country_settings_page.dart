@@ -1,13 +1,12 @@
 import 'dart:async';
 
+import 'package:cyber_hal/locale.dart';
 import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
-import 'package:lws_hmi/features/settings/application/region_country_catalog.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
@@ -22,7 +21,7 @@ class CountrySettingsPage extends StatefulWidget {
   }
 
   static String countryLabel(BuildContext context, String code) {
-    return RegionCountryCatalog.displayName(
+    return RegionCatalog.displayName(
       code,
       chineseUi: _chineseUi(context),
     );
@@ -30,7 +29,7 @@ class CountrySettingsPage extends StatefulWidget {
 
   /// Prefer when [AppLocalizations] is already available (Common Settings row).
   static String countryLabelForLocale(String code, Locale locale) {
-    return RegionCountryCatalog.displayName(
+    return RegionCatalog.displayName(
       code,
       chineseUi: locale.languageCode == 'zh',
     );
@@ -43,20 +42,20 @@ class CountrySettingsPage extends StatefulWidget {
 class _CountrySettingsPageState extends State<CountrySettingsPage> {
   final _searchCtrl = TextEditingController();
   final _ime = CyberImeSession.shared;
-  late List<RegionCountryEntry> _all;
-  late List<RegionCountryEntry> _filtered;
+  late List<RegionCatalogEntry> _all;
+  late List<RegionCatalogEntry> _filtered;
 
   @override
   void initState() {
     super.initState();
-    _all = RegionCountryCatalog.sortedForDisplay();
+    _all = RegionCatalog.sortedForDisplay();
     _filtered = _all;
     _searchCtrl.addListener(_onSearchChanged);
   }
 
   void _onSearchChanged() {
     setState(() {
-      _filtered = RegionCountryCatalog.filter(_all, _searchCtrl.text);
+      _filtered = RegionCatalog.filter(_all, _searchCtrl.text);
     });
   }
 
@@ -136,7 +135,7 @@ class _CountrySettingsPageState extends State<CountrySettingsPage> {
                     child: ListenableBuilder(
                       listenable: store,
                       builder: (context, _) {
-                        final country = store.country;
+                        final region = store.region;
                         if (_filtered.isEmpty) {
                           return SettingsPanel(
                             borderGradientCenter:
@@ -172,9 +171,9 @@ class _CountrySettingsPageState extends State<CountrySettingsPage> {
                               return SettingsOptionTile(
                                 title:
                                     '${e.labelFor(chineseUi: chineseUi)} (${e.code})',
-                                selected: country == e.code,
+                                selected: region == e.code,
                                 onTap: () {
-                                  unawaited(_selectCountry(
+                                  unawaited(_selectRegion(
                                     store: store,
                                     services: appServices,
                                     code: e.code,
@@ -202,22 +201,22 @@ class _CountrySettingsPageState extends State<CountrySettingsPage> {
     );
   }
 
-  static Future<void> _selectCountry({
-    required CommonSettingsStore store,
+  static Future<void> _selectRegion({
+    required LocaleSettings store,
     required AppServices? services,
     required String code,
   }) async {
-    final previous = store.country;
-    final next = CommonSettingsStore.normalizeCountry(code);
-    if (previous == next && store.hadPersistedCountry) {
+    final previous = store.region;
+    final next = RegionCatalog.normalize(code);
+    if (previous == next && store.hadPersistedRegion) {
       return;
     }
-    await store.setCountry(next);
+    await store.setRegion(next);
     final applier = services?.regionSettings;
     if (applier != null) {
-      await applier.applyCountryChange(
-        previousCountry: previous,
-        nextCountry: next,
+      await applier.applyRegionChange(
+        previousRegion: previous,
+        nextRegion: next,
       );
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/datetime.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/usb_otg.dart';
 import 'package:cyber_ui/cyber_ui.dart';
@@ -9,7 +10,6 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
@@ -119,14 +119,11 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     };
   }
 
-  String _unitLabel(AppLocalizations l10n, String unit) {
+  String _unitLabel(AppLocalizations l10n, UnitSystem unit) {
     switch (unit) {
-      case CommonSettingsStore.unitImperial:
-        // lws-ui `unit_option_imperial`
+      case UnitSystem.imperial:
         return l10n.unitOptionImperial;
-      case CommonSettingsStore.unitMetric:
-      default:
-        // lws-ui `unit_option_metric`
+      case UnitSystem.metric:
         return l10n.unitOptionMetric;
     }
   }
@@ -323,7 +320,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 title: l10n.countrySettingText,
                 value: CountrySettingsPage.countryLabel(
                   context,
-                  CommonSettingsStore.defaultCountry,
+                  RegionCatalog.defaultRegion,
                 ),
                 onTap: () => pushSettingsPage(
                   context,
@@ -338,7 +335,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                     title: l10n.countrySettingText,
                     value: CountrySettingsPage.countryLabel(
                       context,
-                      store.country,
+                      store.region,
                     ),
                     onTap: () => pushSettingsPage(
                       context,
@@ -362,7 +359,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 builder: (context, _) {
                   return SettingsNavRow(
                     title: l10n.languageSettingText,
-                    value: store.languageLabel,
+                    value: store.language.endonym,
                     onTap: () => pushSettingsPage(
                       context,
                       const LanguageSettingsPage(),

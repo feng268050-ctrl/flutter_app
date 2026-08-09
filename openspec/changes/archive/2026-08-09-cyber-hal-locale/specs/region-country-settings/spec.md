@@ -1,9 +1,5 @@
-# region-country-settings Specification
+## MODIFIED Requirements
 
-## Purpose
-
-Product Country / Region preference (ISO 3166-1 alpha-2, default `US`) in Common Settings, driving Wi‑Fi regulatory domain and Country-linked timezone / NTP defaults without changing Language.
-## Requirements
 ### Requirement: Country preference persists and defaults to US
 
 The product SHALL persist Common Settings Country / Region as ISO 3166-1 alpha-2 uppercase via **`cyber_hal` locale** at `/var/lib/hal/locale.conf` under key **`region`** (peer of `language` and `unit`). Persistence and normalize SHALL NOT use a duplicate App-owned country string store or `common-settings.json`. Missing file or missing `region` key SHALL default to `US`. Leftover JSON `country` keys MUST be ignored (no migration). Unsupported or malformed codes MUST normalize to `US` without crashing. Corrupt `locale.conf` soft-fail MUST still apply Region `US` with Language/Unit defaults.
@@ -88,4 +84,3 @@ The product SHALL maintain a Region → default IANA timezone and preferred prim
 
 - **WHEN** the operator changes Region from `US` to `DE`
 - **THEN** Language preference is unchanged
-

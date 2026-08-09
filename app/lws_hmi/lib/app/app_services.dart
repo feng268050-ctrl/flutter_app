@@ -16,7 +16,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gat
 import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
-import 'package:lws_hmi/features/settings/application/region_settings_applier.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/gpio/rgb_led_policy_driver.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
@@ -120,7 +120,7 @@ final class AppServices {
   final BoardBindings bindings;
   final DeviceSnReader deviceSnReader;
 
-  /// Country → Wi‑Fi regulatory + linked timezone / NTP.
+  /// Region → Wi‑Fi regulatory + linked timezone / NTP.
   late final RegionSettingsApplier regionSettings;
 
   ProductInfo? _productInfoOverride;

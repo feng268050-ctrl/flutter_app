@@ -1,7 +1,7 @@
+import 'package:cyber_hal/locale.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 
-/// Provides [CommonSettingsStore] under the app tree.
+/// Provides HAL [LocaleSettings] under the app tree (General Language/Unit/Region).
 final class CommonSettingsScope extends InheritedWidget {
   const CommonSettingsScope({
     super.key,
@@ -9,16 +9,16 @@ final class CommonSettingsScope extends InheritedWidget {
     required super.child,
   });
 
-  final CommonSettingsStore store;
+  final LocaleSettings store;
 
-  static CommonSettingsStore of(BuildContext context) {
+  static LocaleSettings of(BuildContext context) {
     final scope =
         context.dependOnInheritedWidgetOfExactType<CommonSettingsScope>();
     assert(scope != null, 'CommonSettingsScope not found');
     return scope!.store;
   }
 
-  static CommonSettingsStore? maybeOf(BuildContext context) {
+  static LocaleSettings? maybeOf(BuildContext context) {
     return context
         .dependOnInheritedWidgetOfExactType<CommonSettingsScope>()
         ?.store;

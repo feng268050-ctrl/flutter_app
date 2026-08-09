@@ -1,11 +1,11 @@
+import 'package:cyber_hal/locale.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lws_hmi/features/settings/application/region_settings_policy.dart';
 
 void main() {
   test('first apply migrates Asia/Shanghai and China NTP to US defaults', () {
     final plan = RegionSettingsPolicy.planClockApply(
-      previousCountry: null,
-      nextCountry: 'US',
+      previousRegion: null,
+      nextRegion: 'US',
       currentTimezone: 'Asia/Shanghai',
       autoTimezone: false,
       currentNtp: 'cn.pool.ntp.org',
@@ -19,8 +19,8 @@ void main() {
 
   test('US to DE updates linked timezone and NTP', () {
     final plan = RegionSettingsPolicy.planClockApply(
-      previousCountry: 'US',
-      nextCountry: 'DE',
+      previousRegion: 'US',
+      nextRegion: 'DE',
       currentTimezone: 'America/New_York',
       autoTimezone: false,
       currentNtp: 'pool.ntp.org',
@@ -33,8 +33,8 @@ void main() {
 
   test('custom timezone is preserved', () {
     final plan = RegionSettingsPolicy.planClockApply(
-      previousCountry: 'US',
-      nextCountry: 'DE',
+      previousRegion: 'US',
+      nextRegion: 'DE',
       currentTimezone: 'America/Los_Angeles',
       autoTimezone: false,
       currentNtp: 'time.cloudflare.com',
@@ -45,8 +45,8 @@ void main() {
 
   test('auto_timezone skips timezone overwrite', () {
     final plan = RegionSettingsPolicy.planClockApply(
-      previousCountry: 'US',
-      nextCountry: 'DE',
+      previousRegion: 'US',
+      nextRegion: 'DE',
       currentTimezone: 'America/New_York',
       autoTimezone: true,
       currentNtp: 'pool.ntp.org',

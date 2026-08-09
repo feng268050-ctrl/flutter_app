@@ -1,6 +1,6 @@
-import 'package:lws_hmi/features/settings/application/region_country_catalog.dart';
+import 'package:cyber_hal/src/locale/region_catalog.dart';
 
-/// Pure Country → timezone / NTP apply decisions (host-testable).
+/// Pure Region → timezone / NTP apply decisions (host-testable).
 final class RegionClockApplyPlan {
   const RegionClockApplyPlan({
     required this.applyTimezone,
@@ -16,38 +16,37 @@ final class RegionClockApplyPlan {
 }
 
 abstract final class RegionSettingsPolicy {
-  /// Decide whether to overwrite timezone / NTP when Country changes.
+  /// Decide whether to overwrite timezone / NTP when Region changes.
   ///
-  /// [previousCountry] is null on first warm-read apply (no prior key).
+  /// [previousRegion] is null on first warm-read apply (no prior key).
   static RegionClockApplyPlan planClockApply({
-    required String? previousCountry,
-    required String nextCountry,
+    required String? previousRegion,
+    required String nextRegion,
     required String currentTimezone,
     required bool autoTimezone,
     required String currentNtp,
   }) {
-    final next = RegionCountryCatalog.entryFor(nextCountry)!;
-    final prevCode = previousCountry == null
+    final next = RegionCatalog.entryFor(nextRegion)!;
+    final prevCode = previousRegion == null
         ? null
-        : RegionCountryCatalog.normalize(previousCountry);
-    final prev = prevCode == null
-        ? null
-        : RegionCountryCatalog.entryFor(prevCode);
+        : RegionCatalog.normalize(previousRegion);
+    final prev =
+        prevCode == null ? null : RegionCatalog.entryFor(prevCode);
 
     final tz = currentTimezone.trim();
     final ntp = currentNtp.trim();
 
     final applyTimezone = !autoTimezone &&
-        _timezoneIsCountryLinked(
+        _timezoneIsRegionLinked(
           current: tz,
           previousDefault: prev?.defaultTimezone,
-          firstApply: previousCountry == null,
+          firstApply: previousRegion == null,
         );
 
-    final applyNtp = _ntpIsCountryLinked(
+    final applyNtp = _ntpIsRegionLinked(
       current: ntp,
       previousPreferred: prev?.preferredNtp,
-      firstApply: previousCountry == null,
+      firstApply: previousRegion == null,
     );
 
     return RegionClockApplyPlan(
@@ -58,7 +57,7 @@ abstract final class RegionSettingsPolicy {
     );
   }
 
-  static bool _timezoneIsCountryLinked({
+  static bool _timezoneIsRegionLinked({
     required String current,
     required String? previousDefault,
     required bool firstApply,
@@ -70,14 +69,13 @@ abstract final class RegionSettingsPolicy {
       return true;
     }
     if (firstApply &&
-        (current == RegionCountryCatalog.legacyAsiaTimezone ||
-            current == 'UTC')) {
+        (current == RegionCatalog.legacyAsiaTimezone || current == 'UTC')) {
       return true;
     }
     return false;
   }
 
-  static bool _ntpIsCountryLinked({
+  static bool _ntpIsRegionLinked({
     required String current,
     required String? previousPreferred,
     required bool firstApply,
@@ -85,14 +83,13 @@ abstract final class RegionSettingsPolicy {
     if (current.isEmpty) {
       return true;
     }
-    if (current == RegionCountryCatalog.legacyChinaNtp) {
+    if (current == RegionCatalog.legacyChinaNtp) {
       return true;
     }
     if (previousPreferred != null && current == previousPreferred) {
       return true;
     }
-    // First apply with only catalog default still Country-linked for seed.
-    if (firstApply && current == RegionCountryCatalog.preferredNtpDefault) {
+    if (firstApply && current == RegionCatalog.preferredNtpDefault) {
       return true;
     }
     return false;

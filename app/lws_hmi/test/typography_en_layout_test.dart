@@ -39,7 +39,8 @@ void main() {
     );
     await tester.pump();
 
-    final title = tester.widget<Text>(find.text('Lens Contamination Detection'));
+    final title =
+        tester.widget<Text>(find.text('Lens Contamination Detection'));
     expect(title.style?.fontSize, 22);
     expect(tester.takeException(), isNull);
   });
@@ -145,9 +146,10 @@ void main() {
     final fontSize = label.style!.fontSize!;
     expect(fontSize, 20);
     // Outer glyph box is fontSize×fontSize (FittedBox may keep Icon layout size).
-    final glyphBox = tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
-          (b) => b.width == fontSize && b.height == fontSize,
-        );
+    final glyphBox =
+        tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
+              (b) => b.width == fontSize && b.height == fontSize,
+            );
     expect(glyphBox.width, fontSize);
     expect(glyphBox.height, fontSize);
     expect(tester.takeException(), isNull);
@@ -203,8 +205,7 @@ void main() {
       required double buttonWidth,
       double iconSlot = 0,
     }) {
-      final budget =
-          buttonWidth - 2 * metrics.horizontalPadding - iconSlot;
+      final budget = buttonWidth - 2 * metrics.horizontalPadding - iconSlot;
       return textWidth(label, metrics.textStyle) <= budget;
     }
 
@@ -258,7 +259,8 @@ void main() {
     );
   });
 
-  test('Medium 100% dialog/tip body roles are explicit (not ladder-derived)', () {
+  test('Medium 100% dialog/tip body roles are explicit (not ladder-derived)',
+      () {
     const t = HmiTypography();
     expect(t.dialogBody.fontSize, AppTypography.pageTitleSize); // 28
     expect(t.importantDialogBody.fontSize, AppTypography.dialogTitleSize); // 32

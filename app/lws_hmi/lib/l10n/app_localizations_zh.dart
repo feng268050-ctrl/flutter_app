@@ -2275,6 +2275,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resetToDefault => '恢复默认';
 
   @override
+  String get engineerActionResetDefaults => '恢复默认';
+
+  @override
   String get retract => '退丝';
 
   @override
@@ -2316,6 +2319,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get saveAsFavorite => '收藏为常用';
+
+  @override
+  String get engineerActionSaveFavorite => '收藏常用';
 
   @override
   String get selectValidProcessPresetFirst => '请先选择有效的工艺预设';
@@ -5046,6 +5052,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get resetToDefault => '恢復默認';
+
+  @override
+  String get engineerActionResetDefaults => '恢復默認';
 
   @override
   String get retract => '退絲';

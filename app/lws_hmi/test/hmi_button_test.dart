@@ -12,15 +12,20 @@ void main() {
   test('HmiButtonMetrics 100% ladder matches baseline heights and sizes', () {
     const typography = HmiTypography();
     expect(HmiButtonMetrics.forSize(HmiButtonSize.mini, typography).height, 36);
-    expect(HmiButtonMetrics.forSize(HmiButtonSize.small, typography).height, 44);
+    expect(
+        HmiButtonMetrics.forSize(HmiButtonSize.small, typography).height, 44);
     expect(
         HmiButtonMetrics.forSize(HmiButtonSize.medium, typography).height, 52);
-    expect(HmiButtonMetrics.forSize(HmiButtonSize.large, typography).height, 60);
+    expect(
+        HmiButtonMetrics.forSize(HmiButtonSize.large, typography).height, 60);
     expect(HmiButtonMetrics.forSize(HmiButtonSize.hero, typography).height, 68);
-    expect(HmiButtonMetrics.forSize(HmiButtonSize.jumbo, typography).height, 88);
+    expect(
+        HmiButtonMetrics.forSize(HmiButtonSize.jumbo, typography).height, 88);
 
     expect(
-      HmiButtonMetrics.forSize(HmiButtonSize.mini, typography).textStyle.fontSize,
+      HmiButtonMetrics.forSize(HmiButtonSize.mini, typography)
+          .textStyle
+          .fontSize,
       14,
     );
     expect(
@@ -42,7 +47,9 @@ void main() {
       24,
     );
     expect(
-      HmiButtonMetrics.forSize(HmiButtonSize.hero, typography).textStyle.fontSize,
+      HmiButtonMetrics.forSize(HmiButtonSize.hero, typography)
+          .textStyle
+          .fontSize,
       24,
     );
     expect(

@@ -4379,6 +4379,12 @@ abstract class AppLocalizations {
   /// **'Reset To Default'**
   String get resetToDefault;
 
+  /// No description provided for @engineerActionResetDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Defaults'**
+  String get engineerActionResetDefaults;
+
   /// No description provided for @retract.
   ///
   /// In en, this message translates to:
@@ -4462,6 +4468,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save As Favorite'**
   String get saveAsFavorite;
+
+  /// No description provided for @engineerActionSaveFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Favorite'**
+  String get engineerActionSaveFavorite;
 
   /// No description provided for @selectValidProcessPresetFirst.
   ///

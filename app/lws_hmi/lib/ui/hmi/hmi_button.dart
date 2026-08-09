@@ -14,6 +14,7 @@ final class HmiButton extends StatelessWidget {
     this.size = HmiButtonSize.medium,
     this.widthPolicy = HmiButtonWidthPolicy.adaptive,
     this.width,
+    this.horizontalPadding,
     this.variant = CyberButtonVariant.standard,
     this.shape = CyberButtonShape.rectangle,
     this.icon,
@@ -37,6 +38,9 @@ final class HmiButton extends StatelessWidget {
   /// when the parent does not already constrain width.
   final double? width;
 
+  /// Optional content padding override for a constrained button group.
+  final double? horizontalPadding;
+
   final CyberButtonVariant variant;
   final CyberButtonShape shape;
   final IconData? icon;
@@ -48,6 +52,7 @@ final class HmiButton extends StatelessWidget {
   final bool groupIconWithLabel;
 
   final bool clickSoundEnabled;
+
   /// Legacy; buttons default to [CyberColors.buttonRim] (70% white) or
   /// [CyberColors.buttonPrimaryRim] (60%) when [variant] is primary.
   final CyberBorderGradientCenter borderGradientCenter;
@@ -76,7 +81,7 @@ final class HmiButton extends StatelessWidget {
       style: labelStyle,
       iconSize: metrics.iconSize,
       buttonHeight: metrics.height,
-      horizontalPadding: metrics.horizontalPadding,
+      horizontalPadding: horizontalPadding ?? metrics.horizontalPadding,
       icon: icon,
       leading: leading,
       trailing: trailing,
@@ -164,7 +169,8 @@ final class _HmiButtonLabel extends StatelessWidget {
     // icon left inset equals top/bottom inset (Reset / Save Favorite).
     // Opt out via [groupIconWithLabel] (e.g. Alarms Clear short pill).
     if (lead != null && trailing == null && !groupIconWithLabel) {
-      final edgeInset = ((buttonHeight - iconSize) / 2).clamp(0.0, buttonHeight);
+      final edgeInset =
+          ((buttonHeight - iconSize) / 2).clamp(0.0, buttonHeight);
       return SizedBox.expand(
         child: Stack(
           fit: StackFit.expand,

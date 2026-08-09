@@ -2371,6 +2371,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetToDefault => 'Reset To Default';
 
   @override
+  String get engineerActionResetDefaults => 'Reset Defaults';
+
+  @override
   String get retract => 'Retract';
 
   @override
@@ -2414,6 +2417,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveAsFavorite => 'Save As Favorite';
+
+  @override
+  String get engineerActionSaveFavorite => 'Save Favorite';
 
   @override
   String get selectValidProcessPresetFirst =>

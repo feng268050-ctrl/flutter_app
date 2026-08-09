@@ -279,6 +279,8 @@
   "editProcess": "編輯工藝",
   "editText": "編輯",
   "endOfWork": "結束工作",
+  "engineerActionResetDefaults": "恢復默認",
+  "engineerActionSaveFavorite": "收藏常用",
   "engineerModeEntryBody": "工程師模式提供面向熟練用戶的高級參數自定義。建議先熟悉設備工作方式，再進行精細調整。",
   "engineerModeEntryConfirm": "確認並進入",
   "engineerModeEntryTitle": "工程師模式提示",

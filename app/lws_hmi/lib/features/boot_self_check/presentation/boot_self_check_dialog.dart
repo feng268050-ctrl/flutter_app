@@ -50,6 +50,8 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  const TipFrostDivider(),
+                  const SizedBox(height: 16),
                   // Shrink-wrap while short; scroll only when taller than max
                   // (lws-ui ScrollView + maxHeight on the item list).
                   ConstrainedBox(

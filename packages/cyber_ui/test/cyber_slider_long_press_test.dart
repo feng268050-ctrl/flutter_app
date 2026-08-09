@@ -92,7 +92,46 @@ void main() {
     expect(value, 50);
   });
 
-  testWidgets('drag value bubble appears while thumb is expanded', (tester) async {
+  testWidgets('discrete tap selects and commits the nearest tick',
+      (tester) async {
+    var value = 0.0;
+    var committed = double.nan;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  return CyberSlider(
+                    value: value,
+                    min: 0,
+                    max: 2,
+                    divisions: 2,
+                    showTickMarks: true,
+                    tapToSelect: true,
+                    onChanged: (v) => setState(() => value = v),
+                    onChangeEnd: (v) => committed = v,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final box = tester.getRect(find.byType(CyberSlider));
+    await tester.tapAt(Offset(box.right - 24, box.center.dy));
+    await tester.pump();
+
+    expect(value, 2);
+    expect(committed, 2);
+  });
+
+  testWidgets('drag value bubble appears while thumb is expanded',
+      (tester) async {
     var value = 50.0;
     await tester.pumpWidget(
       MaterialApp(

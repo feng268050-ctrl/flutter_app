@@ -45,6 +45,36 @@ void main() {
       expect(CyberSliderLogic.centerSnapConfig(min: 0, max: 100), isNull);
     });
 
+    test('discrete values snap to their nearest tick', () {
+      expect(
+        CyberSliderLogic.snapValueToDivisions(
+          value: 0.4,
+          min: 0,
+          max: 2,
+          divisions: 2,
+        ),
+        0,
+      );
+      expect(
+        CyberSliderLogic.snapValueToDivisions(
+          value: 1.4,
+          min: 0,
+          max: 2,
+          divisions: 2,
+        ),
+        1,
+      );
+      expect(
+        CyberSliderLogic.snapValueToDivisions(
+          value: 1.6,
+          min: 0,
+          max: 2,
+          divisions: 2,
+        ),
+        2,
+      );
+    });
+
     test('center snap enters within threshold', () {
       final config = CyberSliderLogic.centerSnapConfig(min: -30, max: 30)!;
       final session = CyberSliderCenterSnapSession()

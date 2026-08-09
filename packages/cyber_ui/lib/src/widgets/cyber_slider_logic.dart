@@ -19,8 +19,6 @@ abstract final class CyberSliderLogic {
   /// Drag value chip above thumb (Settings brightness / volume).
   static const dragValueBubbleHeight = 32.0;
   static const dragValueBubbleGap = 4.0;
-  static const dragValueBubbleSlot =
-      dragValueBubbleHeight + dragValueBubbleGap;
 
   static double fractionFromValue(double value, double min, double max) {
     if (max == min) {
@@ -35,6 +33,22 @@ abstract final class CyberSliderLogic {
     }
     final v = min + fraction.clamp(0.0, 1.0) * (max - min);
     return v.roundToDouble().clamp(min, max);
+  }
+
+  /// Returns the nearest value on an evenly-divided slider track.
+  ///
+  /// A null or non-positive [divisions] preserves the incoming value.
+  static double snapValueToDivisions({
+    required double value,
+    required double min,
+    required double max,
+    required int? divisions,
+  }) {
+    if (divisions == null || divisions <= 0 || max == min) {
+      return value.clamp(min, max);
+    }
+    final step = (max - min) / divisions;
+    return (min + ((value - min) / step).round() * step).clamp(min, max);
   }
 
   static double travelPx(double trackWidthPx, double thumbSizePx) =>
@@ -87,10 +101,7 @@ abstract final class CyberSliderLogic {
     double y,
     ({double left, double top, double right, double bottom}) rect,
   ) =>
-      x >= rect.left &&
-      x <= rect.right &&
-      y >= rect.top &&
-      y <= rect.bottom;
+      x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 
   static CyberSliderCenterSnapConfig? centerSnapConfig({
     required double min,
@@ -192,8 +203,8 @@ CyberSliderDragResolveResult cyberSliderResolveDragValue({
   }
 
   if (snapSession.isCenterSnapped) {
-    final escaped =
-        (currentX - snapSession.snapAnchorX).abs() > snapConfig.escapeDistancePx;
+    final escaped = (currentX - snapSession.snapAnchorX).abs() >
+        snapConfig.escapeDistancePx;
     if (escaped) {
       snapSession.isCenterSnapped = false;
       snapSession.centerSnapSuppressed = true;

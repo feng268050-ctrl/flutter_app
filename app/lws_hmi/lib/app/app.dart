@@ -53,6 +53,8 @@ import 'package:lws_hmi/features/ai/application/live_weld_stream_detect_coordina
 import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dart';
 import 'package:lws_hmi/features/settings/application/app_cyber_ime_language_provider.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_store.dart';
 import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/features/settings/application/load_profile_controller.dart';
 import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
@@ -162,6 +164,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   late final LocaleSettings _commonSettingsStore =
       widget.commonSettingsStore ?? LocaleSettings();
+
+  late final TextSizeSettingsStore _textSizeSettingsStore =
+      TextSizeSettingsStore();
 
   late final LoadProfileController _loadProfileController =
       LoadProfileController(backend: _services.loadProfile);
@@ -314,6 +319,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     _soundEffectStore.warmRead();
     _miscSettingsStore.warmRead();
     _commonSettingsStore.warmRead();
+    _textSizeSettingsStore.warmRead();
     unawaited(_loadProfileController.load());
     _advancedSettingsStore.warmRead();
     _thresholdsController.warmFromStore();
@@ -644,6 +650,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       listenable: Listenable.merge([
         _services.wallClock,
         _loadProfileController,
+        _textSizeSettingsStore,
       ]),
       builder: (context, _) {
         final mq = MediaQuery.of(context);
@@ -653,6 +660,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
           data: mq.copyWith(
             alwaysUse24HourFormat: _services.wallClock.use24HourFormat,
             disableAnimations: reduceMotion ? true : mq.disableAnimations,
+            textScaler:
+                TextScaler.linear(_textSizeSettingsStore.textSize.scale),
           ),
           // Balanced: flat press dim (Home QA gray) instead of expanding ripple —
           // covers InkWell / ListTile / Material buttons that use Theme splash.
@@ -697,85 +706,95 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         child: CloudLocalRuntimeScope(
           runtime: _cloudLocalRuntime,
           child: CloudSettingsScope(
-          store: _cloudSettingsStore,
-          child: RemoteLockScope(
-            store: _remoteLockStore,
-            child: ProcessLibraryScope(
-              controller: _processLibrary,
-              child: GlobalPromptScope(
-                queue: _promptQueue,
-                child: WarnAlarmScope(
-                  controller: _warnAlarm,
-                  child: MiscSettingsScope(
-                    store: _miscSettingsStore,
-                    child: CommonSettingsScope(
-                      store: _commonSettingsStore,
-                      child: AdvancedSettingsScope(
-                        store: _advancedSettingsStore,
-                        aiAssistance: _aiAssistanceSettings,
-                        dangerousOperations: _dangerousOperationsSettings,
-                        thresholds: _thresholdsController,
-                        child: BootSelfCheckScope(
-                          settings: _bootSelfCheckSettings,
-                          child: SoundEffectScope(
-                            store: _soundEffectStore,
-                            clickSound: _clickSound,
-                            child: Listener(
-                              behavior: HitTestBehavior.translucent,
-                              onPointerDown: (_) => _noteUserActivity(),
-                              onPointerMove: (_) {
-                                // Moves reset idle only while awake; blanked wake is double-tap.
-                                if (!_services.autoSleep.isBlanked) {
-                                  _noteUserActivity();
-                                }
-                              },
-                              child: ListenableBuilder(
-                                listenable: _commonSettingsStore,
-                                builder: (context, _) {
-                                  return MaterialApp(
-                                    title: 'HMI',
-                                    theme: buildAppTheme(),
-                                    scrollBehavior: const AppScrollBehavior(),
-                                    locale: localeFromLanguageTag(
-                                      _commonSettingsStore.languageWire,
-                                    ),
-                                    supportedLocales: kAppSupportedLocales,
-                                    localeListResolutionCallback:
-                                        (locales, supported) {
-                                      final preferred =
-                                          locales == null || locales.isEmpty
-                                              ? null
-                                              : locales.first;
-                                      return resolveAppLocale(
-                                            preferred,
-                                            supported,
-                                          ) ??
-                                          supported.first;
+            store: _cloudSettingsStore,
+            child: RemoteLockScope(
+              store: _remoteLockStore,
+              child: ProcessLibraryScope(
+                controller: _processLibrary,
+                child: GlobalPromptScope(
+                  queue: _promptQueue,
+                  child: WarnAlarmScope(
+                    controller: _warnAlarm,
+                    child: MiscSettingsScope(
+                      store: _miscSettingsStore,
+                      child: CommonSettingsScope(
+                        store: _commonSettingsStore,
+                        child: TextSizeSettingsScope(
+                          store: _textSizeSettingsStore,
+                          child: AdvancedSettingsScope(
+                            store: _advancedSettingsStore,
+                            aiAssistance: _aiAssistanceSettings,
+                            dangerousOperations: _dangerousOperationsSettings,
+                            thresholds: _thresholdsController,
+                            child: BootSelfCheckScope(
+                              settings: _bootSelfCheckSettings,
+                              child: SoundEffectScope(
+                                store: _soundEffectStore,
+                                clickSound: _clickSound,
+                                child: Listener(
+                                  behavior: HitTestBehavior.translucent,
+                                  onPointerDown: (_) => _noteUserActivity(),
+                                  onPointerMove: (_) {
+                                    // Moves reset idle only while awake; blanked wake is double-tap.
+                                    if (!_services.autoSleep.isBlanked) {
+                                      _noteUserActivity();
+                                    }
+                                  },
+                                  child: ListenableBuilder(
+                                    listenable: Listenable.merge([
+                                      _commonSettingsStore,
+                                      _textSizeSettingsStore,
+                                    ]),
+                                    builder: (context, _) {
+                                      return MaterialApp(
+                                        title: 'HMI',
+                                        theme: buildAppTheme(),
+                                        scrollBehavior:
+                                            const AppScrollBehavior(),
+                                        locale: localeFromLanguageTag(
+                                          _commonSettingsStore.languageWire,
+                                        ),
+                                        supportedLocales: kAppSupportedLocales,
+                                        localeListResolutionCallback:
+                                            (locales, supported) {
+                                          final preferred =
+                                              locales == null || locales.isEmpty
+                                                  ? null
+                                                  : locales.first;
+                                          return resolveAppLocale(
+                                                preferred,
+                                                supported,
+                                              ) ??
+                                              supported.first;
+                                        },
+                                        localizationsDelegates: const [
+                                          AppLocalizations.delegate,
+                                          GlobalMaterialLocalizations.delegate,
+                                          GlobalWidgetsLocalizations.delegate,
+                                          GlobalCupertinoLocalizations.delegate,
+                                        ],
+                                        builder: _appBuilder,
+                                        navigatorKey: _navKey,
+                                        navigatorObservers: [
+                                          appRouteObserver,
+                                          homeWebpCoverageGate,
+                                          _promptQueue.navigatorObserver,
+                                        ],
+                                        initialRoute:
+                                            SafetyTipsGate.initialRoute,
+                                        // One route only — do not let default
+                                        // initialRoutes push `/` under `/safety-tips`.
+                                        onGenerateInitialRoutes:
+                                            (initialRoute) =>
+                                                generateAppInitialRoutes(
+                                          initialRoute,
+                                          _onGenerateRoute,
+                                        ),
+                                        onGenerateRoute: _onGenerateRoute,
+                                      );
                                     },
-                                    localizationsDelegates: const [
-                                      AppLocalizations.delegate,
-                                      GlobalMaterialLocalizations.delegate,
-                                      GlobalWidgetsLocalizations.delegate,
-                                      GlobalCupertinoLocalizations.delegate,
-                                    ],
-                                    builder: _appBuilder,
-                                    navigatorKey: _navKey,
-                                    navigatorObservers: [
-                                      appRouteObserver,
-                                      homeWebpCoverageGate,
-                                      _promptQueue.navigatorObserver,
-                                    ],
-                                    initialRoute: SafetyTipsGate.initialRoute,
-                                    // One route only — do not let default
-                                    // initialRoutes push `/` under `/safety-tips`.
-                                    onGenerateInitialRoutes: (initialRoute) =>
-                                        generateAppInitialRoutes(
-                                      initialRoute,
-                                      _onGenerateRoute,
-                                    ),
-                                    onGenerateRoute: _onGenerateRoute,
-                                  );
-                                },
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -788,7 +807,6 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
             ),
           ),
         ),
-      ),
       ),
     );
   }

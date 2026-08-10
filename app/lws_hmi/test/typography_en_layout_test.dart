@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -38,7 +39,8 @@ void main() {
     );
     await tester.pump();
 
-    final title = tester.widget<Text>(find.text('Lens Contamination Detection'));
+    final title =
+        tester.widget<Text>(find.text('Lens Contamination Detection'));
     expect(title.style?.fontSize, 22);
     expect(tester.takeException(), isNull);
   });
@@ -110,7 +112,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('EN Alarms Clear groups icon+label; icon matches label size',
+  testWidgets('EN Alarms Clear keeps its label centered when space permits',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -124,7 +126,6 @@ void main() {
             child: MonitorFrostActionButton(
               label: 'Clear',
               variant: CyberButtonVariant.secondary,
-              groupIconWithLabel: true,
               leading: Icon(
                 Icons.delete_outline,
                 color: CyberColors.buttonSecondaryText,
@@ -137,18 +138,20 @@ void main() {
     );
     await tester.pump();
 
-    final hmi = tester.widget<HmiButton>(find.byType(HmiButton));
-    expect(hmi.groupIconWithLabel, isTrue);
     expect(find.text('Clear'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('hmi-icon-label-label-centered')),
+      findsOneWidget,
+    );
     final label = tester.widget<Text>(find.text('Clear'));
-    final fontSize = label.style!.fontSize!;
-    expect(fontSize, 20);
-    // Outer glyph box is fontSize×fontSize (FittedBox may keep Icon layout size).
-    final glyphBox = tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
-          (b) => b.width == fontSize && b.height == fontSize,
-        );
-    expect(glyphBox.width, fontSize);
-    expect(glyphBox.height, fontSize);
+    expect(label.style!.fontSize, 20);
+    const iconSize = HmiButtonMetrics.mediumIconSize;
+    final glyphBox =
+        tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
+              (b) => b.width == iconSize && b.height == iconSize,
+            );
+    expect(glyphBox.width, iconSize);
+    expect(glyphBox.height, iconSize);
     expect(tester.takeException(), isNull);
   });
 
@@ -202,8 +205,7 @@ void main() {
       required double buttonWidth,
       double iconSlot = 0,
     }) {
-      final budget =
-          buttonWidth - 2 * metrics.horizontalPadding - iconSlot;
+      final budget = buttonWidth - 2 * metrics.horizontalPadding - iconSlot;
       return textWidth(label, metrics.textStyle) <= budget;
     }
 
@@ -257,13 +259,19 @@ void main() {
     );
   });
 
-  test('tipBodySizeForTitle is one ladder step below the title', () {
-    expect(AppTypography.tipBodySizeForTitle(52), 44);
-    expect(AppTypography.tipBodySizeForTitle(37), 32);
-    expect(AppTypography.tipBodySizeForTitle(36), 32);
-    expect(AppTypography.tipBodySizeForTitle(32), 28);
-    expect(AppTypography.tipBodySizeForTitle(24), 22);
-    expect(AppTypography.tipBodySizeForTitle(22), lessThan(22));
+  test('Medium 100% dialog/tip body roles are explicit (not ladder-derived)',
+      () {
+    const t = HmiTypography();
+    expect(t.dialogBody.fontSize, AppTypography.pageTitleSize); // 28
+    expect(t.importantDialogBody.fontSize, AppTypography.dialogTitleSize); // 32
+    expect(t.dialogOptionLabel.fontSize, HmiTypography.dialogOptionLabelSize);
+    expect(t.engineerTipTitle.fontSize, AppTypography.criticalTitleSize);
+    expect(t.engineerTipBody.fontSize, AppTypography.largeDialogTitleSize);
+    expect(t.safetyTipBody.fontSize, AppTypography.navigationSize);
+    expect(t.reminderBody.fontSize, AppTypography.sectionTitleSize);
+    expect(HmiTypography.buttonHeroFontSize, 24);
+    expect(t.clock.fontSize, HmiDisplayTypography.clockSize);
+    expect(t.dashboardValue.fontSize, HmiDisplayTypography.dashboardValueSize);
   });
 
   testWidgets('EN HmiDialogActions medium Cancel/Confirm fit equal 196',

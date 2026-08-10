@@ -112,7 +112,8 @@ void main() {
     expect(agree, findsOneWidget);
     expect(tester.widget(agree), isA<HmiButton>());
     expect(tester.getSize(agree).height, 60);
-    expect(tester.getSize(agree).width, 163);
+    // Matches dialog equal-action width (`width: 196` on Agree).
+    expect(tester.getSize(agree).width, 196);
     expect(tester.takeException(), isNull);
   });
 

@@ -6,26 +6,35 @@ import 'package:flutter/rendering.dart';
 
 /// Short toast for process-mode device feedback (lws-ui ToastUtils look).
 ///
-/// Target chrome (device reference): **light** frosted pill + **dark** text over
-/// the orange laser trapezoid, with Gaussian blur of the page behind the pill.
+/// Target chrome: **light** frosted pill + **dark** text, with full-page
+/// matrix 透视 + display-time Gaussian (σ=[blurSigma]) — same bleed idea as
+/// warn/tip LIGHT glass. Display-time [ImageFiltered] (not bake-only) matches
+/// the crop path that actually softens on Weston/SWGL.
 ///
 /// Hosted by [ProcessModeToastLayer] so capture samples page chrome (Weston
 /// Overlay [BackdropFilter] composites as a black/opaque plate).
 abstract final class ProcessModeToast {
   static const Duration shortDuration = Duration(milliseconds: 2000);
 
-  static const double textSize = 16; // supporting
+  /// Supporting (16) + 3 — product toast readability.
+  static const double textSize = 19;
   static const double bottomInset = 20;
   static const double cornerRadius = 18;
-  static const double blurSigma = 24;
+  static const double blurSigma = 30;
   static const double verticalPadding = 12;
-  static const double horizontalPadding = 22;
+  static const double horizontalPadding = 19;
 
-  /// Cream frost fill (图一) — keep alpha low enough for blur to read.
-  static const Color frostFill = Color(0xB3FFFCFA);
+  /// Android lws-ui `toast_frame.xml`: `#e6eeeeee`.
+  ///
+  /// Keep the same translucent neutral plate over our σ=30 matrix capture so
+  /// the background perspective remains subtle rather than becoming white.
+  static const Color frostFill = Color(0xE6EEEEEE);
 
-  /// Dark label on light frost.
-  static const Color textColor = Color(0xFF1A1A1A);
+  /// Same frame while the first snapshot is pending; avoids a colour flash.
+  static const Color frostFillInterim = frostFill;
+
+  /// Android lws-ui `primary_text_default_material_light`: `#de000000`.
+  static const Color textColor = Color(0xDE000000);
 
   static OverlayEntry? _fallbackEntry;
   static Timer? _fallbackTimer;
@@ -44,6 +53,7 @@ abstract final class ProcessModeToast {
       layer.show(message, duration: duration);
       return;
     }
+    debugPrint('process-mode-toast: no layer — fallback overlay (no blur)');
     _showFallbackOverlay(context, message, duration);
   }
 
@@ -57,8 +67,7 @@ abstract final class ProcessModeToast {
     if (overlay == null) {
       return;
     }
-    late final OverlayEntry entry;
-    entry = OverlayEntry(
+    final entry = OverlayEntry(
       builder: (context) {
         return IgnorePointer(
           child: Align(
@@ -76,6 +85,8 @@ abstract final class ProcessModeToast {
                   child: ProcessModeToastPill(
                     message: message,
                     capture: null,
+                    pageLogicalSize: null,
+                    pillOriginInPage: Offset.zero,
                   ),
                 ),
               ),
@@ -124,102 +135,108 @@ final class ProcessModeToastLayer extends StatefulWidget {
 }
 
 final class ProcessModeToastLayerState extends State<ProcessModeToastLayer> {
-  final GlobalKey _boundaryKey = GlobalKey(debugLabel: 'processModeToastCapture');
+  final GlobalKey _boundaryKey =
+      GlobalKey(debugLabel: 'processModeToastCapture');
+  final GlobalKey _pillKey = GlobalKey(debugLabel: 'processModeToastPill');
+
   String? _message;
   ui.Image? _capture;
+  Size? _pageLogicalSize;
+  Offset _pillOriginInPage = Offset.zero;
   Timer? _timer;
+  var _captureGen = 0;
 
   void show(String message, {Duration duration = ProcessModeToast.shortDuration}) {
     _timer?.cancel();
     _capture?.dispose();
     _capture = null;
+    _pageLogicalSize = null;
+    _pillOriginInPage = Offset.zero;
+    final gen = ++_captureGen;
     setState(() => _message = message);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_sampleThenShow(duration));
-    });
-  }
-
-  Future<void> _sampleThenShow(Duration duration) async {
-    if (!mounted || _message == null) {
-      return;
-    }
-    final cropped = await _captureToastRegion();
-    if (!mounted || _message == null) {
-      cropped?.dispose();
-      return;
-    }
-    setState(() {
-      _capture?.dispose();
-      _capture = cropped;
-    });
-    _timer?.cancel();
+    // Dismiss on wall clock from first paint — do not wait for slow toImage.
     _timer = Timer(duration, clear);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_sampleCapture(gen));
+    });
   }
 
-  Future<ui.Image?> _captureToastRegion() async {
+  Future<void> _sampleCapture(int gen) async {
+    for (var attempt = 0; attempt < 4; attempt++) {
+      if (!mounted || _message == null || gen != _captureGen) {
+        return;
+      }
+      final sample = await _captureFullPage();
+      if (!mounted || _message == null || gen != _captureGen) {
+        sample?.image.dispose();
+        return;
+      }
+      if (sample != null) {
+        setState(() {
+          _capture?.dispose();
+          _capture = sample.image;
+          _pageLogicalSize = sample.pageLogicalSize;
+          _pillOriginInPage = sample.pillOriginInPage;
+        });
+        return;
+      }
+      debugPrint('process-mode-toast: capture miss attempt=$attempt — retry');
+      await Future<void>.delayed(Duration.zero);
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    debugPrint('process-mode-toast: capture gave up — cream-only frost');
+  }
+
+  Future<({ui.Image image, Size pageLogicalSize, Offset pillOriginInPage})?>
+      _captureFullPage() async {
     final boundary =
         _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
     final pillContext = _pillKey.currentContext;
     final self = pillContext?.findRenderObject();
-    if (boundary == null ||
-        !boundary.hasSize ||
-        self is! RenderBox ||
-        !self.hasSize) {
+    if (boundary == null || !boundary.hasSize) {
+      debugPrint('process-mode-toast: skip — no boundary');
+      return null;
+    }
+    if (self is! RenderBox || !self.hasSize || self.size.isEmpty) {
+      debugPrint('process-mode-toast: skip — pill not laid out');
       return null;
     }
     try {
       final dpr = MediaQuery.devicePixelRatioOf(context);
-      final scale = (dpr / 2).clamp(0.5, dpr);
+      // Match warn / tip BLUR_SCALE_FACTOR ≈ 3.
+      final scale = (dpr / 3).clamp(0.25, dpr);
       final full = await boundary.toImage(pixelRatio: scale);
-      final selfTopLeft = self.localToGlobal(Offset.zero);
-      final boundaryTopLeft = boundary.localToGlobal(Offset.zero);
-      final localOrigin = selfTopLeft - boundaryTopLeft;
-      final src = Rect.fromLTWH(
-        localOrigin.dx * scale,
-        localOrigin.dy * scale,
-        self.size.width * scale,
-        self.size.height * scale,
-      ).intersect(
-        Rect.fromLTWH(0, 0, full.width.toDouble(), full.height.toDouble()),
+      final origin =
+          self.localToGlobal(Offset.zero) - boundary.localToGlobal(Offset.zero);
+      final pageLogical = boundary.size;
+      debugPrint(
+        'process-mode-toast: capture ok page='
+        '${pageLogical.width.toStringAsFixed(0)}x'
+        '${pageLogical.height.toStringAsFixed(0)} '
+        'pill=${self.size.width.toStringAsFixed(0)}x'
+        '${self.size.height.toStringAsFixed(0)} '
+        'origin=${origin.dx.toStringAsFixed(0)},${origin.dy.toStringAsFixed(0)} '
+        'scale=${scale.toStringAsFixed(2)} sigma=${ProcessModeToast.blurSigma}',
       );
-      if (src.width < 1 || src.height < 1) {
-        full.dispose();
-        return null;
-      }
-      final cropped = await _cropImage(full, src);
-      full.dispose();
-      return cropped;
-    } catch (_) {
+      return (
+        image: full,
+        pageLogicalSize: pageLogical,
+        pillOriginInPage: origin,
+      );
+    } catch (e) {
+      debugPrint('process-mode-toast: capture failed: $e');
       return null;
     }
   }
 
-  static Future<ui.Image> _cropImage(ui.Image src, Rect srcRect) async {
-    final w = srcRect.width.round().clamp(1, src.width);
-    final h = srcRect.height.round().clamp(1, src.height);
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    canvas.drawImageRect(
-      src,
-      srcRect,
-      Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
-      Paint(),
-    );
-    final picture = recorder.endRecording();
-    try {
-      return picture.toImage(w, h);
-    } finally {
-      picture.dispose();
-    }
-  }
-
-  final GlobalKey _pillKey = GlobalKey(debugLabel: 'processModeToastPill');
-
   void clear() {
     _timer?.cancel();
     _timer = null;
+    _captureGen++;
     _capture?.dispose();
     _capture = null;
+    _pageLogicalSize = null;
+    _pillOriginInPage = Offset.zero;
     if (_message == null) {
       return;
     }
@@ -268,6 +285,8 @@ final class ProcessModeToastLayerState extends State<ProcessModeToastLayer> {
                     key: _pillKey,
                     message: _message!,
                     capture: _capture,
+                    pageLogicalSize: _pageLogicalSize,
+                    pillOriginInPage: _pillOriginInPage,
                   ),
                 ),
               ),
@@ -278,52 +297,37 @@ final class ProcessModeToastLayerState extends State<ProcessModeToastLayer> {
   }
 }
 
-/// Light frosted pill — blurred capture + cream tint + dark text (图一).
+/// Light frosted pill — full-page matrix 透视 + display Gaussian + cream tint.
 final class ProcessModeToastPill extends StatelessWidget {
   const ProcessModeToastPill({
     super.key,
     required this.message,
     required this.capture,
+    required this.pageLogicalSize,
+    required this.pillOriginInPage,
   });
 
   final String message;
   final ui.Image? capture;
+  final Size? pageLogicalSize;
+  final Offset pillOriginInPage;
 
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(ProcessModeToast.cornerRadius);
+    final hasPlate = capture != null && pageLogicalSize != null;
     return ClipRRect(
       borderRadius: radius,
       clipBehavior: Clip.antiAlias,
       child: Stack(
         alignment: Alignment.center,
         children: [
+          Positioned.fill(child: _backdropLayer(hasPlate: hasPlate)),
           Positioned.fill(
-            child: capture != null
-                ? ImageFiltered(
-                    imageFilter: ui.ImageFilter.blur(
-                      sigmaX: ProcessModeToast.blurSigma,
-                      sigmaY: ProcessModeToast.blurSigma,
-                      tileMode: TileMode.clamp,
-                    ),
-                    child: RawImage(
-                      image: capture,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                    ),
-                  )
-                : const ColoredBox(color: Color(0xB3FFFCFA)),
-          ),
-          const Positioned.fill(
-            child: ColoredBox(color: ProcessModeToast.frostFill),
-          ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: radius,
-                border: Border.all(color: const Color(0x55FFFFFF), width: 1),
-              ),
+            child: ColoredBox(
+              color: hasPlate
+                  ? ProcessModeToast.frostFill
+                  : ProcessModeToast.frostFillInterim,
             ),
           ),
           Padding(
@@ -340,11 +344,49 @@ final class ProcessModeToastPill extends StatelessWidget {
                 fontSize: ProcessModeToast.textSize,
                 height: 1.2,
                 decoration: TextDecoration.none,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _backdropLayer({required bool hasPlate}) {
+    if (!hasPlate) {
+      return const ColoredBox(color: ProcessModeToast.frostFillInterim);
+    }
+    final page = pageLogicalSize!;
+    final blurred = capture!;
+    // Full-page plate + matrix translate (warn/tip 透视), softens via display
+    // ImageFiltered — σ in logical px, same recipe as the working crop toast.
+    return ClipRect(
+      child: ImageFiltered(
+        imageFilter: ui.ImageFilter.blur(
+          sigmaX: ProcessModeToast.blurSigma,
+          sigmaY: ProcessModeToast.blurSigma,
+          tileMode: TileMode.clamp,
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.hardEdge,
+          children: [
+            Positioned(
+              left: -pillOriginInPage.dx,
+              top: -pillOriginInPage.dy,
+              width: page.width,
+              height: page.height,
+              child: RawImage(
+                image: blurred,
+                width: page.width,
+                height: page.height,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

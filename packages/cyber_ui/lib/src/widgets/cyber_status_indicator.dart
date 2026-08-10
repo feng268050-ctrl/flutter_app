@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 ///
 /// Four common presentations (as in product reference shots):
 /// 1. [CyberStatusState.idle] — gray disc
-/// 2. [CyberStatusState.success] + [CyberStatusVariant.dot] — gray disc + green center
+/// 2. [CyberStatusState.success] + [CyberStatusVariant.dot] — solid green disc
+///    (fills the idle gray circle when monitoring passes)
 /// 3. [CyberStatusState.success] + [CyberStatusVariant.icon] — green disc + white check
 /// 4. [CyberStatusState.failure] + [CyberStatusVariant.icon] — red disc + white cross
 ///
@@ -107,10 +108,10 @@ _Resolved _resolve(CyberStatusState state, CyberStatusVariant variant) {
       );
     case CyberStatusState.success:
       if (variant == CyberStatusVariant.dot) {
+        // Machine Status tiles: green fills the whole gray circle on pass.
         return const _Resolved(
-          background: CyberStatusColors.idle,
-          kind: _GlyphKind.dot,
-          dotColor: CyberStatusColors.success,
+          background: CyberStatusColors.success,
+          kind: _GlyphKind.none,
         );
       }
       return const _Resolved(

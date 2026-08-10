@@ -4,11 +4,15 @@ import 'package:cyber_hal/output.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/features/settings/application/app_text_size.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_pill_dropdown.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Display settings — brightness slider + auto screen-off pill dropdown.
+/// Display settings — brightness, auto screen-off, and text size.
 class DisplaySettingsPage extends StatefulWidget {
   const DisplaySettingsPage({super.key, required this.services});
 
@@ -112,8 +116,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
       body: SettingsScrollView(
         children: [
           SettingsGroup(
-            borderGradientCenter:
-                CyberBorderGradientCenter.topLeftBottomRight,
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
               SettingsSliderRow(
                 title: l10n.screenBrightnessText,
@@ -140,6 +143,141 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
                 ),
               ),
             ],
+          ),
+          SettingsGroup(
+            borderGradientCenter: CyberBorderGradientCenter.topRightBottomLeft,
+            children: const [_TextSizeSliderCard()],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Discrete text-size control. Its local value deliberately does not update
+/// [TextSizeSettingsStore] until the gesture ends, so the app's MediaQuery scale
+/// cannot relayout this page while the thumb is being dragged.
+class _TextSizeSliderCard extends StatefulWidget {
+  const _TextSizeSliderCard();
+
+  @override
+  State<_TextSizeSliderCard> createState() => _TextSizeSliderCardState();
+}
+
+class _TextSizeSliderCardState extends State<_TextSizeSliderCard> {
+  AppTextSize? _localSize;
+
+  AppTextSize get _selectedSize =>
+      _localSize ??
+      TextSizeSettingsScope.maybeOf(context)?.textSize ??
+      TextSizeSettingsStore.defaultTextSize;
+
+  static double _sliderValue(AppTextSize size) =>
+      TextSizeSettingsStore.supportedTextSizes.indexOf(size).toDouble();
+
+  static AppTextSize _sizeForSliderValue(double value) {
+    final index = value
+        .round()
+        .clamp(0, TextSizeSettingsStore.supportedTextSizes.length - 1)
+        .toInt();
+    return TextSizeSettingsStore.supportedTextSizes[index];
+  }
+
+  void _select(double value) {
+    setState(() => _localSize = _sizeForSliderValue(value));
+  }
+
+  void _commit(double value) {
+    final size = _sizeForSliderValue(value);
+    setState(() => _localSize = size);
+    final store = TextSizeSettingsScope.maybeOf(context);
+    if (store != null) {
+      unawaited(store.setTextSize(size));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final store = TextSizeSettingsScope.maybeOf(context);
+    final selected = _selectedSize;
+    final labels = <String>[
+      l10n.textSizeOptionSmall,
+      l10n.defaultLabel,
+      l10n.textSizeOptionLarge,
+    ];
+    final trackInset =
+        CyberSliderLogic.thumbDragOverflow + CyberSliderLogic.thumbSize / 2;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.textSizeSettingText,
+            style: context.hmiTypography.sectionTitle.copyWith(
+              color: CyberColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          CyberSlider(
+            value: _sliderValue(selected),
+            min: 0,
+            max: 2,
+            divisions: 2,
+            showTickMarks: true,
+            tapToSelect: true,
+            longPressDragEnabled: false,
+            enabled: store != null,
+            onChanged: _select,
+            onChangeEnd: _commit,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: trackInset),
+            child: SizedBox(
+              height: 32,
+              child: Row(
+                children: [
+                  for (var i = 0; i < labels.length; i++)
+                    Expanded(
+                      child: Semantics(
+                        button: true,
+                        selected: _sliderValue(selected) == i,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: store == null
+                              ? null
+                              : () {
+                                  CyberClickSoundRegistry.playClick();
+                                  _commit(i.toDouble());
+                                },
+                          child: Align(
+                            alignment: switch (i) {
+                              0 => Alignment.centerLeft,
+                              1 => Alignment.center,
+                              _ => Alignment.centerRight,
+                            },
+                            child: Text(
+                              labels[i],
+                              textScaler: TextScaler.linear(
+                                TextSizeSettingsStore
+                                    .supportedTextSizes[i].scale,
+                              ),
+                              style: context.hmiTypography.supporting.copyWith(
+                                color: _sliderValue(selected) == i
+                                    ? CyberColors.textPrimary
+                                    : CyberColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

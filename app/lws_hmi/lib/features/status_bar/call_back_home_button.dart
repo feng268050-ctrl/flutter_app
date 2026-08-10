@@ -23,6 +23,9 @@ final class CallBackHomeButton extends StatefulWidget {
   /// Rail width matching lws-ui `equipment_status_side_rail_width`.
   static const double railWidth = 160;
 
+  /// Label size (Settings / Monitor Back/Home text). Clock chrome matches this.
+  static const double labelFontSize = 24;
+
   final WorkModeAccent accent;
   final String label;
   final VoidCallback onPressed;
@@ -51,7 +54,7 @@ final class CallBackHomeButton extends StatefulWidget {
       text: TextSpan(
         text: label,
         style: const TextStyle(
-          fontSize: _kHomeLabelFontSize,
+          fontSize: CallBackHomeButton.labelFontSize,
           fontWeight: FontWeight.w400,
           height: 1,
         ),
@@ -75,8 +78,6 @@ final class CallBackHomeButton extends StatefulWidget {
 const _kBackIconSize = 34.0;
 const _kBackHorizontalPadding = 12.0;
 const _kEdgeLineHeight = 3.0;
-/// Ladder: navigation / primaryTabLabel (24).
-const _kHomeLabelFontSize = 24.0;
 const _kBackLabelDisabled = Color(0xFF909399);
 
 final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
@@ -111,15 +112,20 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
         horizontal: _kBackHorizontalPadding,
       ),
       child: Row(
-        mainAxisAlignment:
-            expand ? MainAxisAlignment.center : MainAxisAlignment.start,
+        // Home / Back share the same leading icon inset (do not center the
+        // group in the fixed rail — longer labels would shift the glyph).
+        mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            _leadingIcon(context),
-            size: _kBackIconSize,
-            color: iconColor,
+          SizedBox(
+            width: _kBackIconSize,
+            height: _kBackIconSize,
+            child: Icon(
+              _leadingIcon(context),
+              size: _kBackIconSize,
+              color: iconColor,
+            ),
           ),
           const SizedBox(width: 8),
           if (expand)
@@ -130,7 +136,7 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: labelColor,
-                  fontSize: _kHomeLabelFontSize,
+                  fontSize: CallBackHomeButton.labelFontSize,
                   height: 1,
                 ),
               ),
@@ -143,7 +149,7 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
               overflow: TextOverflow.visible,
               style: TextStyle(
                 color: labelColor,
-                fontSize: _kHomeLabelFontSize,
+                fontSize: CallBackHomeButton.labelFontSize,
                 fontWeight: FontWeight.w400,
                 height: 1,
               ),

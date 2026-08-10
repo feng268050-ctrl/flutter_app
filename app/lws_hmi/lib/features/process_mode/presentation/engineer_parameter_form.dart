@@ -3,11 +3,12 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_mode/domain/engineer_parameter_input_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_parameter_presentation.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_parameter_visibility.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_material_popup.dart';
-import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/ui/cyber/cyber_ime_numeric_input_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
@@ -177,19 +178,33 @@ final class EngineerParameterForm extends StatelessWidget {
     ProcessPreset working,
   ) async {
     final l10n = AppLocalizations.of(context)!;
-    final text = await showCyberImeInputDialog(
+    const min = 0.0;
+    const max = 8.0;
+    final text = await showCyberImeNumericInputDialog(
       context: context,
-      title: l10n.thicknessLabel,
+      title: EngineerParameterInputCopy.titleWithUnit(
+        l10n,
+        l10n.thicknessLabel,
+        l10n.mmUnit,
+      ),
       fieldType: CyberImeFieldType.signedDecimal,
       initial: working.thickness?.toString() ?? '',
-      label: 'mm',
-      requireNonEmpty: true,
+      decimalStep: true,
+      decimalStepSize: CyberNumericInputLogic.metricDecimalStep,
+      minValue: min,
+      maxValue: max,
+      validator: (raw) => _validateNumeric(
+        l10n,
+        raw,
+        min: min,
+        max: max,
+      ),
     );
     if (text == null) {
       return;
     }
     final value = double.tryParse(text.trim());
-    if (value == null || value < 0) {
+    if (value == null) {
       return;
     }
     onChanged(working.copyWith(thickness: value));
@@ -207,13 +222,39 @@ final class EngineerParameterForm extends StatelessWidget {
       l10n,
     );
     final current = working.parameters.values[spec.key];
-    final text = await showCyberImeInputDialog(
+    final max = EngineerParameterInputCopy.effectiveMax(
+      spec.key,
+      working.processType,
+      spec.max,
+    );
+    final decimal = EngineerParameterInputCopy.usesDecimalStep(spec.key);
+    final text = await showCyberImeNumericInputDialog(
       context: context,
-      title: presentation.label,
-      fieldType: CyberImeFieldType.signedDecimal,
+      title: EngineerParameterInputCopy.titleWithUnit(
+        l10n,
+        presentation.label,
+        spec.unit,
+      ),
+      description: EngineerParameterInputCopy.descriptionFor(
+        key: spec.key,
+        processType: working.processType,
+        l10n: l10n,
+        spec: spec,
+      ),
+      fieldType: decimal
+          ? CyberImeFieldType.signedDecimal
+          : CyberImeFieldType.number,
       initial: current?.toString() ?? '',
-      label: '${spec.min}–${spec.max} ${spec.unit}',
-      requireNonEmpty: true,
+      decimalStep: decimal,
+      decimalStepSize: CyberNumericInputLogic.metricDecimalStep,
+      minValue: spec.min,
+      maxValue: max,
+      validator: (raw) => _validateNumeric(
+        l10n,
+        raw,
+        min: spec.min,
+        max: max,
+      ),
     );
     if (text == null) {
       return;
@@ -225,6 +266,28 @@ final class EngineerParameterForm extends StatelessWidget {
     final nextValues = Map<String, double>.from(working.parameters.values)
       ..[spec.key] = value;
     onChanged(working.copyWith(parameters: ProcessParameters(nextValues)));
+  }
+
+  static String? _validateNumeric(
+    AppLocalizations l10n,
+    String raw, {
+    required num min,
+    required num max,
+  }) {
+    if (raw.trim().isEmpty) {
+      return l10n.requiredFieldText;
+    }
+    final value = double.tryParse(raw.trim());
+    if (value == null) {
+      return l10n.engineerNumericValueInvalid;
+    }
+    if (value < min || value > max) {
+      return l10n.engineerNumericValueOutOfRange(
+        _formatNumber(min.toDouble()),
+        _formatNumber(max.toDouble()),
+      );
+    }
+    return null;
   }
 
   static String _formatNumber(double value) {

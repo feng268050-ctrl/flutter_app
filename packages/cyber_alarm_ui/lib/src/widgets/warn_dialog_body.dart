@@ -61,8 +61,7 @@ class WarnDialogBody extends StatelessWidget {
   /// Body on light frost (lws-ui `text_black`).
   static const bodyDark = Color(0xFF1A1A1A);
 
-  bool get _useInfoStyle =>
-      chromeStyle?.isInfo ?? infoStyle;
+  bool get _useInfoStyle => chromeStyle?.isInfo ?? infoStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -141,9 +140,10 @@ class WarnDialogBody extends StatelessWidget {
             height: scrollMax,
             width: double.infinity,
             child: SingleChildScrollView(
-              child: Text(
-                body,
-                textAlign: TextAlign.start,
+              // English copy must wrap between whitespace-separated words.
+              // A regular Text may split a word at the viewport edge.
+              child: _WordBoundaryBody(
+                text: body,
                 style: WarnDialogMetrics.bodyStyle(fontSize: bodyFont),
               ),
             ),
@@ -202,6 +202,123 @@ class WarnDialogBody extends StatelessWidget {
         ),
         child: content,
       ),
+    );
+  }
+}
+
+/// Dialog-body variant of the App's former `WordBoundaryBody`.
+///
+/// English words are separate non-wrapping children, so wrapping happens only
+/// at whitespace. A no-space run (for example CJK copy) remains a regular
+/// [Text] and uses the framework's normal soft wrap.
+final class _WordBoundaryBody extends StatelessWidget {
+  const _WordBoundaryBody({required this.text, required this.style});
+
+  final String text;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final sections = text
+        .split(RegExp(r'\n\s*\n'))
+        .map((section) => section.trim())
+        .where((section) => section.isNotEmpty)
+        .toList(growable: false);
+    if (sections.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < sections.length; index++) ...[
+          if (index > 0) const SizedBox(height: 20),
+          _WordBoundarySection(text: sections[index], style: style),
+        ],
+      ],
+    );
+  }
+}
+
+final class _WordBoundarySection extends StatelessWidget {
+  const _WordBoundarySection({required this.text, required this.style});
+
+  final String text;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = text
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList(growable: false);
+    if (lines.length <= 1) {
+      return _WordBoundaryLine(
+        text: lines.isEmpty ? text : lines.first,
+        style: style,
+      );
+    }
+
+    final lineGap = (style.fontSize ?? 14) * 0.2;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < lines.length; index++) ...[
+          if (index > 0) SizedBox(height: lineGap),
+          _WordBoundaryLine(text: lines[index], style: style),
+        ],
+      ],
+    );
+  }
+}
+
+final class _WordBoundaryLine extends StatelessWidget {
+  const _WordBoundaryLine({required this.text, required this.style});
+
+  final String text;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final words = text
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .toList(growable: false);
+    if (words.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    if (words.length == 1) {
+      return Text(
+        text,
+        textScaler: TextScaler.noScaling,
+        style: style,
+      );
+    }
+
+    final spaceWidth = (TextPainter(
+      text: TextSpan(text: ' ', style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      textScaler: TextScaler.noScaling,
+    )..layout())
+        .width;
+    return Wrap(
+      spacing: spaceWidth,
+      runSpacing: 0,
+      children: [
+        for (final word in words)
+          Text(
+            word,
+            softWrap: false,
+            maxLines: 1,
+            // Font size is already resolved for the dialog; do not apply
+            // ambient MediaQuery textScaler again (would inflate under Large).
+            textScaler: TextScaler.noScaling,
+            overflow: TextOverflow.visible,
+            style: style,
+          ),
+      ],
     );
   }
 }

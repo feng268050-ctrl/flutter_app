@@ -118,15 +118,4 @@ abstract final class AppTypography {
     microSize,
   ];
 
-  /// Tip body under a divided title — one ladder step below [titleSize], never
-  /// larger than the title itself.
-  static double tipBodySizeForTitle(double titleSize) {
-    for (var i = 0; i < sizeLadder.length; i++) {
-      if (titleSize + 0.01 >= sizeLadder[i]) {
-        final next = i + 1 < sizeLadder.length ? sizeLadder[i + 1] : sizeLadder[i];
-        return next < titleSize ? next : titleSize;
-      }
-    }
-    return microSize < titleSize ? microSize : titleSize;
-  }
 }

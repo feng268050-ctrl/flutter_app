@@ -87,7 +87,7 @@ abstract final class TipDialogHost {
       constraints: constraints ??
           BoxConstraints(
             maxWidth: (MediaQuery.sizeOf(context).width * 0.62).clamp(320, 720),
-            maxHeight: 640,
+            maxHeight: (MediaQuery.sizeOf(context).height * 0.85).clamp(320, 720),
           ),
     );
   }
@@ -131,11 +131,13 @@ abstract final class TipDialogHost {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: constraints ??
-                        const BoxConstraints(
+                        BoxConstraints(
                           minWidth: 700,
                           maxWidth: 700,
                           minHeight: 480,
-                          maxHeight: 680,
+                          maxHeight:
+                              (MediaQuery.sizeOf(dialogContext).height * 0.85)
+                                  .clamp(480, 720),
                         ),
                     child: _LightCreamFrostCard(
                       scope: scope,

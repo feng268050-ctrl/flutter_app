@@ -14,6 +14,7 @@ import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// lws-ui `AiVisionVideoChooseActivity` — table pick → [ProcessVideoRecord].
 ///
@@ -153,21 +154,21 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
         ),
         DataCell(
           Center(
-            child: Text(
-              ProcessVideoFormat.workMode(row.processType, l10n),
+            child: WordBoundaryLabel(
+              text: ProcessVideoFormat.workMode(row.processType, l10n),
+              style: _cellStyle(context),
               textAlign: TextAlign.center,
               maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
         DataCell(
           Center(
-            child: Text(
-              ProcessVideoFormat.material(row, l10n),
+            child: WordBoundaryLabel(
+              text: ProcessVideoFormat.material(row, l10n),
+              style: _cellStyle(context),
               textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
         ),
@@ -255,8 +256,7 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
           toolbarHeight: WorkModeStatusBarDimens.height,
-          backLabel: l10n.aiVisionChooseBtn,
-          centerClock: true,
+          backLabel: l10n.equipmentStatusBack,
           backAccent: WorkModeAccent.weld,
           onBack: () => Navigator.of(context).maybePop(),
         ),

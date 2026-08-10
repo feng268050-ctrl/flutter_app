@@ -265,7 +265,7 @@ class _SelectionGridState extends State<_SelectionGrid> {
               child: Row(
                 children: [
                   Text(
-                    'SELECTED ON HOME',
+                    'SHOW ON HOME',
                     style: context.hmiTypography.supporting.copyWith(
                       color: const Color(0xFFD4D9E5),
                       fontWeight: FontWeight.w500,

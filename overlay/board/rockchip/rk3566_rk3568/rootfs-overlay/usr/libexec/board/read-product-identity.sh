@@ -4,10 +4,16 @@
 #   read-product-identity.sh              # print brand / model / sn (one per line, labeled)
 #   read-product-identity.sh brand|model|sn
 # Empty / missing Vendor Storage field → empty string (caller applies chip-ID fallback for sn).
+#
+# Emulator stub: when /dev/vendor_storage is absent, optionally read OEM
+# identity.env (see oem/boards/sim/identity.env). Never used when the VS
+# device node exists — empty VS fields stay empty until write-identity.
 set -eu
 
 IDS_FILE="${VENDOR_STORAGE_IDS:-/usr/libexec/board/vendor-storage-ids.txt}"
 VENDOR_STORAGE_BIN="${VENDOR_STORAGE_BIN:-/usr/bin/vendor_storage}"
+# Override path for tests; default search: /oem/identity.env then /oem/boards/*/identity.env
+IDENTITY_STUB="${IDENTITY_STUB:-}"
 
 die() { echo "read-product-identity: ERROR: $*" >&2; exit 1; }
 
@@ -38,21 +44,76 @@ read_id() {
 	printf '%s' "$out"
 }
 
+# Parse brand|model|sn from a flat key=value identity.env (comments/blanks ignored).
+read_stub_field() {
+	local field="$1"
+	local file="$2"
+	local line key val
+	[ -r "$file" ] || return 0
+	while IFS= read -r line || [ -n "$line" ]; do
+		line="$(printf '%s' "$line" | tr -d '\r')"
+		case "$line" in
+		'' | \#*) continue ;;
+		esac
+		key="${line%%=*}"
+		val="${line#*=}"
+		key="$(printf '%s' "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+		val="$(printf '%s' "$val" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+		if [ "$key" = "$field" ]; then
+			printf '%s' "$val"
+			return 0
+		fi
+	done <"$file"
+}
+
+resolve_stub_file() {
+	local f
+	if [ -n "$IDENTITY_STUB" ] && [ -r "$IDENTITY_STUB" ]; then
+		printf '%s' "$IDENTITY_STUB"
+		return 0
+	fi
+	if [ -r /oem/identity.env ]; then
+		printf '%s' /oem/identity.env
+		return 0
+	fi
+	for f in /oem/boards/*/identity.env; do
+		[ -r "$f" ] || continue
+		printf '%s' "$f"
+		return 0
+	done
+	return 1
+}
+
+# Prefer Vendor Storage when the device node exists; else OEM emulator stub.
+read_field() {
+	local field="$1"
+	local vs_name="$2"
+	local stub out
+	if [ -e /dev/vendor_storage ]; then
+		read_id "$vs_name"
+		return 0
+	fi
+	stub="$(resolve_stub_file 2>/dev/null || true)"
+	[ -n "$stub" ] || return 0
+	out="$(read_stub_field "$field" "$stub")"
+	printf '%s' "$out"
+}
+
 field="${1:-}"
 case "$field" in
 '')
-	printf 'brand=%s\n' "$(read_id "$VENDOR_BRAND_NAME")"
-	printf 'model=%s\n' "$(read_id "$VENDOR_MODEL_NAME")"
-	printf 'sn=%s\n' "$(read_id "$VENDOR_SN_NAME")"
+	printf 'brand=%s\n' "$(read_field brand "$VENDOR_BRAND_NAME")"
+	printf 'model=%s\n' "$(read_field model "$VENDOR_MODEL_NAME")"
+	printf 'sn=%s\n' "$(read_field sn "$VENDOR_SN_NAME")"
 	;;
 brand)
-	printf '%s\n' "$(read_id "$VENDOR_BRAND_NAME")"
+	printf '%s\n' "$(read_field brand "$VENDOR_BRAND_NAME")"
 	;;
 model)
-	printf '%s\n' "$(read_id "$VENDOR_MODEL_NAME")"
+	printf '%s\n' "$(read_field model "$VENDOR_MODEL_NAME")"
 	;;
 sn)
-	printf '%s\n' "$(read_id "$VENDOR_SN_NAME")"
+	printf '%s\n' "$(read_field sn "$VENDOR_SN_NAME")"
 	;;
 *)
 	die "usage: $0 [brand|model|sn]"

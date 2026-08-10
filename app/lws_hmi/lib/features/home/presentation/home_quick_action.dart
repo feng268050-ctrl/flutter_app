@@ -3,6 +3,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 
 /// Design tokens from lws-ui `home_quick_action_*` / `home_stat_card_corner_radius`.
 const double kHomeQuickActionCorner = 18;
@@ -12,7 +13,6 @@ const double kHomeQuickActionLabelMarginTop = 10;
 const double kHomeQaPressScale = CyberPressFeedback.scalePressed;
 const int kHomeQaPressMs = 90; // keep in sync with CyberPressFeedback.pressIn
 const int kHomeQaPressHoldMs = 30;
-
 
 /// Caption reference used to size all home quick-action labels equally.
 const String kHomeQuickActionLabelSizeRef = 'Settings';
@@ -27,7 +27,14 @@ typedef HomeQuickActionCallback = FutureOr<void> Function();
 
 /// Font size so [kHomeQuickActionLabelSizeRef] fits [cardWidth] with equal
 /// side inset (~11% each side) so the caption is not clipped.
-double homeQuickActionLabelFontSize(double cardWidth) {
+///
+/// Pass the same [textScaler] that will paint the caption (use
+/// [HmiTextScale.quickActionTextScalerOf]) so fit is not undone by a second
+/// MediaQuery scale.
+double homeQuickActionLabelFontSize(
+  double cardWidth, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
   const weight = FontWeight.w500;
   final targetWidth = cardWidth * 0.78;
   var lo = 12.0;
@@ -41,6 +48,7 @@ double homeQuickActionLabelFontSize(double cardWidth) {
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
+      textScaler: textScaler,
     )..layout();
     if (probe.width > targetWidth) {
       hi = mid;
@@ -180,8 +188,13 @@ class _HomeQuickActionState extends State<HomeQuickAction>
   Widget build(BuildContext context) {
     final captionWidth = widget.labelWidth ?? widget.cardWidth;
     final radius = BorderRadius.circular(widget.cornerRadius);
-    final fontSize =
-        widget.labelFontSize ?? homeQuickActionLabelFontSize(widget.cardWidth);
+    // Clamp reading scale (max 1.05) for fit + paint — avoid double bump.
+    final qaScaler = HmiTextScale.quickActionTextScalerOf(context);
+    final fontSize = widget.labelFontSize ??
+        homeQuickActionLabelFontSize(
+          widget.cardWidth,
+          textScaler: qaScaler,
+        );
     // Balanced: Theme uses CyberPressInkSplash — skip QA scale, overlay only.
     final scaleOnPress = !MediaQuery.disableAnimationsOf(context) &&
         !identical(
@@ -250,15 +263,18 @@ class _HomeQuickActionState extends State<HomeQuickAction>
               SizedBox(height: widget.labelMarginTop),
               SizedBox(
                 width: captionWidth,
-                child: Text(
-                  widget.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: labelColor,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaler: qaScaler),
+                  child: Text(
+                    widget.label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: labelColor,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),

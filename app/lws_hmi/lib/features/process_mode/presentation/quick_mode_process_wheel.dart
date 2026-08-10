@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
@@ -58,14 +60,27 @@ final class QuickModeProcessWheel extends StatelessWidget {
         .toDouble();
     // Frost plate keeps the smaller lws-ui wheel width; otherwise widen the
     // label band so selected text is not clipped by the solid accent box.
-    final labelBandWidth = showAccents
+    // CNC: keep the band inside [cncGuideLeftInset] so Connection Guide cannot
+    // cover neighbor labels (Stack paints the guide above the wheel).
+    var labelBandWidth = showAccents
         ? (ProcessModeDimens.wheelAccentSolidWidth >
                 roomToScale + ProcessModeDimens.wheelSelectedPadding
             ? ProcessModeDimens.wheelAccentSolidWidth
             : roomToScale + ProcessModeDimens.wheelSelectedPadding)
         : ProcessModeDimens.wheelWidth;
+    if (hideSideAccent && showAccents) {
+      labelBandWidth = math.min(
+        labelBandWidth,
+        ProcessModeDimens.cncGuideLeftInset,
+      );
+    }
     final selectedTextMaxWidth = showAccents
-        ? roomToScale
+        ? (hideSideAccent
+            ? math.max(
+                40.0,
+                labelBandWidth - ProcessModeDimens.wheelSelectedPadding,
+              )
+            : roomToScale)
         : labelBandWidth - ProcessModeDimens.wheelSelectedPadding;
 
     final wheel = SizedBox(
@@ -133,7 +148,10 @@ final class QuickModeProcessWheel extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Padding(
               padding: EdgeInsetsDirectional.only(start: startPad),
-              child: label,
+              child: SizedBox(
+                width: math.max(0.0, labelBandWidth - startPad),
+                child: label,
+              ),
             ),
           );
         },

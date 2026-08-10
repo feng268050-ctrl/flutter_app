@@ -6,6 +6,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Max height for the item list before it scrolls (lws-ui `maxHeight="420dp"`).
 const double _kItemListMaxHeight = 420;
@@ -49,6 +50,8 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  const TipFrostDivider(),
+                  const SizedBox(height: 16),
                   // Shrink-wrap while short; scroll only when taller than max
                   // (lws-ui ScrollView + maxHeight on the item list).
                   ConstrainedBox(
@@ -68,14 +71,17 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   row.item.labelFor(l10n),
-                                  style: context.hmiTypography.body.copyWith(
+                                  style:
+                                      context.hmiTypography.buttonLarge.copyWith(
                                     color: CyberColors.textPrimary,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ),
                               Text(
                                 row.status.labelFor(l10n),
-                                style: context.hmiTypography.supporting.copyWith(
+                                style: context.hmiTypography.sectionTitle
+                                    .copyWith(
                                   color: _statusColor(row.status),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -88,25 +94,25 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                   ),
                   if (session.showFooter) ...[
                     const SizedBox(height: 16),
-                    const Divider(height: 1, color: Color(0x44FFFFFF)),
+                    const TipFrostDivider(),
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        CyberCheckbox(
-                          value: session.dontShowAgain,
-                          size: CyberDimens.checkboxLargeSize,
-                          onChanged: (v) {
-                            onUserInteracted?.call();
-                            session.setDontShowAgain(v ?? false);
-                          },
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            l10n.bootSelfCheckDontShowAgain,
-                            style: context.hmiTypography.sectionTitle.copyWith(
-                              fontSize: 26,
-                              color: CyberColors.textSecondary,
+                          child: CyberCheckbox(
+                            value: session.dontShowAgain,
+                            size: CyberDimens.checkboxLargeSize,
+                            expandLabel: true,
+                            onChanged: (v) {
+                              onUserInteracted?.call();
+                              session.setDontShowAgain(v ?? false);
+                            },
+                            label: Text(
+                              l10n.bootSelfCheckDontShowAgain,
+                              style: context.hmiTypography.dialogOptionLabel
+                                  .copyWith(
+                                color: CyberColors.textSecondary,
+                              ),
                             ),
                           ),
                         ),

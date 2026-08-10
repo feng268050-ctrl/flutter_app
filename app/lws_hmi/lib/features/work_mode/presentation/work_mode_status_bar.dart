@@ -298,6 +298,7 @@ final class _WorkModeEquipmentStripState
           fontSize: WorkModeStatusBarDimens.statusLabelFontSize,
           height: 1,
         );
+        final textScaler = MediaQuery.textScalerOf(context);
         final labelWidths = <double>[
           for (final spec in specs)
             () {
@@ -305,6 +306,7 @@ final class _WorkModeEquipmentStripState
                 text: TextSpan(text: spec.label, style: labelStyle),
                 maxLines: 1,
                 textDirection: TextDirection.ltr,
+                textScaler: textScaler,
               )..layout();
               return painter.width;
             }(),

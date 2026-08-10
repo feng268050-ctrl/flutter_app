@@ -130,7 +130,9 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
         padding: EdgeInsets.only(right: clockEndPadding),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Status icons sit to the left of the date/time (Quick camera↔clock).
             CyberHomeStatusBar(
               items: statusItems,
               gap: statusIconGap,

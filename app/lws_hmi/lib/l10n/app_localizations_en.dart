@@ -916,6 +916,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteText => 'Delete';
 
   @override
+  String get details => 'Details';
+
+  @override
   String get deviceBindBody =>
       'Scan the QR code with the LaserCyber app to bind this device.';
 
@@ -1087,6 +1090,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get engineerModeEntryTitle => 'Engineer Mode Notice';
+
+  @override
+  String get engineerNumericValueInvalid => 'Invalid value';
+
+  @override
+  String engineerNumericValueOutOfRange(String min, String max) {
+    return 'Value must be between $min and $max';
+  }
 
   @override
   String get environmentTemperatureAlarmContent =>
@@ -1938,7 +1949,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paramGasPostFlow => 'Gas Post-Flow';
 
   @override
+  String get paramGasPostFlowDesc =>
+      'Delay before shutting off gas after the laser turns off. Range: 0–10000 ms.';
+
+  @override
   String get paramGasPreFlow => 'Gas Pre-Flow';
+
+  @override
+  String get paramGasPreFlowDesc =>
+      'Gas pre-flow time before laser emission. Range: 0–10000 ms.';
+
+  @override
+  String paramGenericRangeDesc(String min, String max, String unit) {
+    return 'Range: $min–$max $unit.';
+  }
 
   @override
   String get paramLaserDutyCycle => 'Laser Duty Cycle';
@@ -1950,7 +1974,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paramLaserOffDelay => 'Laser-Off Delay';
 
   @override
+  String get paramLaserOffDelayDesc =>
+      'Delay between stopping wire feed and turning off the laser (for wire cutoff). Range: 0–1000 ms.';
+
+  @override
   String get paramLaserPower => 'Laser Power';
+
+  @override
+  String get paramLaserPowerDesc =>
+      'Laser output power. 100% equals the machine’s rated maximum (e.g. 1300 W). Range: 0–100%.';
 
   @override
   String get paramLightOffDelay => 'Laser-Off Delay';
@@ -1980,31 +2012,76 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paramRampDownTime => 'Ramp-Down Time';
 
   @override
+  String get paramRampDownTimeDesc =>
+      'Laser ramp-down time in pulse mode. Range: 0–1000 ms.';
+
+  @override
   String get paramRampUpTime => 'Ramp-Up Time';
+
+  @override
+  String get paramRampUpTimeDesc =>
+      'Laser ramp-up time in pulse mode. Range: 0–1000 ms.';
 
   @override
   String get paramRefeedDelay => 'Re-Feed Delay';
 
   @override
+  String get paramRefeedDelayDesc =>
+      'Delay between retract and re-feed; helps prevent re-sticking. Range: 0–1000 ms.';
+
+  @override
   String get paramRefeedLength => 'Re-Feed Length';
+
+  @override
+  String paramRefeedLengthDesc(String min, String max, String unit) {
+    return 'Re-feed length to reach the optimal tip position. Range: $min–$max $unit.';
+  }
 
   @override
   String get paramRetractLength => 'Retract Length';
 
   @override
+  String paramRetractLengthDesc(String min, String max, String unit) {
+    return 'Wire retract length after welding. Range: $min–$max $unit.';
+  }
+
+  @override
   String get paramRetractSpeed => 'Retract Speed';
+
+  @override
+  String paramRetractSpeedDesc(String min, String max, String unit) {
+    return 'Wire retract speed; helps prevent re-sticking. Range: $min–$max $unit.';
+  }
 
   @override
   String get paramScanFrequency => 'Scan Frequency';
 
   @override
+  String paramScanFrequencyDesc(String min, String max, String unit) {
+    return 'Recommended scan frequency: $min–$max $unit.';
+  }
+
+  @override
   String get paramScanWidth => 'Scan Width';
+
+  @override
+  String paramScanWidthDesc(String min, String max, String unit) {
+    return 'Laser scan width. Range: $min–$max $unit.';
+  }
 
   @override
   String get paramSpotWeldDuration => 'Spot Weld Duration';
 
   @override
+  String get paramSpotWeldDurationDesc =>
+      'Laser-on duration for each spot weld. Range: 0–10000 ms.';
+
+  @override
   String get paramSpotWeldInterval => 'Spot Weld Interval';
+
+  @override
+  String get paramSpotWeldIntervalDesc =>
+      'Interval between spot welds in burst mode. Range: 0–10000 ms.';
 
   @override
   String get paramSpotWeldingDurationCatalog => 'Spot Welding Duration';
@@ -2023,6 +2100,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paramWireFeedSpeed => 'Wire Feed Speed';
+
+  @override
+  String paramWireFeedSpeedDesc(String min, String max, String unit) {
+    return 'Wire feed speed. Range: $min–$max $unit.';
+  }
 
   @override
   String get paramWireFeedingDelay => 'Wire Feed Delay';
@@ -2385,6 +2467,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetToDefault => 'Reset To Default';
 
   @override
+  String get engineerActionResetDefaults => 'Reset Defaults';
+
+  @override
   String get retract => 'Retract';
 
   @override
@@ -2428,6 +2513,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveAsFavorite => 'Save As Favorite';
+
+  @override
+  String get engineerActionSaveFavorite => 'Save Favorite';
 
   @override
   String get selectValidProcessPresetFirst =>
@@ -2670,6 +2758,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unitSettingText => 'Unit';
+
+  @override
+  String get textSizeOptionLarge => 'Large';
+
+  @override
+  String get textSizeOptionMedium => 'Medium';
+
+  @override
+  String get textSizeOptionSmall => 'Small';
+
+  @override
+  String get textSizePersistedFooter =>
+      'Choose how large text appears on this device. Display numbers and charts use a milder scale.';
+
+  @override
+  String get textSizePreferenceUnavailable =>
+      'Text size settings are temporarily unavailable.';
+
+  @override
+  String get textSizeSettingText => 'Text Size';
 
   @override
   String get uploadText => 'Upload';

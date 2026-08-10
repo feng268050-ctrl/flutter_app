@@ -25,6 +25,8 @@ class CyberSlider extends StatefulWidget {
     this.max = 100,
     this.enabled = true,
     this.divisions,
+    this.showTickMarks = false,
+    this.tapToSelect = false,
     this.longPressDragEnabled = true,
     this.showDragValueLabel = false,
     this.dragValueLabelBuilder,
@@ -37,6 +39,15 @@ class CyberSlider extends StatefulWidget {
   final double max;
   final bool enabled;
   final int? divisions;
+
+  /// Shows evenly-spaced ticks when [divisions] is set.
+  final bool showTickMarks;
+
+  /// Lets a tap on the track select the nearest discrete value immediately.
+  ///
+  /// This is intended for short, discrete choice sliders. It has no effect
+  /// unless [divisions] is set.
+  final bool tapToSelect;
 
   /// When true (default), require long-press on thumb before dragging.
   final bool longPressDragEnabled;
@@ -97,7 +108,7 @@ class _CyberSliderState extends State<CyberSlider>
 
   void _resetGesture({required bool cancelled}) {
     final endedArmed = _startedExpand;
-    final endValue = _displayValue;
+    final endValue = _snapValue(_displayValue);
     _cancelTimers();
     if (endedArmed) {
       CyberClickSoundRegistry.playClick();
@@ -134,6 +145,25 @@ class _CyberSliderState extends State<CyberSlider>
         widget.max,
       );
 
+  double _snapValue(double value) => CyberSliderLogic.snapValueToDivisions(
+        value: value,
+        min: widget.min,
+        max: widget.max,
+        divisions: widget.divisions,
+      );
+
+  double _snapFraction(double fraction) => CyberSliderLogic.fractionFromValue(
+        _snapValue(
+          CyberSliderLogic.valueFromFraction(
+            fraction,
+            widget.min,
+            widget.max,
+          ),
+        ),
+        widget.min,
+        widget.max,
+      );
+
   void _applyArmedDrag(double currentX, double travel) {
     if (!_valueArmed) {
       return;
@@ -154,8 +184,8 @@ class _CyberSliderState extends State<CyberSlider>
     if (result.reanchorActivationX != null) {
       _activationX = result.reanchorActivationX!;
     }
-    _dragFraction = result.fraction;
-    widget.onChanged(result.value);
+    _dragFraction = _snapFraction(result.fraction);
+    widget.onChanged(_snapValue(result.value));
     setState(() {});
   }
 
@@ -191,6 +221,23 @@ class _CyberSliderState extends State<CyberSlider>
       event.localPosition.dy,
       hit,
     )) {
+      if (widget.tapToSelect && widget.divisions != null) {
+        final travel = CyberSliderLogic.travelPx(trackWidth, thumbPx);
+        final fraction = travel <= 0
+            ? resting
+            : ((event.localPosition.dx - trackStart - thumbPx / 2) / travel)
+                .clamp(0.0, 1.0);
+        final value = _snapValue(
+          CyberSliderLogic.valueFromFraction(
+            fraction,
+            widget.min,
+            widget.max,
+          ),
+        );
+        widget.onChanged(value);
+        widget.onChangeEnd?.call(value);
+        CyberClickSoundRegistry.playClick();
+      }
       return;
     }
 
@@ -313,8 +360,7 @@ class _CyberSliderState extends State<CyberSlider>
             children: [
               Listener(
                 behavior: HitTestBehavior.opaque,
-                onPointerDown: (e) =>
-                    _onPointerDown(e, trackWidth, overflow),
+                onPointerDown: (e) => _onPointerDown(e, trackWidth, overflow),
                 onPointerMove: (e) => _onPointerMove(e, travel),
                 onPointerUp: _onPointerUp,
                 onPointerCancel: _onPointerCancel,
@@ -322,8 +368,7 @@ class _CyberSliderState extends State<CyberSlider>
                   animation: _expand,
                   builder: (context, _) {
                     final scale = 1.0 +
-                        (CyberSliderLogic.thumbDragScale - 1.0) *
-                            _expand.value;
+                        (CyberSliderLogic.thumbDragScale - 1.0) * _expand.value;
                     return CustomPaint(
                       size: Size(width, touchH),
                       painter: _CyberSliderPainter(
@@ -334,6 +379,9 @@ class _CyberSliderState extends State<CyberSlider>
                         activeColor: CyberColors.buttonPrimaryAccent,
                         inactiveColor: CyberColors.borderMid,
                         thumbColor: CyberColors.textPrimary,
+                        divisions:
+                            widget.showTickMarks ? widget.divisions : null,
+                        activeFraction: fraction,
                       ),
                     );
                   },
@@ -362,7 +410,6 @@ class _CyberSliderDragValueBubble extends StatelessWidget {
   static const width = 48.0;
   static const height = CyberSliderLogic.dragValueBubbleHeight;
   static const gapBelow = CyberSliderLogic.dragValueBubbleGap;
-  static const slotHeight = CyberSliderLogic.dragValueBubbleSlot;
 
   final String label;
 
@@ -403,6 +450,8 @@ class _CyberSliderPainter extends CustomPainter {
     required this.activeColor,
     required this.inactiveColor,
     required this.thumbColor,
+    this.divisions,
+    required this.activeFraction,
   });
 
   final double trackStartX;
@@ -412,6 +461,8 @@ class _CyberSliderPainter extends CustomPainter {
   final Color activeColor;
   final Color inactiveColor;
   final Color thumbColor;
+  final int? divisions;
+  final double activeFraction;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -424,8 +475,7 @@ class _CyberSliderPainter extends CustomPainter {
     );
     canvas.drawRRect(trackRect, Paint()..color = inactiveColor);
 
-    final activeW =
-        (thumbCenterX - trackStartX).clamp(0.0, trackWidth);
+    final activeW = (thumbCenterX - trackStartX).clamp(0.0, trackWidth);
     if (activeW > 0) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -434,6 +484,24 @@ class _CyberSliderPainter extends CustomPainter {
         ),
         Paint()..color = activeColor,
       );
+    }
+
+    final tickCount = divisions;
+    if (tickCount != null && tickCount > 0) {
+      final tickPaint = Paint()..isAntiAlias = true;
+      final travel = CyberSliderLogic.travelPx(
+        trackWidth,
+        CyberSliderLogic.thumbSize,
+      );
+      for (var i = 0; i <= tickCount; i++) {
+        final tickFraction = i / tickCount;
+        final tickX = trackStartX +
+            CyberSliderLogic.thumbSize / 2 +
+            travel * tickFraction;
+        tickPaint.color =
+            tickFraction <= activeFraction ? activeColor : inactiveColor;
+        canvas.drawCircle(Offset(tickX, size.height / 2), 3, tickPaint);
+      }
     }
 
     final radius = (CyberSliderLogic.thumbSize / 2) * thumbScale;
@@ -452,6 +520,8 @@ class _CyberSliderPainter extends CustomPainter {
         thumbScale != oldDelegate.thumbScale ||
         activeColor != oldDelegate.activeColor ||
         inactiveColor != oldDelegate.inactiveColor ||
-        thumbColor != oldDelegate.thumbColor;
+        thumbColor != oldDelegate.thumbColor ||
+        divisions != oldDelegate.divisions ||
+        activeFraction != oldDelegate.activeFraction;
   }
 }

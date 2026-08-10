@@ -40,10 +40,14 @@ abstract final class MonitorDimens {
   static const panelDepthLipShadow = SettingsDimens.depthLipShadow;
   static const panelCardShadow = SettingsDimens.cardShadow;
   static const corner = 18.0;
-  static const metricH = 88.0;
-  static const leftPanelW = 740.0;
+  static const metricH = 100.0;
+  /// Alarm metrics column flex weight (legacy design token; Alarm Log now uses
+  /// [ProcessModeDimens.engineerLeftPanelWidthFor] for absolute width).
+  static const leftPanelW = 1618.0;
   static const leftPanelH = 608.0;
-  static const logPanelW = 468.0;
+
+  /// Design-canvas Alarm Log width — same as Engineer left device panel.
+  static const logPanelW = 467.5;
   static const gaugeCardW = 604.0;
   static const gaugeCardH = 344.0;
   static const gaugeSide = 220.0;
@@ -217,7 +221,6 @@ class MonitorFrostActionButton extends StatelessWidget {
     this.icon,
     this.size = HmiButtonSize.medium,
     this.variant = CyberButtonVariant.standard,
-    this.groupIconWithLabel = false,
     this.clickSoundEnabled = true,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
@@ -228,10 +231,6 @@ class MonitorFrostActionButton extends StatelessWidget {
   final IconData? icon;
   final HmiButtonSize size;
   final CyberButtonVariant variant;
-
-  /// Center icon+label as one group (Alarms Clear). Default keeps label-centered
-  /// / icon left-inset layout used by other Monitor pills.
-  final bool groupIconWithLabel;
 
   final bool clickSoundEnabled;
   final CyberBorderGradientCenter borderGradientCenter;
@@ -259,7 +258,6 @@ class MonitorFrostActionButton extends StatelessWidget {
         paintFill: false,
         icon: icon,
         leading: leading,
-        groupIconWithLabel: groupIconWithLabel,
         clickSoundEnabled: clickSoundEnabled,
         borderGradientCenter: borderGradientCenter,
         onPressed: onPressed,
@@ -398,48 +396,51 @@ class MonitorMetricCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  height: 24,
+                  height: TempTrendArrows.slotHeight,
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        value,
-                        maxLines: 1,
-                        softWrap: false,
-                        style: context.hmiTypography.metricValue.copyWith(
-                          color: fault ? const Color(0xFFFF8A80) : Colors.white,
-                          fontWeight: FontWeight.w400,
-                          height: 1.1,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              value,
+                              maxLines: 1,
+                              softWrap: false,
+                              style:
+                                  context.hmiTypography.metricValue.copyWith(
+                                color: fault
+                                    ? const Color(0xFFFF8A80)
+                                    : Colors.white,
+                                fontWeight: FontWeight.w400,
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        // Always reserve arrow width when a reading exists.
+                        if (hasValue)
+                          TempTrendArrows(trend: trend),
+                      ],
                     ),
                   ),
                 ),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: context.hmiTypography.metricLabel.copyWith(
-                      color: MonitorDimens.labelColor,
-                      fontWeight: FontWeight.w400,
-                      height: 1.15,
-                    ),
+                WordBoundaryLabel(
+                  text: label,
+                  maxLines: 2,
+                  style: context.hmiTypography.metricLabel.copyWith(
+                    color: MonitorDimens.labelColor,
+                    fontWeight: FontWeight.w400,
+                    height: 1.15,
                   ),
                 ),
               ],
             ),
           ),
-          // Same size/colors as Live Machine Status (“更多监测”).
-          if (hasValue && trend != TempTrend.none) ...[
-            const SizedBox(width: 6),
-            TempTrendArrows(trend: trend),
-            const SizedBox(width: 6),
-          ],
           MonitorStatusIcon(kind: kind),
           const SizedBox(width: 4),
         ],

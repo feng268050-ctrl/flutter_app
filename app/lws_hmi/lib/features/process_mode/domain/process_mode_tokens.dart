@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
@@ -140,8 +142,11 @@ abstract final class ProcessModeDimens {
   /// Mode / material linear arc: `|d| × 10 + 24` (lws-ui OffsetWheelBuilder).
   static double linearArcPad(double distance) => distance * 10 + 24;
 
-  /// Clears the process wheel / left accent for the CNC guide.
-  static const double cncGuideLeftInset = 210;
+  /// Clears the process wheel / left solid accent for the CNC guide.
+  ///
+  /// Must be ≥ [wheelAccentSolidWidth] so the selected band is not covered;
+  /// leave a little past that for neighbor labels (e.g. "Wide-Area Cleaning").
+  static const double cncGuideLeftInset = 290;
 
   /// Laser Enable mist for the process wheel only (lws-ui
   /// `model_wheel_view_content` 260×340). Must not cover gear / thickness.
@@ -311,19 +316,44 @@ abstract final class ProcessModeDimens {
 
   // --- Engineer tab bar (engineer_tab.xml, weightSum=1280) ---
 
-  static const double engineerTabBarHeight = 68;
-  /// Match Settings / Monitor / Product top tabs.
-  static const double engineerTabIconSize = 31;
-  static const double engineerTabIconGap = 13;
+  static const double engineerTabBarHeight = HmiTabMetrics.tabHeight;
+  static const double engineerTabIconSize = HmiTabMetrics.iconSize;
+  static const double engineerTabIconGap = HmiTabMetrics.iconLabelGap;
   static const double engineerTabUnderlineHeight = 1.5;
   static const double engineerTabUnderlineInset = 18;
 
-  /// Enlarged for the 1280×800 touch panel (lws-ui tabs used 12sp).
-  static const double engineerTabLabelSize = 20.0; // control / processTabLabel
+  /// Aliases [AppTypography.navigationSize] (primary top-tab label SoT).
+  static const double engineerTabLabelSize = AppTypography.navigationSize;
 
 
-  /// Left device panel — lws-ui `engineer_welding_left_panel_width`.
-  static const double engineerLeftPanelWidth = 460;
+  /// Horizontal inset around the Engineer device + parameters row.
+  static const double engineerPanelHorizontalPad = 16;
+
+  /// Gap between Engineer left device panel and right parameters panel.
+  static const double engineerPanelGap = 24;
+
+  /// Golden ratio φ ≈ 1.618 — Engineer left:right = 1:φ (≈ 38.2% : 61.8%).
+  static const double goldenRatio = 1.618;
+
+  /// Integer flex weights approximating 1 : [goldenRatio].
+  static const int engineerLeftPanelFlex = 1000;
+  static const int engineerRightPanelFlex = 1618;
+
+  /// Design-canvas left device panel width on 1280×800
+  /// (`1280 − 16×2 − 24` panel row × 1000/2618 ≈ 467.5).
+  ///
+  /// Alarm Log uses the same absolute width via [engineerLeftPanelWidthFor].
+  static const double engineerLeftPanelWidth = 467.5;
+
+  /// Engineer left (and Alarm Log) width for the current screen width.
+  static double engineerLeftPanelWidthFor(double screenWidth) {
+    final row = screenWidth -
+        engineerPanelHorizontalPad * 2 -
+        engineerPanelGap;
+    return row *
+        engineerLeftPanelFlex /
+        (engineerLeftPanelFlex + engineerRightPanelFlex);
+  }
 
   /// Flex weights for five engineer tabs (sum 1280, same as lws-ui `weightSum`).
   /// Cutting widened vs original Android art; the five `*_tab_bg` assets were

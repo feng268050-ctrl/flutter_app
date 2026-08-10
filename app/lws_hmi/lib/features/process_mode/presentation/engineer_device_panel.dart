@@ -21,6 +21,7 @@ import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_adaptive_icon_label.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
 ///
@@ -717,8 +718,9 @@ final class _EngineerWireActionButtonState
                       color: actionOrange,
                     ),
                   if (latched) const FeedContinuousRipple(),
-                  // Label-only when continuous feed is latched; otherwise
-                  // icon+label as one group with equal side insets.
+                  // Label-only when continuous feed is latched.
+                  // Feed: left inset = icon↔label gap = top/bottom; label not
+                  // button-centered. Retract: keep prior icon+label group.
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final style = TextStyle(
@@ -733,7 +735,6 @@ final class _EngineerWireActionButtonState
                         label,
                         maxLines: 1,
                         softWrap: false,
-                        textAlign: TextAlign.center,
                         style: style,
                       );
                       if (latched) {
@@ -742,6 +743,41 @@ final class _EngineerWireActionButtonState
                       final edgeInset =
                           ((constraints.maxHeight - iconSize) / 2)
                               .clamp(0.0, constraints.maxHeight);
+                      final iconFace = SizedBox(
+                        width: iconSize,
+                        height: iconSize,
+                        child: Transform.flip(
+                          flipX: widget.retract,
+                          child: Icon(
+                            widget.icon,
+                            color: widget.enabled
+                                ? foreground
+                                : disabledForeground,
+                            size: iconSize,
+                          ),
+                        ),
+                      );
+                      // Feed only: [edgeInset][icon][edgeInset][label…]
+                      if (!widget.retract) {
+                        return Padding(
+                          padding: EdgeInsets.only(left: edgeInset),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  iconFace,
+                                  SizedBox(width: edgeInset),
+                                  labelText,
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }
                       return Padding(
                         padding: EdgeInsets.symmetric(horizontal: edgeInset),
                         child: Center(
@@ -750,20 +786,7 @@ final class _EngineerWireActionButtonState
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                SizedBox(
-                                  width: iconSize,
-                                  height: iconSize,
-                                  child: Transform.flip(
-                                    flipX: widget.retract,
-                                    child: Icon(
-                                      widget.icon,
-                                      color: widget.enabled
-                                          ? foreground
-                                          : disabledForeground,
-                                      size: iconSize,
-                                    ),
-                                  ),
-                                ),
+                                iconFace,
                                 const SizedBox(
                                   width: ProcessModeOutlineChrome.iconLabelGap,
                                 ),
@@ -929,50 +952,23 @@ final class _EngineerDeviceActionButtonState
                       ),
                     ),
                   ),
-                // Icon+label as one group with equal side insets (same as
-                // Engineer Feed/Retract and Quick Auto Wire).
-                Builder(
-                  builder: (context) {
-                    final edgeInset =
-                        ((widget.height - iconSize) / 2).clamp(0.0, widget.height);
-                    return Padding(
-                      padding: EdgeInsets.symmetric(horizontal: edgeInset),
-                      child: Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                widget.icon,
-                                color: isVisuallyEnabled
-                                    ? foreground
-                                    : disabledForeground,
-                                size: iconSize,
-                              ),
-                              const SizedBox(
-                                width: ProcessModeOutlineChrome.iconLabelGap,
-                              ),
-                              Text(
-                                widget.label,
-                                maxLines: 1,
-                                softWrap: false,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: isVisuallyEnabled
-                                      ? foreground
-                                      : disabledForeground,
-                                  fontSize: labelSize,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.0,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                HmiAdaptiveIconLabel(
+                  label: widget.label,
+                  style: TextStyle(
+                    color: isVisuallyEnabled ? foreground : disabledForeground,
+                    fontSize: labelSize,
+                    fontWeight: FontWeight.w600,
+                    height: 1.0,
+                  ),
+                  iconSize: iconSize,
+                  buttonHeight: widget.height,
+                  horizontalPadding: ((widget.height - iconSize) / 2)
+                      .clamp(0.0, widget.height),
+                  leading: Icon(
+                    widget.icon,
+                    color: isVisuallyEnabled ? foreground : disabledForeground,
+                    size: iconSize,
+                  ),
                 ),
               ],
             ),

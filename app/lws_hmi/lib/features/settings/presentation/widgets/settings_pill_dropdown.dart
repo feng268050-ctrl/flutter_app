@@ -95,10 +95,9 @@ final class SettingsPillDropdown<T> extends StatelessWidget {
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: context.hmiTypography.sectionTitle.copyWith(
+                          style: context.hmiTypography.body.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
-                            fontSize: 18,
                           ),
                         ),
                       ),

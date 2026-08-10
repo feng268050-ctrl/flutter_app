@@ -3,6 +3,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
@@ -584,9 +585,8 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
                 ? l10n.newUserProcess
                 : l10n.editProcess,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: context.hmiTypography.formDialogTitle.copyWith(
               color: CyberColors.textPrimary,
-              fontSize: 37,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,

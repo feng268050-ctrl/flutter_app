@@ -44,8 +44,10 @@ import 'package:lws_hmi/features/status_bar/product_tab_slide_body.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/features/process_library/presentation/engineer_action_layout.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
@@ -86,8 +88,22 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   GunDialogCoordinator? _gunDialogs;
   bool _exiting = false;
   int _processSwitchGen = 0;
+
   /// Tab slide direction for [ProductTabSlideSwitcher] (higher index = forward).
   bool _tabSlideForward = true;
+
+  double _largeActionLabelWidth(BuildContext context, String label) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: context.hmiTypography.buttonLarge,
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    return painter.width;
+  }
 
   @override
   void initState() {
@@ -112,8 +128,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         );
         _deviceControl!.onSafetyEvent = _onDeviceSafetyEvent;
         unawaited(_deviceControl!.start());
-        _laserWorkGuardHost =
-            DeviceControlLaserWorkGuardHost(_deviceControl!);
+        _laserWorkGuardHost = DeviceControlLaserWorkGuardHost(_deviceControl!);
         LaserWorkGuard.register(_laserWorkGuardHost!);
         _recordWork = RecordWorkController(
           deviceControl: _deviceControl!,
@@ -482,7 +497,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     };
     if (!silent) {
       final l10n = AppLocalizations.of(context)!;
-      ProcessModeToast.show(context, _applyFailureMessage(l10n, result.failure));
+      ProcessModeToast.show(
+          context, _applyFailureMessage(l10n, result.failure));
     }
     return false;
   }
@@ -510,8 +526,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       modeType: _statisticsModeType(_processType),
       // Stored for audit; settle uses modeType==weld × process wire speed
       // (lws-ui weldStop: sessionSeconds * wireFeedSpeed), not this flag.
-      autoWireFeedEnabled:
-          isWeld && (_deviceControl?.autoWireFeed ?? false),
+      autoWireFeedEnabled: isWeld && (_deviceControl?.autoWireFeed ?? false),
       autoWireFeedSpeedMmPerSecond:
           preset.parameters.values['process.wire_feeding_speed'] ?? 0,
       materialType: preset.materialType?.storageValue,
@@ -787,19 +802,24 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                   l10n.noEngineerProcesses,
                                   key: const ValueKey('engineer-mode-empty'),
                                   style: context.hmiTypography.supporting
-                                      .copyWith(
-                                          color: const Color(0xB3FFFFFF)),
+                                      .copyWith(color: const Color(0xB3FFFFFF)),
                                 ),
                               )
                             : Padding(
                                 padding: const EdgeInsets.fromLTRB(
-                                    16, 12, 16, 16),
+                                  ProcessModeDimens.engineerPanelHorizontalPad,
+                                  12,
+                                  ProcessModeDimens.engineerPanelHorizontalPad,
+                                  16,
+                                ),
                                 child: Row(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     Expanded(
-                                      flex: 1,
+                                      // 1 : φ ≈ 38.2% : 61.8% with the right panel.
+                                      flex: ProcessModeDimens
+                                          .engineerLeftPanelFlex,
                                       child: SizedBox(
                                         key: const ValueKey(
                                             'engineer-device-panel-container'),
@@ -818,9 +838,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                               ),
                                       ),
                                     ),
-                                    const SizedBox(width: 24),
+                                    const SizedBox(
+                                      width: ProcessModeDimens.engineerPanelGap,
+                                    ),
                                     Expanded(
-                                      flex: 2,
+                                      flex: ProcessModeDimens
+                                          .engineerRightPanelFlex,
                                       child: EngineerFrostPanel(
                                         key: const ValueKey(
                                             'engineer-parameters-panel'),
@@ -875,8 +898,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                             const SizedBox(
                                                                 height: 6),
                                                             Text(
-                                                              l10n
-                                                                  .currentProcessName,
+                                                              l10n.currentProcessName,
                                                               key: ValueKey(
                                                                 draft.fromQuickHandoff
                                                                     ? 'engineer-mode-draft-uuid'
@@ -931,8 +953,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                                         .min,
                                                                 children: [
                                                                   Text(
-                                                                    l10n
-                                                                        .moreFavorites,
+                                                                    l10n.moreFavorites,
                                                                     style: context
                                                                         .hmiTypography
                                                                         .settingsRowTitle
@@ -981,63 +1002,116 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                 onBeginEdit:
                                                     _beginEditFromBuiltin,
                                                 footer: Padding(
-                                                  padding: const EdgeInsets
-                                                      .fromLTRB(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
                                                     16,
                                                     8,
                                                     0,
                                                     EngineerDevicePanel
                                                         .panelBottomInset,
                                                   ),
-                                                  child: Row(
-                                                    children: [
-                                                      Expanded(
-                                                        child: HmiButton(
-                                                          key: const ValueKey(
-                                                            'engineer-action-reset-default',
-                                                          ),
-                                                          label: l10n
-                                                              .resetToDefault,
-                                                          size: HmiButtonSize
-                                                              .large,
-                                                          widthPolicy:
-                                                              HmiButtonWidthPolicy
-                                                                  .fill,
-                                                          shape:
-                                                              CyberButtonShape
-                                                                  .rounded,
-                                                          icon: Icons
-                                                              .restart_alt,
-                                                          onPressed:
-                                                              _resetToDefault,
+                                                  child: LayoutBuilder(
+                                                    builder:
+                                                        (context, constraints) {
+                                                      final resetLabel = l10n
+                                                          .engineerActionResetDefaults;
+                                                      final saveLabel = l10n
+                                                          .engineerActionSaveFavorite;
+                                                      final useVertical =
+                                                          EngineerActionLayout
+                                                              .useVertical(
+                                                        isLargeText: HmiTextScale
+                                                                .factorOf(
+                                                              MediaQuery
+                                                                  .textScalerOf(
+                                                                context,
+                                                              ),
+                                                            ) >=
+                                                            HmiTextScale
+                                                                .readingLarge,
+                                                        maxWidth: constraints
+                                                            .maxWidth,
+                                                        resetLabelWidth:
+                                                            _largeActionLabelWidth(
+                                                          context,
+                                                          resetLabel,
                                                         ),
-                                                      ),
-                                                      const SizedBox(
-                                                          width: 22),
-                                                      Expanded(
-                                                        child: HmiButton(
-                                                          key: const ValueKey(
-                                                            'engineer-action-save-favorite',
-                                                          ),
-                                                          label: l10n
-                                                              .saveAsFavorite,
-                                                          size: HmiButtonSize
-                                                              .large,
-                                                          widthPolicy:
-                                                              HmiButtonWidthPolicy
-                                                                  .fill,
-                                                          shape:
-                                                              CyberButtonShape
-                                                                  .rounded,
-                                                          icon: Icons
-                                                              .bookmark_add,
-                                                          onPressed: controller
-                                                                  .applying
-                                                              ? null
-                                                              : _saveAsFavorite,
+                                                        saveLabelWidth:
+                                                            _largeActionLabelWidth(
+                                                          context,
+                                                          saveLabel,
                                                         ),
-                                                      ),
-                                                    ],
+                                                      );
+                                                      final reset = HmiButton(
+                                                        key: const ValueKey(
+                                                          'engineer-action-reset-default',
+                                                        ),
+                                                        label: resetLabel,
+                                                        size:
+                                                            HmiButtonSize.large,
+                                                        widthPolicy:
+                                                            HmiButtonWidthPolicy
+                                                                .fill,
+                                                        horizontalPadding:
+                                                            EngineerActionLayout
+                                                                .horizontalPadding,
+                                                        shape: CyberButtonShape
+                                                            .rounded,
+                                                        icon: Icons.restart_alt,
+                                                        onPressed:
+                                                            _resetToDefault,
+                                                      );
+                                                      final save = HmiButton(
+                                                        key: const ValueKey(
+                                                          'engineer-action-save-favorite',
+                                                        ),
+                                                        label: saveLabel,
+                                                        size:
+                                                            HmiButtonSize.large,
+                                                        widthPolicy:
+                                                            HmiButtonWidthPolicy
+                                                                .fill,
+                                                        horizontalPadding:
+                                                            EngineerActionLayout
+                                                                .horizontalPadding,
+                                                        shape: CyberButtonShape
+                                                            .rounded,
+                                                        icon:
+                                                            Icons.bookmark_add,
+                                                        onPressed: controller
+                                                                .applying
+                                                            ? null
+                                                            : _saveAsFavorite,
+                                                      );
+                                                      if (useVertical) {
+                                                        return Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .stretch,
+                                                          children: [
+                                                            reset,
+                                                            const SizedBox(
+                                                              height:
+                                                                  EngineerActionLayout
+                                                                      .groupGap,
+                                                            ),
+                                                            save,
+                                                          ],
+                                                        );
+                                                      }
+                                                      return Row(
+                                                        children: [
+                                                          Expanded(
+                                                              child: reset),
+                                                          const SizedBox(
+                                                            width:
+                                                                EngineerActionLayout
+                                                                    .groupGap,
+                                                          ),
+                                                          Expanded(child: save),
+                                                        ],
+                                                      );
+                                                    },
                                                   ),
                                                 ),
                                               ),

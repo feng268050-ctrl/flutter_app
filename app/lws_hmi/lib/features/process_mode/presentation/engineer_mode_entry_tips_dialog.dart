@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -83,11 +84,11 @@ final class _EngineerModeEntryTipsBodyState
   /// TipFrostDivider chrome was added.
   static const _iconSize = 140.0;
 
-  /// `frost_dialog_prompt_title_text_size` → [HmiTypography.criticalTitle] (52).
-  static const _titleSize = 52.0;
+  /// `frost_dialog_prompt_title_text_size` → [HmiTypography.engineerTipTitle].
+  static const _titleSize = AppTypography.criticalTitleSize;
 
-  /// `dialog_frost_body_prompt` content → [HmiTypography.importantDialogTitle] (36).
-  static const _bodySize = 36.0;
+  /// `dialog_frost_body_prompt` content → [HmiTypography.engineerTipBody].
+  static const _bodySize = AppTypography.largeDialogTitleSize;
 
   /// `frost_dialog_prompt_content_inset` / `engineer_mode_entry_dialog_content_padding`.
   static const _contentInset = 36.0;
@@ -131,13 +132,13 @@ final class _EngineerModeEntryTipsBodyState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final titleStyle = context.hmiTypography.criticalTitle.copyWith(
+    final titleStyle = context.hmiTypography.engineerTipTitle.copyWith(
       color: _titleOrange,
       fontWeight: FontWeight.w700,
       height: 1.0,
       decoration: TextDecoration.none,
     );
-    final bodyBase = context.hmiTypography.importantDialogTitle;
+    final bodyBase = context.hmiTypography.engineerTipBody;
     final bodySize = bodyBase.fontSize ?? _bodySize;
     final bodyStyle = bodyBase.copyWith(
       color: _bodyDark,
@@ -223,35 +224,22 @@ final class _EngineerModeEntryTipsBodyState
           ),
           const SizedBox(height: _dontShowAgainInset),
           Center(
-            child: Row(
+            child: CyberCheckbox(
               key: const ValueKey('engineer-mode-entry-dont-show-again'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CyberCheckbox(
-                  value: _dontShowAgain,
-                  size: CyberDimens.checkboxLargeSize,
-                  onChanged: (v) {
-                    setState(() => _dontShowAgain = v ?? false);
-                  },
+              value: _dontShowAgain,
+              size: CyberDimens.checkboxLargeSize,
+              onChanged: (v) {
+                setState(() => _dontShowAgain = v ?? false);
+              },
+              label: Text(
+                l10n.dontShowAgainThisSession,
+                textAlign: TextAlign.center,
+                style: context.hmiTypography.dialogOptionLabel.copyWith(
+                  height: 1.0,
+                  color: _labelMuted,
+                  decoration: TextDecoration.none,
                 ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: GestureDetector(
-                    onTap: () {
-                      CyberClickSoundRegistry.playClick();
-                      setState(() => _dontShowAgain = !_dontShowAgain);
-                    },
-                    child: Text(
-                      l10n.dontShowAgainThisSession,
-                      style: context.hmiTypography.sectionTitle.copyWith(
-                        fontSize: 26,
-                        color: _labelMuted,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],

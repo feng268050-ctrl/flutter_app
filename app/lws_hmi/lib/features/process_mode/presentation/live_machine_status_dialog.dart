@@ -540,12 +540,6 @@ final class _LiveTempMetricCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // No arrows when unavailable (dash only) or before first delta.
-                if (hasValue && series.trend != TempTrend.none) ...[
-                  const SizedBox(width: 6),
-                  TempTrendArrows(trend: series.trend),
-                  const SizedBox(width: 2),
-                ],
                 Text(
                   value,
                   maxLines: 1,
@@ -553,9 +547,11 @@ final class _LiveTempMetricCard extends StatelessWidget {
                   style: context.hmiTypography.body.copyWith(
                     color: overTemp ? _faultValue : Colors.white,
                     fontWeight: FontWeight.w400,
-                    height: 1.1,
+                    height: 1.0,
                   ),
                 ),
+                // Fixed arrow slot after the value (stable when trend is none).
+                if (hasValue) TempTrendArrows(trend: series.trend),
               ],
             ),
           ),

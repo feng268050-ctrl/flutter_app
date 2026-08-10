@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_importer.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -199,7 +200,7 @@ void main() {
     );
     expect(
       continuousTab.style?.fontSize,
-      ProcessModeDimens.engineerTabLabelSize,
+      HmiTabMetrics.labelFontSize,
     );
   });
 

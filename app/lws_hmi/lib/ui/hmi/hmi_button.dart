@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_adaptive_icon_label.dart';
 
 /// App-level button that binds FrostUI 100% metrics to [CyberButton] chrome.
 ///
@@ -14,12 +17,12 @@ final class HmiButton extends StatelessWidget {
     this.size = HmiButtonSize.medium,
     this.widthPolicy = HmiButtonWidthPolicy.adaptive,
     this.width,
+    this.horizontalPadding,
     this.variant = CyberButtonVariant.standard,
     this.shape = CyberButtonShape.rectangle,
     this.icon,
     this.leading,
     this.trailing,
-    this.groupIconWithLabel = false,
     this.clickSoundEnabled = true,
     this.borderGradientCenter = CyberBorderGradientCenter.uniform,
     this.borderGradientColors,
@@ -37,17 +40,17 @@ final class HmiButton extends StatelessWidget {
   /// when the parent does not already constrain width.
   final double? width;
 
+  /// Optional content padding override for a constrained button group.
+  final double? horizontalPadding;
+
   final CyberButtonVariant variant;
   final CyberButtonShape shape;
   final IconData? icon;
   final Widget? leading;
   final Widget? trailing;
 
-  /// When true with a leading icon, center icon+label as one Row group.
-  /// Default false: label centered on the button, icon left-inset (Reset…).
-  final bool groupIconWithLabel;
-
   final bool clickSoundEnabled;
+
   /// Legacy; buttons default to [CyberColors.buttonRim] (70% white) or
   /// [CyberColors.buttonPrimaryRim] (60%) when [variant] is primary.
   final CyberBorderGradientCenter borderGradientCenter;
@@ -71,16 +74,19 @@ final class HmiButton extends StatelessWidget {
       height: 1.0,
     );
 
-    final child = _HmiButtonLabel(
+    final resolvedLeading = leading ??
+        (icon == null
+            ? null
+            : Icon(icon, size: metrics.iconSize, color: foreground));
+    final resolvedPadding = horizontalPadding ?? metrics.horizontalPadding;
+    final child = HmiAdaptiveIconLabel(
       label: label,
       style: labelStyle,
       iconSize: metrics.iconSize,
       buttonHeight: metrics.height,
-      horizontalPadding: metrics.horizontalPadding,
-      icon: icon,
-      leading: leading,
+      horizontalPadding: resolvedPadding,
+      leading: resolvedLeading,
       trailing: trailing,
-      groupIconWithLabel: groupIconWithLabel,
     );
 
     // Always stretch so CyberButton uses [height] directly (not shrink-wrap
@@ -110,9 +116,20 @@ final class HmiButton extends StatelessWidget {
           height: metrics.height,
           child: cyber,
         ),
-      HmiButtonWidthPolicy.adaptive => ConstrainedBox(
-          constraints: BoxConstraints(minWidth: metrics.minWidth),
-          child: IntrinsicWidth(child: sized),
+      HmiButtonWidthPolicy.adaptive => SizedBox(
+          width: math.max(
+            metrics.minWidth,
+            HmiIconLabelLayout.groupedRequiredWidth(
+              labelWidth:
+                  HmiIconLabelLayout.textWidth(context, label, labelStyle),
+              horizontalPadding: resolvedPadding,
+              iconSize: metrics.iconSize,
+              hasLeading: resolvedLeading != null,
+              hasTrailing: trailing != null,
+            ),
+          ),
+          height: metrics.height,
+          child: cyber,
         ),
     };
   }
@@ -127,129 +144,5 @@ final class HmiButton extends StatelessWidget {
       HmiButtonSize.jumbo =>
         CyberButtonSize.large,
     };
-  }
-}
-
-final class _HmiButtonLabel extends StatelessWidget {
-  const _HmiButtonLabel({
-    required this.label,
-    required this.style,
-    required this.iconSize,
-    required this.buttonHeight,
-    required this.horizontalPadding,
-    this.icon,
-    this.leading,
-    this.trailing,
-    this.groupIconWithLabel = false,
-  });
-
-  final String label;
-  final TextStyle style;
-  final double iconSize;
-  final double buttonHeight;
-  final double horizontalPadding;
-  final IconData? icon;
-  final Widget? leading;
-  final Widget? trailing;
-  final bool groupIconWithLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final lead = leading ??
-        (icon == null
-            ? null
-            : Icon(icon, size: iconSize, color: style.color ?? Colors.white));
-
-    // Icon/leading without trailing: label centered on the full button;
-    // icon left inset equals top/bottom inset (Reset / Save Favorite).
-    // Opt out via [groupIconWithLabel] (e.g. Alarms Clear short pill).
-    if (lead != null && trailing == null && !groupIconWithLabel) {
-      final edgeInset = ((buttonHeight - iconSize) / 2).clamp(0.0, buttonHeight);
-      return SizedBox.expand(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Center(
-              child: Text(
-                label,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.visible,
-                textAlign: TextAlign.center,
-                style: style,
-              ),
-            ),
-            Positioned(
-              left: edgeInset,
-              top: edgeInset,
-              width: iconSize,
-              height: iconSize,
-              child: icon != null
-                  ? Icon(
-                      icon,
-                      size: iconSize,
-                      color: style.color ?? Colors.white,
-                    )
-                  : FittedBox(fit: BoxFit.contain, child: lead),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Grouped icon+label (Clear) or leading+label+trailing: centered Row.
-    // When grouping, icon edge matches fixed label fontSize (text height @ 1.0).
-    final glyphSize = style.fontSize ?? iconSize;
-    final Widget? groupedLead = lead == null
-        ? null
-        : SizedBox(
-            width: glyphSize,
-            height: glyphSize,
-            child: IconTheme.merge(
-              data: IconThemeData(
-                size: glyphSize,
-                color: style.color ?? Colors.white,
-              ),
-              child: icon != null
-                  ? Icon(
-                      icon,
-                      size: glyphSize,
-                      color: style.color ?? Colors.white,
-                    )
-                  : FittedBox(fit: BoxFit.contain, child: lead),
-            ),
-          );
-    final labelText = Text(
-      label,
-      maxLines: 1,
-      softWrap: false,
-      overflow: TextOverflow.visible,
-      textAlign: TextAlign.center,
-      style: style,
-    );
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: groupIconWithLabel ? MainAxisSize.min : MainAxisSize.max,
-        children: [
-          if (groupIconWithLabel && groupedLead != null) ...[
-            groupedLead,
-            const SizedBox(width: 8),
-          ] else if (lead != null) ...[
-            lead,
-            const SizedBox(width: 8),
-          ],
-          if (groupIconWithLabel && trailing == null)
-            labelText
-          else
-            Flexible(child: labelText),
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ],
-        ],
-      ),
-    );
   }
 }

@@ -49,36 +49,22 @@ class SettingsPage extends StatefulWidget {
   /// Shared camera version cache (cloud WS + Camera settings).
   final CameraDeviceInfoCache? cameraDeviceInfoCache;
 
-  static const _tabs = <({
-    Key key,
-    IconData icon,
-    double iconLeftNudge,
-    bool balanceIconLabelGap,
-  })>[
+  static const _tabs = <({Key key, IconData icon})>[
     (
       key: ValueKey('settings-tab-device-info'),
       icon: Icons.info_outline,
-      iconLeftNudge: 0,
-      balanceIconLabelGap: false,
     ),
     (
       key: ValueKey('settings-tab-common'),
       icon: Icons.settings,
-      iconLeftNudge: 0,
-      balanceIconLabelGap: false,
     ),
     (
       key: ValueKey('settings-tab-advanced'),
       icon: Icons.tune,
-      iconLeftNudge: 0,
-      balanceIconLabelGap: false,
     ),
     (
       key: ValueKey('settings-tab-custom-home'),
       icon: Icons.home_outlined,
-      iconLeftNudge: 0,
-      // Icon left inset == gap between icon and centered label.
-      balanceIconLabelGap: true,
     ),
   ];
 
@@ -137,9 +123,8 @@ class _SettingsPageState extends State<SettingsPage> {
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
           toolbarHeight: WorkModeStatusBarDimens.height,
-          backLabel: tabLabels[_currentTabIndex],
-          useHomeIcon: true,
-          centerClock: true,
+          // Home + page title + trailing clock/status (no orange edge accent).
+          backLabel: l10n.equipmentStatusHome,
           backAccent: WorkModeAccent.weld,
           onBack: canPop ? () => Navigator.of(context).maybePop() : null,
           bottom: SettingsTopTabs(

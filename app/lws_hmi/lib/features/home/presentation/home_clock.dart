@@ -204,6 +204,8 @@ class _HomeClockState extends State<HomeClock> {
     double fontSize, {
     double letterSpacing = 0,
   }) {
+    // Intentionally fixed-size display chrome; does not follow user text size.
+    // Caller applies [HmiTextScale.displayTextScalerOf] into [fontSize].
     return TextPainter(
       text: TextSpan(
         text: value,
@@ -217,6 +219,7 @@ class _HomeClockState extends State<HomeClock> {
       ),
       textDirection: ui.TextDirection.ltr,
       textAlign: TextAlign.center,
+      textScaler: TextScaler.noScaling,
     )..layout();
   }
 

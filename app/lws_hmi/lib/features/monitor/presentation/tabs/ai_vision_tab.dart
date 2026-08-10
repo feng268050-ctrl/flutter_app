@@ -31,6 +31,7 @@ import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 /// lws-ui `fragment_ai_vision` — Work Info + Choose; preview-stack actions.
 class AiVisionTab extends StatefulWidget {
@@ -683,7 +684,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
               children: [
                 Expanded(
                   child: MonitorGlassCard(
-                    padding: const EdgeInsets.fromLTRB(0, 22, 0, 8),
+                    padding: const EdgeInsets.fromLTRB(0, 22, 0, 0),
                     borderGradientCenter:
                         CyberBorderGradientCenter.topLeftBottomRight,
                     child: Column(
@@ -693,24 +694,35 @@ class _AiVisionTabState extends State<AiVisionTab> {
                           padding: const EdgeInsets.fromLTRB(24, 10, 24, 21),
                           child: Text(
                             l10n.deviceMonitorWorkInfoTitle,
-                            style: context.hmiTypography.importantDialogTitle.copyWith(
+                            style: context.hmiTypography.importantDialogTitle
+                                .copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w400,
                               height: 1.0,
                             ),
                           ),
                         ),
-                        _InfoBlock(
-                          label: l10n.aiVisionProcessTypeText,
-                          value: info.$1,
-                        ),
-                        _InfoBlock(
-                          label: l10n.aiVisionMaterialTypeText,
-                          value: info.$2,
-                        ),
-                        _InfoBlock(
-                          label: l10n.processVideoRecordingTime,
-                          value: info.$3,
+                        Expanded(
+                          child: Scrollbar(
+                            thumbVisibility: true,
+                            child: ListView(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              children: [
+                                _InfoBlock(
+                                  label: l10n.aiVisionProcessTypeText,
+                                  value: info.$1,
+                                ),
+                                _InfoBlock(
+                                  label: l10n.aiVisionMaterialTypeText,
+                                  value: info.$2,
+                                ),
+                                _InfoBlock(
+                                  label: l10n.processVideoRecordingTime,
+                                  value: info.$3,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -897,36 +909,32 @@ class _InfoBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ColoredBox(
-            color: AiVisionTab.labelBar,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 31, vertical: 16),
-              child: Text(
-                label,
-                style: context.hmiTypography.navigation.copyWith(
-                  color: const Color(0xFFE1E1E1),
-                  height: 1.0,
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(31, 16, 31, 0),
+    final valueStyle = context.hmiTypography.navigation.copyWith(
+      color: const Color(0xFFE1E1E1),
+      height: 1.0,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ColoredBox(
+          color: AiVisionTab.labelBar,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 31, vertical: 16),
             child: Text(
-              value,
-              style: context.hmiTypography.navigation.copyWith(
-                color: const Color(0xFFE1E1E1),
-                height: 1.0,
-              ),
+              label,
+              style: valueStyle,
             ),
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(31, 16, 31, 16),
+          child: WordBoundaryLabel(
+            text: value,
+            style: valueStyle,
+            maxLines: 3,
+          ),
+        ),
+      ],
     );
   }
 }

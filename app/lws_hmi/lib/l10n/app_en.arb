@@ -424,6 +424,7 @@
   "dateTimeUse24HourFormat": "Use 24-Hour Format",
   "defaultLabel": "Default",
   "deleteText": "Delete",
+  "details": "Details",
   "deviceBindBody": "Scan the QR code with the LaserCyber app to bind this device.",
   "deviceBindTitle": "Bind This Device",
   "deviceControlAutoWireFeedOff": "Wire Feed Turned Off",
@@ -478,6 +479,18 @@
   "engineerModeEntryBody": "Engineer mode unlocks advanced parameter customization for experienced users. We recommend learning how the machine works before making fine adjustments.",
   "engineerModeEntryConfirm": "Confirm & Enter",
   "engineerModeEntryTitle": "Engineer Mode Notice",
+  "engineerNumericValueInvalid": "Invalid value",
+  "engineerNumericValueOutOfRange": "Value must be between {min} and {max}",
+  "@engineerNumericValueOutOfRange": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "environmentTemperatureAlarmContent": "Ambient temperature is out of the allowed range. Improve workshop cooling/heating. If the reading looks wrong, contact LaserCyber support.",
   "environmentTemperatureAlarmTitle": "Ambient Temperature Alarm",
   "environmentTemperatureText": "Ambient Temperature",
@@ -803,11 +816,29 @@
   "paramGasOffDelay": "Gas Post-Flow",
   "paramGasOffDelayCatalog": "Gas Post-Flow",
   "paramGasPostFlow": "Gas Post-Flow",
+  "paramGasPostFlowDesc": "Delay before shutting off gas after the laser turns off. Range: 0–10000 ms.",
   "paramGasPreFlow": "Gas Pre-Flow",
+  "paramGasPreFlowDesc": "Gas pre-flow time before laser emission. Range: 0–10000 ms.",
+  "paramGenericRangeDesc": "Range: {min}–{max} {unit}.",
+  "@paramGenericRangeDesc": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "paramLaserDutyCycle": "Laser Duty Cycle",
   "paramLaserFrequency": "Laser Frequency",
   "paramLaserOffDelay": "Laser-Off Delay",
+  "paramLaserOffDelayDesc": "Delay between stopping wire feed and turning off the laser (for wire cutoff). Range: 0–1000 ms.",
   "paramLaserPower": "Laser Power",
+  "paramLaserPowerDesc": "Laser output power. 100% equals the machine’s rated maximum (e.g. 1300 W). Range: 0–100%.",
   "paramLightOffDelay": "Laser-Off Delay",
   "paramLightOffDelayCatalog": "Light Off Delay",
   "paramPiercingDuration": "Piercing Duration",
@@ -817,21 +848,110 @@
   "paramPowerRampDown": "Ramp-Down Time",
   "paramPowerRampUp": "Ramp-Up Time",
   "paramRampDownTime": "Ramp-Down Time",
+  "paramRampDownTimeDesc": "Laser ramp-down time in pulse mode. Range: 0–1000 ms.",
   "paramRampUpTime": "Ramp-Up Time",
+  "paramRampUpTimeDesc": "Laser ramp-up time in pulse mode. Range: 0–1000 ms.",
   "paramRefeedDelay": "Re-Feed Delay",
+  "paramRefeedDelayDesc": "Delay between retract and re-feed; helps prevent re-sticking. Range: 0–1000 ms.",
   "paramRefeedLength": "Re-Feed Length",
+  "paramRefeedLengthDesc": "Re-feed length to reach the optimal tip position. Range: {min}–{max} {unit}.",
+  "@paramRefeedLengthDesc": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "paramRetractLength": "Retract Length",
+  "paramRetractLengthDesc": "Wire retract length after welding. Range: {min}–{max} {unit}.",
+  "@paramRetractLengthDesc": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "paramRetractSpeed": "Retract Speed",
+  "paramRetractSpeedDesc": "Wire retract speed; helps prevent re-sticking. Range: {min}–{max} {unit}.",
+  "@paramRetractSpeedDesc": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "paramScanFrequency": "Scan Frequency",
+  "paramScanFrequencyDesc": "Recommended scan frequency: {min}–{max} {unit}.",
+  "@paramScanFrequencyDesc": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "paramScanWidth": "Scan Width",
+  "paramScanWidthDesc": "Laser scan width. Range: {min}–{max} {unit}.",
+  "@paramScanWidthDesc": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "paramSpotWeldDuration": "Spot Weld Duration",
+  "paramSpotWeldDurationDesc": "Laser-on duration for each spot weld. Range: 0–10000 ms.",
   "paramSpotWeldInterval": "Spot Weld Interval",
+  "paramSpotWeldIntervalDesc": "Interval between spot welds in burst mode. Range: 0–10000 ms.",
   "paramSpotWeldingDurationCatalog": "Spot Welding Duration",
   "paramSpotWeldingIntervalCatalog": "Spot Welding Interval",
   "paramSwingFrequency": "Scan Frequency",
   "paramSwingFrequencyCatalog": "Scan Frequency",
   "paramSwingWidth": "Scan Width",
   "paramWireFeedSpeed": "Wire Feed Speed",
+  "paramWireFeedSpeedDesc": "Wire feed speed. Range: {min}–{max} {unit}.",
+  "@paramWireFeedSpeedDesc": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "paramWireFeedingDelay": "Wire Feed Delay",
   "paramWireFeedingSpeedCatalog": "Wire Feed Speed",
   "paramWireFillingDelay": "Re-Feed Delay",
@@ -980,6 +1100,7 @@
   "requiredFieldText": "Required",
   "resetComplete": "Reset Complete",
   "resetToDefault": "Reset To Default",
+  "engineerActionResetDefaults": "Reset Defaults",
   "retract": "Retract",
   "retryText": "Retry",
   "rgbLedFooter": "Use these controls to test the status LED indicators on this device.",
@@ -994,8 +1115,9 @@
   "safetyTipsInfoUse": "Product Disclaimer.",
   "safetyTipsTitle": "Safety Tips",
   "saveAsFavorite": "Save As Favorite",
-    "selectValidProcessPresetFirst": "Select A Valid Process Preset First",
-"saveChanges": "Save Changes",
+  "engineerActionSaveFavorite": "Save Favorite",
+  "selectValidProcessPresetFirst": "Select A Valid Process Preset First",
+  "saveChanges": "Save Changes",
   "saveFailed": "Save Failed",
   "saveSucceeded": "Saved",
   "savedSuccessfully": "Saved",
@@ -1104,6 +1226,12 @@
   "unitPersistedFooter": "Choose Metric (°C, mm) or Imperial (°F, in) for values shown on this device.",
   "unitPreferenceUnavailable": "Unit settings are temporarily unavailable.",
   "unitSettingText": "Unit",
+  "textSizeOptionLarge": "Large",
+  "textSizeOptionMedium": "Medium",
+  "textSizeOptionSmall": "Small",
+  "textSizePersistedFooter": "Choose how large text appears on this device. Display numbers and charts use a milder scale.",
+  "textSizePreferenceUnavailable": "Text size settings are temporarily unavailable.",
+  "textSizeSettingText": "Text Size",
   "uploadText": "Upload",
   "usbOtgModeDebug": "Debug",
   "usbOtgModeHost": "Host",

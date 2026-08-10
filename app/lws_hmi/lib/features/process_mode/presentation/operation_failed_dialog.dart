@@ -1,6 +1,5 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
@@ -152,11 +151,8 @@ final class _OperationFailedBody extends StatelessWidget {
           0.02 * (context.hmiTypography.importantDialogTitle.fontSize ?? 0),
       decoration: TextDecoration.none,
     );
-    final titleSize =
-        titleStyle.fontSize ?? AppTypography.largeDialogTitleSize;
-    final bodyStyle = context.hmiTypography.body.copyWith(
+    final bodyStyle = context.hmiTypography.importantDialogBody.copyWith(
       color: CyberColors.textPrimary,
-      fontSize: AppTypography.tipBodySizeForTitle(titleSize),
       fontWeight: FontWeight.w400,
       height: 1.2,
       decoration: TextDecoration.none,

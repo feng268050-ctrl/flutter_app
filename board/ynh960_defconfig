@@ -2,7 +2,7 @@ RK_KERNEL_VERSION="6.10"
 RK_KERNEL_DTS_NAME="ynh960"
 # Display / touch / trim / eth / USB gadget / WiFiBT / BT-HID / PMIC RTC: board line.
 # emulator-virtio: shared Image also boots under QEMU for P3.2 sim (not a board SKU).
-RK_KERNEL_CFG_FRAGMENTS="ynh960-display.config ynh960-touch.config ynh960-kernel-trim.config ynh960-eth.config ynh960-usb-gadget.config ynh960-wifibt.config ynh960-bt-hid.config ynh960-rtc.config emulator-virtio.config"
+RK_KERNEL_CFG_FRAGMENTS="ynh960-display.config ynh960-touch.config ynh960-kernel-trim.config ynh960-eth.config ynh960-usb-gadget.config ynh960-wifibt.config ynh960-bt-hid.config ynh960-rtc.config ynh960-selinux.config emulator-virtio.config"
 RK_PARAMETER="parameter-buildroot-fit.txt"
 RK_USE_FIT_IMG=y
 # Multi-conf FIT (W5): shared kernel + resource + fdt-<board_id> / conf=<board_id>.

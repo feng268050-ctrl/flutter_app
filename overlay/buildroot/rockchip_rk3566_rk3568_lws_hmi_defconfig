@@ -32,5 +32,8 @@
 # OP-TEE client (tee-supplicant + libteec) for HAL Secrets / KEK.
 #include "chips/lws_hmi_optee.config"
 
+# SELinux userspace + permissive refpolicy (kernel: ynh960-selinux.config).
+#include "chips/lws_hmi_selinux.config"
+
 #include "chips/lws_hmi_build.config"
 #include "chips/lws_hmi_toolchain_external.config"

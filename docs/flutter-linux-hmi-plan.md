@@ -94,7 +94,7 @@ P4  业务迁移（子阶段见 §1.2）✅
     ├─ 云服务 / `:5580`：OpenSpec `archive/2026-07-29-align-cloud-local-server`；AI Vision：`archive/2026-07-31-ai-vision-and-process-video-ai`
     ├─ **P4.8 统一整机 OTA** ✅（一级；无 App-only / 二级产品通道）
     │   ├─ OpenSpec：`openspec/changes/archive/2026-08-06-unified-ota-cyber-ota/`（已归档；另见 `settings-cloud-ota` / `make-publish-ota` / `cyber-upgrade-ui-package`）
-    │   ├─ 发布物 = **`make ota-package`**：`tar.gz`（inactive FIT + `rootfs.img`，可选 `oem.img` + manifest）
+    │   ├─ 发布物 = **`make pack-ota`**：`tar.gz`（inactive FIT + `rootfs.img`，可选 `oem.img` + manifest）
     │   │   + 旁路 **Ed25519** `*.tar.gz.sig`（供**云 / publish / SSH `make upgrade`**；**不含** uboot；不对包内各 img 单独签名）
     │   ├─ `/opt/hmi`（HMI）随 **rootfs** 一起更新；不规划产品侧「只推 App」
     │   ├─ **`packages/cyber_ota`**：manifest、包下载/上传、解压、写非活动分区、进度；**云与主机 SSH 均整包验签**
@@ -102,7 +102,7 @@ P4  业务迁移（子阶段见 §1.2）✅
     │   │   · 云：下载 `tar.gz`+`.sig` → **Ed25519 验整包** → 解压 → 写非活动分区 → try-boot
     │   │   · `make upgrade`（USB-SSH/SSH）：主机 ephemeral HTTP + 设备 `download <url>` → 验签 → 解压 → 写非活动分区 → try-boot
     │   ├─ **安全收工 → 直达专用升级页**（下载/验签/解压/烧录）；升级页无激光作业入口
-    │   ├─ 签名在 **`make ota-package`**（需 `OTA_SIGNING_KEY` / `make ota-release-keys`）；`build-*` 只产出 img
+    │   ├─ 签名在 **`make pack-ota`**（需 `OTA_SIGNING_KEY` / `make sign-keys`）；`build-*` 只产出 img
     │   ├─ **不**再单独做逐 img `.sig`；云 `sha512` 不能替代 Ed25519 写盘授权
     │   ├─ 私钥仅发布机/HSM；设备公钥（如 `/etc/ota/ed25519.pub`）；manifest 非信任根
     │   ├─ `make push-app` 仍为开发热路径；**SSH `make upgrade` 纳入 staged 且验签**；RockUSB `di` / `make flash` 仍免签

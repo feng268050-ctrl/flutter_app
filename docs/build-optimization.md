@@ -33,7 +33,7 @@ make build
 ```
 
 Runs in order: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` →
-`build-app` → `build-kernel` → `build-rootfs` → `build-img` → **`output/firmware/update.img` on host**.
+`build-ai` → `build-app` → `build-kernel` → `build-rootfs` → `build-img` → **`output/firmware/update.img` on host**.
 `build-kernel` / `build-rootfs` / `build-img` each publish their own imgs (`boot` / `rootfs` / `update`); daily A/B uses `upgrade` without `build-img`.
 
 **Daily iteration** — run only the stage you changed:

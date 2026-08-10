@@ -117,11 +117,12 @@ make build-gstreamer
 make build-platform-packages
 make build-mediamtx
 make build-opencv
-make build-ai
 make build-umtprd
 make build-extract-video-frame
 make fetch-btop
 ```
+
+`make build-ai`（`lws_ai_daemon`）在 **Build** 组：日常改 AI 源码用 `make build-ai`，再 `make build-app`。
 
 `make build-runtime-deps` already builds **both** `arm64-release` and `arm64-debug` engine prebuilts (commit both under `prebuilt/flutter-engine/<ver>/`).
 Force refresh a bucket: `make rebuild-deps`, `make rebuild-runtime-deps`, etc.
@@ -130,7 +131,7 @@ Force refresh a bucket: `make rebuild-deps`, `make rebuild-runtime-deps`, etc.
 
 ### Full firmware
 
-`make build` runs: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` → `build-app` → `build-kernel` → `build-rootfs` → `build-img`.
+`make build` runs: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` → `build-ai` → `build-app` → `build-kernel` → `build-rootfs` → `build-img`.
 
 ```bash
 make build
@@ -144,12 +145,12 @@ Firmware stage outputs:
 - `make prepare-rootfs` flips Buildroot stack prep (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
 - `make build-img` does **not** compile the kernel or rootfs. It requires `make build-oem`, then packages loader, U-Boot, misc, both FIT images, APP-scoped rootfs, and **oem** into `output/firmware/<APP>/<FACTORY_SKU>/factory.img` (default APP `lws_hmi`, sku `ynh960-p800`) and refreshes `output/firmware/update.img` as a symlink for `make flash`.
 - Full-system `make upgrade` does **not** transfer `factory.img`. Two host transports (auto-selected; override with `UPGRADE_TRANSPORT=ssh|rockusb`):
-  - **SSH** (USB-SSH / registered LAN): runs **`make ota-package`** (unless `UPGRADE_PACKAGE=` + sibling `.sig`), starts an ephemeral **host HTTP** server for `ota-package.tar.gz` + `.sig`, triggers the HMI to **download** into `/userdata/ota/`, then Ed25519-verify + staged extract/apply writes inactive boot+rootfs (+ optional oem). SSH is control-plane only. Host console shows HTTP send progress until transfer complete (does not wait for apply). Returns as soon as transfer is complete. Allow inbound TCP on the bind IP if the OS firewall prompts (USB-SSH default `192.168.55.2`).
+  - **SSH** (USB-SSH / registered LAN): runs **`make pack-ota`** (unless `UPGRADE_PACKAGE=` + sibling `.sig`), starts an ephemeral **host HTTP** server for `ota-package.tar.gz` + `.sig`, triggers the HMI to **download** into `/userdata/ota/`, then Ed25519-verify + staged extract/apply writes inactive boot+rootfs (+ optional oem). SSH is control-plane only. Host console shows HTTP send progress until transfer complete (does not wait for apply). Returns as soon as transfer is complete. Allow inbound TCP on the bind IP if the OS firewall prompts (USB-SSH default `192.168.55.2`).
   - **RockUSB Loader/Maskrom** (e.g. after `make reboot-loader`, or Maskrom): `upgrade_tool` **`di`** downloads the **OTA-equivalent** loose images — `boot.img` → `boot`, `boot_b.img` → `boot_b`, same `rootfs.img` → **both** `rootfs_a` and `rootfs_b`, optional `oem` — with Maskrom `ul` MiniLoader into RAM when needed. With **`UPGRADE_PACKAGE=`**, the host **extracts** the archive first then `di`s those members (`.sig` not required). **Not** `uf factory.img` (no U-Boot / GPT / misc rewrite) and **not** product cloud OTA.
   Wait for the device to finish restarting before reconnecting.
 - Prebuilt OTA tarball: `UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade` (accepted: `.tar` / `.tar.gz` / `.tgz`). SSH needs sibling `<path>.sig`; RockUSB extracts + `di`. Oem-only archives require explicit `OEM_ONLY=1` (no auto-detect).
 - OEM-only (board helpers / profile / screen pack): `make build-oem` then `OEM_ONLY=1 make upgrade` — oem partition only (SSH: staged apply + plain reboot; RockUSB: `di` oem only). Set `OEM_ONLY=1` in `.env` for repeated OEM iteration.
-- Cloud/publish + SSH upgrade packaging: `OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make ota-package` (archive + `.sig`). Release keys: `make ota-release-keys`. Cloud publish: `make publish` / `make publish-only` uploads the same archive via R2 **presigned PUT** on **`CLOUD_API_BASE`** (default api-prod, same as `make login`); channel manifest has **no `sha512`** (trust = `.sig`).
+- Cloud/publish + SSH upgrade packaging: `OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make pack-ota` (archive + `.sig`). Release keys: `make sign-keys`. Cloud publish: `make publish` / `make publish-only` uploads the same archive via R2 **presigned PUT** on **`CLOUD_API_BASE`** (default api-prod, same as `make login`); channel manifest has **no `sha512`** (trust = `.sig`).
 
 ### Daily iteration — by what you changed
 
@@ -392,19 +393,14 @@ make shell                      # interactive root shell; SN=... when multiple b
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL_ONLY=1
 make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
 make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=factory_test → /opt/factory_test
-make upgrade-app                # SN=... when multiple boards; signed app OTA (push-app is alias)
-make package-app                # tar.gz overlay APP → output/firmware/<APP>/v*.tar.gz
+make upgrade-app                # signed app ship; full list under Cloud + Upgrade
+make push-app                   # debug unsigned hot-swap (see Debug); not an upgrade-app alias
 APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/firmware/<APP>/; factory→…/<APP>/<sku>/
 make version                    # print OS Version (default); APP=<id> → Flutter pubspec name+build
 make version-bump VERSION=1.0.0 # bump OS Version; APP=lws_hmi VERSION=… bumps Flutter (5-digit)
 make build-rootfs               # → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)
 make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img
 make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= override
-make upgrade-control-board      # sign+HTTP serve control-board bin; device download/verify (HMI running)
-make upgrade-camera             # sign+HTTP serve camera zip; device download/verify (HMI running)
-make publish-app                # package+sign+upload app tar.gz → lws-hmi/app/release.json
-make upgrade-process-library    # push process-library for device model; force import (HMI running)
-make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make migrate-secrets            # re-seal software Wi‑Fi vault + cloud Ed25519 → OP-TEE (SCOPE=all|wifi|cloud)
 make migrate-seal-kek           # HUK-wrap OP-TEE seal KEK ↔ Vendor Storage ID 23 (cloud seed unchanged)
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/properties.ini (multi-key OK); restarts hmi
@@ -413,21 +409,28 @@ make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphen
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
+make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make smoke-ai                   # upload stain demo JPG; offline RKNN via AI daemon sock (HMI running)
 make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if changed
 ```
 
-### Cloud + OTA (api-server / R2 publish / A/B package)
+### Cloud + Upgrade (api-server / R2 publish / A/B + app/peripheral)
 
 ```bash
 make login                          # api-server login → output/cloud/credentials.json (access_token)
 make register-device                # SN=/IP= select board; SSH read-identity → admin register (needs make login)
-make ota-release-keys               # release Ed25519 keys → keys/ota/ + overlay /etc/ota/ed25519.pub
-make ota-package                    # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig]
-make upgrade                        # ota-package + host HTTP; device downloads tar.gz+.sig → verify/apply; or RockUSB di
+make sign-keys                      # release Ed25519 keys → keys/ota/ + overlay /etc/ota/ed25519.pub
+make pack-ota                       # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig]
+make pack-app                       # tar.gz overlay APP → output/app/<APP>/v*.tar.gz
+make upgrade                        # pack-ota + host HTTP; device downloads tar.gz+.sig → verify/apply; or RockUSB di
 UPGRADE_TRANSPORT=rockusb make upgrade  # force RockUSB path after make reboot-loader / Maskrom
-make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign; release.json)
+make upgrade-app                    # SN=… when multiple boards; signed app upgrade
+make upgrade-control-board          # sign+HTTP serve control-board bin; device download/verify (HMI running)
+make upgrade-camera                 # sign+HTTP serve camera zip; device download/verify (HMI running)
+make upgrade-process-library        # push process-library for device model; force import (HMI running)
+make publish                        # REQUIRE_OTA_SIG pack-ota + R2 upload (presign; release.json)
 make publish-only                   # upload existing output/firmware/<APP>/ota-package.tar.gz +.sig
+make publish-app                    # package+sign+upload app tar.gz → lws-hmi/app/release.json
 make publish-control-board-firmware # sign+upload newest CB bin → lws-hmi/control-board/release.json
 make publish-camera-firmware        # sign+upload newest camera zip → lws-hmi/camera/release.json
 ```
@@ -454,7 +457,7 @@ make disconnect 192.168.1.50
 `IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** (`make devices` columns: MODE / SN / LocationID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is chip-ID fallback. USB-SSH/SSH/EMU **SN** prefers Vendor Storage SN, else chip serial. Android adb / RockUSB loader rows use the adb/SerialNo as SN. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade` / `make write-identity`. Product identity (`brand` / `model` / `sn`) lives in Rockchip **Vendor Storage** — provision with **`make write-identity BRAND=… MODEL=… PRODUCT_SN=…`** after flash (geometry frozen; `factory.img` must not package vendor payloads). Optional macOS RockUSB `upgrade_tool SN` / `RSN` is **SN-only**; brand/model still need `write-identity`. `make set-prop` / `del-prop` refuse identity keys.
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` is an alias of **`make upgrade-app`**: package/sign the app `tar.gz`, serve over ephemeral host HTTP, device `download <url>` + Ed25519 verify, install `/opt/hmi`, restart `hmi.service` (unsigned SCP removed). The flashed image must include the apply helper and DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`) and `OTA_SIGNING_KEY`. `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) auto-selects **SSH stream** (inactive FIT + rootfs) when a Linux SSH target is up, or **RockUSB `di`** of OTA-equivalent images (`boot`/`boot_b`/both rootfs letters/optional oem) when the board is in Loader/Maskrom — **not** `upgrade_tool uf` / `factory.img` (use **`make flash`** for GPT / U-Boot / MiniLoader storage / misc) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Force with `UPGRADE_TRANSPORT=ssh|rockusb`. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / upgrade-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
+`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. **`make push-app`** (Debug) is an **unsigned** SSH hot-swap of the overlay app tree into `/opt/hmi` (+ companions) and restart of `hmi.service` — not an alias of **`make upgrade-app`**. Signed app shipping uses **`make upgrade-app`** (pack/sign `tar.gz`, host HTTP, device `download <url>` + Ed25519 verify). The flashed image must include the push-app apply helper and DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`); signed upgrade also needs `OTA_SIGNING_KEY`. `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) auto-selects **SSH stream** (inactive FIT + rootfs) when a Linux SSH target is up, or **RockUSB `di`** of OTA-equivalent images (`boot`/`boot_b`/both rootfs letters/optional oem) when the board is in Loader/Maskrom — **not** `upgrade_tool uf` / `factory.img` (use **`make flash`** for GPT / U-Boot / MiniLoader storage / misc) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Force with `UPGRADE_TRANSPORT=ssh|rockusb`. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / upgrade-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
 
 ### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 
@@ -474,7 +477,7 @@ make debug-app                   # SN=... or IP=... when multiple boards
 
 Or open `app/lws_hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make prepare-debug-host`: for registered `IP=` / `MODE=SSH` / **`MODE=EMU`** it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
 
-`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts the HMI with VM Service over SSH port forwarding (USB-SSH, registered IP, or **EMU** hostfwd). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make upgrade-app`.
+`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts the HMI with VM Service over SSH port forwarding (USB-SSH, registered IP, or **EMU** hostfwd). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app` (unsigned debug hot-swap) or `make upgrade-app` (signed).
 
 Host-only checks:
 
@@ -830,4 +833,5 @@ make build                 # full firmware → output/firmware/update.img
 - Weston + eLinux is enabled via `lws_hmi_wayland.config` + `lws_hmi_flutter_weston.config`. See [`app/README.md`](app/README.md).
 - **Linux Flutter HMI 规划**（组件裁剪、Hello World、RTSP 分阶段）：[`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md)
 - **ynh960 串口 / GPIO / pinmux 台账**（P2.1）：[`docs/ynh960-io-pinmux-ledger.md`](docs/ynh960-io-pinmux-ledger.md)
+- **SELinux**（permissive；不改 U-Boot）：[`docs/selinux.md`](docs/selinux.md)
 - `make clean-overlay` restores patched SDK files (`check-sdk.sh`, `rk3566_rk3568.config`, post-hook, fs-overlay).

@@ -13,7 +13,7 @@ Retired (must be absent): `ab-upgrade-apply.sh`, `ab-upgrade-stream.sh`, `ab-ota
 ## Happy path (SSH `make upgrade`)
 
 1. Board already has P2.4 GPT + current HMI with `cyber_ota`
-2. `make ota-package` / `make upgrade` (signing key configured)
+2. `make pack-ota` / `make upgrade` (signing key configured)
 3. Host HTTP → device download → verify → extract → write → arm → reboot
 4. Confirm: `journalctl -u ab-boot-confirm` shows COMMIT
 

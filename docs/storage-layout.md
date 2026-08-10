@@ -160,7 +160,7 @@ Notes:
 | Full images under `/userdata/ota/` | **Yes** (`tar.gz` only; **no** `.sig` required) | **N/A** (host `di`) | **Yes** (`tar.gz` + `.sig`, then extract) | N/A |
 | `factory.img` / `uf` | **No** | **No** | **No** | **Yes** |
 
-- **P4.8 — unified staged OTA**: cloud download and host **`make upgrade`** share `/userdata/ota/` → Ed25519-verify → extract → write inactive letter, all orchestrated by **`packages/cyber_ota`**. Progress is `OtaSession.progress` only (UI + cloud WS); debug appends to `ota.log`. Host SSH path: ephemeral host HTTP serves `tar.gz`+`.sig`; device HMI downloads. Host preflight uses `/usr/libexec/ab/ab-preflight.sh`. Archive from **`make ota-package`** (or `UPGRADE_PACKAGE=`). **HMI (`/opt/hmi`) updates with rootfs**. Device pubkey `/etc/ota/ed25519.pub`. Retired board scripts: `ab-upgrade-apply.sh`, `ab-upgrade-stream.sh`, `ab-ota-verify.sh`. Boot confirm/rollback remains `ab-boot-confirm.sh`.
+- **P4.8 — unified staged OTA**: cloud download and host **`make upgrade`** share `/userdata/ota/` → Ed25519-verify → extract → write inactive letter, all orchestrated by **`packages/cyber_ota`**. Progress is `OtaSession.progress` only (UI + cloud WS); debug appends to `ota.log`. Host SSH path: ephemeral host HTTP serves `tar.gz`+`.sig`; device HMI downloads. Host preflight uses `/usr/libexec/ab/ab-preflight.sh`. Archive from **`make pack-ota`** (or `UPGRADE_PACKAGE=`). **HMI (`/opt/hmi`) updates with rootfs**. Device pubkey `/etc/ota/ed25519.pub`. Retired board scripts: `ab-upgrade-apply.sh`, `ab-upgrade-stream.sh`, `ab-ota-verify.sh`. Boot confirm/rollback remains `ab-boot-confirm.sh`.
 - Staging layout:
 
 ```text

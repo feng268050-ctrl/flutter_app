@@ -14,6 +14,7 @@ import 'package:lws_hmi/features/process_video/presentation/process_video_dialog
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
 typedef ProcessVideoUploadInvoker = Future<bool> Function(
   String videoId, {
@@ -326,21 +327,21 @@ class VideosTabState extends State<VideosTab> {
         ),
         DataCell(
           Center(
-            child: Text(
-              ProcessVideoFormat.workMode(row.processType, l10n),
+            child: WordBoundaryLabel(
+              text: ProcessVideoFormat.workMode(row.processType, l10n),
+              style: _cellStyle(context),
               textAlign: TextAlign.center,
               maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
         DataCell(
           Center(
-            child: Text(
-              ProcessVideoFormat.material(row, l10n),
+            child: WordBoundaryLabel(
+              text: ProcessVideoFormat.material(row, l10n),
+              style: _cellStyle(context),
               textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
         ),

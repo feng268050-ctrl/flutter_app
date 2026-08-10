@@ -123,9 +123,8 @@ class _SettingsPageState extends State<SettingsPage> {
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
           toolbarHeight: WorkModeStatusBarDimens.height,
-          backLabel: tabLabels[_currentTabIndex],
-          useHomeIcon: true,
-          centerClock: true,
+          // Home + page title + trailing clock/status (no orange edge accent).
+          backLabel: l10n.equipmentStatusHome,
           backAccent: WorkModeAccent.weld,
           onBack: canPop ? () => Navigator.of(context).maybePop() : null,
           bottom: SettingsTopTabs(

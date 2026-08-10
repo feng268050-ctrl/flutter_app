@@ -112,15 +112,20 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
         horizontal: _kBackHorizontalPadding,
       ),
       child: Row(
-        mainAxisAlignment:
-            expand ? MainAxisAlignment.center : MainAxisAlignment.start,
+        // Home / Back share the same leading icon inset (do not center the
+        // group in the fixed rail — longer labels would shift the glyph).
+        mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            _leadingIcon(context),
-            size: _kBackIconSize,
-            color: iconColor,
+          SizedBox(
+            width: _kBackIconSize,
+            height: _kBackIconSize,
+            child: Icon(
+              _leadingIcon(context),
+              size: _kBackIconSize,
+              color: iconColor,
+            ),
           ),
           const SizedBox(width: 8),
           if (expand)

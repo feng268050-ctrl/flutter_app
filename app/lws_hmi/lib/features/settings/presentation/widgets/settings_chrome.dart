@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_primary_tab_content.dart';
 import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 
@@ -1996,6 +1997,7 @@ class SettingsScaffold extends StatelessWidget {
     // `make upgrade` clears the stack onto System Upgrade — so chrome matches
     // the operator nested path that disables Back during apply.
     final effectiveBackEnabled = backEnabled && canPop;
+    final l10n = AppLocalizations.of(context)!;
     // Nested Settings: static σ30 plate (shell default). Never live ImageFiltered
     // under Cupertino L/R — parent root also uses a baked plate.
     return SettingsBlurredPageShell(
@@ -2009,11 +2011,8 @@ class SettingsScaffold extends StatelessWidget {
           // Back / title row height; hairline rides under this band.
           toolbarHeight: WorkModeStatusBarDimens.height,
           bottom: const SettingsStatusBarHairline(),
-          // Nested settings: arrow + page title; clock centered.
-          // Always pass onBack so the rail stays visible when !canPop
-          // (disabled via [effectiveBackEnabled]).
-          backLabel: title,
-          centerClock: true,
+          // Back + page title + trailing clock/status (no orange edge accent).
+          backLabel: l10n.equipmentStatusBack,
           backAccent: WorkModeAccent.weld,
           backEnabled: effectiveBackEnabled,
           onBack: () {

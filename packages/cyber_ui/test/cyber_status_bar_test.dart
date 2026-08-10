@@ -98,6 +98,9 @@ void main() {
       find.byKey(const ValueKey('cyber-status-bar-clock')),
     );
     expect(tester.getSize(find.byType(MaterialApp)).width - clockRect.right, 55);
+    // Status icons are to the left of the date/time.
+    final iconRect = tester.getRect(find.byKey(const ValueKey('s0')));
+    expect(iconRect.right, lessThanOrEqualTo(clockRect.left));
 
     await tester.tap(find.byKey(const ValueKey('cyber-page-status-bar-back')));
     await tester.pump();

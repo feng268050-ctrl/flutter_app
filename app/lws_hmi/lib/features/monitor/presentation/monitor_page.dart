@@ -128,10 +128,8 @@ class _MonitorPageState extends State<MonitorPage> {
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
           toolbarHeight: WorkModeStatusBarDimens.height,
-          // Home icon + current tab title; clock centered.
-          backLabel: tabLabels[_currentTabIndex],
-          useHomeIcon: true,
-          centerClock: true,
+          // Home stays fixed; title follows the selected Monitor tab.
+          backLabel: l10n.equipmentStatusHome,
           backAccent: WorkModeAccent.weld,
           onBack: canPop ? () => Navigator.of(context).maybePop() : null,
           bottom: ProductTopTabs(

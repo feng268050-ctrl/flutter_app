@@ -18,8 +18,6 @@ class ProductPageStatusBar extends StatelessWidget
     this.backEnabled = true,
     this.backLabel,
     this.backAccent = WorkModeAccent.weld,
-    this.useHomeIcon,
-    this.centerClock = false,
     this.actions,
     this.bottom,
     this.backgroundColor,
@@ -44,18 +42,11 @@ class ProductPageStatusBar extends StatelessWidget
   /// When set with [onBack], uses the product [CallBackHomeButton] (icon +
   /// label + accent press FX) instead of the Material arrow back.
   ///
-  /// Settings / Monitor pass the page or tab title here (not a fixed Back/Home
-  /// string) when [centerClock] is true.
+  /// Keep this label fixed (e.g. Home / Back) when [title] changes with tabs.
   final String? backLabel;
 
   /// Press / edge accent for [CallBackHomeButton]. Defaults to product orange.
   final WorkModeAccent backAccent;
-
-  /// Forwarded to [CallBackHomeButton.useHomeIcon] (Settings/Monitor roots).
-  final bool? useHomeIcon;
-
-  /// Settings / Monitor: clock centered; trailing side is icons only.
-  final bool centerClock;
 
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
@@ -89,36 +80,25 @@ class ProductPageStatusBar extends StatelessWidget
       bluetooth: bluetooth,
       builder: (context, items) {
         final useCallBackHome = onBack != null && backLabel != null;
-        // Settings / Monitor (centerClock): full title label, no orange edges.
-        final settingsMonitorBack = centerClock && useCallBackHome;
         final theme = Theme.of(context);
         final clockFg = foregroundColor ??
             theme.appBarTheme.foregroundColor ??
             theme.colorScheme.onSurface;
         CyberPageStatusBar buildBar() => CyberPageStatusBar(
-              // When the clock is centered, AppBar title is the clock widget.
-              title: centerClock ? '' : title,
-              centerClock: centerClock,
+              title: title,
               onBack: useCallBackHome ? null : onBack,
               leading: useCallBackHome
                   ? CallBackHomeButton(
                       accent: backAccent,
                       label: backLabel!,
                       enabled: backEnabled,
-                      useHomeIcon: useHomeIcon,
-                      expandWidth: !settingsMonitorBack,
-                      showEdgeAccent: !settingsMonitorBack,
+                      // Settings / Monitor: no orange top/bottom edge glow.
+                      showEdgeAccent: false,
                       onPressed: onBack!,
                     )
                   : null,
-              leadingWidth: useCallBackHome
-                  ? (settingsMonitorBack
-                      ? CallBackHomeButton.widthForLabel(
-                          backLabel!,
-                          textScaler: MediaQuery.textScalerOf(context),
-                        )
-                      : CallBackHomeButton.railWidth)
-                  : null,
+              leadingWidth:
+                  useCallBackHome ? CallBackHomeButton.railWidth : null,
               statusItems: items,
               actions: actions,
               bottom: bottom,
@@ -127,7 +107,7 @@ class ProductPageStatusBar extends StatelessWidget
               toolbarHeight: toolbarHeight,
               clockNow: nowFn,
               use24HourFormat: services?.wallClock.use24HourFormat ?? true,
-              // Match Settings / Monitor Back label size.
+              // Match CallBackHomeButton label size.
               clockStyle: TextStyle(
                 color: clockFg,
                 fontSize: CallBackHomeButton.labelFontSize,

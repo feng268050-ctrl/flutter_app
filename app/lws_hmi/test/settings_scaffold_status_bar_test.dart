@@ -8,7 +8,7 @@ import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
-  testWidgets('SettingsScaffold uses page title on Back and centered clock',
+  testWidgets('SettingsScaffold uses Back + page title + trailing clock',
       (tester) async {
     // Push so canPop is true and CallBackHomeButton is shown.
     await tester.pumpWidget(
@@ -48,27 +48,21 @@ void main() {
     expect(find.byType(SettingsStatusBarHairline), findsOneWidget);
     expect(find.byType(SettingsBlurredPageShell), findsOneWidget);
 
-    // Leading rail shows page title (not a fixed "Back" string).
     final backBtn = tester.widget<CallBackHomeButton>(
       find.byType(CallBackHomeButton),
     );
-    expect(backBtn.label, 'Wi‑Fi');
-    expect(backBtn.useHomeIcon, isNull);
+    expect(backBtn.label, 'Back');
     expect(backBtn.showEdgeAccent, isFalse);
-    expect(backBtn.expandWidth, isFalse);
-    expect(find.text('Back'), findsNothing);
-    // Full label visible (no ellipsis).
+    expect(find.text('Back'), findsOneWidget);
+    // Page title is in the AppBar title slot (not the leading label).
     expect(find.text('Wi‑Fi'), findsOneWidget);
 
-    // Clock is centered (title slot); only one clock in the bar.
     expect(find.byKey(const ValueKey('cyber-status-bar-clock')), findsOneWidget);
 
-    // Match CallBackHomeButton label (Settings / Monitor Back).
     final clock = tester.widget<Text>(
       find.byKey(const ValueKey('cyber-status-bar-clock')),
     );
     expect(clock.style?.fontSize, CallBackHomeButton.labelFontSize);
-    // Page chrome shows weekday + date left of time (Quick/Engineer stay time-only).
     expect(clock.data, isNotNull);
     expect(clock.data!.split(' ').length, greaterThanOrEqualTo(2));
     expect(clock.data, contains(':'));
@@ -106,8 +100,8 @@ void main() {
     );
     await tester.pump();
     await tester.tap(find.text('open'));
-    await tester.pump(); // start route
-    await tester.pump(const Duration(milliseconds: 400)); // finish Cupertino slide
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     final shell = tester.widget<SettingsBlurredPageShell>(
       find.byType(SettingsBlurredPageShell),

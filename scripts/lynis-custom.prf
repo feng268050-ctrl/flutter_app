@@ -7,6 +7,9 @@
 # BusyBox/Buildroot: GNU `stat -L --format` is unavailable; TIME-3185 aborts the scan.
 skip-test=TIME-3185
 
+# /proc/config.gz needs zgrep; BusyBox has grep/gzip but no zgrep → KRNL-5730 Exception.
+skip-test=KRNL-5730
+
 # systemd-journald already ingests kernel messages; BusyBox klogd is present but unused.
 skip-test=LOGG-2138
 

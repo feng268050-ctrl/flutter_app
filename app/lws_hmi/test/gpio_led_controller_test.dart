@@ -8,13 +8,13 @@ void main() {
     final leds = GpioLedController(hal: fake);
 
     await leds.setMode(LedColor.red, IndicatorMode.blink);
-    expect(fake.setModeCalls, [('led_red', GpioLineMode.blink)]);
+    expect(fake.setModeCalls, [('red', LedMode.blink)]);
 
     await leds.setMode(LedColor.red, IndicatorMode.blink);
     expect(fake.setModeCalls.length, 1);
 
     await leds.setMode(LedColor.red, IndicatorMode.steadyOn);
-    expect(fake.setModeCalls.last, ('led_red', GpioLineMode.steady));
+    expect(fake.setModeCalls.last, ('red', LedMode.steady));
     expect(fake.setModeCalls.length, 2);
 
     leds.dispose();
@@ -26,7 +26,7 @@ void main() {
 
     expect(leds.modeOf(LedColor.green), IndicatorMode.off);
     await leds.setMode(LedColor.green, IndicatorMode.off);
-    expect(fake.setModeCalls, [('led_green', GpioLineMode.off)]);
+    expect(fake.setModeCalls, [('green', LedMode.off)]);
 
     await leds.setMode(LedColor.green, IndicatorMode.off);
     expect(fake.setModeCalls.length, 1);
@@ -46,16 +46,15 @@ void main() {
     expect(
       fake.setModeCalls,
       [
-        ('led_red', GpioLineMode.off),
-        ('led_yellow', GpioLineMode.off),
-        ('led_green', GpioLineMode.off),
+        ('red', LedMode.off),
+        ('yellow', LedMode.off),
+        ('green', LedMode.off),
       ],
     );
     expect(leds.modeOf(LedColor.red), IndicatorMode.off);
     expect(leds.modeOf(LedColor.yellow), IndicatorMode.off);
     expect(leds.modeOf(LedColor.green), IndicatorMode.off);
 
-    // Second reset still force-writes (boot / re-start safety).
     fake.setModeCalls.clear();
     await leds.resetAllOff();
     expect(fake.setModeCalls.length, 3);
@@ -65,15 +64,32 @@ void main() {
 }
 
 class _FakeGpioHal implements GpioHal {
-  final List<(String, GpioLineMode)> setModeCalls = [];
-  final Map<String, _FakeLine> _lines = {};
+  final List<(String, LedMode)> setModeCalls = [];
+  late final _FakeStatusLedBank _bank = _FakeStatusLedBank(this);
 
   @override
   GpioConfig get config => throw UnimplementedError();
 
   @override
-  GpioLine openLine(String id) =>
-      _lines.putIfAbsent(id, () => _FakeLine(this, id));
+  GpioLine openLine(String id) => throw UnimplementedError();
+
+  @override
+  StatusLedBank openStatusLed(String id) {
+    expect(id, LedColor.bankId);
+    return _bank;
+  }
+
+  @override
+  GpioBuzzer openBuzzer(String id) => throw UnimplementedError();
+
+  @override
+  GpioButton openButton(String id) => throw UnimplementedError();
+
+  @override
+  RotaryEncoder openEncoder(String id) => throw UnimplementedError();
+
+  @override
+  StubLogicalGpioLine? debugStubLine(String id) => null;
 
   @override
   void addLevelListener(GpioLevelListener listener) {}
@@ -85,31 +101,34 @@ class _FakeGpioHal implements GpioHal {
   Future<void> dispose() async {}
 }
 
-class _FakeLine implements GpioLine {
-  _FakeLine(this.hal, this.id);
+class _FakeStatusLedBank implements StatusLedBank {
+  _FakeStatusLedBank(this.hal);
 
   final _FakeGpioHal hal;
+  final Map<String, LedMode?> _modes = {};
 
   @override
-  final String id;
-
-  GpioLineMode? _mode;
+  String get id => LedColor.bankId;
 
   @override
-  Future<void> set(bool high) async {}
+  List<String> get channelIds =>
+      LedColor.values.map((c) => c.channelId).toList();
 
   @override
-  Future<bool> get() async => false;
-
-  @override
-  Future<void> setMode(GpioLineMode mode, {bool force = false}) async {
-    if (!force && _mode == mode) {
+  Future<void> setMode(String channelId, LedMode mode, {bool force = false}) async {
+    if (!force && _modes[channelId] == mode) {
       return;
     }
-    hal.setModeCalls.add((id, mode));
-    _mode = mode;
+    hal.setModeCalls.add((channelId, mode));
+    _modes[channelId] = mode;
   }
 
   @override
-  GpioLineMode get mode => _mode ?? GpioLineMode.off;
+  LedMode modeOf(String channelId) => _modes[channelId] ?? LedMode.off;
+
+  @override
+  Future<bool> isOn(String channelId) async => false;
+
+  @override
+  Future<void> dispose() async {}
 }

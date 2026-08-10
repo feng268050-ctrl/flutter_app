@@ -20,7 +20,7 @@ void main() {
     });
 
     test('matches former GpioLedConfig pin map', () {
-      expect(config.version, 1);
+      expect(config.version, 2);
       expect(config.backend, 'sysfs_innohi');
       expect(config.defaults.blinkOnMs, 1000);
       expect(config.defaults.blinkOffMs, 1000);
@@ -37,6 +37,10 @@ void main() {
         expect(line.fallbackLinuxGpio, entry.value.linux);
         expect(line.path, contains(entry.value.label));
       }
+
+      final bank = config.deviceById('chassis_rgb')!.statusLed!;
+      expect(bank.channelById('red')!.binding.offset, 9);
+      expect(config.deviceById('panel_buzzer')!.buzzer!.line.label, 'BELL');
     });
 
     test('GpioHal openLine + unknown id', () {

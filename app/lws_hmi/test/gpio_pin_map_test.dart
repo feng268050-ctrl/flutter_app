@@ -9,19 +9,31 @@ void main() {
       ? 'assets/hal'
       : 'app/lws_hmi/assets/hal';
 
-  test('RGB line ids match product gpio.json (5/4/7 → 105/106/149)', () {
+  test('RGB channel ids match product gpio.json (5/4/7 → 105/106/149)', () {
     final json = File('$halRoot/gpio.json').readAsStringSync();
     final config = GpioConfig.fromJsonString(json);
 
-    expect(LedColor.red.lineId, 'led_red');
-    expect(LedColor.yellow.lineId, 'led_yellow');
-    expect(LedColor.green.lineId, 'led_green');
+    expect(LedColor.red.channelId, 'red');
+    expect(LedColor.yellow.channelId, 'yellow');
+    expect(LedColor.green.channelId, 'green');
+    expect(LedColor.bankId, 'chassis_rgb');
 
-    expect(config.lineById(LedColor.red.lineId)!.label, 'GPIO_5');
-    expect(config.lineById(LedColor.yellow.lineId)!.label, 'GPIO_4');
-    expect(config.lineById(LedColor.green.lineId)!.label, 'GPIO_7');
-    expect(config.lineById(LedColor.red.lineId)!.fallbackLinuxGpio, 105);
-    expect(config.lineById(LedColor.yellow.lineId)!.fallbackLinuxGpio, 106);
-    expect(config.lineById(LedColor.green.lineId)!.fallbackLinuxGpio, 149);
+    final bank = config.deviceById(LedColor.bankId)!.statusLed!;
+    final red = bank.channelById(LedColor.red.channelId)!;
+    final yellow = bank.channelById(LedColor.yellow.channelId)!;
+    final green = bank.channelById(LedColor.green.channelId)!;
+
+    expect(red.binding.label, 'GPIO_5');
+    expect(yellow.binding.label, 'GPIO_4');
+    expect(green.binding.label, 'GPIO_7');
+    expect(red.binding.fallbackLinuxGpio, 105);
+    expect(yellow.binding.fallbackLinuxGpio, 106);
+    expect(green.binding.fallbackLinuxGpio, 149);
+    expect(red.binding.chip, 'gpiochip3');
+    expect(red.binding.offset, 9);
+    expect(green.binding.chip, 'gpiochip4');
+    expect(green.binding.offset, 21);
+
+    expect(config.deviceById('panel_buzzer')?.buzzer?.line.label, 'BELL');
   });
 }

@@ -12,7 +12,7 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/output.dart` | display + sound barrels | see sub-imports |
 | `package:cyber_hal/input.dart` | keyboard, mouse (USB/serial cameras later) | `/var/lib/hal/keyboard.conf`, `mouse.conf` |
 | `package:cyber_hal/ip_camera.dart` | IP network camera (host-injected; multi-instance; RTSP→file recording) | path/MediaMTX are **product** concerns — not this module |
-| `package:cyber_hal/gpio.dart` | named GPIO lines | board `gpio.json` (sysfs) |
+| `package:cyber_hal/gpio.dart` | Status LED / buzzer / button / encoder (config-driven) | App `gpio.json` — **sysfs** and/or **gpiod** per binding |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
 | `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` | procfs/sysfs + Vendor Storage identity (`brand`/`model`/`sn`/`chipId`) + opaque `/var/lib/hal/properties.ini` bag via `get(key)` |
@@ -74,6 +74,26 @@ if (resolveHalBackend(env: 'stub') == HalBackendKind.stub) {
   final sysInfo = StubSysInfo();
 }
 ```
+
+## GPIO
+
+`package:cyber_hal/gpio.dart` loads App-owned `gpio.json` (via `BoardProfile.configs.gpio`). **Pins and paths are never hard-coded in HAL** — boards enable fewer/more devices by editing config.
+
+**Devices:** `StatusLedBank`, `GpioBuzzer`, `GpioButton` (long-press), `RotaryEncoder` (debounce).
+
+**Line schemes** (per binding, optional document default `backend`):
+
+| Scheme | Addressing |
+|--------|------------|
+| `sysfs_innohi` / `sysfs` / `sysfs_file` | `path` and/or `label` (any `/sys/class/…` tree) |
+| `gpiod` | `chip` + `offset` via `flutter_gpiod` (`/dev/gpiochip*`) |
+| `stub` | in-memory (host tests; `forceStub: true`) |
+
+ynh960 product catalog example (RGB + BELL) and pad table: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md). Sysfs remains supported alongside gpiod (lines hogged by Innohi `own-gpio` typically stay on sysfs).
+
+**gpiod access:** HMI must open `/dev/gpiochip*` (often root or `gpio` group). Prefer sysfs for hogged Innohi lines; use gpiod when the line is free and edges are needed.
+
+**Field smoke (manual):** after `make build-app` / `upgrade-app`, verify RGB Steady/Blink/Off and optional `panel_buzzer` beep on hardware; confirm `BELL` sysfs node name if beep fails.
 
 ## Keyboard layouts (v1)
 

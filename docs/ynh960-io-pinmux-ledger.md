@@ -33,8 +33,9 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 | 黄 | **`GPIO_4`** | gpio3 RK_PB2 | 106 | `YNHAPI.GPIO_4` → **3** |
 | 绿 | **`GPIO_7`** | gpio4 RK_PC5 | 149 | `YNHAPI.GPIO_7` → **6** |
 
-- 路径：`/sys/class/gpio_innohi/GPIO_N/value`（写 `0`/`1`）。
-- App：`app/lws_hmi/lib/gpio/gpio_led_config.dart` — 红/黄/绿 = **5/4/7**（勿改成 4/3/6）。
+- 路径：`/sys/class/gpio_innohi/GPIO_N/value`（写 `0`/`1`）；HAL 亦可经 `gpio.json` 使用 gpiod `gpiochip`+offset（红 `gpiochip3:9`、黄 `gpiochip3:10`、绿 `gpiochip4:21`）。
+- 蜂鸣器候选：`BELL`（DTS Bell-CTL，gpio3 RK_PD3 → `gpiochip3:27` / linux 123）。
+- App：`assets/hal/gpio.json`（Status LED `chassis_rgb` + 可选 `panel_buzzer`）；勿在 Dart 写死 SoC 号。
 - 开机默认：**关**（overlay 将 `GPIO_4/5/7` 的 `default-value` 设为 `"0"`）。
 
 经典 `/sys/class/gpio/export` 仅作工程兜底；`gpio_innohi` 已占用同脚时 export 失败是预期行为。

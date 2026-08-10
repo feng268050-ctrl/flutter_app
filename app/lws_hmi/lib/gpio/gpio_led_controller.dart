@@ -5,17 +5,23 @@ import 'package:cyber_hal/cyber_hal.dart' show BoardProfile;
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/hal/hal_assets.dart';
 
-/// Side-panel RGB indicators — product names mapped to HAL line ids.
+/// Side-panel RGB indicators — product channel ids (bindings in gpio.json).
 ///
-/// Pin numbers live in [HmiHalAssets.gpio] / [HmiHalAssets.gpioSim], not here.
+/// Hardware maps live in [HmiHalAssets.gpio] / [HmiHalAssets.gpioSim], not here.
 enum LedColor {
-  red(lineId: 'led_red'),
-  yellow(lineId: 'led_yellow'),
-  green(lineId: 'led_green');
+  red(channelId: 'red', lineId: 'led_red'),
+  yellow(channelId: 'yellow', lineId: 'led_yellow'),
+  green(channelId: 'green', lineId: 'led_green');
 
-  const LedColor({required this.lineId});
+  const LedColor({required this.channelId, required this.lineId});
 
+  /// Status LED bank channel id in product gpio config.
+  final String channelId;
+
+  /// Legacy line / alias id (v1 configs and level listener aliases).
   final String lineId;
+
+  static const bankId = 'chassis_rgb';
 }
 
 /// Modes aligned with lws-ui `IndicatorMode` (Steady / Blink / Off).
@@ -25,11 +31,9 @@ enum IndicatorMode {
   steadyOn,
 }
 
-/// Thin App façade over [GpioHal] for Demo LED rows / emulator overlay.
+/// Thin App façade over [GpioHal] Status LED bank for Demo / emulator overlay.
 ///
-/// [isOn] tracks HAL line levels: one [GpioLine.get] snapshot in
-/// [ensureWatching], then [GpioHal.addLevelListener] on every [GpioLine.set]
-/// (including HAL blink ticks). No UI/HAL duplicate blink timer in the App.
+/// [isOn] tracks HAL levels via [GpioHal.addLevelListener] (including blink).
 class GpioLedController extends ChangeNotifier {
   GpioLedController({
     GpioHal? hal,
@@ -40,6 +44,7 @@ class GpioLedController extends ChangeNotifier {
         _loading = halFuture;
 
   GpioHal? _hal;
+  StatusLedBank? _bank;
   final BoardProfile? _profile;
   Future<GpioHal>? _loading;
   final Map<LedColor, IndicatorMode?> _modes = {
@@ -48,8 +53,12 @@ class GpioLedController extends ChangeNotifier {
   final Map<LedColor, bool> _on = {
     for (final c in LedColor.values) c: false,
   };
-  final Map<String, LedColor> _lineToColor = {
-    for (final c in LedColor.values) c.lineId: c,
+  final Map<String, LedColor> _idToColor = {
+    for (final c in LedColor.values) ...{
+      c.channelId: c,
+      c.lineId: c,
+      '${LedColor.bankId}/${c.channelId}': c,
+    },
   };
   bool _watching = false;
   late final GpioLevelListener _levelListener = _onHalLevel;
@@ -82,9 +91,16 @@ class GpioLedController extends ChangeNotifier {
     });
   }
 
-  /// Subscribe to HAL level callbacks and seed [isOn] from [GpioLine.get].
-  ///
-  /// Idempotent — call from the LED overlay when it mounts.
+  Future<StatusLedBank> _ensureBank() async {
+    final existing = _bank;
+    if (existing != null) return existing;
+    final hal = await _ensureHal();
+    final bank = hal.openStatusLed(LedColor.bankId);
+    _bank = bank;
+    return bank;
+  }
+
+  /// Subscribe to HAL level callbacks and seed [isOn].
   Future<void> ensureWatching() async {
     if (_watching) {
       return;
@@ -92,14 +108,11 @@ class GpioLedController extends ChangeNotifier {
     _watching = true;
     try {
       final hal = await _ensureHal();
-      for (final color in LedColor.values) {
-        // Open lines so blink set() paths share the same handles.
-        hal.openLine(color.lineId);
-      }
+      final bank = await _ensureBank();
       hal.addLevelListener(_levelListener);
       for (final color in LedColor.values) {
         try {
-          _on[color] = await hal.openLine(color.lineId).get();
+          _on[color] = await bank.isOn(color.channelId);
         } catch (e) {
           debugPrint('GPIO LED ${color.name}: initial get failed: $e');
           _on[color] = false;
@@ -113,7 +126,7 @@ class GpioLedController extends ChangeNotifier {
   }
 
   void _onHalLevel(String lineId, bool logicalHigh) {
-    final color = _lineToColor[lineId];
+    final color = _idToColor[lineId];
     if (color == null) {
       return;
     }
@@ -124,16 +137,15 @@ class GpioLedController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Force all RGB lines Off (cancels blink). Call once at boot before policy.
+  /// Force all RGB channels Off (cancels blink). Call once at boot before policy.
   Future<void> resetAllOff() async {
     try {
-      final hal = await _ensureHal();
+      final bank = await _ensureBank();
       if (!_watching) {
         await ensureWatching();
       }
       for (final color in LedColor.values) {
-        final line = hal.openLine(color.lineId);
-        await line.setMode(GpioLineMode.off, force: true);
+        await bank.setMode(color.channelId, LedMode.off, force: true);
         _modes[color] = IndicatorMode.off;
         _on[color] = false;
       }
@@ -144,36 +156,30 @@ class GpioLedController extends ChangeNotifier {
   }
 
   Future<void> setMode(LedColor color, IndicatorMode mode) async {
-    // Skip only after a successful apply of the same mode. Initial cache is
-    // null so the first Off still writes GPIO (boot may leave lines HIGH).
-    // Same-mode skip preserves HAL blink (lws-ui LedIndicatorManager).
     if (_modes[color] == mode) {
       return;
     }
     try {
-      final hal = await _ensureHal();
+      final bank = await _ensureBank();
       if (!_watching) {
-        // Settings can change LEDs before overlay mounts — still get callbacks.
         await ensureWatching();
       }
-      final line = hal.openLine(color.lineId);
-      await line.setMode(_toHalMode(mode));
+      await bank.setMode(color.channelId, _toLedMode(mode));
       _modes[color] = mode;
       notifyListeners();
-      // Level updates arrive via [GpioLevelListener] from each [GpioLine.set].
     } catch (e) {
       debugPrint('GPIO LED ${color.name}: setMode failed: $e');
     }
   }
 
-  static GpioLineMode _toHalMode(IndicatorMode mode) {
+  static LedMode _toLedMode(IndicatorMode mode) {
     switch (mode) {
       case IndicatorMode.off:
-        return GpioLineMode.off;
+        return LedMode.off;
       case IndicatorMode.steadyOn:
-        return GpioLineMode.steady;
+        return LedMode.steady;
       case IndicatorMode.blink:
-        return GpioLineMode.blink;
+        return LedMode.blink;
     }
   }
 
@@ -187,6 +193,7 @@ class GpioLedController extends ChangeNotifier {
       unawaited(hal.dispose());
     }
     _watching = false;
+    _bank = null;
     for (final c in LedColor.values) {
       _modes[c] = null;
       _on[c] = false;

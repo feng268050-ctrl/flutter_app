@@ -1,0 +1,2 @@
+# BusyBox/Buildroot: GNU `stat -L --format` is unavailable; TIME-3185 aborts the scan.
+skip-test=TIME-3185

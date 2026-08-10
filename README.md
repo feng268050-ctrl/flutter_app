@@ -434,6 +434,15 @@ make publish-control-board-firmware # sign+upload newest CB bin → lws-hmi/cont
 make publish-camera-firmware        # sign+upload newest camera zip → lws-hmi/camera/release.json
 ```
 
+### Audit (Lynis / SBOM+CVE)
+
+```bash
+make fetch-cve-db               # refresh host Grype + cve-bin-tool DBs (before release audits)
+make audit                      # Lynis on live board → output/audit/lynis-* (SN=/IP=; STRICT=1)
+make audit-cve                  # Syft+Grype+cve-bin-tool on APP rootfs.img → output/audit/cve-*
+# Needs: APP=$APP make build-rootfs first for audit-cve; host tools syft/grype/cve-bin-tool
+```
+
 Device selection: use **`SN=`** (matches `make devices` **SN**). Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** / **`UPGRADE_TRANSPORT=`** in `.env` for IDE / daily use.
 
 Alarm history persists in SQLite **`/var/lib/hmi/alarm-logs.db`** (→ `/userdata/hmi/alarm-logs.db`, table `alarm_logs`) — kept across `push-app` / `make upgrade`.

@@ -657,6 +657,33 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 
 ---
 
+## Audit
+
+### `make fetch-cve-db`
+
+- **怎么用：** `make fetch-cve-db`
+- **何时用：** 首次 / 发版前刷新宿主漏洞库（Grype DB + cve-bin-tool）；**不**扫描 `rootfs.img`
+- **参数：** `SKIP_GRYPE=1` / `SKIP_CVE_BIN=1`；`CVE_BIN_DISABLE=`（默认 `OSV,EPSS`，OSV 依赖 `gsutil`）
+- **说明：** 之后再跑 `make audit-cve`。库在宿主 `~/.cache` / Grype 默认路径，不进仓库。
+
+### `make audit`
+
+- **怎么用：** `make audit`（多板 `SN=` / `IP=`）
+- **何时用：** 对已启动的板做 Lynis 加固/配置审计；报告写入 `output/audit/lynis-<stamp>/`
+- **参数：** `SN=` / `IP=`；`STRICT=1` 或 `FAIL_ON=high` 在有 Warning 时非零退出；`LYNIS_REF=` 控制 `.cache/lynis` clone 分支
+- **说明：** 临时上传 Lynis 到 `/tmp/lynis-audit`，跑完删除；**不**打进产品 rootfs。`-Q` 非交互且**保留颜色**（`--cronjob` 会关色）。`scripts/lynis-custom.prf` 跳过 BusyBox 不兼容的 `TIME-3185`。
+- **产物：** 终端直接显示 **Lynis 原生彩色报告**（含 Hardening index / Warnings / Suggestions）；并保存 `output/audit/lynis-<stamp>/lynis-console.txt`、`lynis-report.dat`、`lynis.log`
+
+### `make audit-cve`
+
+- **怎么用：** `APP=lws_hmi make build-rootfs` 后 `make audit-cve`（发版前先 `make fetch-cve-db`）
+- **何时用：** 对已发布的 `output/firmware/<APP>/rootfs.img` 出 SBOM + 主干 CVE + 二次二进制扫描
+- **参数：** `APP=`；`ROOTFS_IMG=` 覆盖镜像路径；`STRICT=1` / `FAIL_ON=high|critical` 在 Critical/High 时非零退出；`CVE_BIN_UPDATE=`（默认 `never`，刷新库用 `make fetch-cve-db`）
+- **宿主工具：** `syft`、`grype`、`cve-bin-tool`（见 `bash scripts/audit-cve.sh --help`）。macOS 用 Docker 解挂 ext4。
+- **产物：** `output/audit/cve-<stamp>/report.txt`（终端打印 Critical/High 摘要）；另有 `sbom.cdx.json`、`grype.json`、`grype.txt`、`cve-bin-tool.json`、`summary.txt`
+
+---
+
 ## 常用场景速查
 
 | 场景 | 命令（自上而下） |

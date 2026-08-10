@@ -1,34 +1,58 @@
 {
-  "version": 1,
+  "version": 2,
   "backend": "sysfs_file",
   "defaults": {
     "active_low": false,
     "blink_on_ms": 1000,
     "blink_off_ms": 1000
   },
-  "lines": [
+  "devices": [
     {
-      "id": "led_red",
-      "label": "sim_led_red",
-      "path": "/run/hmi/gpio-sim/led_red/value",
-      "roles": ["indicator", "alarm"]
+      "type": "status_led",
+      "id": "chassis_rgb",
+      "channels": [
+        {
+          "id": "red",
+          "scheme": "sysfs",
+          "label": "sim_led_red",
+          "path": "/run/hmi/gpio-sim/led_red/value",
+          "aliases": ["led_red"],
+          "roles": ["indicator"]
+        },
+        {
+          "id": "yellow",
+          "scheme": "sysfs",
+          "label": "sim_led_yellow",
+          "path": "/run/hmi/gpio-sim/led_yellow/value",
+          "aliases": ["led_yellow"],
+          "roles": ["indicator", "alarm"]
+        },
+        {
+          "id": "green",
+          "scheme": "sysfs",
+          "label": "sim_led_green",
+          "path": "/run/hmi/gpio-sim/led_green/value",
+          "aliases": ["led_green"],
+          "roles": ["indicator"]
+        }
+      ]
     },
     {
-      "id": "led_yellow",
-      "label": "sim_led_yellow",
-      "path": "/run/hmi/gpio-sim/led_yellow/value",
-      "roles": ["indicator"]
-    },
-    {
-      "id": "led_green",
-      "label": "sim_led_green",
-      "path": "/run/hmi/gpio-sim/led_green/value",
-      "roles": ["indicator"]
+      "type": "buzzer",
+      "id": "panel_buzzer",
+      "line": {
+        "scheme": "stub",
+        "label": "sim_bell"
+      }
     }
   ],
   "capabilities": {
     "set_level": true,
     "blink": true,
-    "read_level": true
+    "read_level": true,
+    "status_led": true,
+    "buzzer": true,
+    "button": false,
+    "rotary_encoder": false
   }
 }

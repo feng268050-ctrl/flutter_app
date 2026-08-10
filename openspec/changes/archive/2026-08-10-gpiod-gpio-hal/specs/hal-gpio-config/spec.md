@@ -1,10 +1,4 @@
-# hal-gpio-config Specification
-
-## Purpose
-
-Versioned App-owned gpio config schema for `hal/gpio`: device inventory, per-line binding schemes (sysfs and/or gpiod), and capabilities. Pins and paths are never hard-coded in portable HAL.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: GPIO config schema
 `hal/gpio` SHALL load a versioned config document (JSON preferred) that declares at least: `version`, `backend` (document default scheme or stub), and either a v1 `lines[]` array or a v2+ `devices[]` array (or both during migration). The document SHALL be the **sole** runtime source of which devices/channels exist and how each line is addressed. Each device SHALL have a stable string `id`, a `type` (`status_led`, `buzzer`, `button`, `rotary_encoder`), and line bindings that select a **scheme** (`gpiod`, `sysfs_innohi`, or documented fallback/stub). Gpiod bindings SHALL use chip name/label + line `offset`. Sysfs bindings SHALL use an explicit `path` and/or `label` (path MAY point at any board-specific `/sys/class/…` node, not only a hard-coded Innohi prefix in HAL). The config MAY include `defaults` (blink timings, debounce, long-press, `active_low`) and a `capabilities` object advertising supported device classes. A v1 document that only lists indicator `lines[]` with sysfs bindings SHALL still load: HAL MUST adapt those lines into a Status LED bank.

@@ -20,6 +20,7 @@ dependencies:
   dbus: ^0.7.12
   # Software-fallback KEK (emulator/sim/host); not used on OP-TEE product path.
   cryptography: ^2.7.0
+  flutter_gpiod: ^0.6.0
 
 dev_dependencies:
   flutter_test:

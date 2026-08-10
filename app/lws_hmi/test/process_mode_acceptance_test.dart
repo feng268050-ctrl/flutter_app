@@ -363,7 +363,10 @@ void main() {
       find.byKey(const ValueKey('quick-mode-status-message')),
       findsNothing,
     );
-    expect(modbus.groupWrites, 0);
+    // lws-ui sendData still writes process regs while laser enable is on;
+    // process_type must stay unchanged under the live-tune path.
+    expect(modbus.groupWrites, greaterThanOrEqualTo(1));
+    expect(modbus.attributes['control.process_type'], 0);
   });
 
   testWidgets('Engineer mode omits legacy Copy Reset Apply controls',
@@ -466,6 +469,10 @@ final class _SimModbus extends ModbusRtuClient {
     for (final spec in ProcessParameterCatalog.specs) {
       attributes[spec.key] = 10.0;
     }
+    control['control.accessory_model_1'] = 0;
+    control['control.accessory_model_2'] = 0;
+    control['control.gun_drive_type'] = 1;
+    control['control.gun_swing_range_mode'] = 7;
     attributes['control.process_type'] = 0;
     control[LaserWorkGuard.laserEnableAttribute] = false;
     control['control.manual_gas'] = false;
@@ -507,6 +514,23 @@ final class _SimModbus extends ModbusRtuClient {
     if (groupId == 'control') {
       control.addAll(values);
     }
+    return true;
+  }
+
+  @override
+  Future<bool> writeHoldingRegisters(
+    int address,
+    List<int> words,
+  ) async {
+    if (address != 0x0050 || words.length != 5) {
+      return false;
+    }
+    control['control.accessory_model_1'] = words[0];
+    control['control.accessory_model_2'] = words[1];
+    control['control.gun_drive_type'] = words[2];
+    control['control.gun_swing_range_mode'] = words[3];
+    control['control.process_type'] = words[4];
+    attributes['control.process_type'] = words[4];
     return true;
   }
 

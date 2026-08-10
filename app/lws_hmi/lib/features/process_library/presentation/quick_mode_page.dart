@@ -428,9 +428,15 @@ final class _QuickModePageState extends State<QuickModePage> {
     });
   }
 
-  Future<bool> _applyPreset(ProcessPreset preset) async {
+  Future<bool> _applyPreset(
+    ProcessPreset preset, {
+    bool allowLiveTune = true,
+  }) async {
     final controller = ProcessLibraryScope.of(context);
-    final result = await controller.apply(preset);
+    final result = await controller.apply(
+      preset,
+      allowLiveTune: allowLiveTune,
+    );
     if (!mounted) {
       return false;
     }
@@ -624,7 +630,8 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
 
     // Match lws-ui ordering: current process + advanced settings, then control.
-    final applied = await _applyPreset(preset);
+    // Require idle so a stuck laser_enable cannot skip process_type.
+    final applied = await _applyPreset(preset, allowLiveTune: false);
     if (!mounted) {
       return;
     }

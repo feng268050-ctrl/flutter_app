@@ -31,7 +31,7 @@ void main() {
     EngineerModeSessionStore.instance.clearForTest();
   });
 
-  AppServices testServices() => AppServices(
+  AppServices testServices({ModbusRtuClient? modbus}) => AppServices(
         boardProfile: BoardProfile.fromJsonString('''
 {
   "schema_version": 1,
@@ -41,7 +41,7 @@ void main() {
 }
 '''),
         sysInfo: StubSysInfo(),
-        modbusClient: _UnusedModbus(),
+        modbusClient: modbus ?? _UnusedModbus(),
       );
 
   Future<void> setDesignSurface(WidgetTester tester) async {
@@ -112,9 +112,10 @@ void main() {
     required ProcessLibraryController controller,
     ProcessType? initialProcessType,
     String? initialPresetUuid,
+    AppServices? services,
   }) {
     return _AppServicesHost(
-      services: testServices(),
+      services: services ?? testServices(),
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -520,6 +521,143 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 600));
   });
+
+  testWidgets(
+      'tab switch to spot welding applies process_type and spot interval',
+      (tester) async {
+    await setDesignSurface(tester);
+    final modbus = _RecordingModbus();
+    final spot = _engineer(
+      uuid: 'eng-spot',
+      name: 'Spot Steel-2mm',
+      builtin: true,
+    ).copyWith(
+      processType: ProcessType.spotWelding,
+      parameters: ProcessParameters({
+        'process.laser_power': 53,
+        'process.spot_welding_interval': 1500,
+        'process.spot_welding_duration': 200,
+        'process.blowing_delay': 100,
+        'process.gas_off_delay': 200,
+        'process.swing_frequency': 50,
+        'process.swing_width': 2,
+        'process.light_off_delay': 0,
+      }),
+    );
+    final controller = await seedController(
+      extras: [spot],
+      applier: ProcessParameterApplier(
+        modbus: modbus,
+        interlockFailure: () async => null,
+      ),
+    );
+    // Seed spot session so tab switch restores a known draft (not empty).
+    EngineerModeSessionStore.instance.put(EngineerModeDraft.fromLibrary(spot));
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.continuousWelding,
+        services: testServices(modbus: modbus),
+      ),
+    );
+    await tester.pump();
+    // Device panel laser label can overflow by 1px at 1280 — clear it.
+    while (tester.takeException() != null) {}
+    await tester.pump(const Duration(milliseconds: 80));
+    while (tester.takeException() != null) {}
+    // Let continuous first-entry apply settle.
+    await tester.pump(const Duration(milliseconds: 350));
+    while (tester.takeException() != null) {}
+    expect(modbus.attributes['control.process_type'], 0);
+
+    await tester.tap(find.byKey(const ValueKey('engineer-tab-spotWelding')));
+    await tester.pump();
+    while (tester.takeException() != null) {}
+    // Tab-switch schedules apply immediately (300ms debounce).
+    await tester.pump(const Duration(milliseconds: 350));
+    while (tester.takeException() != null) {}
+    // Busy-retry backoff if CW apply overlapped.
+    await tester.pump(const Duration(milliseconds: 800));
+    while (tester.takeException() != null) {}
+
+    expect(modbus.attributes['control.process_type'], 1);
+    expect(modbus.attributes['process.spot_welding_interval'], 1500);
+    expect(modbus.attributes['process.spot_welding_duration'], 200);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 600));
+  });
+
+  testWidgets(
+      'rapid tab switches converge continuous welding auto wire to enabled',
+      (tester) async {
+    await setDesignSurface(tester);
+    final modbus = _RecordingModbus(
+      controlWriteDelay: const Duration(milliseconds: 50),
+    );
+    final spot = _engineer(
+      uuid: 'eng-spot-auto-wire',
+      name: 'Spot Steel-2mm',
+      builtin: true,
+    ).copyWith(processType: ProcessType.spotWelding);
+    final controller = await seedController(extras: [spot]);
+    EngineerModeSessionStore.instance.put(EngineerModeDraft.fromLibrary(spot));
+
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.continuousWelding,
+        services: testServices(modbus: modbus),
+      ),
+    );
+    await tester.pump();
+    while (tester.takeException() != null) {}
+    // DeviceControlController.start: snapshot + default Auto Wire ON.
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    while (tester.takeException() != null) {}
+
+    // Establish a completed OFF → ON cycle first.
+    await tester.tap(find.byKey(const ValueKey('engineer-tab-spotWelding')));
+    await tester.pump();
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    while (tester.takeException() != null) {}
+    expect(modbus.controlField1Writes.last & (1 << 4), 0);
+
+    await tester.tap(
+      find.byKey(const ValueKey('engineer-tab-continuousWelding')),
+    );
+    await tester.pump();
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    while (tester.takeException() != null) {}
+    expect(modbus.controlField1Writes.last & (1 << 4), isNot(0));
+
+    // Reproduce the race: select continuous while spot's delayed OFF write is
+    // already in flight. The serialized queue must make the latest ON win.
+    await tester.tap(find.byKey(const ValueKey('engineer-tab-spotWelding')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.tap(
+      find.byKey(const ValueKey('engineer-tab-continuousWelding')),
+    );
+    await tester.pump();
+    for (var i = 0; i < 16; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    while (tester.takeException() != null) {}
+
+    expect(modbus.controlField1Writes, contains(0));
+    expect(modbus.controlField1Writes.last & (1 << 4), isNot(0));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 600));
+  });
 }
 
 ProcessPreset _engineer({
@@ -600,14 +738,23 @@ final class _UnusedModbus extends ModbusRtuClient {}
 
 /// Counts successful process-group applies for first-entry policy tests.
 final class _RecordingModbus extends ModbusRtuClient {
-  _RecordingModbus() {
+  _RecordingModbus({
+    this.controlWriteDelay = Duration.zero,
+  }) {
     for (final spec in ProcessParameterCatalog.specs) {
       attributes[spec.key] = 0.0;
     }
+    attributes['control.accessory_model_1'] = 0;
+    attributes['control.accessory_model_2'] = 0;
+    attributes['control.gun_drive_type'] = 1;
+    attributes['control.gun_swing_range_mode'] = 7;
     attributes['control.process_type'] = 0;
+    attributes['control.field_1'] = 0;
   }
 
   final Map<String, Object?> attributes = {};
+  final Duration controlWriteDelay;
+  final List<int> controlField1Writes = [];
   int processGroupWrites = 0;
 
   @override
@@ -626,17 +773,48 @@ final class _RecordingModbus extends ModbusRtuClient {
   }
 
   @override
+  Future<bool> writeHoldingRegisters(
+    int address,
+    List<int> words,
+  ) async {
+    if (address != 0x0050 || words.length != 5) {
+      return false;
+    }
+    attributes['control.accessory_model_1'] = words[0];
+    attributes['control.accessory_model_2'] = words[1];
+    attributes['control.gun_drive_type'] = words[2];
+    attributes['control.gun_swing_range_mode'] = words[3];
+    attributes['control.process_type'] = words[4];
+    return true;
+  }
+
+  @override
   Future<Map<String, Object?>> readGroup(String groupId) async =>
       Map<String, Object?>.from(attributes);
 
   @override
   Future<bool> writeAttribute(String id, Object? value) async {
+    if (id == 'control.field_1' && controlWriteDelay > Duration.zero) {
+      await Future<void>.delayed(controlWriteDelay);
+    }
     attributes[id] = value;
+    if (id == 'control.field_1' && value is num) {
+      controlField1Writes.add(value.toInt());
+    }
     return true;
   }
 
   @override
   Future<Object?> readAttribute(String id) async => attributes[id];
+
+  @override
+  Future<void> ensurePolling() async {}
+
+  @override
+  Future<Stream<List<ModbusAttributeChange>>> watchAttributes({
+    Iterable<String>? ids,
+  }) async =>
+      const Stream.empty();
 }
 
 /// Owns [AppServices] so [OsWallClock] is disposed when the harness is removed.

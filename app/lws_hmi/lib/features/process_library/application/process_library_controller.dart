@@ -142,7 +142,10 @@ final class ProcessLibraryController extends ChangeNotifier {
     await _reload();
   }
 
-  Future<ProcessApplyResult> apply(ProcessPreset preset) async {
+  Future<ProcessApplyResult> apply(
+    ProcessPreset preset, {
+    bool allowLiveTune = true,
+  }) async {
     if (_applying) {
       return const ProcessApplyResult.failure(ProcessApplyFailure.busy);
     }
@@ -150,7 +153,10 @@ final class ProcessLibraryController extends ChangeNotifier {
     _notify();
     try {
       final resolved = ProcessParameterDefaults.resolve(preset);
-      final result = await applier.apply(resolved);
+      final result = await applier.apply(
+        resolved,
+        allowLiveTune: allowLiveTune,
+      );
       if (result.isSuccess) {
         ProcessParametersSnapshotStore.instance.updateFromPreset(
           resolved,

@@ -88,6 +88,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   GunDialogCoordinator? _gunDialogs;
   bool _exiting = false;
   int _processSwitchGen = 0;
+  Future<void> _processSwitchSync = Future<void>.value();
 
   /// Tab slide direction for [ProductTabSlideSwitcher] (higher index = forward).
   bool _tabSlideForward = true;
@@ -305,14 +306,21 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   ///
   /// UI updates first (Quick Mode pattern). Modbus clear / laser off runs in
   /// the background so tab chrome is not blocked. Record Work stays armed —
-  /// encode stops when laser session ends (do not [RecordWorkController.stopRecordingForExit]).
+  /// encode stops when laser session ends (do not
+  /// [RecordWorkController.stopRecordingForExit]).
   ///
-  /// Does **not** re-apply process params (lws-ui `onEngineerPageActivated` only
-  /// refreshes UI; send resumes on the next field edit).
+  /// Parity with lws-ui `selectModel`: push the active tab's process group and
+  /// `control.process_type` (do not confuse with UI-only
+  /// `onEngineerPageActivated`). Spot interval/duration only take effect when
+  /// process_type is spot welding (1).
   void _onProcessTypeChanged(ProcessType type) {
     if (type == _processType) {
       return;
     }
+    // Drop a pending edit apply from the previous tab so it cannot overwrite
+    // the new type's process group / process_type.
+    _applyDebounce?.cancel();
+    _applyDebounce = null;
     final types = EngineerProcessTabs.types;
     final oldIndex = types.indexOf(_processType);
     final newIndex = types.indexOf(type);
@@ -335,24 +343,104 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     });
     LaserEnableLedHolder.instance.setWorkModel(type);
     final gen = ++_processSwitchGen;
-    unawaited(_syncDeviceForProcessType(type, gen));
+    debugPrint(
+      'engineer-mode: process tab changed '
+      'type=${type.name} sync=$gen',
+    );
+    final preset = _draft?.preset;
+    if (preset != null && preset.processType == type) {
+      // Kick apply without waiting for wire/laser Modbus (those can be slow on
+      // a busy RTU). Interlock still blocks when laser is actually on — then
+      // [_syncDeviceForProcessType] re-applies after disable.
+      _scheduleApply(preset);
+    }
+    _enqueueDeviceSyncForProcessType(type, gen);
   }
 
-  /// Clears continuous wire, ends laser session, aligns Auto Wire with capability.
+  /// Serialize tab-side device writes.
+  ///
+  /// `DeviceControlController` rejects concurrent commands as `busy`. Starting
+  /// one unawaited chain per tab allowed an old `setAutoWireFeed(false)` to
+  /// finish after the latest continuous-weld `setAutoWireFeed(true)` was
+  /// rejected, producing an alternating off/on result on repeated switches.
+  void _enqueueDeviceSyncForProcessType(ProcessType type, int gen) {
+    final previous = _processSwitchSync;
+    _processSwitchSync = () async {
+      try {
+        await previous;
+      } catch (e) {
+        debugPrint('engineer-mode: prior process switch sync failed: $e');
+      }
+      if (!mounted || gen != _processSwitchGen) {
+        return;
+      }
+      try {
+        await _syncDeviceForProcessType(type, gen);
+      } catch (e) {
+        debugPrint('engineer-mode: process switch sync failed: $e');
+      }
+    }();
+    unawaited(_processSwitchSync);
+  }
+
+  /// Clears continuous wire, ends laser session, aligns Auto Wire. Re-applies
+  /// process params when laser had been on (early apply would hit interlock).
   Future<void> _syncDeviceForProcessType(ProcessType type, int gen) async {
-    await _deviceControl?.clearContinuousWire();
     if (!mounted || gen != _processSwitchGen) {
       return;
     }
-    await _deviceControl?.disableLaser();
+    final laserWasOn = _deviceControl?.laserEnable ?? false;
+    final clearResult = await _deviceControl?.clearContinuousWire();
+    debugPrint(
+      'engineer-mode: process tab clear-wire '
+      'type=${type.name} result=$clearResult',
+    );
     if (!mounted || gen != _processSwitchGen) {
       return;
     }
-    if (type == ProcessType.continuousWelding) {
-      await _deviceControl?.ensureAutoWireFeedDefault();
-    } else if (_deviceControl?.autoWireFeed == true) {
-      await _deviceControl?.setAutoWireFeed(false);
+    if (laserWasOn) {
+      final disableResult = await _deviceControl?.disableLaser();
+      debugPrint(
+        'engineer-mode: process tab disable-laser '
+        'type=${type.name} result=$disableResult',
+      );
     }
+    if (!mounted || gen != _processSwitchGen) {
+      return;
+    }
+    final device = _deviceControl;
+    if (device != null) {
+      final enableAutoWire =
+          type == ProcessType.continuousWelding && !device.emergencyStop;
+      LaserEnableBlockReason? result;
+      for (var attempt = 0; attempt < 8; attempt++) {
+        if (!mounted || gen != _processSwitchGen) {
+          return;
+        }
+        result = await device.setAutoWireFeed(enableAutoWire);
+        if (result != LaserEnableBlockReason.busy) {
+          break;
+        }
+        await Future<void>.delayed(
+          Duration(milliseconds: 40 * (attempt + 1)),
+        );
+      }
+      debugPrint(
+        'engineer-mode: process tab auto-wire '
+        'type=${type.name} enabled=$enableAutoWire result=$result',
+      );
+    }
+    if (!mounted || gen != _processSwitchGen) {
+      return;
+    }
+    if (!laserWasOn) {
+      return;
+    }
+    final preset = _draft?.preset;
+    if (preset == null || preset.processType != type) {
+      return;
+    }
+    _scheduleApply(preset);
   }
 
   /// Engineer Back:
@@ -461,9 +549,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   /// Debounced process-group write (lws-ui `sendDataProxy` 300ms).
   ///
   /// Used after field edits / favorites / reset / continuous-weld first entry /
-  /// Quick handoff. Tab switches do not call this (lws-ui page-activate is
-  /// UI-only). Unlike Quick Mode, the same draft uuid may change field values,
-  /// so every edit schedules an apply — do not skip on uuid equality.
+  /// Quick handoff / tab switch (`selectModel` sendData). Unlike Quick Mode,
+  /// the same draft uuid may change field values, so every edit schedules an
+  /// apply — do not skip on uuid equality.
   void _scheduleApply(ProcessPreset preset) {
     _applyDebounce?.cancel();
     _applyDebounce = Timer(const Duration(milliseconds: 300), () {
@@ -477,7 +565,21 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   Future<bool> _applyDraft(ProcessPreset preset) async {
     final gen = ++_applyGen;
     final library = ProcessLibraryScope.of(context);
-    final result = await library.apply(preset);
+    // Tab-switch apply can land while continuous first-entry apply still holds
+    // the library lock; retry busy like RTU baseline retries.
+    var result = const ProcessApplyResult.failure(ProcessApplyFailure.busy);
+    for (var attempt = 0; attempt < 8; attempt++) {
+      if (!mounted || gen != _applyGen) {
+        return false;
+      }
+      result = await library.apply(preset);
+      if (result.isSuccess || result.failure != ProcessApplyFailure.busy) {
+        break;
+      }
+      await Future<void>.delayed(
+        Duration(milliseconds: 40 * (attempt + 1)),
+      );
+    }
     if (!mounted || gen != _applyGen) {
       return false;
     }
@@ -545,6 +647,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (draft == null) {
       return false;
     }
+    final library = ProcessLibraryScope.of(context);
     final focusScaleRef = await _focusScaleRef();
     if (!mounted) {
       return false;
@@ -584,8 +687,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       }
     }
 
-    final library = ProcessLibraryScope.of(context);
-    final result = await library.apply(draft.preset);
+    // Enable must write process_type + params after force-disable; do not
+    // fall through to live-tune if the enable bit is still stuck on.
+    final result = await library.apply(
+      draft.preset,
+      allowLiveTune: false,
+    );
     if (!mounted) {
       return false;
     }

@@ -112,7 +112,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('EN Alarms Clear groups icon+label; icon matches label size',
+  testWidgets('EN Alarms Clear keeps its label centered when space permits',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -126,7 +126,6 @@ void main() {
             child: MonitorFrostActionButton(
               label: 'Clear',
               variant: CyberButtonVariant.secondary,
-              groupIconWithLabel: true,
               leading: Icon(
                 Icons.delete_outline,
                 color: CyberColors.buttonSecondaryText,
@@ -139,19 +138,20 @@ void main() {
     );
     await tester.pump();
 
-    final hmi = tester.widget<HmiButton>(find.byType(HmiButton));
-    expect(hmi.groupIconWithLabel, isTrue);
     expect(find.text('Clear'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('hmi-icon-label-label-centered')),
+      findsOneWidget,
+    );
     final label = tester.widget<Text>(find.text('Clear'));
-    final fontSize = label.style!.fontSize!;
-    expect(fontSize, 20);
-    // Outer glyph box is fontSize×fontSize (FittedBox may keep Icon layout size).
+    expect(label.style!.fontSize, 20);
+    const iconSize = HmiButtonMetrics.mediumIconSize;
     final glyphBox =
         tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
-              (b) => b.width == fontSize && b.height == fontSize,
+              (b) => b.width == iconSize && b.height == iconSize,
             );
-    expect(glyphBox.width, fontSize);
-    expect(glyphBox.height, fontSize);
+    expect(glyphBox.width, iconSize);
+    expect(glyphBox.height, iconSize);
     expect(tester.takeException(), isNull);
   });
 

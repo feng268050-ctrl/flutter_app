@@ -221,7 +221,6 @@ class MonitorFrostActionButton extends StatelessWidget {
     this.icon,
     this.size = HmiButtonSize.medium,
     this.variant = CyberButtonVariant.standard,
-    this.groupIconWithLabel = false,
     this.clickSoundEnabled = true,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
@@ -232,10 +231,6 @@ class MonitorFrostActionButton extends StatelessWidget {
   final IconData? icon;
   final HmiButtonSize size;
   final CyberButtonVariant variant;
-
-  /// Center icon+label as one group (Alarms Clear). Default keeps label-centered
-  /// / icon left-inset layout used by other Monitor pills.
-  final bool groupIconWithLabel;
 
   final bool clickSoundEnabled;
   final CyberBorderGradientCenter borderGradientCenter;
@@ -263,7 +258,6 @@ class MonitorFrostActionButton extends StatelessWidget {
         paintFill: false,
         icon: icon,
         leading: leading,
-        groupIconWithLabel: groupIconWithLabel,
         clickSoundEnabled: clickSoundEnabled,
         borderGradientCenter: borderGradientCenter,
         onPressed: onPressed,

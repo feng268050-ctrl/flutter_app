@@ -279,7 +279,6 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                             child: MonitorFrostActionButton(
                               variant: CyberButtonVariant.secondary,
                               clickSoundEnabled: false,
-                              groupIconWithLabel: true,
                               onPressed:
                                   _history.isEmpty ? null : _clearHistory,
                               label: l10n.clearAlarmLogs,

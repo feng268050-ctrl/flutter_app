@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -204,7 +204,6 @@ help:
 	@echo "  make publish-camera-firmware         # sign+upload newest camera zip → lws-hmi/camera/release.json"
 	@echo ""
 	@echo "USB Flash (macOS / Linux x86_64 / Windows Git Bash):"
-	@echo "  make audit                 # pre-flight before make flash"
 	@echo "  make reboot                # Linux → USB-SSH/SSH sysrq + unregister; Android → adb"
 	@echo "  make reboot-loader         # Linux USB-SSH → RockUSB + unregister; Android → adb"
 	@echo "  make flash                 # uf factory.img (APP+FACTORY_SKU); IMAGE= override; Maskrom ul"
@@ -599,9 +598,6 @@ fix-buildroot-host-rpaths:
 
 export-buildroot-toolchain:
 	@bash scripts/export-buildroot-toolchain.sh
-
-audit:
-	@bash scripts/audit-firmware.sh
 
 # --- USB Flash ---
 

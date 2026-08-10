@@ -571,11 +571,6 @@ USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockch
 
 ## USB Flash
 
-### `make audit`
-
-- **怎么用：** `make audit`
-- **何时用：** `flash` 前检查镜像/工具是否就绪。
-
 ### `make reboot` / `make reboot-loader` / `make loader`
 
 - **怎么用：** `SN=… make reboot`；进烧录：`make reboot-loader`；Maskrom 下发 loader：`make loader`

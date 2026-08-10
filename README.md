@@ -362,7 +362,6 @@ Canonical host artifacts live under `output/firmware/` only. SDK `linux-sdk/outp
 ### Flash and device (macOS)
 
 ```bash
-make audit
 make devices
 make shell
 make flash

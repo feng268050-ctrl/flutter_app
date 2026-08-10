@@ -1709,6 +1709,12 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get deleteText;
 
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
   /// No description provided for @deviceBindBody.
   ///
   /// In en, this message translates to:

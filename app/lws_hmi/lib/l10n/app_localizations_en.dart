@@ -916,6 +916,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteText => 'Delete';
 
   @override
+  String get details => 'Details';
+
+  @override
   String get deviceBindBody =>
       'Scan the QR code with the LaserCyber app to bind this device.';
 

@@ -424,6 +424,7 @@
   "dateTimeUse24HourFormat": "Use 24-Hour Format",
   "defaultLabel": "Default",
   "deleteText": "Delete",
+  "details": "Details",
   "deviceBindBody": "Scan the QR code with the LaserCyber app to bind this device.",
   "deviceBindTitle": "Bind This Device",
   "deviceControlAutoWireFeedOff": "Wire Feed Turned Off",

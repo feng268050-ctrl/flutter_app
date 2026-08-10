@@ -5,7 +5,6 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
-import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_video/application/video_cover_extractor.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
@@ -14,6 +13,7 @@ import 'package:lws_hmi/features/process_video/presentation/process_video_dialog
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
@@ -22,6 +22,7 @@ import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 import 'package:video_player/video_player.dart';
 
 /// lws-ui `ProcessVideoDetailsActivity` — left params + right fixed player.
@@ -257,70 +258,89 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
         }
         unawaited(_handleBack());
       },
-      child: Scaffold(
-        backgroundColor: ProcessModeTokens.background,
-        body: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : record == null
-                ? Center(
-                    child: Text(
-                      l10n.processVideoPlaybackFailed,
-                      style: const TextStyle(color: Colors.white54),
+      child: SettingsBlurredPageShell(
+        // Same stack as Monitor / AI Vision choose: home wallpaper → σ30 plate.
+        blurSigma: SettingsPerspectiveChrome.blurSigma,
+        backdropBuilder: () => const Stack(
+          fit: StackFit.expand,
+          children: [
+            SettingsHomeBackdrop(),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x16000000), Color(0x26000000)],
+                ),
+              ),
+            ),
+          ],
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : record == null
+                  ? Center(
+                      child: Text(
+                        l10n.processVideoPlaybackFailed,
+                        style: const TextStyle(color: Colors.white54),
+                      ),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final scale =
+                            (constraints.maxWidth / 1280).clamp(0.55, 1.0);
+                        final minParams = 360.0 * scale;
+                        final gap = _pagePad * scale;
+                        var playerWidth = _playerDesignWidth * scale;
+                        final maxPlayer =
+                            constraints.maxWidth - gap - minParams;
+                        if (playerWidth > maxPlayer) {
+                          playerWidth = maxPlayer.clamp(200.0, playerWidth);
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.all(_pagePad),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: _ParameterColumn(
+                                  record: record,
+                                  title: l10n.processVideoParametersTitle,
+                                  backLabel: l10n.details,
+                                  uploadLabel: l10n.uploadText,
+                                  deleteLabel: l10n.deleteText,
+                                  labelWidth: 230 * scale,
+                                  onBack: () => unawaited(_handleBack()),
+                                  onUpload: () => unawaited(_upload()),
+                                  onDelete: () => unawaited(_delete()),
+                                ),
+                              ),
+                              SizedBox(width: gap),
+                              SizedBox(
+                                width: playerWidth,
+                                child: _PlayerPane(
+                                  player: _player,
+                                  poster: _poster,
+                                  showPoster: !_playbackStarted,
+                                  error: _error,
+                                  failedLabel: l10n.processVideoPlaybackFailed,
+                                  onPlaybackStarted: _onPlaybackStarted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final scale =
-                          (constraints.maxWidth / 1280).clamp(0.55, 1.0);
-                      final minParams = 360.0 * scale;
-                      final gap = _pagePad * scale;
-                      var playerWidth = _playerDesignWidth * scale;
-                      final maxPlayer =
-                          constraints.maxWidth - gap - minParams;
-                      if (playerWidth > maxPlayer) {
-                        playerWidth = maxPlayer.clamp(200.0, playerWidth);
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.all(_pagePad),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: _ParameterColumn(
-                                record: record,
-                                title: l10n.processVideoParametersTitle,
-                                backLabel: 'Back',
-                                uploadLabel: l10n.uploadText,
-                                deleteLabel: l10n.deleteText,
-                                labelWidth: 230 * scale,
-                                onBack: () => unawaited(_handleBack()),
-                                onUpload: () => unawaited(_upload()),
-                                onDelete: () => unawaited(_delete()),
-                              ),
-                            ),
-                            SizedBox(width: gap),
-                            SizedBox(
-                              width: playerWidth,
-                              child: _PlayerPane(
-                                player: _player,
-                                poster: _poster,
-                                showPoster: !_playbackStarted,
-                                error: _error,
-                                failedLabel: l10n.processVideoPlaybackFailed,
-                                onPlaybackStarted: _onPlaybackStarted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+        ),
       ),
     );
   }
 }
 
-/// Left column: Back + Frost param card + Upload / Delete (lws-ui Activity).
+/// Left column: Details chrome + Frost param card + Upload / Delete.
 final class _ParameterColumn extends StatelessWidget {
   const _ParameterColumn({
     required this.record,
@@ -352,12 +372,15 @@ final class _ParameterColumn extends StatelessWidget {
         Align(
           alignment: Alignment.centerLeft,
           child: SizedBox(
-            width: CallBackHomeButton.railWidth,
             height: WorkModeStatusBarDimens.height,
+            // Settings / Monitor nested chrome: full title, no orange edges.
             child: CallBackHomeButton(
               accent: WorkModeAccent.weld,
               label: backLabel,
               onPressed: onBack,
+              expandWidth: false,
+              showEdgeAccent: false,
+              useHomeIcon: false,
             ),
           ),
         ),
@@ -463,22 +486,30 @@ final class _ParameterList extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(text: row.value, style: dataStyle),
-                      if (unit != null && unit.isNotEmpty)
-                        TextSpan(
-                          text: ' $unit',
-                          style: dataStyle.copyWith(
-                            color: const Color(0xFFE1E1E1),
+                child: unit != null && unit.isNotEmpty
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Flexible(
+                            child: WordBoundaryLabel(
+                              text: row.value,
+                              style: dataStyle,
+                              maxLines: 2,
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                          Text(
+                            ' $unit',
+                            style: dataStyle.copyWith(
+                              color: const Color(0xFFE1E1E1),
+                            ),
+                          ),
+                        ],
+                      )
+                    : WordBoundaryLabel(
+                        text: row.value,
+                        style: dataStyle,
+                        maxLines: 2,
+                      ),
               ),
             ],
           ),

@@ -873,6 +873,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteText => '删除';
 
   @override
+  String get details => '详情';
+
+  @override
   String get deviceBindBody => '请使用 LaserCyber App 扫描二维码绑定此设备。';
 
   @override
@@ -3925,6 +3928,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get deleteText => '刪除';
 
   @override
+  String get details => '詳情';
+
+  @override
   String get deviceBindBody => '請使用 LaserCyber App 掃描二維碼綁定此設備。';
 
   @override
@@ -5251,9 +5257,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get saveAsFavorite => '收藏爲常用';
-
-  @override
-  String get engineerActionSaveFavorite => '收藏常用';
 
   @override
   String get selectValidProcessPresetFirst => '請先選擇有效的工藝預設';

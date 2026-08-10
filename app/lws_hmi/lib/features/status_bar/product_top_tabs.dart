@@ -2,14 +2,16 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_primary_tab_content.dart';
 
 /// Item layout for [ProductTopTabs].
 enum ProductTopTabLayout {
-  /// Monitor: text centered; icon pinned with equal L/T/B inset.
+  /// Monitor: compact icon+label group centered in the cell.
   monitorPinnedIcon,
 
-  /// Settings (lws-ui sizes): text centered; icon pinned with equal L/T/B inset.
+  /// Legacy Settings strip sizing (same content group as Monitor).
   lwsUi,
 }
 
@@ -18,6 +20,9 @@ enum ProductTopTabLayout {
 /// Opaque strip ([background]) so Home wallpaper does not show through.
 /// A hairline under the strip matches Settings / Monitor card inset
 /// ([dividerInset]).
+///
+/// Content matches Settings: [HmiPrimaryTabContent] (icon 28 + label 24 + gap 8)
+/// centered in the cell with a full-width selection indicator.
 final class ProductTopTabs extends StatefulWidget
     implements PreferredSizeWidget {
   const ProductTopTabs({
@@ -40,11 +45,11 @@ final class ProductTopTabs extends StatefulWidget
   static const dividerColor = Color(0x33FFFFFF);
   static const dividerInset = 24.0;
 
-  /// Monitor strip height (slightly under lws-ui; −10 vs prior 78).
-  static const monitorHeight = 68.0;
+  /// Monitor strip height (aligned with Settings / Engineer).
+  static const monitorHeight = HmiTabMetrics.tabHeight;
 
   /// Settings strip height (aligned with Monitor).
-  static const lwsUiHeight = 68.0;
+  static const lwsUiHeight = HmiTabMetrics.tabHeight;
 
   /// Monitor min width (wider than lws-ui 236 for fontSize 24).
   static const monitorMinTabWidth = 280.0;
@@ -131,48 +136,24 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
   }
 
   double _tabWidthFor(String label) {
-    final tabFontSize = context.hmiTypography.navigation.fontSize!;
-    if (widget.layout == ProductTopTabLayout.lwsUi) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: label,
-          style: TextStyle(
-            fontSize: tabFontSize,
-            fontWeight: FontWeight.w500,
-            height: 1.0,
-          ),
-        ),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout();
-      const iconSize = _ProductTopTabItem.lwsUiIconSize;
-      final iconInset = (ProductTopTabs.lwsUiHeight - iconSize) / 2;
-      final side = iconInset + iconSize + _ProductTopTabItem.iconTextGap;
-      return math.max(
-        ProductTopTabs.lwsUiMinTabWidth,
-        painter.width + 2 * side,
-      );
-    }
-
+    final labelStyle = context.hmiTypography.primaryTabLabel.copyWith(
+      fontWeight: HmiTabMetrics.labelWeight,
+      height: 1.0,
+    );
     final painter = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: TextStyle(
-          fontSize: tabFontSize,
-          fontWeight: FontWeight.w500,
-          height: 1.0,
-        ),
-      ),
+      text: TextSpan(text: label, style: labelStyle),
       maxLines: 1,
       textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
     )..layout();
-    const iconSize = _ProductTopTabItem.monitorIconSize;
-    final iconInset = (ProductTopTabs.monitorHeight - iconSize) / 2;
-    final side = iconInset + iconSize + _ProductTopTabItem.iconTextGap;
-    return math.max(
-      ProductTopTabs.monitorMinTabWidth,
-      painter.width + 2 * side,
-    );
+    final contentWidth = HmiTabMetrics.horizontalPadding * 2 +
+        HmiTabMetrics.iconSize +
+        HmiTabMetrics.iconLabelGap +
+        painter.width;
+    final minWidth = widget.layout == ProductTopTabLayout.lwsUi
+        ? ProductTopTabs.lwsUiMinTabWidth
+        : ProductTopTabs.monitorMinTabWidth;
+    return math.max(minWidth, contentWidth);
   }
 
   List<double> _tabWidths() =>
@@ -189,7 +170,6 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
           icon: widget.tabs[i].icon,
           selected: i == widget.currentIndex,
           layout: widget.layout,
-          stripHeight: widget.height,
           onTap: () => widget.onSelected(i),
         ),
       ),
@@ -265,20 +245,15 @@ final class _ProductTopTabItem extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.layout,
-    required this.stripHeight,
     required this.onTap,
   });
 
-  static const monitorIconSize = 31.0;
-  static const lwsUiIconSize = 31.0;
-  static const iconTextGap = 6.0;
   static const unselectedLwsUi = Color(0xFF94A3B8);
 
   final String label;
   final IconData icon;
   final bool selected;
   final ProductTopTabLayout layout;
-  final double stripHeight;
   final VoidCallback onTap;
 
   @override
@@ -293,101 +268,34 @@ final class _ProductTopTabItem extends StatelessWidget {
       scaleOnPress: false,
       clickSoundEnabled: true,
       onPressed: () async => onTap(),
-      child: layout == ProductTopTabLayout.lwsUi
-          ? _buildLwsUi(context, color)
-          : _buildMonitorPinned(context, color),
-    );
-  }
-
-  Widget _buildLwsUi(BuildContext context, Color color) {
-    final labelStyle = context.hmiTypography.primaryTabLabel.copyWith(
-      color: color,
-      fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-      height: 1.0,
-    );
-    final iconInset = (stripHeight - lwsUiIconSize) / 2;
-    final textPainter = TextPainter(
-      text: TextSpan(text: label, style: labelStyle),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    // Underline tracks the centered label (icon is pinned separately).
-    final underlineWidth = textPainter.width;
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Center(
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            style: labelStyle,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Center(
+            child: HmiPrimaryTabContent(
+              icon: Icon(
+                icon,
+                size: HmiTabMetrics.iconSize,
+                color: color,
+              ),
+              label: label,
+              color: color,
+              selected: selected,
+            ),
           ),
-        ),
-        Positioned(
-          left: iconInset,
-          top: iconInset,
-          width: lwsUiIconSize,
-          height: lwsUiIconSize,
-          child: Icon(icon, size: lwsUiIconSize, color: color),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 3),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: HmiTabMetrics.indicatorHeight,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
-              height: 2,
-              width: selected ? underlineWidth : 0,
               color: selected ? Colors.white : Colors.transparent,
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMonitorPinned(BuildContext context, Color color) {
-    final labelStyle = context.hmiTypography.primaryTabLabel.copyWith(
-      color: color,
-      fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-      height: 1.0,
-    );
-    final iconInset = (stripHeight - monitorIconSize) / 2;
-    return Stack(
-      children: [
-        Center(
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            softWrap: false,
-            style: labelStyle,
-          ),
-        ),
-        Positioned(
-          left: iconInset,
-          top: iconInset,
-          width: monitorIconSize,
-          height: monitorIconSize,
-          child: Icon(icon, size: monitorIconSize, color: color),
-        ),
-        Positioned(
-          left: 14,
-          right: 14,
-          bottom: 3,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            height: 2,
-            color: selected ? Colors.white : Colors.transparent,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

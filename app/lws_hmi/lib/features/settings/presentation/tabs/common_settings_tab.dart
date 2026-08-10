@@ -50,11 +50,13 @@ class CommonSettingsTab extends StatefulWidget {
 }
 
 class _CommonSettingsTabState extends State<CommonSettingsTab> {
-  String _wifiValue = '';
-  String _proxyValue = '';
-  String _sshDebugValue = '';
-  String _usbOtgValue = '';
-  String _btValue = '';
+  /// Semantic trailing state — resolve labels in [build] so locale switches
+  /// refresh Off/On without leaving the tab.
+  bool _proxyEnabled = false;
+  String _proxyEndpoint = '';
+  bool _sshDebugEnabled = false;
+  bool _btPowered = false;
+  UsbOtgMode? _usbOtgMode;
   String _brightnessValue = '';
   String _volumeValue = '';
   TimeSyncMode? _dateTimeMode;
@@ -69,11 +71,9 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     // work that reads InheritedWidgets (including sync stream emits).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _wifiSub = services.wifi.connection.listen((c) {
+      _wifiSub = services.wifi.connection.listen((_) {
         if (!mounted) return;
-        setState(
-          () => _wifiValue = _wifiSummary(AppLocalizations.of(context)!, c),
-        );
+        setState(() {});
       });
       unawaited(_refreshProxy());
       unawaited(_refreshSshDebug());
@@ -83,22 +83,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
       unawaited(_refreshVolume());
       unawaited(_refreshDateTime());
     });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final l10n = AppLocalizations.of(context)!;
-    _wifiValue = _wifiSummary(l10n, services.wifi.currentConnection);
-    if (_proxyValue.isEmpty) {
-      _proxyValue = l10n.offLabel;
-    }
-    if (_sshDebugValue.isEmpty) {
-      _sshDebugValue = l10n.offLabel;
-    }
-    if (_btValue.isEmpty) {
-      _btValue = l10n.offLabel;
-    }
   }
 
   String _wifiSummary(AppLocalizations l10n, WifiConnectionState c) {
@@ -136,13 +120,21 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
         : l10n.dateTimeModeManual;
   }
 
+  String _proxyTrailing(AppLocalizations l10n) {
+    if (!_proxyEnabled) {
+      return l10n.offLabel;
+    }
+    return _proxyEndpoint.isEmpty ? l10n.onLabel : _proxyEndpoint;
+  }
+
   Future<void> _refreshProxy() async {
     try {
       final p = await services.http.getProxy();
       if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _proxyValue = p.enabled ? '${p.host}:${p.port}' : l10n.offLabel;
+        _proxyEnabled = p.enabled;
+        _proxyEndpoint =
+            p.enabled && p.host.isNotEmpty ? '${p.host}:${p.port}' : '';
       });
     } catch (_) {}
   }
@@ -151,11 +143,10 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     try {
       final on = await services.sshDebug.isEnabled();
       if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
-      setState(() => _sshDebugValue = on ? l10n.onLabel : l10n.offLabel);
+      setState(() => _sshDebugEnabled = on);
     } catch (_) {
       if (mounted) {
-        setState(() => _sshDebugValue = AppLocalizations.of(context)!.offLabel);
+        setState(() => _sshDebugEnabled = false);
       }
     }
   }
@@ -164,18 +155,16 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     try {
       final mode = await services.usbOtg.getMode();
       if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
-      setState(() => _usbOtgValue = _usbOtgLabel(l10n, mode));
+      setState(() => _usbOtgMode = mode);
     } catch (_) {
-      if (mounted) setState(() => _usbOtgValue = '');
+      if (mounted) setState(() => _usbOtgMode = null);
     }
   }
 
   Future<void> _refreshBt() async {
     final powered = services.bluetooth.currentAdapterInfo.powered;
     if (!mounted) return;
-    final l10n = AppLocalizations.of(context)!;
-    setState(() => _btValue = powered ? l10n.onLabel : l10n.offLabel);
+    setState(() => _btPowered = powered);
   }
 
   Future<void> _refreshBrightness() async {
@@ -218,6 +207,13 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final store = CommonSettingsScope.maybeOf(context);
+    final wifiValue = _wifiSummary(l10n, services.wifi.currentConnection);
+    final proxyValue = _proxyTrailing(l10n);
+    final sshDebugValue =
+        _sshDebugEnabled ? l10n.onLabel : l10n.offLabel;
+    final btValue = _btPowered ? l10n.onLabel : l10n.offLabel;
+    final usbOtgValue =
+        _usbOtgMode == null ? null : _usbOtgLabel(l10n, _usbOtgMode!);
 
     return SettingsScrollView(
       children: [
@@ -228,26 +224,21 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             SettingsNavRow(
               // lws-ui `wifi_network_text`
               title: l10n.wifiNetworkText,
-              value: _wifiValue,
+              value: wifiValue,
               onTap: () async {
                 await pushSettingsPage(
                   context,
                   WifiSettingsPage(services: services),
                 );
                 if (mounted) {
-                  setState(() {
-                    _wifiValue = _wifiSummary(
-                      l10n,
-                      services.wifi.currentConnection,
-                    );
-                  });
+                  setState(() {});
                 }
               },
             ),
             SettingsNavRow(
               // lws-ui `http_proxy_settings_title`
               title: l10n.httpProxySettingsTitle,
-              value: _proxyValue,
+              value: proxyValue,
               onTap: () async {
                 await pushSettingsPage(
                   context,
@@ -258,7 +249,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             ),
             SettingsNavRow(
               title: l10n.sshDebugText,
-              value: _sshDebugValue,
+              value: sshDebugValue,
               onTap: () async {
                 await pushSettingsPage(
                   context,
@@ -269,7 +260,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             ),
             SettingsNavRow(
               title: l10n.bluetoothText,
-              value: _btValue,
+              value: btValue,
               onTap: () async {
                 await pushSettingsPage(
                   context,
@@ -511,7 +502,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             ),
             SettingsNavRow(
               title: l10n.usbOtgText,
-              value: _usbOtgValue.isEmpty ? null : _usbOtgValue,
+              value: usbOtgValue,
               onTap: () async {
                 await pushSettingsPage(
                   context,

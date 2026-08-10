@@ -266,8 +266,11 @@ EMU_MESA_LIB=""
 EMU_MESA_SRC=""
 if [ "$is_emulator" -eq 1 ]; then
 	# Host VirGL only: virtio-gpu-gl + Mesa virtio_gpu (no softpipe / pixman GLES).
+	# Prefer debugfs (stable); dmesg can miss the early line after ring wrap / dmesg -c.
 	echo "hmi-launch: emulator — DRM: $(ls /sys/class/drm 2>/dev/null | tr '\n' ' ')" >&2
-	if ! dmesg 2>/dev/null | grep -q 'features: +virgl'; then
+	if ! grep -q 'virgl[[:space:]]*:[[:space:]]*yes' \
+		/sys/kernel/debug/dri/*/virtio-gpu-features 2>/dev/null \
+		&& ! dmesg 2>/dev/null | grep -q 'features: +virgl'; then
 		echo "hmi-launch: ERROR: virtio-gpu has no VirGL (need qemu-virgl + virtio-gpu-gl)" >&2
 		echo "hmi-launch: ERROR: host: make setup-emulator-qemu && make emulator" >&2
 		exit 1

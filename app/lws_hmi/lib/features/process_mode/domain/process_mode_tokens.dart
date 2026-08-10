@@ -142,8 +142,11 @@ abstract final class ProcessModeDimens {
   /// Mode / material linear arc: `|d| × 10 + 24` (lws-ui OffsetWheelBuilder).
   static double linearArcPad(double distance) => distance * 10 + 24;
 
-  /// Clears the process wheel / left accent for the CNC guide.
-  static const double cncGuideLeftInset = 210;
+  /// Clears the process wheel / left solid accent for the CNC guide.
+  ///
+  /// Must be ≥ [wheelAccentSolidWidth] so the selected band is not covered;
+  /// leave a little past that for neighbor labels (e.g. "Wide-Area Cleaning").
+  static const double cncGuideLeftInset = 290;
 
   /// Laser Enable mist for the process wheel only (lws-ui
   /// `model_wheel_view_content` 260×340). Must not cover gear / thickness.

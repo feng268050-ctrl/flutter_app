@@ -1,4 +1,3 @@
-import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/ai_vision_tab.dart';
@@ -142,7 +141,6 @@ class _MonitorPageState extends State<MonitorPage> {
               if (index == _currentTabIndex) {
                 return;
               }
-              CyberClickSoundRegistry.playClick();
               setState(() => _currentTabIndex = index);
             },
           ),

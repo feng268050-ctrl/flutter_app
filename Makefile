@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-app apply-app-overlay package-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only ota-release-keys ota-package upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -109,13 +109,19 @@ help:
 	@echo "  make docker-volume-status  # show volume mount and SDK tree status"
 	@echo ""
 	@echo "Build (scope = active #include in overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig):"
-	@echo "  make build                 # full image: prebuilt → overlay → lunch → logo → app → kernel → rootfs → img"
+	@echo "  make build                 # full image: prebuilt → overlay → lunch → logo → ai → app → kernel → rootfs → img"
 	@echo "  make lunch                 # select ynh960 + lws_hmi Buildroot profile in SDK"
 	@echo "  make show-config           # print RK_* lines from output/.config"
 	@echo "  make build-boot-logo       # board/logo → logo.bmp (kernel FIT splash)"
-	@echo "  make build-app             # release AOT → fs-overlay (*_hmi→/opt/hmi; else /opt/<APP>)"
+	@echo "  make build-ai              # incremental lws_ai_daemon → prebuilt/ai (daily; rebuild-ai / FORCE=1 wipe cmake)"
 	@echo "  make prepare-app-assets    # prune/convert process-library + firmware → assets/.generated/"
+	@echo "  make build-app             # release AOT → fs-overlay (*_hmi→/opt/hmi; else /opt/<APP>)"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
+	@echo "  make build-kernel          # dual multi-conf FIT → boot.img + boot_b.img (+ bare Image)"
+	@echo "  make build-rootfs          # rootfs → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)"
+	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"
+	@echo "  make build-oem             # pack oem/out/<oem_id>/oem.img (FACTORY_SKU / OEM_ID)"
+	@echo "  make build-img             # pack output/firmware/<APP>/<sku>/factory.img; needs build-oem"
 	@echo "  make version               # print OS Version (default); APP=<id> → Flutter pubspec name+build"
 	@echo "  make version-bump          # bump OS Version; APP= + VERSION= → Flutter; VERSION=x.y.z required"
 	@echo "  make l10n                  # sync child ARBs + flutter gen-l10n (app/lws_hmi)"
@@ -124,20 +130,33 @@ help:
 	@echo "  APP=…                     # app/ dir; *_hmi→/opt/hmi; rootfs/factory under output/firmware/<APP>/ (default lws_hmi)"
 	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"
 	@echo "  make check-typography      # fail bare fontSize:N / business AppTypography.*Size"
-	@echo "  make build-kernel          # dual multi-conf FIT → boot.img + boot_b.img (+ bare Image)"
-	@echo "  make build-rootfs          # rootfs → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)"
-	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"
-	@echo "  make build-oem             # pack oem/out/<oem_id>/oem.img (FACTORY_SKU / OEM_ID)"
-	@echo "  make build-img             # pack output/firmware/<APP>/<sku>/factory.img; needs build-oem"
 	@echo "  make sdk-shell             # interactive shell in linux-sdk (native Linux or macOS Docker)"
 	@echo "  See docs/build-optimization.md"
 	@echo ""
-	@echo "Emulator (P3.2 — same Image+rootfs + sim_virt OEM; docs/p32-emulator.md):"
-	@echo "  make setup-emulator-qemu   # once (macOS): install qemu-virgl (host VirGL / ANGLE→Metal)"
-	@echo "  make fetch-emulator-swgl   # once: guest Mesa virtio_gpu → prebuilt/ (9p; FORCE=1 to refetch)"
-	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (grows emulator rootfs copy; EMULATOR_ROOTFS_SIZE=1536M)"
-	@echo "  make emulator              # start QEMU (host VirGL; SSH :2222 + HTTP :5580 hostfwd)"
-	@echo "  make emulator-stop         # stop lws-hmi QEMU guest (not Android Studio)"
+	@echo "Debug (device / host — USB-SSH, remote SSH, Flutter, serial):"
+	@echo "  make setup-usb-ssh         # host ECM/RNDIS IP + sshpass doctor (Win: Admin; macOS may sudo)"
+	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH; host:port OK for EMU)"
+	@echo "  make disconnect <ip>       # remove registered remote SSH board"
+	@echo "  make devices               # RockUSB + USB-SSH + SSH + EMU (auto-probe QEMU :2222)"
+	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
+	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
+	@echo "  make write-identity …      # Vendor Storage BRAND/MODEL/PRODUCT_SN (FORCE=1 overwrite); restart hmi"
+	@echo "  make reset-process-library # clear process-library DB via HMI watcher; re-import bundled (no restart)"
+	@echo "  make migrate-secrets       # re-seal software Wi‑Fi vault + cloud key → OP-TEE (SCOPE=all|wifi|cloud)"
+	@echo "  make migrate-seal-kek      # HUK-wrap OP-TEE seal KEK ↔ Vendor Storage ID 23 (cloud seed unchanged)"
+	@echo "  make set-prop KEY=val ...  # upsert product.ini tunables (not brand/model/sn); restart hmi"
+	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
+	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
+	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
+	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
+	@echo "  make prepare-debug-host    # USB ECM or registered SSH reachability for debug-app/IDE"
+	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
+	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
+	@echo "  make push-app              # debug: SSH stream overlay APP → /opt/hmi + restart (unsigned; not upgrade-app)"
+	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); SERIAL_BAUD=; LOG= (hex)"
+	@echo "                             # TTL=miniterm @1500000 quit Ctrl+]; RS485/RS232=hex+TX bar @115200 quit Esc/:q"
+	@echo "  make serial-ports          # list host /dev/cu.* serial ports"
+	@echo "  make serial-sniff          # auto-detect baud while power-cycling board"
 	@echo ""
 	@echo "Dependencies (prebuilt / fetch — run before first make build-rootfs):"
 	@echo "  make extract-linux-sdk SRC=<dir>  # xz split volumes → linux-sdk/ (FORCE=1 replace; TRIM=1 trim+squash)"
@@ -155,7 +174,6 @@ help:
 	@echo "  make build-flutter-embedded-linux  # Weston image: eLinux Wayland client → prebuilt/"
 	@echo "  make build-mediamtx        # runtime: mediamtx arm64 → prebuilt/ (App /opt/hmi)"
 	@echo "  make build-opencv          # runtime: OpenCV aarch64 → prebuilt/opencv (for lws_ai)"
-	@echo "  make build-ai              # runtime: incremental lws_ai_daemon → prebuilt/ai (daily; rebuild-ai / FORCE=1 wipe cmake)"
 	@echo "  make build-umtprd          # runtime: umtprd aarch64 → prebuilt/ + fs-overlay (MTP)"
 	@echo "  make build-extract-video-frame  # runtime: MP4→JPEG helper → prebuilt/ + libexec (GStreamer)"
 	@echo "  make build-secrets-seal    # OP-TEE seal TA + CA (signs with keys/oem/vendor_ta.pem; TA_SIGN_KEY= overrides)"
@@ -168,44 +186,18 @@ help:
 	@echo "  make export-prebuilt       # re-export flutter + runtime (usually build-* already did)"
 	@echo "  rebuild-*                  # FORCE=1 refresh (e.g. make rebuild-runtime-deps)"
 	@echo ""
-	@echo "Debug (device / host — USB-SSH, remote SSH, Flutter, serial):"
-	@echo "  make setup-usb-ssh         # host ECM/RNDIS IP + sshpass doctor (Win: Admin; macOS may sudo)"
-	@echo "  make prepare-debug-host    # USB ECM or registered SSH reachability for debug-app/IDE"
-	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH; host:port OK for EMU)"
-	@echo "  make disconnect <ip>       # remove registered remote SSH board"
-	@echo "  make devices               # RockUSB + USB-SSH + SSH + EMU (auto-probe QEMU :2222)"
-	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
-	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
+	@echo "Cloud + Upgrade (api-server / R2 publish / A/B + app/peripheral):"
+	@echo "  make login                 # api-server POST /v1/login → output/cloud/credentials.json (access_token)"
+	@echo "  make register-device       # SN=/IP= select board; SSH read-identity → POST /v1/admin/devices (needs login)"
+	@echo "  make sign-keys             # release Ed25519 keypair → keys/ota/ + overlay /etc/ota/ed25519.pub"
+	@echo "  make pack-ota              # pack existing boot/boot_b/rootfs[+oem] + manifest → tar.gz [+.sig]; does not build"
+	@echo "  make pack-app              # tar.gz of overlay APP tree → output/app/<APP>/v*.tar.gz"
+	@echo "  make upgrade               # SSH: pack-ota (or UPGRADE_PACKAGE=+.sig) host-HTTP → device pull; RockUSB: di (or extract UPGRADE_PACKAGE); OEM_ONLY=1"
 	@echo "  make upgrade-app           # sign+HTTP serve app tar.gz; device download/verify/install+hmi restart"
-	@echo "  make push-app              # alias of upgrade-app (signed; no unsigned SCP)"
-	@echo "  make apply-app-overlay     # recovery: SSH overlay → /opt/hmi + restart (bypass in-app installer)"
-	@echo "  make package-app           # tar.gz of overlay APP tree → output/firmware/<APP>/v*.tar.gz"
 	@echo "  make upgrade-control-board # sign+HTTP serve control-board bin; device download/verify/flash (no version gate)"
 	@echo "  make upgrade-camera        # sign+HTTP serve camera zip; device download/verify/flash (no version gate)"
 	@echo "  make upgrade-process-library # push process-library for device model; force import (no version gate)"
-	@echo "  make reset-process-library # clear process-library DB via HMI watcher; re-import bundled (no restart)"
-	@echo "  make migrate-secrets       # re-seal software Wi‑Fi vault + cloud key → OP-TEE (SCOPE=all|wifi|cloud)"
-	@echo "  make migrate-seal-kek      # HUK-wrap OP-TEE seal KEK ↔ Vendor Storage ID 23 (cloud seed unchanged)"
-	@echo "  make set-prop KEY=val ...  # upsert product.ini tunables (not brand/model/sn); restart hmi"
-	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
-	@echo "  make write-identity …      # Vendor Storage BRAND/MODEL/PRODUCT_SN (FORCE=1 overwrite); restart hmi"
-	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
-	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
-	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
-	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
-	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
-	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); SERIAL_BAUD=; LOG= (hex)"
-	@echo "                             # TTL=miniterm @1500000 quit Ctrl+]; RS485/RS232=hex+TX bar @115200 quit Esc/:q"
-	@echo "  make serial-ports          # list host /dev/cu.* serial ports"
-	@echo "  make serial-sniff          # auto-detect baud while power-cycling board"
-	@echo ""
-	@echo "Cloud + OTA (api-server / R2 publish / A/B package):"
-	@echo "  make login                 # api-server POST /v1/login → output/cloud/credentials.json (access_token)"
-	@echo "  make register-device       # SN=/IP= select board; SSH read-identity → POST /v1/admin/devices (needs login)"
-	@echo "  make ota-release-keys      # release Ed25519 keypair → keys/ota/ + overlay /etc/ota/ed25519.pub"
-	@echo "  make ota-package           # pack existing boot/boot_b/rootfs[+oem] + manifest → tar.gz [+.sig]; does not build"
-	@echo "  make upgrade               # SSH: ota-package (or UPGRADE_PACKAGE=+.sig) host-HTTP → device pull; RockUSB: di (or extract UPGRADE_PACKAGE); OEM_ONLY=1"
-	@echo "  make publish               # ota-package + upload tar.gz+.sig + release.json to R2 (presign; release-only)"
+	@echo "  make publish               # pack-ota + upload tar.gz+.sig + release.json to R2 (presign; release-only)"
 	@echo "  make publish-only          # upload existing ota-package.tar.gz+.sig (no pack) → release.json"
 	@echo "  make publish-app                     # package+sign+upload app tar.gz → lws-hmi/app/release.json"
 	@echo "  make publish-control-board-firmware  # sign+upload newest CB bin → lws-hmi/control-board/release.json"
@@ -217,6 +209,13 @@ help:
 	@echo "  make reboot-loader         # Linux USB-SSH → RockUSB + unregister; Android → adb"
 	@echo "  make flash                 # uf factory.img (APP+FACTORY_SKU); IMAGE= override; Maskrom ul"
 	@echo "  make flash-android         # optional: flash Android instead"
+	@echo ""
+	@echo "Emulator (P3.2 — same Image+rootfs + sim_virt OEM; docs/p32-emulator.md):"
+	@echo "  make setup-emulator-qemu   # once (macOS): install qemu-virgl (host VirGL / ANGLE→Metal)"
+	@echo "  make fetch-emulator-swgl   # once: guest Mesa virtio_gpu → prebuilt/ (9p; FORCE=1 to refetch)"
+	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (grows emulator rootfs copy; EMULATOR_ROOTFS_SIZE=1536M)"
+	@echo "  make emulator              # start QEMU (host VirGL; SSH :2222 + HTTP :5580 hostfwd)"
+	@echo "  make emulator-stop         # stop lws-hmi QEMU guest (not Android Studio)"
 	@echo ""
 	@echo "Misc (infrequent — board params, BR output maintenance):"
 	@echo "  make pull-display-params        # adb: ynh960 LCD/MIPI tables → board/ (+ apply-overlay)"
@@ -252,7 +251,7 @@ help:
 	@echo "  - Existing OTA tarball: UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade (SSH: sibling .sig; RockUSB: extract+di)."
 	@echo "  - Loader/Maskrom: make reboot-loader (or Maskrom) then make upgrade (di OTA images; not factory uf)."
 	@echo "  - OEM-only (helpers/profile): make build-oem && OEM_ONLY=1 make upgrade"
-	@echo "  - Cloud/publish + SSH upgrade: OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make ota-package (archive + .sig); make upgrade serves via host HTTP."
+	@echo "  - Cloud/publish + SSH upgrade: OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make pack-ota (archive + .sig); make upgrade serves via host HTTP."
 	@echo "  - make publish: same tar.gz+.sig as upgrade; GET presigned-url on CLOUD_API_BASE (api-prod) then PUT R2; manifest has no sha512."
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ only (no host linux-sdk/output/ mirror)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
@@ -309,7 +308,7 @@ lunch:
 show-config:
 	@bash scripts/docker-run.sh bash -lc 'test -r output/.config && grep -E "^RK_(CHIP|KERNEL_DTS|ROOTFS|DEFCONFIG|BUILDROOT)" output/.config || echo "No output/.config yet — run make lunch first"'
 
-build: check-prebuilt apply-overlay lunch build-boot-logo build-app build-kernel build-rootfs build-oem build-img
+build: check-prebuilt apply-overlay lunch build-boot-logo build-ai build-app build-kernel build-rootfs build-oem build-img
 	@echo ""
 	@if [[ -r output/firmware/update.img || -r output/firmware/ynh960-p800/factory.img ]]; then \
 		echo "Build complete:"; \
@@ -627,21 +626,18 @@ setup-usb-ssh:
 # Sign + host-HTTP serve HMI app tar.gz; device download+verify+install+/opt/hmi + hmi.service restart.
 # Device-side: app watches /run/hmi/upgrade-app.cmd for `download <url>`.
 upgrade-app:
-	@chmod +x scripts/upgrade-app.sh scripts/package-app.sh scripts/peripheral-ota-http.sh scripts/ota-sign.sh scripts/ota-http-serve.py
+	@chmod +x scripts/upgrade-app.sh scripts/pack-app.sh scripts/peripheral-ota-http.sh scripts/ota-sign.sh scripts/ota-http-serve.py
 	@$(call WITH_DOTENV,APP='$(APP)' APP_PACKAGE='$(APP_PACKAGE)' bash scripts/upgrade-app.sh)
 
-# Alias of upgrade-app (signed path only; unsigned SCP removed).
-push-app: upgrade-app
+# Debug: unsigned SSH stream of overlay APP → /opt/hmi (+ companions) + hmi.service restart.
+# Not an alias of upgrade-app — use upgrade-app / publish-app for signed shipping.
+push-app:
+	@chmod +x scripts/push-app.sh
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/push-app.sh)
 
-# Recovery: SSH-stream overlay → /opt/hmi + restart (bypasses in-app installer).
-# Use when signed upgrade-app cannot finish install (stale/broken on-device installer).
-apply-app-overlay:
-	@chmod +x scripts/apply-app-overlay-remote.sh
-	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/apply-app-overlay-remote.sh)
-
-package-app:
-	@chmod +x scripts/package-app.sh
-	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/package-app.sh)
+pack-app:
+	@chmod +x scripts/pack-app.sh
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/pack-app.sh)
 
 # Sign + host-HTTP serve control-board firmware; device download+verify+Modbus (no version gate).
 # Device-side: app watches /run/hmi/upgrade-control-board.cmd for `download <url>`.
@@ -740,19 +736,19 @@ else
 endif
 
 # Release Ed25519 keypair (private under keys/ota/; pubkey → overlay /etc/ota/).
-ota-release-keys:
-	@chmod +x scripts/ota-release-keys.sh
-	@bash scripts/ota-release-keys.sh
+sign-keys:
+	@chmod +x scripts/sign-keys.sh
+	@bash scripts/sign-keys.sh
 
 # Whole-device OTA tar.gz (+ optional .sig). Publish/CI: REQUIRE_OTA_SIG=1 OTA_SIGNING_KEY=…
-ota-package:
-	@chmod +x scripts/ota-package.sh scripts/ota-sign.sh
-	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/ota-package.sh)
+pack-ota:
+	@chmod +x scripts/pack-ota.sh scripts/ota-sign.sh
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/pack-ota.sh)
 
-# Cloud publish: signed ota-package then upload tar.gz + .sig + release.json (R2 presign on CLOUD_API_BASE).
+# Cloud publish: signed pack-ota then upload tar.gz + .sig + release.json (R2 presign on CLOUD_API_BASE).
 publish:
-	@chmod +x scripts/ota-package.sh scripts/ota-sign.sh scripts/publish-ota.sh scripts/cloud-credentials.sh
-	@$(call WITH_DOTENV,APP='$(APP)' REQUIRE_OTA_SIG=1 bash scripts/ota-package.sh)
+	@chmod +x scripts/pack-ota.sh scripts/ota-sign.sh scripts/publish-ota.sh scripts/cloud-credentials.sh
+	@$(call WITH_DOTENV,APP='$(APP)' REQUIRE_OTA_SIG=1 bash scripts/pack-ota.sh)
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/publish-ota.sh)
 
 # Upload existing signed OTA package (no pack). Always release.json (no staging / RELEASE=).
@@ -762,7 +758,7 @@ publish-only:
 
 # HMI app channel publish (always release.json under lws-hmi/app/).
 publish-app:
-	@chmod +x scripts/publish-app.sh scripts/package-app.sh scripts/ota-sign.sh scripts/cloud-credentials.sh scripts/peripheral-ota-http.sh
+	@chmod +x scripts/publish-app.sh scripts/pack-app.sh scripts/ota-sign.sh scripts/cloud-credentials.sh scripts/peripheral-ota-http.sh
 	@$(call WITH_DOTENV,APP='$(APP)' APP_PACKAGE='$(APP_PACKAGE)' bash scripts/publish-app.sh)
 
 publish-app-only:
@@ -789,7 +785,7 @@ publish-camera-firmware-only:
 # SSH: package (unless UPGRADE_PACKAGE=) → host HTTP serve tar.gz+.sig → device download+verify+staged apply.
 # RockUSB: still di loose images (unsigned; or package members via upgrade-package-env).
 upgrade:
-	@chmod +x scripts/upgrade-remote.sh scripts/ota-package.sh scripts/ota-sign.sh scripts/ota-http-serve.py
+	@chmod +x scripts/upgrade-remote.sh scripts/pack-ota.sh scripts/ota-sign.sh scripts/ota-http-serve.py
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/upgrade-remote.sh)
 
 reboot:

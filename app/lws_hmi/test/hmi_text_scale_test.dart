@@ -55,6 +55,35 @@ void main() {
     expect(large.length, greaterThanOrEqualTo(medium.length));
   });
 
+  testWidgets('WordBoundaryLabel never soft-wraps mid-word under Large',
+      (tester) async {
+    await tester.pumpWidget(
+      const MediaQuery(
+        data: MediaQueryData(textScaler: TextScaler.linear(1.12)),
+        child: MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 160,
+              child: WordBoundaryLabel(
+                text: 'Continuous Welding',
+                style: TextStyle(fontSize: 24, height: 1.15),
+                maxLines: 2,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Continuous'), findsOneWidget);
+    expect(find.text('Welding'), findsOneWidget);
+    // Mid-word fragments must not appear as separate Text widgets.
+    expect(find.text('Weld'), findsNothing);
+    expect(find.text('ing'), findsNothing);
+    expect(find.text('Continuous Weld'), findsNothing);
+  });
+
   test('homeQuickActionLabelFontSize shrinks when TextScaler grows', () {
     // Wide enough that Medium is above the 12sp floor.
     const card = 280.0;

@@ -346,7 +346,9 @@ final class _OutlineFace extends StatelessWidget {
               buttonHeight: height,
               horizontalPadding: edgeInset,
               leading: showLeading ? tintedLeading : null,
-              allowGroupedTrailingInsetCollapse: true,
+              // Icon+label as one group; equal L/R insets (shrink before ellipsis).
+              forceGroupedCentered: true,
+              allowGroupedTrailingInsetCollapse: false,
             ),
           ],
         ),

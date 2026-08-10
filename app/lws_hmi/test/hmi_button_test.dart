@@ -139,6 +139,31 @@ void main() {
     );
   });
 
+  test('resolveGroupedInsets keeps equal side padding and full label', () {
+    // Fits at design gap: leftover split equally.
+    final roomy = HmiIconLabelLayout.resolveGroupedInsets(
+      maxWidth: 269,
+      labelWidth: 168,
+      iconSize: 32,
+      accessoryCount: 1,
+      preferredPadding: 18,
+    );
+    expect(roomy.overflows, isFalse);
+    expect(roomy.gap, HmiIconLabelLayout.iconLabelGap);
+    expect(roomy.padding, closeTo((269 - (168 + 32 + 8)) / 2, 0.01));
+
+    // Needs tighter equal insets to keep full label.
+    final tight = HmiIconLabelLayout.resolveGroupedInsets(
+      maxWidth: 269,
+      labelWidth: 220,
+      iconSize: 32,
+      accessoryCount: 1,
+      preferredPadding: 18,
+    );
+    expect(tight.overflows, isFalse);
+    expect(tight.padding * 2 + 220 + 32 + tight.gap, closeTo(269, 0.01));
+  });
+
   testWidgets('HmiButton switches layout automatically at actual width',
       (tester) async {
     Future<void> pumpAt(double width) => tester.pumpWidget(

@@ -47,6 +47,12 @@ class WordBoundaryLabel extends StatelessWidget {
         _ => CrossAxisAlignment.start,
       };
 
+  WrapAlignment get _wrapAlignment => switch (textAlign) {
+        TextAlign.center => WrapAlignment.center,
+        TextAlign.right || TextAlign.end => WrapAlignment.end,
+        _ => WrapAlignment.start,
+      };
+
   /// Pack [words] into at most [maxLines] lines that fit [maxWidth].
   @visibleForTesting
   static List<String> packLines({
@@ -101,6 +107,48 @@ class WordBoundaryLabel extends StatelessWidget {
     ];
   }
 
+  /// One English token — never soft-wrap mid-glyph; ellipsis if too wide.
+  Widget _tokenText(String token, {required bool ellipsis}) {
+    return Text(
+      token,
+      textAlign: textAlign,
+      maxLines: 1,
+      softWrap: false,
+      overflow: ellipsis ? TextOverflow.ellipsis : TextOverflow.visible,
+      style: style,
+    );
+  }
+
+  /// Render [line] as separate non-wrapping word chips (never one soft-wrap Text).
+  Widget _lineAsWordChips(
+    String line, {
+    required TextScaler textScaler,
+    required bool ellipsisLast,
+  }) {
+    final words =
+        line.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    if (words.length == 1) {
+      return _tokenText(words.first, ellipsis: ellipsisLast);
+    }
+    final gap = spacing ?? spaceWidth(style, textScaler: textScaler);
+    return Wrap(
+      alignment: _wrapAlignment,
+      spacing: gap,
+      runSpacing: 0,
+      children: [
+        for (var i = 0; i < words.length; i++)
+          _tokenText(
+            words[i],
+            // Only the final token of an overflow line may ellipsis.
+            ellipsis: ellipsisLast && i == words.length - 1,
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final words =
@@ -108,30 +156,34 @@ class WordBoundaryLabel extends StatelessWidget {
     if (words.isEmpty) {
       return const SizedBox.shrink();
     }
-    // Single line, or a single token (CJK): ordinary Text is fine.
-    if (maxLines <= 1 || words.length == 1) {
-      return Text(
-        text,
-        textAlign: textAlign,
-        maxLines: maxLines < 1 ? 1 : maxLines,
-        softWrap: maxLines > 1,
-        overflow: TextOverflow.ellipsis,
-        style: style,
+
+    final textScaler = MediaQuery.textScalerOf(context);
+
+    // Single token (CJK / one English word): never soft-wrap mid-glyph.
+    if (words.length == 1) {
+      return _tokenText(words.first, ellipsis: true);
+    }
+
+    if (maxLines <= 1) {
+      return _lineAsWordChips(
+        words.join(' '),
+        textScaler: textScaler,
+        ellipsisLast: true,
       );
     }
 
-    final textScaler = MediaQuery.textScalerOf(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxW = constraints.maxWidth;
         if (!maxW.isFinite || maxW <= 0) {
-          return Text(
-            text,
-            textAlign: textAlign,
-            maxLines: maxLines,
-            softWrap: true,
-            overflow: TextOverflow.ellipsis,
-            style: style,
+          return Wrap(
+            alignment: _wrapAlignment,
+            spacing: spacing ?? spaceWidth(style, textScaler: textScaler),
+            runSpacing: 0,
+            children: [
+              for (final word in words)
+                _tokenText(word, ellipsis: false),
+            ],
           );
         }
         final lines = packLines(
@@ -147,14 +199,10 @@ class WordBoundaryLabel extends StatelessWidget {
           crossAxisAlignment: _crossAxis,
           children: [
             for (var i = 0; i < lines.length; i++)
-              Text(
+              _lineAsWordChips(
                 lines[i],
-                textAlign: textAlign,
-                maxLines: 1,
-                softWrap: false,
-                // Last line may hold leftover words — ellipsis at end, not mid-token wrap.
-                overflow: TextOverflow.ellipsis,
-                style: style,
+                textScaler: textScaler,
+                ellipsisLast: i == lines.length - 1,
               ),
           ],
         );

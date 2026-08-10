@@ -25,7 +25,8 @@ void main() {
   });
 
   group('WarnDialogBody', () {
-    testWidgets('warn dialogs share unified 725×≥480 card size', (tester) async {
+    testWidgets('warn dialogs share unified 725×≥480 card size',
+        (tester) async {
       const titles = [
         'Camera Communication Alarm',
         'Gas Pressure Low',
@@ -51,7 +52,8 @@ void main() {
 
       for (final size in sizes) {
         expect(size.width, WarnDialogMetrics.minCardWidth);
-        expect(size.height, greaterThanOrEqualTo(WarnDialogMetrics.minCardHeight));
+        expect(
+            size.height, greaterThanOrEqualTo(WarnDialogMetrics.minCardHeight));
         expect(
           size.height,
           lessThanOrEqualTo(WarnDialogMetrics.maxCardHeightDimen),
@@ -148,9 +150,32 @@ void main() {
       await tester.pump();
 
       final titleSize = tester.widget<Text>(find.text(title)).style!.fontSize!;
-      final bodySize = tester.widget<Text>(find.text(body)).style!.fontSize!;
+      final bodySize = tester.widget<Text>(find.text('Power')).style!.fontSize!;
       expect(titleSize, lessThan(WarnDialogMetrics.titleSize));
       expect(bodySize, lessThanOrEqualTo(titleSize));
+    });
+
+    testWidgets('English body wraps only between complete words',
+        (tester) async {
+      await tester.pumpWidget(
+        harness(
+          size: const Size(640, 800),
+          WarnDialogBody(
+            title: 'Camera Communication Alarm',
+            body: 'Power off, wait 10 seconds, then power on again.',
+            onConfirm: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Power off, wait 10 seconds, then power on again.'),
+          findsNothing);
+      for (final word in ['Power', 'off,', 'wait', '10', 'seconds,']) {
+        final text = tester.widget<Text>(find.text(word));
+        expect(text.softWrap, isFalse);
+        expect(text.maxLines, 1);
+      }
     });
 
     testWidgets('INFO chrome uses black title', (tester) async {
@@ -166,7 +191,8 @@ void main() {
       );
       await tester.pump();
 
-      final title = tester.widget<Text>(find.text('Camera Communication Alarm'));
+      final title =
+          tester.widget<Text>(find.text('Camera Communication Alarm'));
       expect(title.style?.color, WarnDialogBody.titleBlack);
     });
 

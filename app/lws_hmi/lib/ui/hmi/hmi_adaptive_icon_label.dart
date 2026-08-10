@@ -11,6 +11,9 @@ abstract final class HmiIconLabelLayout {
 
   static const minimumIconLabelGap = 2.0;
 
+  /// Floor for equal side insets when centering an icon+label group.
+  static const minimumGroupedHorizontalPadding = 8.0;
+
   static double textWidth(
     BuildContext context,
     String label,
@@ -22,7 +25,8 @@ abstract final class HmiIconLabelLayout {
       textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
     )..layout();
-    return painter.width;
+    // Painter can undershoot real glyph advance; keep a small slack.
+    return painter.width + 2;
   }
 
   static double groupedRequiredWidth({
@@ -36,6 +40,17 @@ abstract final class HmiIconLabelLayout {
     final accessoryCount = (hasLeading ? 1 : 0) + (hasTrailing ? 1 : 0);
     return horizontalPadding * 2 +
         labelWidth +
+        accessoryCount * iconSize +
+        accessoryCount * gap;
+  }
+
+  static double groupedCoreWidth({
+    required double labelWidth,
+    required double iconSize,
+    required int accessoryCount,
+    required double gap,
+  }) {
+    return labelWidth +
         accessoryCount * iconSize +
         accessoryCount * gap;
   }
@@ -74,6 +89,50 @@ abstract final class HmiIconLabelLayout {
     final widthAtDesignGap = labelWidth + accessoryCount * (iconSize + gap);
     return widthAtDesignGap <= availableWidth ? gap : minimumGap;
   }
+
+  /// Equal L/R inset so [icon+gap+label] sits as one centered group.
+  ///
+  /// Shrinks from [preferredPadding] only when needed to keep the full label;
+  /// returns the resolved padding and whether the label still overflows.
+  static ({double padding, double gap, bool overflows}) resolveGroupedInsets({
+    required double maxWidth,
+    required double labelWidth,
+    required double iconSize,
+    required int accessoryCount,
+    required double preferredPadding,
+    double gap = iconLabelGap,
+    double minimumGap = minimumIconLabelGap,
+    double minimumPadding = minimumGroupedHorizontalPadding,
+  }) {
+    final minPad = math.min(minimumPadding, preferredPadding);
+    double core(double g) => groupedCoreWidth(
+          labelWidth: labelWidth,
+          iconSize: iconSize,
+          accessoryCount: accessoryCount,
+          gap: g,
+        );
+
+    // Prefer design gap + preferred padding when there is room.
+    if (core(gap) + preferredPadding * 2 <= maxWidth) {
+      final pad = (maxWidth - core(gap)) / 2;
+      return (padding: pad, gap: gap, overflows: false);
+    }
+
+    // Keep design gap; shrink equal side insets down to [minPad].
+    if (core(gap) + minPad * 2 <= maxWidth) {
+      final pad = (maxWidth - core(gap)) / 2;
+      return (padding: pad, gap: gap, overflows: false);
+    }
+
+    // Minimum gap + equal leftover (may be below minPad, including 0).
+    final coreMin = core(minimumGap);
+    if (coreMin <= maxWidth) {
+      final pad = (maxWidth - coreMin) / 2;
+      return (padding: pad, gap: minimumGap, overflows: false);
+    }
+
+    return (padding: 0, gap: minimumGap, overflows: true);
+  }
 }
 
 /// Automatically switches between a button-centered label with a fixed-left
@@ -93,6 +152,7 @@ final class HmiAdaptiveIconLabel extends StatelessWidget {
     this.leading,
     this.trailing,
     this.allowGroupedTrailingInsetCollapse = false,
+    this.forceGroupedCentered = false,
     this.gap = HmiIconLabelLayout.iconLabelGap,
     this.minimumGap = HmiIconLabelLayout.minimumIconLabelGap,
   });
@@ -105,6 +165,10 @@ final class HmiAdaptiveIconLabel extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final bool allowGroupedTrailingInsetCollapse;
+
+  /// When true, always center icon+label as one group with equal side insets
+  /// (Quick Auto Wire Feed / Manual Gas outline chrome).
+  final bool forceGroupedCentered;
   final double gap;
   final double minimumGap;
 
@@ -123,17 +187,19 @@ final class HmiAdaptiveIconLabel extends StatelessWidget {
                 hasTrailing: trailing != null,
                 gap: gap,
               );
-        final mode = leading != null && trailing == null
-            ? HmiIconLabelLayout.modeFor(
-                maxWidth: maxWidth,
-                labelWidth: labelWidth,
-                buttonHeight: buttonHeight,
-                iconSize: iconSize,
-                horizontalPadding: horizontalPadding,
-                gap: gap,
-                minimumGap: minimumGap,
-              )
-            : HmiIconLabelLayoutMode.groupedCentered;
+        final mode = forceGroupedCentered
+            ? HmiIconLabelLayoutMode.groupedCentered
+            : (leading != null && trailing == null
+                ? HmiIconLabelLayout.modeFor(
+                    maxWidth: maxWidth,
+                    labelWidth: labelWidth,
+                    buttonHeight: buttonHeight,
+                    iconSize: iconSize,
+                    horizontalPadding: horizontalPadding,
+                    gap: gap,
+                    minimumGap: minimumGap,
+                  )
+                : HmiIconLabelLayoutMode.groupedCentered);
 
         if (mode == HmiIconLabelLayoutMode.labelCentered) {
           final edgeInset =
@@ -156,65 +222,106 @@ final class HmiAdaptiveIconLabel extends StatelessWidget {
           );
         }
 
-        final collapseTrailingInset = allowGroupedTrailingInsetCollapse &&
-            leading != null &&
-            trailing == null;
-        final contentWidth = math
-            .max(
-              0.0,
-              maxWidth - horizontalPadding * (collapseTrailingInset ? 1 : 2),
-            )
-            .toDouble();
         final accessoryCount =
             (leading != null ? 1 : 0) + (trailing != null ? 1 : 0);
-        final resolvedGap = HmiIconLabelLayout.groupedGapFor(
-          availableWidth: contentWidth,
+
+        if (allowGroupedTrailingInsetCollapse &&
+            leading != null &&
+            trailing == null) {
+          // Legacy: keep left preferred inset, collapse trailing for more text.
+          final contentWidth =
+              math.max(0.0, maxWidth - horizontalPadding).toDouble();
+          final resolvedGap = HmiIconLabelLayout.groupedGapFor(
+            availableWidth: contentWidth,
+            labelWidth: labelWidth,
+            iconSize: iconSize,
+            accessoryCount: accessoryCount,
+            gap: gap,
+            minimumGap: minimumGap,
+          );
+          final groupWidth = HmiIconLabelLayout.groupedCoreWidth(
+            labelWidth: labelWidth,
+            iconSize: iconSize,
+            accessoryCount: accessoryCount,
+            gap: resolvedGap,
+          );
+          final renderedWidth = math.min(groupWidth, contentWidth).toDouble();
+          final overflows = groupWidth > contentWidth;
+          return Padding(
+            key: const ValueKey('hmi-icon-label-grouped-centered'),
+            padding: EdgeInsets.only(left: horizontalPadding),
+            child: Align(
+              alignment: Alignment.center,
+              child: SizedBox(
+                width: renderedWidth,
+                child: _groupedRow(
+                  resolvedGap: resolvedGap,
+                  overflows: overflows,
+                ),
+              ),
+            ),
+          );
+        }
+
+        final insets = HmiIconLabelLayout.resolveGroupedInsets(
+          maxWidth: maxWidth,
           labelWidth: labelWidth,
           iconSize: iconSize,
           accessoryCount: accessoryCount,
+          preferredPadding: horizontalPadding,
           gap: gap,
           minimumGap: minimumGap,
         );
-        final groupWidth = labelWidth +
-            accessoryCount * iconSize +
-            accessoryCount * resolvedGap;
+        final contentWidth =
+            math.max(0.0, maxWidth - insets.padding * 2).toDouble();
+        final groupWidth = HmiIconLabelLayout.groupedCoreWidth(
+          labelWidth: labelWidth,
+          iconSize: iconSize,
+          accessoryCount: accessoryCount,
+          gap: insets.gap,
+        );
         final renderedWidth = math.min(groupWidth, contentWidth).toDouble();
-        final overflows = groupWidth > contentWidth;
         return Padding(
           key: const ValueKey('hmi-icon-label-grouped-centered'),
-          padding: EdgeInsets.only(
-            left: horizontalPadding,
-            right: collapseTrailingInset ? 0 : horizontalPadding,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: insets.padding),
           child: Align(
             alignment: Alignment.center,
             child: SizedBox(
               width: renderedWidth,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (leading != null) ...[
-                    _accessory(leading!),
-                    SizedBox(width: resolvedGap),
-                  ],
-                  Expanded(
-                    child: _label(
-                      overflow: overflows
-                          ? TextOverflow.ellipsis
-                          : TextOverflow.visible,
-                    ),
-                  ),
-                  if (trailing != null) ...[
-                    SizedBox(width: resolvedGap),
-                    _accessory(trailing!),
-                  ],
-                ],
+              child: _groupedRow(
+                resolvedGap: insets.gap,
+                overflows: insets.overflows,
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _groupedRow({
+    required double resolvedGap,
+    required bool overflows,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (leading != null) ...[
+          _accessory(leading!),
+          SizedBox(width: resolvedGap),
+        ],
+        if (overflows)
+          Expanded(
+            child: _label(overflow: TextOverflow.ellipsis),
+          )
+        else
+          _label(overflow: TextOverflow.visible),
+        if (trailing != null) ...[
+          SizedBox(width: resolvedGap),
+          _accessory(trailing!),
+        ],
+      ],
     );
   }
 

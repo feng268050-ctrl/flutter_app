@@ -5091,6 +5091,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get saveAsFavorite => '收藏爲常用';
 
   @override
+  String get engineerActionSaveFavorite => '收藏常用';
+
+  @override
   String get selectValidProcessPresetFirst => '請先選擇有效的工藝預設';
 
   @override

@@ -183,6 +183,8 @@ if [[ "${EXPORT_PLATFORM}" == "1" ]]; then
   require_path "yaml-cpp" "$TARGET/usr/lib/libyaml-cpp.so*"
   require_path "sqlite" "$TARGET/usr/lib/libsqlite3.so*"
   [[ -x "$TARGET/usr/sbin/avahi-daemon" ]] || die "missing $TARGET/usr/sbin/avahi-daemon"
+  [[ -x "$TARGET/usr/bin/avahi-publish" ]] || die "missing $TARGET/usr/bin/avahi-publish"
+  [[ -x "$TARGET/usr/bin/avahi-publish-service" ]] || die "missing $TARGET/usr/bin/avahi-publish-service"
   [[ -f "$TARGET/usr/share/dbus-1/system.d/avahi-dbus.conf" ]] || \
     die "missing $TARGET/usr/share/dbus-1/system.d/avahi-dbus.conf"
   [[ -f "$TARGET/usr/lib/systemd/system/avahi-daemon.service" ]] || \
@@ -197,6 +199,8 @@ if [[ "${EXPORT_PLATFORM}" == "1" ]]; then
     usr/lib/libyaml-cpp.so* \
     usr/lib/libsqlite3.so* \
     usr/sbin/avahi-daemon \
+    usr/bin/avahi-publish \
+    usr/bin/avahi-publish-service \
     usr/lib/avahi \
     usr/lib/libavahi-client.so* \
     usr/lib/libavahi-common.so* \

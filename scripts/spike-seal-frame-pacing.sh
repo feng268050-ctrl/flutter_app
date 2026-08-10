@@ -15,16 +15,17 @@ LOGFILE="${SPIKE_SEAL_LOG:-$ROOT/.cursor/embedder-seal-pacing.log}"
 IFACE="${IFACE:-en12}"
 ADDR="${USB_SSH_ADDR:-192.168.55.1}"
 USER_="${USB_SSH_USER:-root}"
-PASS="${USB_SSH_PASS:-rockchip}"
 REMOTE=/userdata/elinux-spike
+# shellcheck source=scripts/usb-ssh-common.sh
+source "$ROOT/scripts/usb-ssh-common.sh"
 
 SSH() {
-  sshpass -p "$PASS" ssh \
-    -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new \
-    -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-    -o PreferredAuthentications=password -o PubkeyAuthentication=no \
-    -o BindInterface="$IFACE" -o ServerAliveInterval=3 -o ServerAliveCountMax=3 \
-    "$USER_@$ADDR" "$@"
+  local -a opts=(
+    -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new
+    -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR
+    -o BindInterface="$IFACE" -o ServerAliveInterval=3 -o ServerAliveCountMax=3
+  )
+  lws_ssh_with_opts "$ROOT" "${opts[@]}" "$USER_@$ADDR" "$@"
 }
 
 kill_all_flutter() {

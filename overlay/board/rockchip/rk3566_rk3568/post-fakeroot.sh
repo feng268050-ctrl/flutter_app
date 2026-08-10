@@ -116,6 +116,34 @@ if [ -f "$ENSURE_KEYS" ]; then
 	sh "$ENSURE_KEYS" "$TARGET_DIR"
 fi
 
+# Team SSH pubkey (PasswordAuthentication no on sshd); private key stays on host only.
+AUTH_OVERLAY="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/root/.ssh/authorized_keys"
+if [ -f "$AUTH_OVERLAY" ]; then
+	mkdir -p "$TARGET_DIR/root/.ssh"
+	cp -f "$AUTH_OVERLAY" "$TARGET_DIR/root/.ssh/authorized_keys"
+	chmod 700 "$TARGET_DIR/root/.ssh"
+	chmod 600 "$TARGET_DIR/root/.ssh/authorized_keys"
+fi
+
+# Buildroot sshd_config may omit Include for sshd_config.d; enforce drop-in load.
+# OpenSSH first-match wins: Include MUST be at the top so 50-ssh-auth.conf overrides
+# stock PermitRootLogin yes (append-at-end left drop-ins ineffective; Lynis sshd -T saw YES).
+SSHD_CFG="$TARGET_DIR/etc/ssh/sshd_config"
+if [ -f "$SSHD_CFG" ]; then
+	if grep -qE '^[[:space:]]*Include[[:space:]]+/etc/ssh/sshd_config\.d/\*\.conf' "$SSHD_CFG"; then
+		sed -i '/^[[:space:]]*Include[[:space:]]*\/etc\/ssh\/sshd_config\.d\/\*\.conf/d' "$SSHD_CFG"
+	fi
+	{
+		echo '# lws-hmi: team SSH auth drop-ins (first-match; must precede stock defaults)'
+		echo 'Include /etc/ssh/sshd_config.d/*.conf'
+		echo
+		cat "$SSHD_CFG"
+	} >"$SSHD_CFG.new"
+	mv "$SSHD_CFG.new" "$SSHD_CFG"
+	# Belt-and-suspenders if a later Match/copy reintroduces stock yes.
+	sed -i 's/^PermitRootLogin[[:space:]]\{1,\}yes$/PermitRootLogin prohibit-password/' "$SSHD_CFG"
+fi
+
 STRIP_FSTAB="$(dirname "$0")/strip-fstab.sh"
 if [ -f "$STRIP_FSTAB" ]; then
 	bash "$STRIP_FSTAB" "$TARGET_DIR"

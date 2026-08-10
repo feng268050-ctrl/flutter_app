@@ -29,5 +29,7 @@ fi
 
 echo "lan-ssh-run: starting sshd $*" >&2
 exec /usr/sbin/sshd -D -f /etc/ssh/sshd_config "$@" \
-	-o PasswordAuthentication=yes \
-	-o PermitRootLogin=yes
+	-o PubkeyAuthentication=yes \
+	-o PasswordAuthentication=no \
+	-o KbdInteractiveAuthentication=no \
+	-o PermitRootLogin=prohibit-password

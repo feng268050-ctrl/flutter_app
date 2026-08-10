@@ -39,7 +39,7 @@ Env:
   STRICT=1        exit non-zero when the Lynis report contains Warnings
   FAIL_ON=high    alias for STRICT=1
   LYNIS_REF=      git ref for .cache/lynis clone (default master)
-  USB_SSH_PASS=   root password (default rockchip)
+  LWS_SSH_IDENTITY=  host private key (default keys/ssh/id_ed25519)
 EOF
 }
 
@@ -59,6 +59,7 @@ want_strict() {
 
 ensure_lynis() {
 	if [[ -x "$LYNIS_CACHE/lynis" ]]; then
+		patch_lynis_busybox_usrmerge
 		return 0
 	fi
 	if command -v git >/dev/null 2>&1; then
@@ -68,10 +69,32 @@ ensure_lynis() {
 		git clone --depth 1 --branch "$LYNIS_REF" "$LYNIS_REPO_URL" "$LYNIS_CACHE" ||
 			git clone --depth 1 "$LYNIS_REPO_URL" "$LYNIS_CACHE"
 		[[ -x "$LYNIS_CACHE/lynis" ]] || die "Lynis clone missing executable at $LYNIS_CACHE/lynis"
+		patch_lynis_busybox_usrmerge
 		return 0
 	fi
 	die "Lynis not found at $LYNIS_CACHE/lynis and git is unavailable.
 Install: git clone $LYNIS_REPO_URL $LYNIS_CACHE"
+}
+
+# Buildroot usr-merge: /bin → /usr/bin, so readlink -f /bin/ps is /usr/bin/busybox.
+# Upstream Lynis only matches /bin/busybox → SHELL_IS_BUSYBOX=0 → IsRunning uses
+# GNU `ps -C` (unsupported by BusyBox) → false "rngd not found" for CRYP-8004 etc.
+patch_lynis_busybox_usrmerge() {
+	local f="$LYNIS_CACHE/include/osdetection"
+	[[ -f "$f" ]] || return 0
+	if grep -q '/usr/bin/busybox' "$f"; then
+		return 0
+	fi
+	if ! grep -q 'SYMLINK.*=.*"/bin/busybox"' "$f"; then
+		echo "WARN: Lynis osdetection BusyBox check shape changed; skip usr-merge patch" >&2
+		return 0
+	fi
+	# shellcheck disable=SC2016
+	sed -i.bak \
+		's|"\${SYMLINK}" = "/bin/busybox"|"${SYMLINK}" = "/bin/busybox" -o "${SYMLINK}" = "/usr/bin/busybox"|' \
+		"$f"
+	rm -f "$f.bak"
+	echo "==> patched Lynis BusyBox detect for usr-merge (/usr/bin/busybox)"
 }
 
 cleanup_remote() {
@@ -100,7 +123,7 @@ export COPYFILE_DISABLE=1
 remote "rm -rf '$REMOTE_DIR' && mkdir -p '$REMOTE_DIR'"
 tar --exclude='._*' --exclude='.DS_Store' --exclude='.git' -C "$LYNIS_CACHE" -cf - . |
 	remote "tar -xf - -C '$REMOTE_DIR'"
-# Appliance profile: skip BusyBox-incompatible TIME-3185 so Lynis finishes.
+# Appliance profile (scripts/lynis-custom.prf): skip BusyBox TIME-3185 + false klogd LOGG-2138.
 if [[ -f "$ROOT/scripts/lynis-custom.prf" ]]; then
 	remote "cat >'$REMOTE_DIR/custom.prf'" <"$ROOT/scripts/lynis-custom.prf"
 fi

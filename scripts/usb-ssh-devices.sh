@@ -43,7 +43,6 @@ ensure_host_addr_on_iface() {
 fetch_board_identity_via_ssh() {
 	local iface="$1"
 	local addr="$USB_SSH_ADDR"
-	local pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=(
 		-o ConnectTimeout=3
 		-o StrictHostKeyChecking=no
@@ -51,13 +50,13 @@ fetch_board_identity_via_ssh() {
 		-o LogLevel=ERROR
 	)
 
-	command -v sshpass >/dev/null 2>&1 || return 1
+	require_ssh_identity "$ROOT" || return 1
 	ensure_host_addr_on_iface "$iface" || return 1
 	ping_usb_ssh_target "$iface" >/dev/null 2>&1 || return 1
 	while IFS= read -r opt; do
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(usb_ssh_bind_pair "$iface")
-	remote_device_identity_via_ssh sshpass -p "$pass" ssh "${ssh_opts[@]}" "root@${addr}"
+	remote_device_identity_via_ssh lws_ssh_with_opts "$ROOT" "${ssh_opts[@]}" "root@${addr}"
 }
 
 enrich_usb_ssh_rows() {
@@ -416,8 +415,7 @@ network_reachable_usb_ssh() {
 		;;
 	esac
 	[[ -n "$iface" ]] || return 1
-	pass="${USB_SSH_PASS:-rockchip}"
-	if command -v sshpass >/dev/null 2>&1; then
+	if require_ssh_identity "$ROOT" 2>/dev/null; then
 		local -a ssh_opts=(
 			-o ConnectTimeout=2
 			-o StrictHostKeyChecking=no
@@ -427,7 +425,7 @@ network_reachable_usb_ssh() {
 		while IFS= read -r opt; do
 			[[ -n "$opt" ]] && ssh_opts+=("$opt")
 		done < <(usb_ssh_bind_pair "$iface")
-		serial="$(remote_device_identity_via_ssh sshpass -p "$pass" ssh "${ssh_opts[@]}" \
+		serial="$(remote_device_identity_via_ssh lws_ssh_with_opts "$ROOT" "${ssh_opts[@]}" \
 			"root@${addr}" || printf '%s\t%s\n' '-' '-')"
 		IFS=$'\t' read -r sn chip <<<"$serial"
 		[[ -n "$sn" ]] || sn="-"

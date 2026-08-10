@@ -57,7 +57,7 @@
 
 **选择优先级：** `IP` → `IFACE` → `SN` → 唯一已连接设备。
 
-USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockchip`、`USB_SSH_ADDR=192.168.55.1`。
+USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/ssh/id_ed25519`（`LWS_SSH_IDENTITY=` 可覆盖）。首次生成或轮换：`make ssh-keys`（私钥内部流转，勿提交 git）。丢密钥：TTL 串口登录后重写 `authorized_keys`，无产线/现场恢复路径。
 
 先看板子：`make devices`。
 
@@ -271,7 +271,13 @@ USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockch
 ### `make setup-usb-ssh`
 
 - **怎么用：** `make setup-usb-ssh`
-- **何时用：** 首次 USB 网卡调试；配置 ECM/RNDIS IP + `sshpass`（Win 需管理员；macOS 可能要 sudo）。
+- **何时用：** 首次 USB 网卡调试；配置 ECM/RNDIS IP + 检查团队 SSH 私钥（Win 需管理员；macOS 可能要 sudo）。
+
+### `make ssh-keys`
+
+- **怎么用：** `make ssh-keys`；轮换团队密钥时 `FORCE=1 make ssh-keys`
+- **何时用：** 新开发者机器缺 `keys/ssh/id_ed25519`；或更新 overlay `authorized_keys` 后需 `apply-overlay` + `build-rootfs` + `upgrade`/`flash` 下发到板子。
+- **做什么：** 生成/保留 Ed25519 团队密钥 `keys/ssh/id_ed25519`，同步 `id_ed25519.pub` → overlay `/root/.ssh/authorized_keys`。
 
 ### `make connect` / `make disconnect`
 
@@ -671,7 +677,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **怎么用：** `make audit`（多板 `SN=` / `IP=`）
 - **何时用：** 对已启动的板做 Lynis 加固/配置审计；报告写入 `output/audit/lynis-<stamp>/`
 - **参数：** `SN=` / `IP=`；`STRICT=1` 或 `FAIL_ON=high` 在有 Warning 时非零退出；`LYNIS_REF=` 控制 `.cache/lynis` clone 分支
-- **说明：** 临时上传 Lynis 到 `/tmp/lynis-audit`，跑完删除；**不**打进产品 rootfs。`-Q` 非交互且**保留颜色**（`--cronjob` 会关色）。`scripts/lynis-custom.prf` 跳过 BusyBox 不兼容的 `TIME-3185`。
+- **说明：** 临时上传 Lynis 到 `/tmp/lynis-audit`，跑完删除；**不**打进产品 rootfs。`-Q` 非交互且**保留颜色**（`--cronjob` 会关色）。不适用项见 [`scripts/lynis-custom.prf`](../scripts/lynis-custom.prf)（Buildroot/journald/固定 GPT/无包管理器/server 工具等 skip；**不** skip 已在 overlay 加固项：USB-1000、NETW-3200、NAME-4028、BANN-7126、ACCT-9628、KRNL-6000 sysctl）。CVE 用 host `make audit-cve`。
 - **产物：** 终端直接显示 **Lynis 原生彩色报告**（含 Hardening index / Warnings / Suggestions）；并保存 `output/audit/lynis-<stamp>/lynis-console.txt`、`lynis-report.dat`、`lynis.log`
 
 ### `make audit-cve`
@@ -692,7 +698,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | App 签名升级 | `make build-app` → `make upgrade-app` |
 | Overlay / systemd | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
 | Kernel / DTS | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `make build-kernel` → `make upgrade` |
-| SELinux（permissive；见 [`docs/selinux.md`](selinux.md)） | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage systemd` → `make build-kernel` → `make build-rootfs` → `make upgrade`（**勿** `build-uboot`） |
+| SELinux + auditd（permissive；见 [`docs/selinux.md`](selinux.md)） | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage audit systemd` → `make build-kernel` → `make build-rootfs` → `make upgrade`（**勿** `build-uboot`） |
+| rng-tools + jitterentropy（`rngd.service`） | `make apply-overlay` → `bash scripts/br-make-packages.sh rng rng-tools jitterentropy-library` → `make build-rootfs` → `make upgrade` |
 | 仅 OEM | `make build-oem` → `OEM_ONLY=1 make upgrade` |
 | 出厂 USB | `make build-oem` → `make build-img` → `make reboot-loader` → `make flash` |
 | 全量 | `make build` |

@@ -13,7 +13,7 @@ TARGET="${PROPERTIES_INI_PATH:-${PRODUCT_INI_PATH:-/var/lib/hal/properties.ini}}
 
 _DEL_PROP_SKIP=(
 	SERIAL CHIP_ID IP IMAGE FLUTTER_SDK BUILD_JOBS BUILD_BIND_MOUNT
-	USB_SSH_PASS USB_SSH_USER USB_SSH_ADDR IFACE
+	USB_SSH_USER USB_SSH_ADDR IFACE
 	DOCKER_IMAGE DOCKER_PLATFORM SCOPE FORCE SRC
 	PRODUCT_INI_PATH PROPERTIES_INI_PATH
 )
@@ -75,7 +75,7 @@ find_prop_key "$@" || {
 refuse_oem_identity_product_key "${PROP_KEY}"
 KEY="$(printf '%s' "${PROP_KEY}" | tr '[:upper:]' '[:lower:]')"
 
-command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make setup-usb-ssh)"
+require_ssh_identity "$ROOT"
 
 usb_ssh_session_prepare "$ROOT"
 

@@ -192,13 +192,12 @@ if ping_target "$IFACE"; then
 	sn="$(USB_SSH_SKIP_ENRICH=1 bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $2}')"
 	[[ -n "$sn" && "$sn" != "-" ]] && echo "Board SN: $sn"
 	echo ""
-	echo "OK — try: ssh root@${TARGET_ADDR}   (password: rockchip)"
+	echo "OK — try: ssh -i keys/ssh/id_ed25519 root@${TARGET_ADDR}"
 	echo "     or: make push-app"
 	echo "     or: make reboot-loader   (SN not required when only one board)"
-	if [[ "$(usb_ssh_host_os)" == windows ]] && ! command -v sshpass >/dev/null 2>&1; then
-		echo ""
-		echo "NOTE: install sshpass for make push-app / reboot-loader password login:"
-		sshpass_install_hint
+	if ! require_ssh_identity "$ROOT" 2>/dev/null; then
+		echo "NOTE: place team SSH key at keys/ssh/id_ed25519 for make push-app / reboot (make ssh-keys)"
+		lws_ssh_identity_hint "$ROOT"
 	fi
 	exit 0
 fi

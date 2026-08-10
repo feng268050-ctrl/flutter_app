@@ -19,11 +19,13 @@ after AVC soak.
 
 ```text
 FORCE_PLATFORM_OVERLAY=1 make apply-overlay
-bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage systemd
+bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage audit systemd
 make build-kernel
 make build-rootfs
 make upgrade
 ```
+
+`audit` adds userspace `auditd` (Lynis ACCT-9628); kernel `CONFIG_AUDIT=y` is already on via `ynh960-selinux.config`.
 
 `systemd` is listed because enabling `libselinux` flips Meson `-Dselinux=enabled`; stamp reuse would leave an SELinux-unaware PID 1.
 

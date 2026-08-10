@@ -104,11 +104,14 @@ start_sshd() {
 	/usr/libexec/ssh/ensure-sshd-hostkeys.sh
 	mkdir -p /run/sshd
 	chmod 0755 /run/sshd 2>/dev/null || true
+	# Match 50-ssh-auth.conf (Buildroot sshd_config may not Include drop-ins until post-fakeroot).
 	/usr/sbin/sshd \
 		-f /etc/ssh/sshd_config \
 		-o "ListenAddress=192.168.55.1" \
-		-o "PasswordAuthentication=yes" \
-		-o "PermitRootLogin=yes" \
+		-o "PubkeyAuthentication=yes" \
+		-o "PasswordAuthentication=no" \
+		-o "KbdInteractiveAuthentication=no" \
+		-o "PermitRootLogin=prohibit-password" \
 		-o "PidFile=$SSHD_PID"
 }
 

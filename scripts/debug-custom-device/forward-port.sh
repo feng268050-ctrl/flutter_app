@@ -18,17 +18,12 @@ usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
 target_user="${TARGET_USER:-${USB_SSH_USER:-root}}"
 target_addr="${TARGET_ADDR:-${USB_SSH_ADDR:-192.168.55.1}}"
-ssh_pass="${SSH_PASS:-${USB_SSH_PASS:-rockchip}}"
 control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$IFACE")")"
 declare -a ssh_opts=(
 	-o ConnectTimeout=5
 	-o StrictHostKeyChecking=accept-new
 	-o UserKnownHostsFile=/dev/null
 	-o LogLevel=ERROR
-	-o PreferredAuthentications=password
-	-o PubkeyAuthentication=no
-	-o KbdInteractiveAuthentication=no
-	-o NumberOfPasswordPrompts=1
 	-o ControlMaster=auto
 	-o ControlPersist=30
 	-o "ControlPath=$control_path"
@@ -42,8 +37,11 @@ if ! usb_ssh_session_is_remote; then
 	done < <(usb_ssh_bind_pair "$IFACE")
 fi
 
-require_sshpass
-sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" -N "$target_user@$target_addr" &
+require_ssh_identity "$ROOT"
+parse_ssh_endpoint "$target_addr" || exit 1
+ssh_opts+=(-p "$_SSH_PORT")
+lws_ssh_auth_opts "$ROOT" ssh_opts
+ssh "${ssh_opts[@]}" -N "$target_user@$_SSH_HOST" &
 ssh_pid=$!
 trap 'kill "$ssh_pid" 2>/dev/null || true' EXIT INT TERM
 

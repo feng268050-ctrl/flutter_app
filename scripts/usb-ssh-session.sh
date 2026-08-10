@@ -29,7 +29,7 @@ usb_ssh_session_load_env() {
 	CHIP_ID="${CHIP_ID:-}"
 	IP="${IP:-}"
 	TARGET_USER="${USB_SSH_USER:-root}"
-	SSH_PASS="${USB_SSH_PASS:-rockchip}"
+	SSH_IDENTITY_ROOT="$root"
 	WAIT_SEC=30
 	# Default USB gadget address; overridden by select for MODE=SSH.
 	TARGET_ADDR="${USB_SSH_ADDR:-192.168.55.1}"
@@ -147,7 +147,6 @@ usb_ssh_session_run_ssh() {
 	shift 2
 	local target_user="${TARGET_USER:-${USB_SSH_USER:-root}}"
 	local target_addr="${TARGET_ADDR:-${USB_SSH_ADDR:-192.168.55.1}}"
-	local ssh_pass="${SSH_PASS:-${USB_SSH_PASS:-rockchip}}"
 	local control_path host port
 	control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$iface")")"
 	local -a ssh_opts=(
@@ -155,26 +154,24 @@ usb_ssh_session_run_ssh() {
 		-o StrictHostKeyChecking=accept-new
 		-o UserKnownHostsFile=/dev/null
 		-o LogLevel=ERROR
-		-o PreferredAuthentications=password
-		-o PubkeyAuthentication=no
-		-o KbdInteractiveAuthentication=no
-		-o NumberOfPasswordPrompts=1
 		-o ControlMaster=auto
 		-o ControlPersist=30
 		-o "ControlPath=$control_path"
 	)
+	[[ "${LWS_SSH_TTY:-0}" == "1" ]] && ssh_opts+=(-t)
 	if [[ "$iface" != "-" && -n "$iface" ]] && ! usb_ssh_session_is_remote; then
 		local opt
 		while IFS= read -r opt; do
 			[[ -n "$opt" ]] && ssh_opts+=("$opt")
 		done < <(usb_ssh_bind_pair "$iface")
 	fi
-	require_sshpass
+	require_ssh_identity "$root"
 	parse_ssh_endpoint "$target_addr" || usb_ssh_session_die "invalid SSH endpoint: $target_addr"
 	host="$_SSH_HOST"
 	port="$_SSH_PORT"
 	ssh_opts+=(-p "$port")
-	sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$host" "$@"
+	lws_ssh_auth_opts "$root" ssh_opts
+	ssh "${ssh_opts[@]}" "$target_user@$host" "$@"
 }
 
 usb_ssh_session_run_scp() {
@@ -182,7 +179,6 @@ usb_ssh_session_run_scp() {
 	shift 2
 	local target_user="${TARGET_USER:-${USB_SSH_USER:-root}}"
 	local target_addr="${TARGET_ADDR:-${USB_SSH_ADDR:-192.168.55.1}}"
-	local ssh_pass="${SSH_PASS:-${USB_SSH_PASS:-rockchip}}"
 	local attempt status host port
 	local control_path
 	control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$iface")")"
@@ -191,10 +187,6 @@ usb_ssh_session_run_scp() {
 		-o StrictHostKeyChecking=accept-new
 		-o UserKnownHostsFile=/dev/null
 		-o LogLevel=ERROR
-		-o PreferredAuthentications=password
-		-o PubkeyAuthentication=no
-		-o KbdInteractiveAuthentication=no
-		-o NumberOfPasswordPrompts=1
 		-o ControlMaster=auto
 		-o ControlPersist=30
 		-o "ControlPath=$control_path"
@@ -205,7 +197,7 @@ usb_ssh_session_run_scp() {
 			[[ -n "$opt" ]] && ssh_opts+=("$opt")
 		done < <(usb_ssh_bind_pair "$iface")
 	fi
-	require_sshpass
+	require_ssh_identity "$root"
 	parse_ssh_endpoint "$target_addr" || usb_ssh_session_die "invalid SSH endpoint: $target_addr"
 	host="$_SSH_HOST"
 	port="$_SSH_PORT"
@@ -222,8 +214,9 @@ usb_ssh_session_run_scp() {
 		fi
 	done
 	ssh_opts+=(-P "$port")
+	lws_ssh_auth_opts "$root" ssh_opts
 	for attempt in 1 2 3; do
-		if sshpass -p "$ssh_pass" scp "${ssh_opts[@]}" "${scp_args[@]}"; then
+		if scp "${ssh_opts[@]}" "${scp_args[@]}"; then
 			return 0
 		else
 			status=$?

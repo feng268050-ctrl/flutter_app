@@ -51,7 +51,7 @@ done
 
 command -v curl >/dev/null 2>&1 || die "curl not found"
 command -v python3 >/dev/null 2>&1 || die "python3 not found"
-command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make setup-usb-ssh)"
+require_ssh_identity "$ROOT"
 
 # Fail before SSH if no token
 TOKEN="$(cloud_resolve_access_token)" || exit 1

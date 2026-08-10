@@ -33,27 +33,92 @@ usb_ssh_windows_ps1() {
 	powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$winpath" "$@"
 }
 
-sshpass_install_hint() {
-	case "$(usb_ssh_host_os)" in
-	darwin) echo "  install: brew install esolitos/ipa/sshpass" ;;
-	linux)
-		if command -v apt-get >/dev/null 2>&1; then
-			echo "  install: sudo apt install sshpass"
-		elif command -v dnf >/dev/null 2>&1; then
-			echo "  install: sudo dnf install sshpass"
-		elif command -v yum >/dev/null 2>&1; then
-			echo "  install: sudo yum install sshpass"
-		else
-			echo "  install: sshpass (use your distro package manager)"
-		fi
-		;;
-	windows)
-		echo "  install (MSYS2): pacman -S sshpass"
-		echo "  or: scoop install sshpass / choco install sshpass"
-		;;
-	*) echo "  install: sshpass (non-interactive SSH password for USB-SSH)" ;;
-	esac
+lws_repo_root() {
+	local self="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+	cd "$(dirname "$self")/.." && pwd
 }
+
+lws_ssh_identity_file() {
+	local root="${1:-$(lws_repo_root)}"
+	printf '%s\n' "${LWS_SSH_IDENTITY:-${SSH_IDENTITY_FILE:-$root/keys/ssh/id_ed25519}}"
+}
+
+lws_ssh_identity_hint() {
+	local root="${1:-$(lws_repo_root)}"
+	local id
+	id="$(lws_ssh_identity_file "$root")"
+	echo "  expected identity: $id"
+	echo "  obtain id_ed25519 from your team or run: make ssh-keys"
+}
+
+require_ssh_identity() {
+	local root="${1:-$(lws_repo_root)}"
+	local id
+	id="$(lws_ssh_identity_file "$root")"
+	if [[ -f "$id" ]]; then
+		return 0
+	fi
+	{
+		echo "ERROR: SSH identity not found (public-key auth only on device)."
+		lws_ssh_identity_hint "$root"
+	} >&2
+	exit 1
+}
+
+warn_ssh_identity_if_usb_ssh() {
+	local n="${1:-0}" root="${2:-$(lws_repo_root)}"
+	[[ "$n" -gt 0 ]] || return 0
+	local id
+	id="$(lws_ssh_identity_file "$root")"
+	[[ -f "$id" ]] && return 0
+	{
+		echo ""
+		echo "NOTE: USB-SSH/SSH device(s) present — place team key for SN lookup, push-app, and reboot:"
+		lws_ssh_identity_hint "$root"
+	} >&2
+}
+
+# Build team identity ssh/scp options into _LWS_SSH_AUTH_OPTS (bash 3.2 — no nameref).
+lws_ssh_auth_opts_build() {
+	local root="$1"
+	require_ssh_identity "$root"
+	local id
+	id="$(lws_ssh_identity_file "$root")"
+	_LWS_SSH_AUTH_OPTS=(
+		-i "$id"
+		-o IdentitiesOnly=yes
+		-o PreferredAuthentications=publickey
+		-o PubkeyAuthentication=yes
+		-o PasswordAuthentication=no
+		-o KbdInteractiveAuthentication=no
+	)
+}
+
+# Prepend auth opts to a named array variable (bash 3.2 — no nameref).
+lws_ssh_auth_opts_prepend() {
+	local root="$1"
+	local varname="$2"
+	lws_ssh_auth_opts_build "$root"
+	# shellcheck disable=SC2170,SC2124
+	eval "${varname}=( \"\${_LWS_SSH_AUTH_OPTS[@]}\" \"\${${varname}[@]}\" )"
+}
+
+# Prepend standard pubkey auth options into caller's ssh/scp argv array.
+lws_ssh_auth_opts() {
+	lws_ssh_auth_opts_prepend "$@"
+}
+
+# Run ssh with team identity + caller opts (identity path first arg after root).
+lws_ssh_with_opts() {
+	local root="$1"
+	shift
+	lws_ssh_auth_opts_build "$root"
+	ssh "${_LWS_SSH_AUTH_OPTS[@]}" "$@"
+}
+
+# Deprecated aliases (call sites migrating off sshpass).
+require_sshpass() { require_ssh_identity "$@"; }
+warn_sshpass_if_usb_ssh() { warn_ssh_identity_if_usb_ssh "$@"; }
 
 # Android AVD serials look like emulator-5554 (not physical adb / RockUSB boards).
 is_android_emulator_serial() {
@@ -213,7 +278,7 @@ printf '%s\t%s\n' "$sn" "$chip"
 EOF
 }
 
-# Prints SN<TAB>chip via remote SSH argv prefix (sshpass/ssh … user@host).
+# Prints SN<TAB>chip via remote SSH argv prefix (lws_ssh_with_opts / ssh … user@host).
 # Chip is for SN fallback only — host device tables emit SN alone.
 # Pipe the script on stdin — do NOT use `ssh … sh -c "$(script)"`: remote shells
 # expand $vars / break awk inside the -c string, which collapses SN to chip.
@@ -242,29 +307,6 @@ remote_device_serial_via_ssh() {
 # Deprecated name kept for callers; prefer remote_device_identity_sh.
 remote_device_serial_sh() {
 	remote_device_identity_sh
-}
-
-require_sshpass() {
-	if command -v sshpass >/dev/null 2>&1; then
-		return 0
-	fi
-	{
-		echo "ERROR: sshpass is not installed (required for USB-SSH password login)."
-		echo "  target: root@${USB_SSH_ADDR:-192.168.55.1}  password: ${USB_SSH_PASS:-rockchip}"
-		sshpass_install_hint
-	} >&2
-	exit 1
-}
-
-warn_sshpass_if_usb_ssh() {
-	local n="${1:-0}"
-	[[ "$n" -gt 0 ]] || return 0
-	command -v sshpass >/dev/null 2>&1 && return 0
-	{
-		echo ""
-		echo "NOTE: USB-SSH/SSH device(s) present — install sshpass for SN lookup, push-app, and reboot:"
-		sshpass_install_hint
-	} >&2
 }
 
 # Print two lines: -o  then  Key=val  (append to ssh/scp argv with while-read).
@@ -372,10 +414,10 @@ ping_remote_ssh_target() {
 }
 
 remote_ssh_run() {
+	local root="${LWS_SSH_ROOT:-$(lws_repo_root)}"
 	local target_addr="$1"
 	shift
 	local target_user="${USB_SSH_USER:-root}"
-	local ssh_pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=(
 		-o ConnectTimeout=5
 		-o StrictHostKeyChecking=accept-new
@@ -383,13 +425,16 @@ remote_ssh_run() {
 		-o LogLevel=ERROR
 	)
 
-	require_sshpass
 	parse_ssh_endpoint "$target_addr" || {
 		echo "ERROR: invalid SSH endpoint: $target_addr" >&2
 		return 1
 	}
 	ssh_opts+=(-p "$_SSH_PORT")
-	sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$_SSH_HOST" "$@"
+	lws_ssh_auth_opts "$root" ssh_opts
+	if [[ $# -eq 0 && -t 0 && -t 1 ]]; then
+		ssh_opts=(-t "${ssh_opts[@]}")
+	fi
+	ssh "${ssh_opts[@]}" "$target_user@$_SSH_HOST" "$@"
 }
 
 remote_ssh_schedule_sysrq_reboot() {
@@ -399,11 +444,11 @@ remote_ssh_schedule_sysrq_reboot() {
 }
 
 usb_ssh_run() {
+	local root="${LWS_SSH_ROOT:-$(lws_repo_root)}"
 	local iface="$1"
 	shift
 	local target_addr="${USB_SSH_ADDR:-192.168.55.1}"
 	local target_user="${USB_SSH_USER:-root}"
-	local ssh_pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=(
 		-o ConnectTimeout=5
 		-o StrictHostKeyChecking=accept-new
@@ -411,12 +456,15 @@ usb_ssh_run() {
 		-o LogLevel=ERROR
 	)
 
-	require_sshpass
 	configure_usb_ssh_host_addr "$iface"
 	while IFS= read -r opt; do
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(usb_ssh_bind_pair "$iface")
-	sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$target_addr" "$@"
+	lws_ssh_auth_opts "$root" ssh_opts
+	if [[ $# -eq 0 && -t 0 && -t 1 ]]; then
+		ssh_opts=(-t "${ssh_opts[@]}")
+	fi
+	ssh "${ssh_opts[@]}" "$target_user@$target_addr" "$@"
 }
 
 usb_ssh_schedule_sysrq_reboot() {

@@ -23,10 +23,16 @@ read_tag() {
 TAG="$(read_tag)"
 TAG_NO_V="${TAG#v}"
 REPO="${MEDIAMTX_REPO:-https://github.com/bluenviron/mediamtx.git}"
-# Upstream renamed linux_arm64v8 → linux_arm64 around the 1.12+ releases.
-RELEASE_URL_PRIMARY="https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64.tar.gz"
-RELEASE_URL_LEGACY="https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64v8.tar.gz"
-CACHE_TAR="$SRC_ROOT/mediamtx_${TAG_NO_V}_linux_arm64.tar.gz"
+# Upstream asset names use the tag with a leading "v" (mediamtx_v1.20.0_…);
+# older docs / some mirrors omit it — try both. Also renamed linux_arm64v8 →
+# linux_arm64 around the 1.12+ releases.
+RELEASE_URLS=(
+  "https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG}_linux_arm64.tar.gz"
+  "https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64.tar.gz"
+  "https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG}_linux_arm64v8.tar.gz"
+  "https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64v8.tar.gz"
+)
+CACHE_TAR="$SRC_ROOT/mediamtx_${TAG}_linux_arm64.tar.gz"
 
 # App-owned: binary stays in prebuilt/ and is copied into /opt/hmi/bin by make build-app.
 # Do not sync into rootfs-overlay.
@@ -47,7 +53,7 @@ download_release() {
     echo "build-mediamtx: using cached $CACHE_TAR"
   else
     local url=""
-    for cand in "$RELEASE_URL_PRIMARY" "$RELEASE_URL_LEGACY"; do
+    for cand in "${RELEASE_URLS[@]}"; do
       echo "build-mediamtx: trying ${cand} ..."
       if curl -fL --retry 3 --retry-delay 2 -o "$CACHE_TAR" "$cand"; then
         url="$cand"
@@ -59,6 +65,7 @@ download_release() {
       echo "ERROR: could not download MediaMTX ${TAG} linux/arm64 release" >&2
       return 1
     fi
+    echo "build-mediamtx: downloaded from ${url}"
   fi
   rm -rf "$OUT_DIR"
   mkdir -p "$OUT_DIR"
@@ -67,6 +74,8 @@ download_release() {
     echo "ERROR: mediamtx binary missing after extract" >&2
     return 1
   fi
+  # Release tarball also ships LICENSE + sample mediamtx.yml — keep only the binary.
+  find "$OUT_DIR" -mindepth 1 -maxdepth 1 ! -name mediamtx -exec rm -rf {} +
   chmod 755 "$OUT_DIR/mediamtx"
   prebuilt_stamp "$OUT_DIR" "${TAG}-linux-arm64"
   bash "$ROOT/scripts/sync-prebuilt-manifest.sh"
@@ -89,9 +98,12 @@ build_from_source() {
     git -C "$REPO_DIR" checkout -f "$TAG"
   fi
   if ! command -v go >/dev/null 2>&1; then
-    echo "build-mediamtx: go not found — source at $REPO_DIR; install Go 1.22+ and re-run" >&2
+    echo "build-mediamtx: go not found — source at $REPO_DIR; install a current Go toolchain and re-run" >&2
     exit 1
   fi
+  # Official releases are built with a CVE-patched toolchain (e.g. go1.26.5 for
+  # v1.20.0). Host go often lags (Homebrew); prefer the release tarball above.
+  echo "build-mediamtx: WARNING: source build with $(go env GOVERSION) — release binary preferred for CVE-fixed stdlib" >&2
   export GOMODCACHE
   echo "build-mediamtx: go mod download ..."
   (cd "$REPO_DIR" && go mod download)

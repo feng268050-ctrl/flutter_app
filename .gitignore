@@ -31,6 +31,10 @@ overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/
 /keys/ota/*.pem
 /keys/ota/ed25519.pem
 
+# Team SSH host private key (pubkey → overlay root/.ssh/authorized_keys)
+/keys/ssh/id_ed25519
+/keys/ssh/id_rsa
+
 # OP-TEE TA signing private key (BL32-matched vendor key; never commit)
 /keys/oem/*.pem
 /keys/oem/vendor_ta.pem

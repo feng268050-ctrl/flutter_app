@@ -77,7 +77,7 @@ if [[ ! "$PRODUCT_SN" =~ ^[A-Za-z0-9]+$ ]]; then
 	die "PRODUCT_SN must be alphanumeric [A-Za-z0-9] after stripping '-'; got '$raw_sn' → '$PRODUCT_SN'"
 fi
 
-command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make setup-usb-ssh)"
+require_ssh_identity "$ROOT"
 
 usb_ssh_session_prepare "$ROOT"
 

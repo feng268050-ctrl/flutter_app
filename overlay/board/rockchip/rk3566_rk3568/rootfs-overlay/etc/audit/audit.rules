@@ -1,0 +1,8 @@
+# Cyber OS appliance baseline audit rules (Lynis ACCT-9630).
+-D
+-b 8192
+-w /etc/passwd -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/sudoers -p wa -k identity
+-e 1

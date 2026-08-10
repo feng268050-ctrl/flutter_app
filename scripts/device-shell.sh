@@ -14,7 +14,7 @@ die() {
 usb_ssh_session_load_env "$ROOT"
 usb_ssh_session_select "$ROOT"
 usb_ssh_session_configure_link
-require_sshpass
+require_ssh_identity "$ROOT"
 
 if usb_ssh_session_is_remote; then
 	echo "Opening shell on ${TARGET_USER}@${TARGET_ADDR} (SSH)..."

@@ -57,24 +57,19 @@ candidate_endpoints() {
 probe_endpoint() {
 	local ep="$1"
 	local user="${USB_SSH_USER:-root}"
-	local pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=(
 		-o ConnectTimeout=2
 		-o StrictHostKeyChecking=accept-new
 		-o UserKnownHostsFile=/dev/null
 		-o LogLevel=ERROR
-		-o PreferredAuthentications=password
-		-o PubkeyAuthentication=no
-		-o KbdInteractiveAuthentication=no
-		-o NumberOfPasswordPrompts=1
 	)
 
 	parse_ssh_endpoint "$ep" || return 1
 	# Skip slow SSH attempts when nothing listens.
 	ssh_endpoint_reachable "$ep" || return 1
-	command -v sshpass >/dev/null 2>&1 || return 1
-	sshpass -p "$pass" ssh "${ssh_opts[@]}" -p "$_SSH_PORT" "$user@$_SSH_HOST" true >/dev/null 2>&1 || return 1
-	remote_device_identity_via_ssh sshpass -p "$pass" ssh "${ssh_opts[@]}" -p "$_SSH_PORT" "$user@$_SSH_HOST" || true
+	require_ssh_identity "$ROOT" || return 1
+	lws_ssh_with_opts "$ROOT" "${ssh_opts[@]}" -p "$_SSH_PORT" "$user@$_SSH_HOST" true >/dev/null 2>&1 || return 1
+	remote_device_identity_via_ssh lws_ssh_with_opts "$ROOT" "${ssh_opts[@]}" -p "$_SSH_PORT" "$user@$_SSH_HOST" || true
 }
 
 emit_emu_row() {
@@ -122,12 +117,12 @@ list_emulator_devices() {
 
 	# QEMU is up (or SSH answered above) but identity probe pending.
 	ep="${reachable_ep:-${best_ep:-127.0.0.1:${EMULATOR_SSH_PORT:-2222}}}"
-	if ! command -v sshpass >/dev/null 2>&1; then
-		echo "NOTE: EMU ${ep} — install sshpass to probe SN (brew install sshpass)" >&2
+	if ! require_ssh_identity "$ROOT" 2>/dev/null; then
+		echo "NOTE: EMU ${ep} — place team key at keys/ssh/id_ed25519 to probe SN (make ssh-keys)" >&2
 	elif [[ -z "$reachable_ep" ]]; then
 		echo "NOTE: EMU listed at ${ep} but SSH not accepting yet (guest still booting?)" >&2
 	else
-		echo "NOTE: EMU ${ep} reachable but identity probe failed (check root password)" >&2
+		echo "NOTE: EMU ${ep} reachable but identity probe failed (check team SSH key)" >&2
 	fi
 	emit_emu_row "$EMU_SN_FALLBACK" "$ep"
 }

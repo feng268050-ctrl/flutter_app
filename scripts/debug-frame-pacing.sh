@@ -12,16 +12,18 @@ DURATION_S="${2:-25}"
 IFACE="${IFACE:-en12}"
 ADDR="${USB_SSH_ADDR:-192.168.55.1}"
 USER_="${USB_SSH_USER:-root}"
-PASS="${USB_SSH_PASS:-rockchip}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/usb-ssh-common.sh
+source "$ROOT/scripts/usb-ssh-common.sh"
 LOGFILE="/Users/ayon/Workspace/lws-hmi/.cursor/debug-8fb78d.log"
 
 SSH() {
-  sshpass -p "$PASS" ssh \
-    -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new \
-    -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-    -o PreferredAuthentications=password -o PubkeyAuthentication=no \
-    -o BindInterface="$IFACE" -o ServerAliveInterval=3 -o ServerAliveCountMax=3 \
-    "$USER_@$ADDR" "$@"
+  local -a opts=(
+    -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new
+    -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR
+    -o BindInterface="$IFACE" -o ServerAliveInterval=3 -o ServerAliveCountMax=3
+  )
+  lws_ssh_with_opts "$ROOT" "${opts[@]}" "$USER_@$ADDR" "$@"
 }
 
 echo "[frame-pacing] checking device ($USER_@$ADDR via $IFACE)..." >&2

@@ -32,7 +32,8 @@ Usage: $0 {connect|disconnect|dismiss-target|list|--tsv|--select} [args]
 Env:
   IP=<addr>                  address for connect/disconnect/select
   SN                         select among registered SSH devices (SERIAL= deprecated)
-  USB_SSH_USER/PASS          same credentials as USB-SSH (default root/rockchip)
+  LWS_SSH_IDENTITY           team SSH private key (default keys/ssh/id_ed25519)
+  USB_SSH_USER               SSH login user (default root)
 EOF
 }
 
@@ -110,10 +111,6 @@ remote_ssh_opts() {
 		-o StrictHostKeyChecking=accept-new
 		-o UserKnownHostsFile=/dev/null
 		-o LogLevel=ERROR
-		-o PreferredAuthentications=password
-		-o PubkeyAuthentication=no
-		-o KbdInteractiveAuthentication=no
-		-o NumberOfPasswordPrompts=1
 	)
 	printf '%s\n' "${opts[@]}"
 }
@@ -121,17 +118,16 @@ remote_ssh_opts() {
 fetch_identity_via_ssh() {
 	local addr="$1"
 	local user="${USB_SSH_USER:-root}"
-	local pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=()
 	local opt
 
-	require_sshpass
+	require_ssh_identity "$ROOT"
 	parse_ssh_endpoint "$addr" || return 1
 	while IFS= read -r opt; do
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(remote_ssh_opts)
 	ssh_opts+=(-p "$_SSH_PORT")
-	remote_device_identity_via_ssh sshpass -p "$pass" ssh "${ssh_opts[@]}" "$user@$_SSH_HOST" || true
+	remote_device_identity_via_ssh lws_ssh_with_opts "$ROOT" "${ssh_opts[@]}" "$user@$_SSH_HOST" || true
 }
 
 list_ssh_devices() {
@@ -156,22 +152,21 @@ list_ssh_devices() {
 }
 
 cmd_connect() {
-	local ip serial user pass sn chip live
+	local ip serial user sn chip live
 	ip="$(resolve_ip_arg "${1:-}")"
 	user="${USB_SSH_USER:-root}"
-	pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=()
 	local opt
 
-	require_sshpass
+	require_ssh_identity "$ROOT"
 	parse_ssh_endpoint "$ip" || die "invalid IP=$ip"
 	echo "SSH connect: probing $user@${_SSH_HOST}:${_SSH_PORT} ..."
 	while IFS= read -r opt; do
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(remote_ssh_opts)
 	ssh_opts+=(-p "$_SSH_PORT")
-	if ! sshpass -p "$pass" ssh "${ssh_opts[@]}" "$user@$_SSH_HOST" true >/dev/null 2>&1; then
-		die "cannot SSH to $user@${_SSH_HOST}:${_SSH_PORT} (reachable? password? sshd listening?)"
+	if ! lws_ssh_with_opts "$ROOT" "${ssh_opts[@]}" "$user@$_SSH_HOST" true >/dev/null 2>&1; then
+		die "cannot SSH to $user@${_SSH_HOST}:${_SSH_PORT} (reachable? team key? sshd listening?)"
 	fi
 	live="$(fetch_identity_via_ssh "$ip")"
 	IFS=$'\t' read -r sn chip <<<"${live:-}"

@@ -336,7 +336,7 @@ list_devices() {
   done < <(bash "$ROOT/scripts/emulator-devices.sh" --tsv || true)
 
   device_table_print
-  warn_sshpass_if_usb_ssh "$(( $(usb_ssh_device_count) + $(ssh_registry_device_count) ))"
+  warn_ssh_identity_if_usb_ssh "$(( $(usb_ssh_device_count) + $(ssh_registry_device_count) ))" "$ROOT"
 }
 
 resolve_upgrade_tool_location() {

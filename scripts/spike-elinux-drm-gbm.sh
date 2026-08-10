@@ -20,16 +20,17 @@ ENGINE_SO="$ROOT/prebuilt/flutter-engine/3.41.9/arm64-release/target/usr/lib/lib
 IFACE="${IFACE:-en12}"
 ADDR="${USB_SSH_ADDR:-192.168.55.1}"
 USER_="${USB_SSH_USER:-root}"
-PASS="${USB_SSH_PASS:-rockchip}"
 REMOTE_DIR="${REMOTE_DIR:-/userdata/elinux-spike}"
+# shellcheck source=scripts/usb-ssh-common.sh
+source "$ROOT/scripts/usb-ssh-common.sh"
 
 SSH() {
-  sshpass -p "$PASS" ssh \
-    -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new \
-    -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-    -o PreferredAuthentications=password -o PubkeyAuthentication=no \
-    -o BindInterface="$IFACE" -o ServerAliveInterval=3 -o ServerAliveCountMax=3 \
-    "$USER_@$ADDR" "$@"
+  local -a opts=(
+    -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new
+    -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR
+    -o BindInterface="$IFACE" -o ServerAliveInterval=3 -o ServerAliveCountMax=3
+  )
+  lws_ssh_with_opts "$ROOT" "${opts[@]}" "$USER_@$ADDR" "$@"
 }
 
 ensure_src() {

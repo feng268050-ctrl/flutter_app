@@ -8,7 +8,7 @@ Host registry (`make connect` / `disconnect`) and unbound TCP SSH transport for 
 
 ### Requirement: make connect registers a remote SSH device
 
-The repository SHALL provide **`make connect`** that registers a reachable remote SSH board by IP. The IP SHALL be accepted as a Make goal argument (`make connect <ip>`) or via **`IP=`**. On success the host SHALL persist the registration and verify SSH login using the same credentials as USB-SSH (`root` / password via `sshpass`, overridable by existing USB-SSH env vars). The command SHALL fetch the board serial when possible and store it with the IP.
+The repository SHALL provide **`make connect`** that registers a reachable remote SSH board by IP. The IP SHALL be accepted as a Make goal argument (`make connect <ip>`) or via **`IP=`**. On success the host SHALL persist the registration and verify SSH login using the same team key as USB-SSH (`keys/ssh/id_ed25519` by default, overridable via **`LWS_SSH_IDENTITY=`**). The command SHALL fetch the board serial when possible and store it with the IP.
 
 #### Scenario: Connect by positional IP
 

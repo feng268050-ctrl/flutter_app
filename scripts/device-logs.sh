@@ -113,7 +113,7 @@ build_journal_args
 usb_ssh_session_load_env "$ROOT"
 usb_ssh_session_select "$ROOT"
 usb_ssh_session_configure_link
-require_sshpass
+require_ssh_identity "$ROOT"
 
 if ((${#filter_parts[@]} > 0)); then
 	if usb_ssh_session_is_remote; then
@@ -131,17 +131,4 @@ else
 fi
 echo "  quit: Ctrl+C"
 
-ssh_opts=(
-	-t
-	-o ConnectTimeout=5
-	-o StrictHostKeyChecking=accept-new
-	-o UserKnownHostsFile=/dev/null
-	-o LogLevel=ERROR
-)
-if ! usb_ssh_session_is_remote; then
-	while IFS= read -r opt; do
-		[[ -n "$opt" ]] && ssh_opts+=("$opt")
-	done < <(usb_ssh_bind_pair "$IFACE")
-fi
-
-exec sshpass -p "$SSH_PASS" ssh "${ssh_opts[@]}" "$TARGET_USER@$TARGET_ADDR" journalctl "${journal_args[@]}"
+LWS_SSH_TTY=1 exec usb_ssh_session_run_ssh "$ROOT" "$IFACE" journalctl "${journal_args[@]}"

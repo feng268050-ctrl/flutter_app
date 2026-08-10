@@ -41,10 +41,10 @@ Env:
                                  HMI apps MUST use suffix _hmi (install path /opt/hmi).
   SN                         select board when multiple devices
   IP                         registered SSH only (make connect <ip>)
-  USB_SSH_PASS           root password (default: rockchip)
+  LWS_SSH_IDENTITY           host private key (default: keys/ssh/id_ed25519)
 
 Prereq: APP=\$APP make build-app (artifacts in overlay $DEVICE_APP)
-Host: sshpass required (see error message if missing)
+Host: team SSH key required (see error message if missing)
 
 The board must include the DRM GEM teardown fix before using in-place HMI restart.
 EOF

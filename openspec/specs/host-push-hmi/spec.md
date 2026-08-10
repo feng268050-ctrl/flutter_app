@@ -25,7 +25,7 @@ The repository SHALL provide **`make push-app`** that streams the selected appâ€
 
 The repository SHALL extend **`make devices`** to list **RockUSB** flash devices (`upgrade_tool ld`), **USB-SSH** Linux boards, **registered remote SSH** boards (`MODE=SSH`), and **adb-connected Android** devices (`MODE` column: `Loader`, `Maskrom`, `USB-SSH`, `SSH`, `android`, etc.) in a **single merged table** with columns including **`SN`**, **`LocationID`**, host **`IFACE`** (USB-SSH only; `-` for SSH), and target **`IP`** (`192.168.55.1` for USB-SSH; registered IP for SSH; matches `IP=` selection for `MODE=SSH`). The table MUST NOT include a **ChipID** column. **SN** follows product identity (Vendor Storage SN, else chip serial); for android adb and RockUSB loader rows, SN SHALL be the adb SerialNo / upgrade_tool SerialNo. There SHALL NOT be a separate **`make devices-usb-ssh`** target.
 
-When USB-SSH device(s) are present and **`sshpass`** is not installed, the command SHALL print an install hint (push-app / reboot require sshpass).
+When USB-SSH device(s) are present and the team SSH identity file is missing, the command SHALL print a hint to obtain `keys/ssh/id_ed25519` or run `make ssh-keys`.
 
 #### Scenario: Two boards connected
 
@@ -88,14 +88,14 @@ Before `scp`/`ssh`, host scripts SHALL assign **`192.168.55.2/24`** to the host 
 - **WHEN** the user runs `make push-app` immediately after plugging in USB
 - **THEN** the script waits until the target responds or times out with an actionable error
 
-### Requirement: sshpass required for USB-SSH host commands
+### Requirement: team SSH identity required for USB-SSH host commands
 
-Host scripts that log in to **`root@192.168.55.1`** over USB-SSH (`make push-app`, `make upgrade-app`, **`make reboot`**, **`make reboot-loader`**) SHALL require **`sshpass`** (or future key-based auth) and SHALL print platform-specific install instructions when it is missing.
+Host scripts that log in to **`root@192.168.55.1`** over USB-SSH (`make push-app`, `make upgrade-app`, **`make reboot`**, **`make reboot-loader`**) SHALL authenticate with the team SSH private key (default **`keys/ssh/id_ed25519`**, overridable via **`LWS_SSH_IDENTITY=`**) matching the pubkey baked into rootfs **`/root/.ssh/authorized_keys`**. When the identity file is missing, the command SHALL fail with an actionable hint (`make ssh-keys` or obtain key from the team).
 
-#### Scenario: push-app without sshpass
+#### Scenario: push-app without team SSH key
 
-- **WHEN** the user runs `make push-app` and `sshpass` is not on `PATH`
-- **THEN** the command fails with an error and install hint (e.g. `brew install esolitos/ipa/sshpass` on macOS)
+- **WHEN** the user runs `make push-app` and `keys/ssh/id_ed25519` (or `LWS_SSH_IDENTITY`) is not present
+- **THEN** the command fails with an error and hint to run `make ssh-keys` or obtain the key internally
 
 ### Requirement: make reboot triggers normal board reset
 

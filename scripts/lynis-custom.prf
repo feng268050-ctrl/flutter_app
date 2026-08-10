@@ -1,2 +1,88 @@
+# Lynis custom profile for Cyber OS (Buildroot appliance).
+# Convention: skip server-only / false-positive checks; keep tests we harden in overlay.
+# CVE coverage: host `make audit-cve` (Grype on rootfs.img), not on-device scanners.
+
+# --- Tool / environment (scan would abort or false-positive) ---
+
 # BusyBox/Buildroot: GNU `stat -L --format` is unavailable; TIME-3185 aborts the scan.
 skip-test=TIME-3185
+
+# systemd-journald already ingests kernel messages; BusyBox klogd is present but unused.
+skip-test=LOGG-2138
+
+# --- Logging (journald volatile, not logrotate / remote syslog) ---
+
+# Lynis looks for process name "systemd-journal"; real binary is systemd-journald (false NOT FOUND).
+skip-test=LOGG-2136
+
+# journald Storage=volatile + SystemMaxUse；无传统 /var/log + logrotate 模型。
+skip-test=LOGG-2146
+
+# 产品无集中式 syslog 收集器；板上 journald 足够，外发留待现场集成时再定。
+skip-test=LOGG-2154
+
+# --- Packages / CVE (static rootfs) ---
+
+# Buildroot 静态 rootfs，无包管理器；CVE 走 host make audit-cve。
+skip-test=PKGS-7398
+
+# resolved DNSSEC=allow-downgrade; Lynis NETW-2706 parses obsolete "DNSSEC supported:" from resolvectl statistics.
+skip-test=NETW-2706
+
+# --- Filesystem layout (fixed GPT appliance) ---
+
+# 固定 GPT（rootfs A/B + userdata）；/home 几乎不用；/var 在 / 上且 journald volatile。
+skip-test=FILE-6310
+
+# --- Storage / buses (no hardware or already hardened elsewhere) ---
+
+# RK356x 无 FireWire；建议对 appliance 为噪声。
+skip-test=STRG-1846
+
+# USB-1000 / NETW-3200：已在 99-appliance-hardening + ynh960-hardening.config 关闭，勿 skip。
+
+# --- Authentication / PAM (console-only password; SSH pubkey-only) ---
+
+# 单用户 appliance；console 仍 root/rockchip；SSH 仅团队 Ed25519 公钥。
+skip-test=AUTH-9229
+skip-test=AUTH-9262
+
+# fs.suid_dumpable=0 已限制 setuid core dump；不在 limits.conf 彻底禁 coredump（保留 TTL 现场取证空间）。
+skip-test=KRNL-5820
+
+# --- Kernel sysctl (intentional deltas vs Lynis server profile) ---
+
+# 需 modprobe g_ether / Wi-Fi .ko；SysRq 保留现场调试。
+skip-test=KRNL-6000:kernel.modules_disabled
+skip-test=KRNL-6000:kernel.sysrq
+
+# 其余 KRNL-6000 sysctl 见 etc/sysctl.d/99-appliance-hardening.conf（勿 blanket skip）。
+
+# --- Accounting / integrity / automation (server tooling) ---
+
+# 无 process accounting / sysstat 需求；审计用 auditd（ACCT-9628，overlay 已 enable）。
+skip-test=ACCT-9622
+skip-test=ACCT-9626
+
+# 文件完整性 / rootkit 扫描走 host make audit-cve + 签名 OTA，不装 AIDE/rkhunter/chkrootkit。
+skip-test=FINT-4350
+skip-test=HRDN-7230
+
+# 非数据中心；板端无 Ansible/Puppet 等配置管理 agent。
+skip-test=TOOL-5002
+
+# BANN-7126 / ACCT-9628：已在 overlay 实现，勿 skip。
+# CRYP-8004（HW RNG & rngd）：板端 rockchip hwrng + rngd 已启用；勿 skip。
+#   make audit 会 patch Lynis usr-merge BusyBox 检测（否则 IsRunning 误报 not found）。
+# CRYP-8005（SW prng）：Lynis 只认 haveged/jitterentropy-rngd 进程名，不认 rngd；保持 NO 即可。
+
+# --- SSH (on-demand usb/lan sshd; pubkey-only) ---
+
+# 单标签 hostname（buildroot）；resolved Domains=local 不进 dnsdomainname。
+skip-test=NAME-4028
+
+# 保持 Port 22：USB-SSH / make 工具链写死；非 internet-facing sshd。
+skip-test=SSH-7408:port
+
+# AllowTcpForwarding=local（保留 host -L debug）；Lynis 只认 NO 为 GOOD。
+skip-test=SSH-7408:allowtcpforwarding

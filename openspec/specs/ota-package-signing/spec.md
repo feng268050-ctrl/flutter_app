@@ -1,40 +1,40 @@
 # ota-package-signing Specification
 
 ## Purpose
-Host `make ota-package` tar.gz + Ed25519 detached `.sig`, and device pubkey at `/etc/ota/ed25519.pub`.
+Host `make pack-ota` tar.gz + Ed25519 detached `.sig`, and device pubkey at `/etc/ota/ed25519.pub`.
 
 ## Requirements
-### Requirement: make ota-package builds a tar.gz archive of partition images
+### Requirement: make pack-ota builds a tar.gz archive of partition images
 
-The repository SHALL provide **`make ota-package`** that packages the required partition images (`*.img`) and an orchestration `manifest.json` into a **single `tar.gz`** at a documented path under `output/firmware/<APP>/` (default `APP=lws_hmi`). The archive exists to reduce transfer size versus shipping loose images. **`make upgrade` MUST** depend on this target for its default package input (unless an alternate package path such as `UPGRADE_PACKAGE=` is used). Future **`make publish` MUST** use the same package artifact as its prerequisite. The archive MUST NOT contain per-image detached signatures as the trust mechanism.
+The repository SHALL provide **`make pack-ota`** that packages the required partition images (`*.img`) and an orchestration `manifest.json` into a **single `tar.gz`** at a documented path under `output/firmware/<APP>/` (default `APP=lws_hmi`). The archive exists to reduce transfer size versus shipping loose images. **`make upgrade` MUST** depend on this target for its default package input (unless an alternate package path such as `UPGRADE_PACKAGE=` is used). Future **`make publish` MUST** use the same package artifact as its prerequisite. The archive MUST NOT contain per-image detached signatures as the trust mechanism.
 
-#### Scenario: ota-package emits tar.gz with images and manifest
+#### Scenario: pack-ota emits tar.gz with images and manifest
 
-- **WHEN** required boot/rootfs (and optional oem) image artifacts exist and the operator runs `APP=<id> make ota-package` with signing configured
+- **WHEN** required boot/rootfs (and optional oem) image artifacts exist and the operator runs `APP=<id> make pack-ota` with signing configured
 - **THEN** a `tar.gz` exists at the documented output path and contains those `*.img` files plus a manifest
 
 #### Scenario: missing image refuses packaging
 
 - **WHEN** a required image is absent
-- **THEN** `make ota-package` exits non-zero and does not publish a package intended for upgrade/publish
+- **THEN** `make pack-ota` exits non-zero and does not publish a package intended for upgrade/publish
 
 #### Scenario: OEM-only package contents
 
-- **WHEN** the operator runs `OEM_ONLY=1 make ota-package` with `oem.img` available and signing configured
+- **WHEN** the operator runs `OEM_ONLY=1 make pack-ota` with `oem.img` available and signing configured
 - **THEN** the archive contains oem image (and manifest) without requiring boot/rootfs members for that mode
 
-### Requirement: make ota-package emits a detached Ed25519 signature for upgrade, cloud, and publish
+### Requirement: make pack-ota emits a detached Ed25519 signature for upgrade, cloud, and publish
 
-When signing is configured (`OTA_SIGNING_KEY` or documented equivalent), **`make ota-package` SHALL** publish a detached **Ed25519** signature beside the archive (`<archive>.sig`, e.g. `ota-package.tar.gz.sig`). The signature SHALL cover the complete archive bytes (hash-then-sign). This signature is required for **USB-SSH/SSH `make upgrade`**, **cloud OTA**, and **`make publish`**. Individual partition images are **not** required to have sibling `*.img.sig` files. **`uboot.img` and MiniLoader SHALL NOT** be signed or included by this OTA packaging pipeline.
+When signing is configured (`OTA_SIGNING_KEY` or documented equivalent), **`make pack-ota` SHALL** publish a detached **Ed25519** signature beside the archive (`<archive>.sig`, e.g. `ota-package.tar.gz.sig`). The signature SHALL cover the complete archive bytes (hash-then-sign). This signature is required for **USB-SSH/SSH `make upgrade`**, **cloud OTA**, and **`make publish`**. Individual partition images are **not** required to have sibling `*.img.sig` files. **`uboot.img` and MiniLoader SHALL NOT** be signed or included by this OTA packaging pipeline.
 
 #### Scenario: package signature emitted when key configured
 
-- **WHEN** `APP=<id> make ota-package` completes successfully with signing configured
+- **WHEN** `APP=<id> make pack-ota` completes successfully with signing configured
 - **THEN** both the documented `tar.gz` and its sibling `.sig` exist
 
 #### Scenario: missing signing key refuses packaging for upgrade or publish
 
-- **WHEN** `OTA_SIGNING_KEY` is unset/unusable and the operator runs `make ota-package` (default packaging used by SSH `make upgrade` or publish/CI)
+- **WHEN** `OTA_SIGNING_KEY` is unset/unusable and the operator runs `make pack-ota` (default packaging used by SSH `make upgrade` or publish/CI)
 - **THEN** the command exits non-zero and MUST NOT promote an unsigned archive as the upgrade/publish artifact
 
 ### Requirement: Device embeds the OTA verification public key

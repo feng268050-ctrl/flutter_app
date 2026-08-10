@@ -26,7 +26,7 @@ The repository SHALL provide a host helper named `make reset-process-library` (l
 
 ### Requirement: Reset helper is documented like other host cmd helpers
 
-Makefile `help`, README Make commands, and AGENTS.md SHALL document `make reset-process-library` as a host-only operator helper (no firmware rebuild), describing that it clears process-library DB state via the running HMI watcher and force-reimports bundled assets without restarting HMI (same pattern as `upgrade-process-library`).
+Makefile `help`, README Make commands, and AGENTS.md SHALL document `make reset-process-library` as a host-only **Debug** helper (no firmware rebuild), describing that it clears process-library DB state via the running HMI watcher and force-reimports bundled assets without restarting HMI. Docs SHALL list it under Debug, not under Cloud + Upgrade (contrast with `upgrade-process-library`).
 
 #### Scenario: Help lists the target
 

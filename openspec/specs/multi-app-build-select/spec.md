@@ -43,12 +43,12 @@ Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc
 
 ### Requirement: push-app deploys only the selected APP
 
-`make push-app` SHALL be a Make alias of **`make upgrade-app`**: signed `tar.gz` + host HTTP + device `download <url>`, Ed25519 verify, install to `/opt/hmi` (or `/opt/<APP>` for non-HMI), and restart `hmi.service` only for `*_hmi` apps. The former unsigned SCP / `push-app-staging` / `push-app-apply-and-restart.sh` path MUST NOT be used. For any other `APP`, upgrade MUST copy the release layout to `/opt/<APP>` and MUST NOT restart `hmi.service`.
+`make push-app` SHALL stream the selected app’s overlay install tree over SSH and install to `/opt/hmi` for `*_hmi` (then restart `hmi.service`), or to `/opt/<APP>` for any other `APP` without restarting `hmi.service`. This is unsigned debug hot-swap (`host-push-hmi`), not a Make alias of `make upgrade-app`.
 
 #### Scenario: Default push remains HMI hot-swap
 
 - **WHEN** the operator runs `make push-app` after a default `make build-app`
-- **THEN** the board `/opt/hmi` tree MUST be updated and `hmi.service` MUST be restarted via the signed upgrade-app path
+- **THEN** the board `/opt/hmi` tree MUST be updated and `hmi.service` MUST be restarted
 
 #### Scenario: factory_test push does not restart HMI
 

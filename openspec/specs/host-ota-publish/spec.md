@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Host `make publish` / `publish-only`: upload signed `ota-package` `tar.gz` (+ `.sig`) and **`release.json`** to R2 via production-cloud presigned PUT (same API base as `make login`). Devices discover packages at the public CDN (`https://cdn.lasercyber.com/{artifact}/release.json`).
+Host `make publish` / `publish-only`: upload signed `pack-ota` `tar.gz` (+ `.sig`) and **`release.json`** to R2 via production-cloud presigned PUT (same API base as `make login`). Devices discover packages at the public CDN (`https://cdn.lasercyber.com/{artifact}/release.json`).
 
 ## Requirements
 
 ### Requirement: make publish uploads OTA tar.gz and channel manifest to R2
 
-The repository SHALL provide **`make publish`** that (1) ensures a signed OTA `tar.gz` exists via **`make ota-package`** (or Make prerequisite equivalent) for the selected `APP`, and (2) uploads that archive, its detached `.sig`, and the channel manifest to the application R2 bucket under the publish artifact prefix derived from `APP`, updating **`release.json`** so devices can discover the package via the public CDN (same R2 keys as peripheral `release.json`). The repository SHALL also provide **`make publish-only`** that performs only the upload/manifest step against an already-built OTA `tar.gz` (+ `.sig`) and MUST fail if that archive or signature is missing.
+The repository SHALL provide **`make publish`** that (1) ensures a signed OTA `tar.gz` exists via **`make pack-ota`** (or Make prerequisite equivalent) for the selected `APP`, and (2) uploads that archive, its detached `.sig`, and the channel manifest to the application R2 bucket under the publish artifact prefix derived from `APP`, updating **`release.json`** so devices can discover the package via the public CDN (same R2 keys as peripheral `release.json`). The repository SHALL also provide **`make publish-only`** that performs only the upload/manifest step against an already-built OTA `tar.gz` (+ `.sig`) and MUST fail if that archive or signature is missing.
 
 Upload authentication SHALL resolve a Bearer token in this order: (1) **`PUBLISH_API_TOKEN`** when set (Worker **`STATIC_API_TOKENS`** member — preferred for presign), (2) **`CLOUD_ACCESS_TOKEN`** when set, (3) **`access_token`** from the **`make login`** credentials file (`output/cloud/credentials.json`, see **`make-login-register-device`** / `cloud_resolve_publish_token`). Values are loadable from repo-root **`.env`** via the same dotenv pattern as other Make targets, with a non-empty command-line/env value overriding `.env`. Tokens MUST NOT be committed to git.
 
@@ -16,8 +16,8 @@ API base URL SHALL be resolved via the same helper as **`make login`** / **`make
 
 #### Scenario: Default publish builds package then uploads release
 
-- **WHEN** the operator runs `make publish` with default `APP` after images required by `ota-package` exist and signing is configured, and a publish token is available (`PUBLISH_API_TOKEN` or login credentials)
-- **THEN** a signed OTA `tar.gz` is produced or refreshed via `ota-package`, uploaded under the `lws-hmi/` R2 prefix (with `.sig` per documented convention), and `lws-hmi/release.json` is updated with fields suitable for client download (`version`, `filename`, `published_at`, `url`)
+- **WHEN** the operator runs `make publish` with default `APP` after images required by `pack-ota` exist and signing is configured, and a publish token is available (`PUBLISH_API_TOKEN` or login credentials)
+- **THEN** a signed OTA `tar.gz` is produced or refreshed via `pack-ota`, uploaded under the `lws-hmi/` R2 prefix (with `.sig` per documented convention), and `lws-hmi/release.json` is updated with fields suitable for client download (`version`, `filename`, `published_at`, `url`)
 
 #### Scenario: Default API base is production (same as login)
 

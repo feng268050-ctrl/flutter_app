@@ -51,7 +51,7 @@ The host SHALL download `boot.img` → partition `boot`, `boot_b.img` → `boot_
 
 ### Requirement: make upgrade performs remote full-system firmware upgrade over SSH
 
-The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SN=` / `IP=`), **first ensures an OTA `tar.gz` and sibling `.sig` via `make ota-package`** (unless an alternate package input is documented elsewhere), starts an **ephemeral host HTTP server** that serves the archive and `.sig`, triggers the on-device HMI to **HTTP download** those files into **`/userdata/ota/`**, runs the **staged verify-extract-apply** pipeline shared with product OTA (**MUST** Ed25519-verify before write), and returns successfully as soon as board reboot-after-arm is requested. It SHALL NOT wait for SSH disconnect, post-reboot SSH, or claim that boot health was verified.
+The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SN=` / `IP=`), **first ensures an OTA `tar.gz` and sibling `.sig` via `make pack-ota`** (unless an alternate package input is documented elsewhere), starts an **ephemeral host HTTP server** that serves the archive and `.sig`, triggers the on-device HMI to **HTTP download** those files into **`/userdata/ota/`**, runs the **staged verify-extract-apply** pipeline shared with product OTA (**MUST** Ed25519-verify before write), and returns successfully as soon as board reboot-after-arm is requested. It SHALL NOT wait for SSH disconnect, post-reboot SSH, or claim that boot health was verified.
 
 For the SSH path, the host SHALL: obtain the `tar.gz` and `.sig`; preflight the active/inactive letter and refuse unsafe slot state; bind HTTP on an address the device can reach (USB-SSH default `192.168.55.2`, LAN: local source IP toward the board, overridable via `OTA_HTTP_HOST=` / `OTA_HTTP_PORT=`); trigger the on-device HMI to enter the dedicated upgrade page and download; report **HTTP send** progress on the host console until archive + `.sig` are fully served (`TRANSFER_COMPLETE`); then exit successfully without waiting for on-device apply. On-device **`cyber_ota`** SHALL verify, extract, and burn via Dart-orchestrated `openssl`/`tar`/`dd`. Default full-system mode MUST update the inactive **boot and rootfs** letter pair. SSH SHALL be used as a **control plane** (trigger + transfer complete), not as the bulk transfer path for the OTA archive.
 
@@ -72,23 +72,23 @@ For the SSH path, the host SHALL: obtain the `tar.gz` and `.sig`; preflight the 
 - **WHEN** more than one deployable Linux target is present and neither `SN=` nor `IP=` is set
 - **THEN** `make upgrade` fails with guidance to run `make devices` and set `SN` or `IP`
 
-### Requirement: make upgrade depends on ota-package
+### Requirement: make upgrade depends on pack-ota
 
-`make upgrade` SHALL automatically invoke **`make ota-package`** (as a Make prerequisite or equivalent first step) before serving anything to the device when no alternate package path is set. **`make publish`** SHALL require the same `ota-package` artifact (and its `.sig`). The package SHALL be one compressed `tar.gz` plus sibling `.sig` to reduce transfer size relative to shipping loose images while preserving authenticity.
+`make upgrade` SHALL automatically invoke **`make pack-ota`** (as a Make prerequisite or equivalent first step) before serving anything to the device when no alternate package path is set. **`make publish`** SHALL require the same `pack-ota` artifact (and its `.sig`). The package SHALL be one compressed `tar.gz` plus sibling `.sig` to reduce transfer size relative to shipping loose images while preserving authenticity.
 
 #### Scenario: upgrade runs packaging first
 
 - **WHEN** the operator runs `make upgrade` and required images exist with signing configured
-- **THEN** an OTA `tar.gz` and `.sig` are produced (or refreshed) via `ota-package` before the host HTTP server starts
+- **THEN** an OTA `tar.gz` and `.sig` are produced (or refreshed) via `pack-ota` before the host HTTP server starts
 
 #### Scenario: publish prerequisite is the same package
 
 - **WHEN** a developer reads Make/docs for cloud publish
-- **THEN** `make ota-package` (output `tar.gz` + `.sig`) is documented as the required prerequisite artifact for `make publish`
+- **THEN** `make pack-ota` (output `tar.gz` + `.sig`) is documented as the required prerequisite artifact for `make publish`
 
 ### Requirement: make upgrade honors UPGRADE_PACKAGE when set
 
-In addition to upgrading from tree-built firmware outputs (or the default `ota-package` artifact when that path is active), **`make upgrade` SHALL** honor **`UPGRADE_PACKAGE=`** as specified by the `upgrade-package-input` capability: when the variable is non-empty, use that local `.tar` / `.tar.gz` / `.tgz` as the package input, branching by transport (**SSH/USB-SSH** → host HTTP serve archive **+ sibling `.sig`** + device download + staged **verify**-apply; **RockUSB Loader/Maskrom** → host extract + `di` OTA images). When `UPGRADE_PACKAGE` is unset or empty, existing input resolution for `make upgrade` remains unchanged by this requirement.
+In addition to upgrading from tree-built firmware outputs (or the default `pack-ota` artifact when that path is active), **`make upgrade` SHALL** honor **`UPGRADE_PACKAGE=`** as specified by the `upgrade-package-input` capability: when the variable is non-empty, use that local `.tar` / `.tar.gz` / `.tgz` as the package input, branching by transport (**SSH/USB-SSH** → host HTTP serve archive **+ sibling `.sig`** + device download + staged **verify**-apply; **RockUSB Loader/Maskrom** → host extract + `di` OTA images). When `UPGRADE_PACKAGE` is unset or empty, existing input resolution for `make upgrade` remains unchanged by this requirement.
 
 #### Scenario: Unset keeps default inputs
 
@@ -100,19 +100,19 @@ In addition to upgrading from tree-built firmware outputs (or the default `ota-p
 - **WHEN** the operator runs `UPGRADE_PACKAGE=/path/to/pkg.tar.gz make upgrade` with a valid archive and a selected transport
 - **THEN** the upgrade uses that archive per `upgrade-package-input` and does not require regenerating a package solely because tree outputs changed
 
-### Requirement: make publish shares ota-package artifact with make upgrade
+### Requirement: make publish shares pack-ota artifact with make upgrade
 
-**`make publish`** SHALL use the **same** OTA `tar.gz` (and detached `.sig`) produced by **`make ota-package`** (for the selected `APP` and packaging mode) as its upload artifact. **`make publish`** MUST invoke `ota-package` (or equivalent prerequisite) before upload when using the full `publish` target. Host documentation SHALL state that cloud publish and SSH `make upgrade` share that archive shape; publish MUST NOT invent a second unsigned or differently laid-out cloud-only archive.
+**`make publish`** SHALL use the **same** OTA `tar.gz` (and detached `.sig`) produced by **`make pack-ota`** (for the selected `APP` and packaging mode) as its upload artifact. **`make publish`** MUST invoke `pack-ota` (or equivalent prerequisite) before upload when using the full `publish` target. Host documentation SHALL state that cloud publish and SSH `make upgrade` share that archive shape; publish MUST NOT invent a second unsigned or differently laid-out cloud-only archive.
 
-#### Scenario: publish prerequisite is ota-package tar.gz
+#### Scenario: publish prerequisite is pack-ota tar.gz
 
 - **WHEN** a developer reads Make/docs for `make publish` or runs `make publish` with packaging available
-- **THEN** the uploaded archive bytes are the `ota-package` `tar.gz` (or a content-identical rename for basename rules), not a separate ad-hoc firmware layout
+- **THEN** the uploaded archive bytes are the `pack-ota` `tar.gz` (or a content-identical rename for basename rules), not a separate ad-hoc firmware layout
 
 #### Scenario: Docs link upgrade and publish packaging
 
 - **WHEN** a developer reads host upgrade/publish documentation
-- **THEN** the text states that both `make upgrade` and `make publish` depend on `make ota-package` for the whole-device `tar.gz`
+- **THEN** the text states that both `make upgrade` and `make publish` depend on `make pack-ota` for the whole-device `tar.gz`
 
 ### Requirement: Host refuses upgrade when required bundle images or signature are missing
 
@@ -149,7 +149,7 @@ Host/docs SHALL state that full-system `make upgrade` over SSH **packages an OTA
 #### Scenario: Help or README mentions unified staged upgrade with verify
 
 - **WHEN** a developer reads Makefile `help` or README Make-commands for `upgrade`
-- **THEN** the text indicates full-system SSH upgrade runs `ota-package`, serves a `tar.gz` and `.sig` over host HTTP for device download, uses staged verify-apply shared with OTA shape, and is not an unsigned stream-to-partition path
+- **THEN** the text indicates full-system SSH upgrade runs `pack-ota`, serves a `tar.gz` and `.sig` over host HTTP for device download, uses staged verify-apply shared with OTA shape, and is not an unsigned stream-to-partition path
 
 ### Requirement: make upgrade presents transfer progress unified with device download UX
 
@@ -169,7 +169,7 @@ Host/docs SHALL state that full-system `make upgrade` over SSH **packages an OTA
 
 ### Requirement: make upgrade streams OEM when available
 
-After resolving `FACTORY_SKU` / `OEM_ID` (same resolver as `build-oem`), `make ota-package` / `make upgrade` SHALL include `oem.img` in the OTA `tar.gz` and staged apply to the device `oem` partition when the resolved image exists, unless the operator explicitly disables OEM update via `OEM_IMG` set empty. OEM controls SHALL be environment variables (`OEM_IMG`, `OEM_ONLY`), loadable from `.env` via `WITH_DOTENV`, with command-line overriding `.env`. When `OEM_ONLY=1`, the package/command SHALL include/apply only `oem.img`, SHALL NOT write boot/rootfs, and SHALL plain-reboot without arming an A/B letter switch. When the resolved oem image is missing and `OEM_ONLY` is not `1`, full-system boot/rootfs upgrade MAY still proceed with a clear warning that OEM was skipped. `make upgrade` MUST NOT use `factory.img` / RockUSB for the A/B staged SSH path.
+After resolving `FACTORY_SKU` / `OEM_ID` (same resolver as `build-oem`), `make pack-ota` / `make upgrade` SHALL include `oem.img` in the OTA `tar.gz` and staged apply to the device `oem` partition when the resolved image exists, unless the operator explicitly disables OEM update via `OEM_IMG` set empty. OEM controls SHALL be environment variables (`OEM_IMG`, `OEM_ONLY`), loadable from `.env` via `WITH_DOTENV`, with command-line overriding `.env`. When `OEM_ONLY=1`, the package/command SHALL include/apply only `oem.img`, SHALL NOT write boot/rootfs, and SHALL plain-reboot without arming an A/B letter switch. When the resolved oem image is missing and `OEM_ONLY` is not `1`, full-system boot/rootfs upgrade MAY still proceed with a clear warning that OEM was skipped. `make upgrade` MUST NOT use `factory.img` / RockUSB for the A/B staged SSH path.
 
 #### Scenario: Default upgrade writes oem
 

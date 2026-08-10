@@ -2,23 +2,24 @@
 
 ## Purpose
 
-Host-side USB-SSH workflow for Flutter app iteration: `make push-app`, `make devices`, `make reboot`, and `make reboot-loader` over the ECM link without rootfs reflash.
+Host-side **debug** USB-SSH / registered SSH workflow for Flutter app iteration: unsigned `make push-app` hot-swap of `/opt/hmi` (or `/opt/<APP>`), plus `make devices`, `make reboot`, and `make reboot-loader` over the ECM link without rootfs reflash. Signed shipping uses **`make upgrade-app`** (`host-app-upgrade`), not this path.
+
 ## Requirements
 ### Requirement: make push-app deploys Flutter app over USB SSH
 
-The repository SHALL provide **`make push-app` as a Make alias of `make upgrade-app`** (see `host-app-upgrade`). Both names SHALL use the signed path: package/sign `tar.gz`, host HTTP serve, device `download <url>`, Ed25519 verify, install to `/opt/hmi`, restart `hmi.service`. The former unsigned SCP / `/var/lib/hmi/push-app-staging/` hot-swap bulk-transfer path MUST be removed. Updating `/opt/hmi` without rebuilding rootfs SHALL still not require `make build-rootfs`, `make build-img`, board reboot, or `make flash`.
+The repository SHALL provide **`make push-app`** that streams the selected app’s overlay install tree to the board over SSH (USB-SSH or registered `MODE=SSH`), stages under `/var/lib/hmi/push-app-staging/`, applies via **`/usr/libexec/hmi/push-app-apply-and-restart.sh`** (refreshed from the host overlay each push), installs to `/opt/hmi` (or `/opt/<APP>` for non-HMI), and for `*_hmi` apps restarts `hmi.service`. This path is **unsigned debug hot-swap** and MUST NOT be a Make alias of `make upgrade-app`. Updating `/opt/hmi` without rebuilding rootfs SHALL still not require `make build-rootfs`, `make build-img`, board reboot, or `make flash`.
 
 #### Scenario: Supported iteration without rootfs rebuild
 
-- **WHEN** only Dart/assets changed and `make build-app` then `make push-app` (or `make upgrade-app`) succeeds
+- **WHEN** only Dart/assets changed and `make build-app` then `make push-app` succeeds
 - **THEN** the new app is installed on the target and `hmi.service` is restarted
 - **AND** no `make build-rootfs`, `make build-img`, board reboot, or `make flash` is required for the update to take effect
 
-#### Scenario: push-app does not use unsigned SCP
+#### Scenario: push-app is unsigned SSH stream (not upgrade-app)
 
-- **WHEN** the operator runs `make push-app` with signing configured
-- **THEN** the transfer uses host HTTP + device download of the signed archive
-- **AND** MUST NOT SCP `libapp.so` / `flutter_assets` as the bulk path
+- **WHEN** the operator runs `make push-app` after `make build-app`
+- **THEN** the transfer streams overlay artifacts over SSH into push-app staging and applies on-board
+- **AND** MUST NOT require Ed25519 signing, host HTTP serve, or `/run/hmi/upgrade-app.cmd`
 
 ### Requirement: make devices lists RockUSB and USB-SSH targets
 
@@ -43,21 +44,21 @@ When USB-SSH device(s) are present and **`sshpass`** is not installed, the comma
 
 ### Requirement: SN selects target for push-app
 
-When more than one deployable Linux target is available (USB-SSH and/or registered SSH), **`make upgrade-app`** and its alias **`make push-app`** SHALL require **`SN=`** matching the board **SN**, or **`IP=`** matching a registered **`MODE=SSH`** address. **`IP=`** SHALL NOT select USB-SSH devices. Multi-device selection remains consistent with `scripts/flash-usb.sh` SN ergonomics for USB-SSH. Deprecated **`SERIAL=`** SHALL be accepted as an alias for **`SN=`**. Host tooling MUST NOT accept **`CHIP_ID=`** as a device selector.
+When more than one deployable Linux target is available (USB-SSH and/or registered SSH), **`make push-app`** and **`make upgrade-app`** SHALL require **`SN=`** matching the board **SN**, or **`IP=`** matching a registered **`MODE=SSH`** address. **`IP=`** SHALL NOT select USB-SSH devices. Multi-device selection remains consistent with `scripts/flash-usb.sh` SN ergonomics for USB-SSH. Deprecated **`SERIAL=`** SHALL be accepted as an alias for **`SN=`**. Host tooling MUST NOT accept **`CHIP_ID=`** as a device selector.
 
 #### Scenario: Multiple devices without SN
 
-- **WHEN** two USB-SSH devices are connected and the user runs `make upgrade-app` or `make push-app` without `SN` or `IP`
+- **WHEN** two USB-SSH devices are connected and the user runs `make push-app` without `SN` or `IP`
 - **THEN** the command fails with a message to run `make devices` and set `SN` or `IP`
 
-#### Scenario: Upgrade with SN
+#### Scenario: Push with SN
 
 - **WHEN** `SN=<sn> make push-app` is run with multiple devices connected
-- **THEN** the download/install is triggered only on the board matching that SN
+- **THEN** the install is performed only on the board matching that SN
 
-#### Scenario: Upgrade with IP to SSH device
+#### Scenario: Push with IP to SSH device
 
-- **WHEN** a remote SSH device is registered and the user runs `IP=<ip> make upgrade-app`
+- **WHEN** a remote SSH device is registered and the user runs `IP=<ip> make push-app`
 - **THEN** the session targets only that registered SSH address
 
 ### Requirement: Host routes SSH via correct interface
@@ -80,7 +81,7 @@ Before `scp`/`ssh`, host scripts SHALL assign **`192.168.55.2/24`** to the host 
 
 ### Requirement: push-app waits for device readiness
 
-`make upgrade-app` / `make push-app` SHALL retry reachability to the selected target (including `192.168.55.1` on the selected USB-SSH interface) for at least 30 seconds before failing, to tolerate gadget bring-up delay after plug.
+`make push-app` SHALL retry reachability to the selected target (including `192.168.55.1` on the selected USB-SSH interface) for at least 30 seconds before failing, to tolerate gadget bring-up delay after plug.
 
 #### Scenario: Device not yet ready
 
@@ -89,7 +90,7 @@ Before `scp`/`ssh`, host scripts SHALL assign **`192.168.55.2/24`** to the host 
 
 ### Requirement: sshpass required for USB-SSH host commands
 
-Host scripts that log in to **`root@192.168.55.1`** over USB-SSH (`make upgrade-app`, `make push-app`, **`make reboot`**, **`make reboot-loader`**) SHALL require **`sshpass`** (or future key-based auth) and SHALL print platform-specific install instructions when it is missing.
+Host scripts that log in to **`root@192.168.55.1`** over USB-SSH (`make push-app`, `make upgrade-app`, **`make reboot`**, **`make reboot-loader`**) SHALL require **`sshpass`** (or future key-based auth) and SHALL print platform-specific install instructions when it is missing.
 
 #### Scenario: push-app without sshpass
 

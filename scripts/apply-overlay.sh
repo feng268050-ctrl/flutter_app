@@ -750,20 +750,45 @@ sync_meson_package() {
   echo "overlay: meson package synced ($(grep -E '^MESON_VERSION' "$pkg/meson.mk" | awk '{print $3}'))"
 }
 
-# systemd 256 + Rockchip GCC 10.3 UAPI 4.20: enable networkd (chips claim headers
-# ≥ 5.4) and ship sockios *_OLD compat so networkd compiles against 4.20 UAPI.
+# systemd + Rockchip GCC 10.3 UAPI 4.20: keep networkd selectable while the
+# external toolchain truthfully reports 4.20, and ship sockios *_OLD compat so
+# networkd compiles against that UAPI.
 sync_systemd_package() {
-  local src="$OVERLAY/buildroot/package/systemd/0003-basic-linux-sockios-compat-old-uapi.patch"
+  local sockios_src="$OVERLAY/buildroot/package/systemd/0003-basic-linux-sockios-compat-old-uapi.patch"
   local pkg="$BR_PKG_SYSTEMD"
-  if [[ ! -f "$src" ]]; then
-    return 0
-  fi
   if [[ ! -d "$pkg" ]]; then
-    echo "overlay: skip systemd sockios patch (package missing)" >&2
+    echo "overlay: skip systemd patches (package missing)" >&2
     return 0
   fi
-  install_file "$src" "$pkg/0003-basic-linux-sockios-compat-old-uapi.patch"
-  echo "overlay: systemd sockios UAPI compat patch synced"
+  local stale_config_patch="$pkg/0002-config-allow-networkd-with-rockchip-4.20-uapi.patch"
+  if [[ -f "$stale_config_patch" ]]; then
+    rm -f "$stale_config_patch"
+    echo "overlay: removed stale systemd Config.in patch from package patch dir"
+  fi
+
+  local config="$pkg/Config.in"
+  if [[ -f "$config" ]]; then
+    perl -0pi -e 's/\tdefault y if BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_4\n\tdepends on BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_4\n/\tdefault y\n/s' "$config"
+    perl -0pi -e 's/\ncomment "systemd-networkd needs a toolchain (?:w\/|with kernel) headers >= 5\.4"\n\tdepends on !BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_4\n//s' "$config"
+    echo "overlay: systemd Config.in networkd header gate relaxed"
+  fi
+
+  local mk="$pkg/systemd.mk"
+  local version=""
+  local major=""
+  if [[ -f "$mk" ]]; then
+    version="$(sed -n 's/^SYSTEMD_VERSION[[:space:]]*=[[:space:]]*//p' "$mk" | head -1)"
+    major="${version%%.*}"
+  fi
+  if [[ -f "$sockios_src" && "$major" =~ ^[0-9]+$ && "$major" -ge 256 ]]; then
+    install_file "$sockios_src" "$pkg/0003-basic-linux-sockios-compat-old-uapi.patch"
+    echo "overlay: systemd sockios UAPI compat patch synced (systemd $version)"
+  else
+    rm -f "$pkg/0003-basic-linux-sockios-compat-old-uapi.patch"
+    if [[ -n "$version" ]]; then
+      echo "overlay: systemd sockios UAPI compat patch skipped (systemd $version)"
+    fi
+  fi
 }
 
 # OpenSSL CVE pin (3.5.7 LTS). Replace Rockchip SDK 3.2.1 recipe; stash vendor patches

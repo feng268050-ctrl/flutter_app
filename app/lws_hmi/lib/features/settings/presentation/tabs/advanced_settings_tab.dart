@@ -7,8 +7,8 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_modbus_i
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/auto_zero_offset_dialog.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -81,7 +81,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
 
     Widget body() {
       final l10n = AppLocalizations.of(context)!;
-      final unit = common?.unit ?? CommonSettingsStore.defaultUnit;
+      final unit =
+          (common?.unit ?? UnitSystem.defaultValue).wire;
       final v = thresholds?.values ??
           store?.thresholds ??
           const AdvancedSettingsThresholdValues();

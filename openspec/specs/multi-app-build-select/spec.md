@@ -43,18 +43,18 @@ Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc
 
 ### Requirement: push-app deploys only the selected APP
 
-`make push-app` SHALL deploy artifacts from the selected APP’s overlay tree to the matching on-device prefix. For any `APP` ending in `_hmi`, behavior SHALL be: stage under `/var/lib/hmi/push-app-staging`, apply via `push-app-apply-and-restart.sh`, and restart `hmi.service`. For any other `APP`, push MUST copy the release layout to `/opt/<APP>` and MUST NOT restart `hmi.service`.
+`make push-app` SHALL be a Make alias of **`make upgrade-app`**: signed `tar.gz` + host HTTP + device `download <url>`, Ed25519 verify, install to `/opt/hmi` (or `/opt/<APP>` for non-HMI), and restart `hmi.service` only for `*_hmi` apps. The former unsigned SCP / `push-app-staging` / `push-app-apply-and-restart.sh` path MUST NOT be used. For any other `APP`, upgrade MUST copy the release layout to `/opt/<APP>` and MUST NOT restart `hmi.service`.
 
 #### Scenario: Default push remains HMI hot-swap
 
 - **WHEN** the operator runs `make push-app` after a default `make build-app`
-- **THEN** the board `/opt/hmi` tree MUST be updated and `hmi.service` MUST be restarted per existing apply helper
+- **THEN** the board `/opt/hmi` tree MUST be updated and `hmi.service` MUST be restarted via the signed upgrade-app path
 
 #### Scenario: factory_test push does not restart HMI
 
 - **WHEN** the operator runs `APP=factory_test make push-app` after a matching build-app
 - **THEN** `/opt/factory_test` on the board MUST receive `libapp.so` and flutter_assets
-- **AND** the push MUST NOT invoke the HMI apply/restart helper as the primary apply path
+- **AND** the push MUST NOT restart `hmi.service` as the primary apply path
 
 ### Requirement: build-rootfs ensures APP and optional factory_test
 

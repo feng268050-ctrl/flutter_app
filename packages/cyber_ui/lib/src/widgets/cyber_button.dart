@@ -7,6 +7,8 @@ import 'package:cyber_ui/src/theme/cyber_colors.dart';
 import 'package:cyber_ui/src/theme/cyber_dimens.dart';
 import 'package:cyber_ui/src/theme/cyber_panel_outline.dart';
 import 'package:cyber_ui/src/theme/cyber_tone.dart';
+import 'package:cyber_ui/src/widgets/cyber_press_feedback.dart';
+import 'package:cyber_ui/src/widgets/cyber_press_ink_splash.dart';
 
 /// Frost `FrostButton` variants (`DEFAULT` → [standard]).
 enum CyberButtonVariant { standard, primary, secondary, light }
@@ -72,6 +74,24 @@ abstract final class CyberButtonPressDefaults {
         CyberButtonVariant.secondary =>
           restingAlpha,
       };
+
+  /// Face alpha while pressed (performance / with ripple). PRIMARY/LIGHT stay
+  /// opaque — ripple is the cue. Balanced uses a press dim overlay instead
+  /// (see [CyberButton] build), not this alpha.
+  static double pressedFaceAlpha(
+    CyberButtonVariant variant, {
+    required bool suppressRipple,
+  }) {
+    if (suppressRipple) {
+      // Overlay path — keep face paint at resting alpha.
+      return restingFaceAlpha(variant);
+    }
+    return pressedAlpha;
+  }
+
+  /// Black scrim at full press when ripple is suppressed (Balanced).
+  /// Alias of [CyberPressFeedback.overlay] (Home Monitor/Settings QA).
+  static const Color suppressRipplePressOverlay = CyberPressFeedback.overlay;
 }
 
 /// Frost-styled button (Material [InkRipple] + shape; lws-ui `FrostButton`).
@@ -80,7 +100,10 @@ abstract final class CyberButtonPressDefaults {
 /// - Bounded ripple clipped to the button radius.
 /// - LIGHT → black ripple; PRIMARY/DEFAULT → white `0x3D`; SECONDARY → `0x2A`.
 /// - DEFAULT/SECONDARY face alpha 225→255 (70ms in / 140ms out); LIGHT/PRIMARY
-///   stay at full opacity (ripple is the visible cue — same as IME).
+///   stay at full opacity while ripple is the visible cue (same as IME).
+/// - When [MediaQuery.disableAnimations] is true or theme [NoSplash] (Balanced),
+///   ink / custom ripple is suppressed and a dark press scrim replaces it so
+///   press feedback stays obvious on PRIMARY (which never changed face alpha).
 ///
 /// IME alternate long-press keys set [inkWellGestures] false and drive
 /// [externalPress] (global hotspot while down, `null` when up) so ripple still
@@ -166,15 +189,32 @@ class _CyberButtonState extends State<CyberButton>
   final GlobalKey _hostKey = GlobalKey();
   late final AnimationController _rippleExpand;
   late final AnimationController _rippleFade;
+  /// 0 = resting face alpha, 1 = pressed. Uses a ticker so Balanced
+  /// (`MediaQuery.disableAnimations`) can kill ink ripple without also
+  /// zeroing [AnimatedOpacity] press feedback.
+  late final AnimationController _facePress;
   Offset _rippleOrigin = Offset.zero;
   bool _inkHighlighted = false;
+  /// Pointer-driven press (more reliable than InkWell highlight alone).
+  bool _pointerDown = false;
 
   bool get _enabled => widget.onPressed != null;
 
   bool get _externalDown =>
       widget.externalPress != null && widget.externalPress!.value != null;
 
-  bool get _pressed => _inkHighlighted || _externalDown;
+  bool get _pressed => _inkHighlighted || _externalDown || _pointerDown;
+
+  /// Ripple-only gate (Balanced). Prefer MediaQuery; Theme press-ink is backup
+  /// when density MediaQuery re-wrapping drops disableAnimations.
+  bool get _suppressRipple {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return true;
+    }
+    final splash = Theme.of(context).splashFactory;
+    return identical(splash, CyberPressInkSplash.splashFactory) ||
+        identical(splash, NoSplash.splashFactory);
+  }
 
   @override
   void initState() {
@@ -187,6 +227,10 @@ class _CyberButtonState extends State<CyberButton>
       vsync: this,
       duration: CyberButtonPressDefaults.rippleFade,
       value: 1,
+    );
+    _facePress = AnimationController(
+      vsync: this,
+      duration: CyberButtonPressDefaults.pressIn,
     );
     widget.externalPress?.addListener(_onExternalPress);
   }
@@ -205,7 +249,18 @@ class _CyberButtonState extends State<CyberButton>
     widget.externalPress?.removeListener(_onExternalPress);
     _rippleExpand.dispose();
     _rippleFade.dispose();
+    _facePress.dispose();
     super.dispose();
+  }
+
+  void _syncFacePress() {
+    if (_pressed) {
+      _facePress.duration = CyberButtonPressDefaults.pressIn;
+      _facePress.forward();
+    } else {
+      _facePress.duration = CyberButtonPressDefaults.pressOut;
+      _facePress.reverse();
+    }
   }
 
   void _onExternalPress() {
@@ -213,17 +268,20 @@ class _CyberButtonState extends State<CyberButton>
       return;
     }
     final hotspot = widget.externalPress?.value;
-    if (hotspot != null) {
-      _rippleOrigin = _hotspotInHost(hotspot);
-      _rippleFade.value = 1;
-      _rippleExpand.forward(from: 0);
-    } else {
-      if (_rippleExpand.status != AnimationStatus.completed) {
-        _rippleExpand.value = 1;
+    if (!_suppressRipple) {
+      if (hotspot != null) {
+        _rippleOrigin = _hotspotInHost(hotspot);
+        _rippleFade.value = 1;
+        _rippleExpand.forward(from: 0);
+      } else {
+        if (_rippleExpand.status != AnimationStatus.completed) {
+          _rippleExpand.value = 1;
+        }
+        _rippleFade.reverse(from: _rippleFade.value);
       }
-      _rippleFade.reverse(from: _rippleFade.value);
     }
     setState(() {});
+    _syncFacePress();
   }
 
   Offset _hotspotInHost(Offset globalPosition) {
@@ -333,36 +391,74 @@ class _CyberButtonState extends State<CyberButton>
     }
 
     final resting = CyberButtonPressDefaults.restingFaceAlpha(widget.variant);
-    final faceAlpha = !enabled
-        ? CyberButtonPressDefaults.disabledOpacity
-        : (_pressed ? CyberButtonPressDefaults.pressedAlpha : resting);
-
-    final body = AnimatedOpacity(
-      duration: _pressed
-          ? CyberButtonPressDefaults.pressIn
-          : CyberButtonPressDefaults.pressOut,
-      opacity: faceAlpha,
-      child: face,
+    final reduceMotion = _suppressRipple;
+    final pressedTarget = CyberButtonPressDefaults.pressedFaceAlpha(
+      widget.variant,
+      suppressRipple: reduceMotion,
     );
 
-    Widget childBox = body;
+    // Performance: DEFAULT/SECONDARY brighten via Opacity. Balanced: keep face
+    // paint steady and use a dark scrim (PRIMARY never had an opacity cue).
+    final Widget body;
+    if (reduceMotion) {
+      body = face;
+    } else {
+      body = AnimatedBuilder(
+        animation: _facePress,
+        builder: (context, child) {
+          final faceAlpha = !enabled
+              ? CyberButtonPressDefaults.disabledOpacity
+              : resting + (pressedTarget - resting) * _facePress.value;
+          return Opacity(opacity: faceAlpha, child: child);
+        },
+        child: face,
+      );
+    }
+
+    Widget childBox = !enabled && reduceMotion
+        ? Opacity(
+            opacity: CyberButtonPressDefaults.disabledOpacity,
+            child: body,
+          )
+        : body;
     if (widget.expand) {
-      childBox = SizedBox.expand(child: body);
+      childBox = SizedBox.expand(child: childBox);
     } else if (widget.stretch) {
       childBox = SizedBox(
         width: double.infinity,
         height: resolvedHeight,
-        child: body,
+        child: childBox,
       );
     }
 
     final ripple = CyberButtonPressDefaults.rippleColor(widget.variant);
     final useInkWell = widget.inkWellGestures && enabled;
-    final showExternalRipple = !widget.inkWellGestures;
+    final showExternalRipple = !widget.inkWellGestures && !reduceMotion;
 
-    // Face + optional external foreground ripple (IME PressInteraction path).
     Widget surfaced = childBox;
-    if (showExternalRipple) {
+    if (reduceMotion && !useInkWell) {
+      // IME external-press path has no InkWell — paint Home-QA gray overlay.
+      surfaced = Stack(
+        fit: StackFit.passthrough,
+        children: [
+          childBox,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ClipRRect(
+                borderRadius: radius,
+                clipBehavior: Clip.antiAlias,
+                child: AnimatedBuilder(
+                  animation: _facePress,
+                  builder: (context, _) => ColoredBox(
+                    color: CyberPressFeedback.overlayAt(_facePress.value),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (showExternalRipple) {
       surfaced = Stack(
         fit: StackFit.passthrough,
         children: [
@@ -390,26 +486,45 @@ class _CyberButtonState extends State<CyberButton>
       );
     }
 
-    final button = Material(
+    void setPointerDown(bool down) {
+      if (!_enabled || _pointerDown == down) {
+        return;
+      }
+      setState(() => _pointerDown = down);
+      _syncFacePress();
+    }
+
+    Widget button = Material(
       key: _hostKey,
       color: Colors.transparent,
       borderRadius: radius,
       clipBehavior: Clip.antiAlias,
       child: useInkWell
-          ? InkWell(
-              onTap: _handleTap,
-              onLongPress: widget.onLongPress,
-              onHighlightChanged: (v) {
-                if (_inkHighlighted == v) {
-                  return;
-                }
-                setState(() => _inkHighlighted = v);
-              },
-              borderRadius: radius,
-              splashColor: ripple,
-              highlightColor: Colors.transparent,
-              splashFactory: InkRipple.splashFactory,
-              child: surfaced,
+          ? Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (_) => setPointerDown(true),
+              onPointerUp: (_) => setPointerDown(false),
+              onPointerCancel: (_) => setPointerDown(false),
+              child: InkWell(
+                onTap: _handleTap,
+                onLongPress: widget.onLongPress,
+                onHighlightChanged: (v) {
+                  if (_inkHighlighted == v) {
+                    return;
+                  }
+                  setState(() => _inkHighlighted = v);
+                  _syncFacePress();
+                },
+                borderRadius: radius,
+                splashColor: reduceMotion
+                    ? CyberPressFeedback.overlay
+                    : ripple,
+                highlightColor: Colors.transparent,
+                splashFactory: reduceMotion
+                    ? CyberPressInkSplash.splashFactory
+                    : InkRipple.splashFactory,
+                child: surfaced,
+              ),
             )
           : surfaced,
     );

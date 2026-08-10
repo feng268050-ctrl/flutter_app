@@ -10,13 +10,17 @@ import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
 import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
+import 'package:lws_hmi/features/camera_update/presentation/camera_program_upgrade_page.dart';
+import 'package:lws_hmi/features/hmi_app_ota/presentation/hmi_upgrade_page.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/storage_capacity.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_storage_bar.dart';
 import 'package:lws_hmi/features/system_ota/presentation/system_upgrade_page.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
@@ -46,7 +50,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   String _deviceModel = kUnavailableDisplay;
   String _deviceSn = kUnavailableDisplay;
   String _gunheadSn = kUnavailableDisplay;
-  String _systemVersion = kUnavailableDisplay;
+  String _osVersion = kUnavailableDisplay;
+  String _hmiVersion = kUnavailableDisplay;
   String _controlCardVersion = kUnavailableDisplay;
   String _laserVersion = kUnavailableDisplay;
   String _wireFeederVersion = kUnavailableDisplay;
@@ -88,10 +93,24 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     );
   }
 
+  Future<void> _openHmiUpgrade() async {
+    await pushSettingsPage(
+      context,
+      const HmiUpgradePage(),
+    );
+  }
+
   Future<void> _openControlBoardUpgrade() async {
     await pushSettingsPage(
       context,
       const ControlBoardUpgradePage(),
+    );
+  }
+
+  Future<void> _openCameraProgramUpgrade() async {
+    await pushSettingsPage(
+      context,
+      const CameraProgramUpgradePage(),
     );
   }
 
@@ -132,7 +151,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
       _modelRaw = snap.model;
       _deviceModel = productDeviceModelDisplay(snap.brand, snap.model);
       _deviceSn = _dash(snap.serialNumber);
-      _systemVersion = snap.appVersion ?? kUnavailableDisplay;
+      _osVersion = snap.osVersion ?? kUnavailableDisplay;
+      _hmiVersion = snap.appVersion ?? kHmiVersion;
       _storage = summarizeStorage(snap.storage);
     });
     unawaited(_refreshProductRows());
@@ -197,7 +217,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     final sn = _deviceSn == kUnavailableDisplay ? '' : _deviceSn;
     final model = productDeviceModelForQr(_brandRaw, _modelRaw);
     final version =
-        _systemVersion == kUnavailableDisplay ? '' : _systemVersion;
+        _hmiVersion == kUnavailableDisplay ? '' : _hmiVersion;
     final payload = DeviceIdentityQr.contentV2(
       sn: sn,
       model: model,
@@ -268,19 +288,25 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             ),
           ],
         ),
-        // Versions: System, Camera, Control Board, Laser, Wire Feeder
+        // Versions: OS, HMI, Camera, Control Board, Laser, Wire Feeder + auto-check
         SettingsGroup(
           borderGradientCenter:
               CyberBorderGradientCenter.bottomLeftTopRight,
           children: [
             SettingsNavRow(
-              title: l10n.systemVersion,
-              value: _systemVersion,
+              title: l10n.osVersion,
+              value: _osVersion,
               onTap: () => unawaited(_openSystemUpgrade()),
             ),
-            SettingsValueRow(
+            SettingsNavRow(
+              title: l10n.hmiVersion,
+              value: _hmiVersion,
+              onTap: () => unawaited(_openHmiUpgrade()),
+            ),
+            SettingsNavRow(
               title: l10n.cameraVersion,
               value: _cameraVersion,
+              onTap: () => unawaited(_openCameraProgramUpgrade()),
             ),
             SettingsNavRow(
               title: l10n.firmwareVersion,
@@ -294,6 +320,31 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             SettingsValueRow(
               title: l10n.wireFeederVersion,
               value: _wireFeederVersion,
+            ),
+            Builder(
+              builder: (context) {
+                final misc = MiscSettingsScope.maybeOf(context);
+                if (misc == null) {
+                  return SettingsSwitchRow(
+                    title: l10n.autoCheckOtaUpdate,
+                    subtitle: l10n.unavailable,
+                    value: false,
+                    onChanged: null,
+                  );
+                }
+                return ListenableBuilder(
+                  listenable: misc,
+                  builder: (context, _) {
+                    return SettingsSwitchRow(
+                      title: l10n.autoCheckOtaUpdate,
+                      value: misc.autoCheckOtaUpdate,
+                      onChanged: (v) {
+                        unawaited(misc.setAutoCheckOtaUpdate(v));
+                      },
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),

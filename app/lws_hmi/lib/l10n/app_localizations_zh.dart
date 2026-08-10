@@ -411,6 +411,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get autoControlBoardUpdateDialogTitle => '控制板固件更新可用';
 
   @override
+  String autoCameraProgramUpdateDialogMessage(String version) {
+    return '检测到摄像头固件 $version。请到设置中查看并安装更新。';
+  }
+
+  @override
+  String get autoCameraProgramUpdateDialogTitle => '摄像头固件更新可用';
+
+  @override
   String get goToSettings => '前往设置';
 
   @override
@@ -556,6 +564,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cameraVersion => '摄像头版本';
+
+  @override
+  String cameraProgramAlreadyUpToDate(String version) {
+    return '摄像头固件 $version 已是最新。';
+  }
+
+  @override
+  String get cameraProgramCheckFailed => '无法检查摄像头固件，请确认摄像头网络连接。';
+
+  @override
+  String get cameraProgramCheckUnavailable => '当前无法检查摄像头固件。';
+
+  @override
+  String cameraProgramDialogMessage(String currentVersion, String newVersion) {
+    return '检测到新摄像头固件（当前 $currentVersion → $newVersion）。\n请保持设备通电，升级过程中请勿操作。';
+  }
+
+  @override
+  String get cameraProgramFailedMessage => '摄像头固件升级失败，请稍后重试。';
+
+  @override
+  String get cameraProgramFailedTitle => '摄像头升级失败';
+
+  @override
+  String cameraProgramNewVersionHeadline(String version) {
+    return '新摄像头固件 $version';
+  }
+
+  @override
+  String get cameraProgramRebootTitle => '正在重启摄像头';
+
+  @override
+  String get cameraProgramSuccessMessage => '摄像头固件已更新完成。';
+
+  @override
+  String get cameraProgramSuccessTitle => '摄像头升级成功';
+
+  @override
+  String get cameraProgramTransferTitle => '正在传输摄像头固件';
+
+  @override
+  String get cameraProgramUpgradeIdleHint => '检查本机 App 内是否有更新的摄像头固件。';
+
+  @override
+  String get cameraProgramUpgradeTitle => '摄像头升级';
+
+  @override
+  String get cameraProgramUpgradingMessage => '请保持设备通电，升级过程中请勿操作。';
+
+  @override
+  String get cameraProgramWaitOnlineTitle => '等待摄像头恢复';
 
   @override
   String get cancelText => '取消';
@@ -1139,6 +1198,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get holdToEnableLaser => '长按开启激光';
 
   @override
+  String get hmiUpgradeTitle => 'HMI 升级';
+
+  @override
+  String get hmiVersion => 'HMI 版本';
+
+  @override
   String get homeAiVisionLabel => 'AI 视觉';
 
   @override
@@ -1675,10 +1740,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onLabel => '开启';
 
   @override
+  String get osVersion => '操作系统版本';
+
+  @override
   String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
 
   @override
-  String get otaCheckFailed => '无法检查更新，请确认网络和云服务设置。';
+  String get otaCheckFailed => '无法检查更新，请确认网络连接。';
 
   @override
   String get otaSessionActive => '系统升级正在进行中。';
@@ -1748,6 +1816,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get otaUpgradeStatusApk => '正在安装应用';
+
+  @override
+  String get otaUpgradeStatusRestarting => '正在重启应用…';
 
   @override
   String get otaUpgradeStatusDownloading => '正在下载升级包';
@@ -2182,6 +2253,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processWheelWideCleaning => '宽幅清洗';
 
   @override
+  String get powerModeOptionBalanced => '均衡';
+
+  @override
+  String get powerModeOptionPerformance => '性能';
+
+  @override
+  String get powerModePersistedFooter =>
+      '性能模式保持满频与完整动画；均衡模式通过限制时钟并减少装饰动画降低机身发热与负载。';
+
+  @override
+  String get powerModePreferenceUnavailable => '暂时无法更改效能模式。';
+
+  @override
+  String get powerModeSettingText => '效能模式';
+
+  @override
   String get productDisclaimerContent =>
       '尊敬的用户：感谢您选择我们的手持激光焊接产品。在使用本产品前，我们强烈建议您仔细阅读本免责声明，并严格遵守用户手册中的所有说明和安全措施。\n\n1. 安全警告\n激光设备可能对眼睛和皮肤造成严重伤害。在操作过程中，请始终佩戴适当的个人防护装备（PPE），包括但不限于激光防护眼镜和手套，以确保您的安全。\n\n2. 操作说明\n请确保您已充分理解并能够遵守产品手册中的所有操作流程和安全指南。使用不当可能导致设备损坏或人身伤害。\n\n3. 不当操作\n对于用户未遵循产品手册中的说明或未采取适当安全措施而导致的任何伤害或损失，本公司概不负责。\n\n4. 维护\n请定期检查并维护产品，以确保其处于良好工作状态。由于产品维护不当造成的任何事故，本公司不承担责任。\n\n5. 责任免责声明\n虽然本公司提供了全面的使用说明和安全措施，但对于因用户操作不当或违反手册规定而造成的任何伤害或损坏，本公司保留免责权利。我们强烈建议用户在使用本产品前，充分了解并遵守所有相关安全法规和操作标准。\n\n6. 适用法律\n本免责声明的解释、适用和争议解决，应受本公司总部所在地法律管辖。\n\n7. 完整协议\n本免责声明构成您与本公司之间的完整协议，并取代此前任何口头或书面理解或协议。';
 
@@ -2497,7 +2584,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get syncNow => '立即同步';
 
   @override
-  String get systemVersion => '系统版本';
+  String get systemVersion => '操作系统版本';
 
   @override
   String get tempBoardRefrigerationCommAlarmContent =>
@@ -3436,6 +3523,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String autoCameraProgramUpdateDialogMessage(String version) {
+    return '檢測到攝像頭固件 $version。請到設置中查看並安裝更新。';
+  }
+
+  @override
+  String get autoCameraProgramUpdateDialogTitle => '攝像頭固件更新可用';
+
+  @override
   String get goToSettings => '前往設置';
 
   @override
@@ -3561,6 +3656,57 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get cameraVersion => '攝像頭版本';
+
+  @override
+  String cameraProgramAlreadyUpToDate(String version) {
+    return '攝像頭固件 $version 已是最新。';
+  }
+
+  @override
+  String get cameraProgramCheckFailed => '無法檢查攝像頭固件，請確認攝像頭網絡連接。';
+
+  @override
+  String get cameraProgramCheckUnavailable => '當前無法檢查攝像頭固件。';
+
+  @override
+  String cameraProgramDialogMessage(String currentVersion, String newVersion) {
+    return '檢測到新攝像頭固件（當前 $currentVersion → $newVersion）。\n請保持設備通電，升級過程中請勿操作。';
+  }
+
+  @override
+  String get cameraProgramFailedMessage => '攝像頭固件升級失敗，請稍後重試。';
+
+  @override
+  String get cameraProgramFailedTitle => '攝像頭升級失敗';
+
+  @override
+  String cameraProgramNewVersionHeadline(String version) {
+    return '新攝像頭固件 $version';
+  }
+
+  @override
+  String get cameraProgramRebootTitle => '正在重啓攝像頭';
+
+  @override
+  String get cameraProgramSuccessMessage => '攝像頭固件已更新完成。';
+
+  @override
+  String get cameraProgramSuccessTitle => '攝像頭升級成功';
+
+  @override
+  String get cameraProgramTransferTitle => '正在傳輸攝像頭固件';
+
+  @override
+  String get cameraProgramUpgradeIdleHint => '檢查本機 App 內是否有更新的攝像頭固件。';
+
+  @override
+  String get cameraProgramUpgradeTitle => '攝像頭升級';
+
+  @override
+  String get cameraProgramUpgradingMessage => '請保持設備通電，升級過程中請勿操作。';
+
+  @override
+  String get cameraProgramWaitOnlineTitle => '等待攝像頭恢復';
 
   @override
   String get cellularNetworkText => '蜂窩網絡';
@@ -4071,6 +4217,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get holdToEnableLaser => '長按開啓激光';
 
   @override
+  String get hmiUpgradeTitle => 'HMI 升級';
+
+  @override
   String get homeAiVisionLabel => 'AI 視覺';
 
   @override
@@ -4504,10 +4653,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get onLabel => '開啓';
 
   @override
+  String get osVersion => '操作系統版本';
+
+  @override
   String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
 
   @override
-  String get otaCheckFailed => '無法檢查更新，請確認網絡和雲服務設置。';
+  String get otaCheckFailed => '無法檢查更新，請確認網絡連接。';
 
   @override
   String get otaSessionActive => '系統升級正在進行中。';
@@ -4577,6 +4729,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get otaUpgradeStatusApk => '正在安裝應用';
+
+  @override
+  String get otaUpgradeStatusRestarting => '正在重啟應用…';
 
   @override
   String get otaUpgradeStatusDownloading => '正在下載升級包';
@@ -4967,6 +5122,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get processWheelWideCleaning => '大面積清洗';
 
   @override
+  String get powerModePersistedFooter =>
+      '性能模式保持滿頻與完整動畫；均衡模式透過限制時鐘並減少裝飾動畫降低機身發熱與負載。';
+
+  @override
+  String get powerModePreferenceUnavailable => '暫時無法更改效能模式。';
+
+  @override
   String get productDisclaimerContent =>
       '尊敬的用戶：感謝您選擇我們的手持激光焊接產品。在使用本產品前，我們強烈建議您仔細閱讀本免責聲明，並嚴格遵守用戶手冊中的所有說明和安全措施。\n\n1. 安全警告\n激光設備可能對眼睛和皮膚造成嚴重傷害。在操作過程中，請始終佩戴適當的個人防護裝備（PPE），包括但不限於激光防護眼鏡和手套，以確保您的安全。\n\n2. 操作說明\n請確保您已充分理解並能夠遵守產品手冊中的所有操作流程和安全指南。使用不當可能導致設備損壞或人身傷害。\n\n3. 不當操作\n對於用戶未遵循產品手冊中的說明或未採取適當安全措施而導致的任何傷害或損失，本公司概不負責。\n\n4. 維護\n請定期檢查並維護產品，以確保其處於良好工作狀態。由於產品維護不當造成的任何事故，本公司不承擔責任。\n\n5. 責任免責聲明\n雖然本公司提供了全面的使用說明和安全措施，但對於因用戶操作不當或違反手冊規定而造成的任何傷害或損壞，本公司保留免責權利。我們強烈建議用戶在使用本產品前，充分瞭解並遵守所有相關安全法規和操作標準。\n\n6. 適用法律\n本免責聲明的解釋、適用和爭議解決，應受本公司總部所在地法律管轄。\n\n7. 完整協議\n本免責聲明構成您與本公司之間的完整協議，並取代此前任何口頭或書面理解或協議。';
 
@@ -5221,7 +5383,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get swingWidthLabel => '擺動寬度';
 
   @override
-  String get systemVersion => '系統版本';
+  String get systemVersion => '作業系統版本';
 
   @override
   String get tempBoardRefrigerationCommAlarmContent =>

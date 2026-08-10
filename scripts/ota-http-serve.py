@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Ephemeral OTA HTTP server for host make upgrade.
+"""Ephemeral OTA HTTP server for host make upgrade / peripheral firmware.
 
 Serves only allowlisted files under --dir by reading them in chunks.
 Stdout:
   line 1 = base URL (http://bind:port/)
-  later  = TRANSFER_COMPLETE once archive + .sig have each been fully GET once
+  later  = TRANSFER_COMPLETE once every allowlisted file has been fully GET once
 Stderr: transfer progress while writing each response body
         (same style as stream-file-progress.py).
+
+Default allowlist (system OTA): ota-package.tar.gz + .sig
+Override with repeatable --file NAME (must exist under --dir).
 """
 
 from __future__ import annotations
@@ -22,7 +25,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 
-ALLOWED_NAMES = frozenset(
+DEFAULT_ALLOWED_NAMES = frozenset(
     {
         "ota-package.tar.gz",
         "ota-package.tar.gz.sig",
@@ -34,6 +37,7 @@ _session_sent = 0
 _session_total = 0
 _completed_names: set[str] = set()
 _transfer_complete_emitted = False
+_allowed_names: frozenset[str] = DEFAULT_ALLOWED_NAMES
 
 
 def format_bytes(value: int) -> str:
@@ -71,7 +75,7 @@ def _mark_file_complete(name: str) -> None:
     global _transfer_complete_emitted
     with _session_lock:
         _completed_names.add(name)
-        done = ALLOWED_NAMES.issubset(_completed_names)
+        done = _allowed_names.issubset(_completed_names)
         if done and not _transfer_complete_emitted:
             _transfer_complete_emitted = True
             emit = True
@@ -92,7 +96,7 @@ class OtaRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = unquote(urlparse(self.path).path)
         name = path.rsplit("/", 1)[-1]
-        if name not in ALLOWED_NAMES or ".." in path or path.startswith("//"):
+        if name not in _allowed_names or ".." in path or path.startswith("//"):
             self.send_error(404, "Not found")
             return
 
@@ -169,7 +173,7 @@ class OtaRequestHandler(BaseHTTPRequestHandler):
     def do_HEAD(self) -> None:  # noqa: N802
         path = unquote(urlparse(self.path).path)
         name = path.rsplit("/", 1)[-1]
-        if name not in ALLOWED_NAMES:
+        if name not in _allowed_names:
             self.send_error(404, "Not found")
             return
         file_path = self.serve_dir / name
@@ -201,7 +205,15 @@ def main() -> int:
         "--dir",
         type=Path,
         required=True,
-        help="Directory containing ota-package.tar.gz and .sig",
+        help="Directory containing files to serve",
+    )
+    parser.add_argument(
+        "--file",
+        action="append",
+        dest="files",
+        default=[],
+        metavar="NAME",
+        help="Basename to serve (repeatable). Default: ota-package.tar.gz + .sig",
     )
     parser.add_argument(
         "--chunk-size",
@@ -216,17 +228,27 @@ def main() -> int:
         print(f"ERROR: not a directory: {serve_dir}", file=sys.stderr)
         return 2
 
-    archive = serve_dir / "ota-package.tar.gz"
-    sig = serve_dir / "ota-package.tar.gz.sig"
-    if not archive.is_file() or not sig.is_file():
-        print(
-            "ERROR: serve dir must contain ota-package.tar.gz and .sig",
-            file=sys.stderr,
-        )
-        return 2
+    global _allowed_names, _session_total
+    if args.files:
+        names = []
+        for name in args.files:
+            base = Path(name).name
+            if not base or base != name or ".." in name or "/" in name:
+                print(f"ERROR: invalid --file name: {name}", file=sys.stderr)
+                return 2
+            names.append(base)
+        _allowed_names = frozenset(names)
+    else:
+        _allowed_names = DEFAULT_ALLOWED_NAMES
 
-    global _session_total
-    _session_total = archive.stat().st_size + sig.stat().st_size
+    total = 0
+    for name in sorted(_allowed_names):
+        path = serve_dir / name
+        if not path.is_file():
+            print(f"ERROR: serve dir missing required file: {name}", file=sys.stderr)
+            return 2
+        total += path.stat().st_size
+    _session_total = total
 
     OtaRequestHandler.serve_dir = serve_dir
     OtaRequestHandler.chunk_size = max(64 * 1024, args.chunk_size)

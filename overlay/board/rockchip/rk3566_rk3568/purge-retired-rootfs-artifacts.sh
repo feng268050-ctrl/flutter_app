@@ -114,6 +114,12 @@ rm -f \
 	"$TARGET_DIR/usr/libexec/hmi/render-mediamtx-config.sh"
 rm -rf "$TARGET_DIR/etc/mediamtx"
 
+# HMI app OTA: install+restart is App-owned (OtaExtract + tree install +
+# systemd-run systemctl restart). Incremental target/ keeps retired shell helpers.
+rm -f \
+	"$TARGET_DIR/usr/libexec/hmi/push-app-apply-and-restart.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/upgrade-app-apply-and-restart.sh"
+
 # libexec-board: helpers moved out of /usr/libexec/hmi/. Buildroot overlay into
 # incremental target/ has no --delete for moved files — purge stale copies here.
 rm -f \

@@ -185,9 +185,24 @@ def main() -> None:
     parser.add_argument("--artifact", required=True, help="R2 prefix, e.g. lws-hmi")
     parser.add_argument("--archive-path", required=True)
     parser.add_argument("--sig-path", required=True)
-    parser.add_argument("--pack-name", required=True, help="Remote basename, e.g. v1.0.38-beta.tar.gz")
-    parser.add_argument("--pack-version", required=True, help="Channel version without leading v, e.g. 1.0.38-beta")
-    parser.add_argument("--manifest-name", required=True, choices=("staging.json", "release.json"))
+    parser.add_argument("--pack-name", required=True, help="Remote basename, e.g. v1.0.38.tar.gz")
+    parser.add_argument("--pack-version", required=True, help="Channel version without leading v, e.g. 1.0.38")
+    parser.add_argument(
+        "--manifest-name",
+        required=True,
+        choices=("release.json",),
+        help="Channel manifest filename (release-only; staging.json removed)",
+    )
+    parser.add_argument(
+        "--content-type",
+        default="application/gzip",
+        help="Content-Type for the package object (default application/gzip)",
+    )
+    parser.add_argument(
+        "--version-prefix",
+        default="v",
+        help="Prefix for manifest version field (default 'v'; empty for control-board SW integers)",
+    )
     args = parser.parse_args()
 
     archive_path = args.archive_path
@@ -208,11 +223,11 @@ def main() -> None:
     manifest_key = f"{artifact}/{args.manifest_name}"
 
     print(f"Requesting presigned URL for archive: {archive_key}", flush=True)
-    archive_ps = request_presigned(base, args.token, "application/gzip", archive_key)
+    archive_ps = request_presigned(base, args.token, args.content_type, archive_key)
     print(f"Uploading archive ({format_bytes(os.path.getsize(archive_path))})...", flush=True)
     upload_put(
         archive_ps["upload_url"],
-        "application/gzip",
+        args.content_type,
         path=archive_path,
         label=pack_name,
     )
@@ -228,8 +243,10 @@ def main() -> None:
     )
 
     # No sha512: device trust is Ed25519 .sig (cyber_ota defaults sig URL to package_url + ".sig").
+    # System OTA / camera use prefix "v"; control-board SW integers use --version-prefix '' → "1017".
+    manifest_version = f"{args.version_prefix}{args.pack_version}"
     manifest = {
-        "version": f"v{args.pack_version}",
+        "version": manifest_version,
         "filename": pack_name,
         "published_at": iso_now_utc(),
         "url": archive_ps["public_url"],

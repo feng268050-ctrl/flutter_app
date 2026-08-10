@@ -179,7 +179,7 @@ USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockch
 | `FLUTTER_SDK` | 主机 SDK |
 | `REQUIRE_AI=1` | AI 预编译缺失则失败（发版门禁） |
 
-**注意：** 不重建 rootfs；板端已有可推送 HMI 时用 `push-app`，无需 `build-rootfs`。
+**注意：** 不重建 rootfs；板端已有可推送 HMI 时用 `upgrade-app`（`push-app` 别名），无需 `build-rootfs`。
 
 ### `make prepare-app-assets`
 
@@ -196,17 +196,19 @@ USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockch
 ### `make version` / `make version-bump`
 
 - **怎么用：**
-  - `make version`
-  - `make version-bump VERSION=1.0.40`（可选 `APP=`）
-- **何时用：** 查/改 `app/<APP>/pubspec.yaml`（及可选 `app_version.dart`）。
-- **参数：** `VERSION`（bump 必填）、`APP`。
-- **后续上板：** `build-app` + `push-app`。
+  - `make version` → 打印 **OS Version**（`/etc/os-release` 的 `VERSION=`，Cyber OS）
+  - `APP=lws_hmi make version` → 打印 Flutter pubspec `name+build`
+  - `make version-bump VERSION=1.0.1` →  bump OS（同步 `VERSION=` / `VERSION_ID=` / `PRETTY_NAME=`）
+  - `APP=lws_hmi make version-bump VERSION=1.0.42` → bump Flutter（同步 `kHmiVersion`）
+- **何时用：** 查/改 OS 或 HMI 版本。默认无 `APP=` 时操作 OS；显式 `APP=` 时操作 Flutter。
+- **参数：** `VERSION`（bump 必填）、`APP`（可选，选 Flutter）。
+- **后续上板：** OS 需 `apply-overlay` + `build-rootfs` + `upgrade`；HMI 用 `build-app` + `upgrade-app`。
 
 ### `make l10n` / `l10n-sync` / `l10n-gen` / `l10n-verify`
 
 - **怎么用：** 改父 ARB（`app_en.arb` / `app_zh.arb`）后 `make l10n`；CI/自检 `make l10n-verify`。
 - **何时用：** 文案/多语言；`l10n-sync` 只重生子 ARB；`l10n-gen` 只 `flutter gen-l10n`。
-- **后续上板：** `build-app` + `push-app`。
+- **后续上板：** `build-app` + `upgrade-app`。
 
 ### `make check-typography`
 
@@ -334,7 +336,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `build-platform-packages` | libmodbus/yaml-cpp/sqlite/avahi | `FORCE` |
 | `build-mediamtx` | MediaMTX 二进制 | → prebuilt；随 `build-app` 进 `/opt/hmi` |
 | `build-opencv` / `fetch-opencv` / `fetch-opencv-ximgproc` | AI 依赖 | OpenCV 源码/产物 |
-| `build-ai` | `lws_ai_daemon` | `AI_VERSION`、`FORCE` |
+| `build-ai` | 一等产品代码：增量编译 `lws_ai_daemon` → `prebuilt/ai`（日常改 `native/lws_ai` 后用此命令，再 `build-app`） | `AI_VERSION`；保留 cmake 于 `.cache/lws_ai/` |
+| `rebuild-ai` | 强制清 cmake 后全量重编（与其它 `rebuild-*` / `FORCE=1` 同习惯；非日常源码改动） | `FORCE=1`；指纹不匹配时 `build-ai` 也会 wipe |
 | `build-umtprd` | USB MTP | → prebuilt + overlay |
 | `build-extract-video-frame` | MP4→JPEG helper | → prebuilt + libexec |
 | `build-secrets-seal` | OP-TEE seal TA + CA | → prebuilt + overlay |
@@ -390,18 +393,28 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `KERNEL_ONLY=1` | 仅内核日志 |
 | `SN` / `IP` | 选板 |
 
-### `make push-app`
+### `make upgrade-app` / `make push-app` / `make package-app` / `make apply-app-overlay`
 
-- **怎么用：** `make build-app` 后 `make push-app`
-- **何时用：** App 日更（不刷 rootfs）。
-- **参数：** `APP`、设备选择。
-- **行为：** `*_hmi` → `/opt/hmi` 并重启 `hmi.service`；其它 App → `/opt/<id>`。
+- **怎么用：** `make build-app` 后 `make upgrade-app`（`make push-app` 为同名别名）
+- **何时用：** App 日更（不刷 rootfs）；签名后经主机临时 HTTP 下发，设备拉取 + Ed25519 验签后安装 `/opt/hmi` 并重启 `hmi.service`。
+- **行为：** `package-app` → `ota-sign.sh` → HTTP 提供 `v*.tar.gz`+`.sig` → SSH 写 `/run/hmi/upgrade-app.cmd` 为 `download <url>`（**无** unsigned SCP）。
+- **参数：** `APP`、`APP_PACKAGE=`（可选已打包路径）、`OTA_SIGNING_KEY`、设备选择。
+- **前提：** `OTA_SIGNING_KEY`；板端 HMI 含 `UpgradeAppCommandWatcher`。
+- **恢复：** 板端安装器坏掉/过旧导致 `upgrade-app` 装不上时，`make build-app` 后跑 `make apply-app-overlay`（SSH 推 overlay + shell 安装 + 重启；绕过 App 内安装器）。
 
 ### `make upgrade-control-board`
 
 - **怎么用：** `make upgrade-control-board`；指定包 `FIRMWARE_BIN=/path/to.bin make upgrade-control-board`
-- **何时用：** 推最新控制板固件并触发升级（无版本门禁）。
-- **前提：** 板端 HMI 含 watcher。
+- **何时用：** 签名并经主机临时 HTTP 下发最新控制板固件，设备拉取 + Ed25519 验签后强制 Modbus 升级（无版本门禁 / 无 Home 确认）。
+- **行为：** `ota-sign.sh` → `ota-http-serve.py` 提供 `.bin`+`.sig` → SSH 写 `/run/hmi/upgrade-control-board.cmd` 为 `download <url>`（不再 SSH 上传固件本体）。
+- **前提：** `OTA_SIGNING_KEY`（或 `keys/ota/ed25519.pem`）；板端 HMI 含 watcher 且能访问主机 HTTP（`OTA_HTTP_HOST` / `OTA_HTTP_PORT` 可选）。
+
+### `make upgrade-camera`
+
+- **怎么用：** `make upgrade-camera`；指定包 `FIRMWARE_ZIP=/path/to.zip make upgrade-camera`
+- **何时用：** 签名并经主机临时 HTTP 下发最新摄像头固件 ZIP，设备拉取 + 验签后强制 CGI 升级（无版本门禁；成功需相机重启并重新上线）。
+- **行为：** 同控制板：HTTP + `download <url>` 写 `/run/hmi/upgrade-camera.cmd`。
+- **前提：** `OTA_SIGNING_KEY`；板端 HMI 含 watcher；源包在 `app/lws_hmi/assets/firmware/camera/`。
 
 ### `make upgrade-process-library` / `make reset-process-library`
 
@@ -525,19 +538,40 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 ### `make publish` / `make publish-only`
 
 - **怎么用：**
-  - 打包并发布（staging）：`make publish`（内部 `REQUIRE_OTA_SIG=1 make ota-package` 再上传）
+  - 打包并发布：`make publish`（内部 `REQUIRE_OTA_SIG=1 make ota-package` 再上传）
   - 仅上传已有包：`make publish-only`
-  - 正式渠道：`RELEASE=1 make publish`
   - 其它 HMI：`APP=cnc_hmi make publish`（R2 前缀 `cnc-hmi/`；需 `app/cnc_hmi`）
-- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新渠道 manifest，供设备云端拉取。
+  - 测试 API：`CLOUD_API_BASE=https://api-test.lasercyber.workers.dev make publish`
+- **何时用：** 把与 `make upgrade` **同一** 的签名 `ota-package.tar.gz` + `.sig` 发到应用 R2，并更新 **`release.json`**，供设备云端拉取 **整机 / OS** 通道。
 - **上传路径：** 与 `lws-ui` / `make login` 同源——默认 **`CLOUD_API_BASE=https://api-prod.lasercyber.workers.dev`**，`GET /v1/storage/r2/presigned-url` 取凭证后 Python **直传 R2**（不走 `PUT /upload/…`）。
-- **渠道：** 默认 `staging.json`，版本 `{pubspec-semver}-beta`；`RELEASE=1` → `release.json`，无 `-beta`。版本取自 `app/<APP>/pubspec.yaml`（去 `+build`）。
-- **设备比较：** Settings / 云检查用运行中 HMI 版本与 channel `version` 做 semver 比较；**同数字基线的 `-beta` 视为低于正式版**（设备已是 `1.0.40` 时，`1.0.40-beta` **不会**提示更新——请发布更高基线如 `1.0.41-beta`，或降低设备版本后再测）。
+- **渠道：** **仅 release**（始终写 `release.json`；无 `staging.json`、无 `RELEASE=`、无 `-beta`/`-alpha`）。版本取自 **OS Version** SoT（`/etc/os-release` `VERSION=`），**不是** Flutter pubspec。
+- **设备比较：** Settings System Upgrade 用运行中 **OS Version** 与 channel `version` 做 semver 比较；设备始终拉取 **`https://cdn.lasercyber.com/{artifact}/release.json`**（R2 CDN 直连，与云服务 / API pin 无关）。HMI app 通道见 `make publish-app`。
 - **Manifest 字段：** `version`、`filename`、`published_at`、`url`（**无 `sha512`**；完整性靠旁路 `.sig`，设备侧 `url`/`package_url` + `".sig"`）。
 - **鉴权：** `PUBLISH_API_TOKEN`（优先）→ `CLOUD_ACCESS_TOKEN` → `make login` 的 `output/cloud/credentials.json`。
-- **产出对象（默认 APP）：** `lws-hmi/v{ver}[-beta].tar.gz`、同名 `.sig`、`lws-hmi/staging.json|release.json`。
-- **参数：** `APP`、`RELEASE`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
+- **产出对象（默认 APP）：** `lws-hmi/v{OS}.tar.gz`、同名 `.sig`、`lws-hmi/release.json`。
+- **参数：** `APP`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`CLOUD_ACCESS_TOKEN`、`PUBLISH_ARTIFACT`（覆盖 R2 前缀；非 `*_hmi` 须设此项）、`OTA_SIGNING_KEY`（`make publish` 打包时）
 - **前提：** `make ota-release-keys` / `OTA_SIGNING_KEY`；`make login` 或静态 token。
+- **注意：** 勿再设 `RELEASE=`（已移除；设置会报错退出）。App-only 发布用 `make publish-app`。
+
+### `make publish-app` / `make publish-app-only`
+
+- **怎么用：** `make publish-app`；仅上传已有包：`make publish-app-only`（需 `APP_PACKAGE=` 或默认 `output/firmware/<APP>/v*.tar.gz` + `.sig`）
+- **何时用：** 把 HMI app `tar.gz` + `.sig` + **`release.json`** 发到 R2 **`lws-hmi/app/`**，供设备 HMI Upgrade 云端检查。
+- **渠道版本：** Flutter pubspec SemVer，manifest `version` = `v{semver}`。
+- **鉴权 / API 基址：** 与 `make publish` 相同。
+
+### `make publish-control-board-firmware` / `make publish-camera-firmware`
+
+- **怎么用：**
+  - 控制板：`make publish-control-board-firmware`（默认选最新 `LSW01H*.bin`；`FIRMWARE_BIN=` 覆盖）
+  - 摄像头：`make publish-camera-firmware`（默认选最新 ZIP；`FIRMWARE_ZIP=` 覆盖）
+  - 仅上传已签名对：`make publish-control-board-firmware-only` / `make publish-camera-firmware-only`
+- **何时用：** 把最新控制板 / 摄像头固件 + `.sig` + **`release.json`** 发到 R2，供设备云端检查（与系统 OTA 相同的 presign PUT；系统与外设均为 release-only）。
+- **渠道：** **仅 release**（始终写 `release.json`，无 staging / `-beta`；与 `make publish` 一致）。
+- **R2 前缀（默认 APP）：** `lws-hmi/control-board/`、`lws-hmi/camera/`（对象：固件文件、同名 `.sig`、`release.json`）。
+- **鉴权 / API 基址：** 与 `make publish` 相同。
+- **注意：** sibling api-server 可能需放行上述 R2 key 前缀。
+- **参数：** `APP`、`FIRMWARE_BIN` / `FIRMWARE_ZIP`、`OTA_SIGNING_KEY`、`CLOUD_API_BASE`、`PUBLISH_API_TOKEN`、`PUBLISH_ARTIFACT`
 
 ---
 
@@ -580,7 +614,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `pull-display-params` | `make pull-display-params` | 从 Android 板拉 LCD/MIPI 表到 `board/` | adb 设备；会 `apply-overlay` |
 | `migrate-buildroot-output` | `make migrate-buildroot-output` | 旧 `*_lws_hmi_p1` BR 树迁为 `lws_hmi` | — |
 | `fix-buildroot-host-rpaths` | `make fix-buildroot-host-rpaths` | migrate 后修 host rpath | — |
-| `clean-buildroot-output` | `make clean-buildroot-output` | 删当前 BR output（保留 `dl/`）后全量重编 rootfs | 之后常需 `lunch` + `build-rootfs` |
+| `clean-buildroot-output` | `make clean-buildroot-output` | 删当前 BR output（保留 `dl/`）后全量重编 rootfs；**macOS** 走 Docker volume（勿只清 host `linux-sdk/`） | 大版本 BR 升级（见 `BUILDROOT_VERSION`）必做；之后 `lunch` + `build-rootfs` |
 | `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
 | `build-uboot` | **ynh960 勿用**（无 Innohi 指示） | 有砖机风险 | — |
 | `fetch-uboot` | 内部/少用 | 拉 uboot | — |
@@ -593,7 +627,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 
 | 场景 | 命令（自上而下） |
 |------|------------------|
-| App 日更 | `make build-app` → `make push-app` |
+| App 日更 | `make build-app` → `make upgrade-app`（`push-app` 别名） |
 | Overlay / systemd | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
 | Kernel / DTS | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `make build-kernel` → `make upgrade` |
 | 仅 OEM | `make build-oem` → `OEM_ONLY=1 make upgrade` |

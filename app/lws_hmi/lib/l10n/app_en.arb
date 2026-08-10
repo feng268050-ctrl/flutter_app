@@ -196,7 +196,7 @@
   "alarmTitle": "Alarms",
   "anyMaterialLabel": "Any Material",
   "applyToDevice": "Apply To Device",
-  "autoCheckOtaUpdate": "Automatically check for updates",
+  "autoCheckOtaUpdate": "Auto-Check for Updates",
   "autoOtaUpdateDialogMessage": "Version {version} is available. Go to Settings to review and install the update.",
   "@autoOtaUpdateDialogMessage": {
     "placeholders": {
@@ -215,6 +215,15 @@
     }
   },
   "autoControlBoardUpdateDialogTitle": "Control Board Firmware Available",
+  "autoCameraProgramUpdateDialogMessage": "Camera firmware {version} is available. Go to Settings to review and install the update.",
+  "@autoCameraProgramUpdateDialogMessage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "autoCameraProgramUpdateDialogTitle": "Camera Firmware Available",
   "goToSettings": "Go to Settings",
   "autoWireFeed": "Auto Wire Feed",
   "blowOnLabel": "Gas Flow",
@@ -279,6 +288,45 @@
   "cameraTypeBlueLight": "Blue Light",
   "cameraTypeRedLight": "Red Light",
   "cameraVersion": "Camera Version",
+  "cameraProgramAlreadyUpToDate": "Camera firmware {version} is up to date.",
+  "@cameraProgramAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "cameraProgramCheckFailed": "Could not check camera firmware. Verify camera network connection.",
+  "cameraProgramCheckUnavailable": "Camera firmware check is not available right now.",
+  "cameraProgramDialogMessage": "A newer camera firmware is available ({currentVersion} → {newVersion}).\nKeep power connected and don’t operate the device during the upgrade.",
+  "@cameraProgramDialogMessage": {
+    "placeholders": {
+      "currentVersion": {
+        "type": "String"
+      },
+      "newVersion": {
+        "type": "String"
+      }
+    }
+  },
+  "cameraProgramFailedMessage": "Camera firmware update failed. Try again later.",
+  "cameraProgramFailedTitle": "Camera Update Failed",
+  "cameraProgramNewVersionHeadline": "New camera firmware {version}",
+  "@cameraProgramNewVersionHeadline": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "cameraProgramRebootTitle": "Rebooting Camera",
+  "cameraProgramSuccessMessage": "Camera firmware has been updated.",
+  "cameraProgramSuccessTitle": "Camera Updated",
+  "cameraProgramTransferTitle": "Transferring Camera Firmware",
+  "cameraProgramUpgradeIdleHint": "Check for newer camera firmware bundled with this App.",
+  "cameraProgramUpgradeTitle": "Camera Upgrade",
+  "cameraProgramUpgradingMessage": "Keep power connected and don’t operate the device during the upgrade.",
+  "cameraProgramWaitOnlineTitle": "Waiting for Camera",
   "cancelText": "Cancel",
   "cellularNetworkText": "Cellular",
   "celsiusUnit": "°C",
@@ -492,6 +540,8 @@
   "hardwareBusErrorAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
   "hardwareBusErrorAlarmTitle": "Hardware Bus Error",
   "holdToEnableLaser": "Hold To Enable Laser",
+  "hmiUpgradeTitle": "HMI Upgrade",
+  "hmiVersion": "HMI Version",
   "homeAiVisionLabel": "AI Vision",
   "homeEngineerModeLabel": "Engineer Mode",
   "homeMonitorLabel": "Monitor",
@@ -695,8 +745,9 @@
   "offLabel": "Off",
   "okText": "OK",
   "onLabel": "On",
+  "osVersion": "OS Version",
   "otaCheckUnavailable": "Software update check is not available on this build.",
-  "otaCheckFailed": "Could not check for updates. Verify network and cloud settings.",
+  "otaCheckFailed": "Could not check for updates. Verify network connectivity.",
   "otaSessionActive": "A system upgrade is already in progress.",
   "otaAlreadyUpToDate": "System version {version} is up to date.",
   "@otaAlreadyUpToDate": {
@@ -742,6 +793,7 @@
   "otaUpgradeStatusFailed": "Upgrade failed",
   "otaUpgradeRebootHint": "Device will reboot to apply the update.",
   "otaUpgradeStatusApk": "Installing app…",
+  "otaUpgradeStatusRestarting": "Restarting application…",
   "otaUpgradeStatusDownloading": "Downloading update…",
   "otaUpgradeStatusFirmware": "Updating control board firmware ({percent}%)",
   "@otaUpgradeStatusFirmware": {
@@ -1013,6 +1065,11 @@
   "processWheelSpotWelding": "Spot Welding",
   "processWheelWeldCleaning": "Weld Seam Cleaning",
   "processWheelWideCleaning": "Wide-Area Cleaning",
+  "powerModeOptionBalanced": "Balanced",
+  "powerModeOptionPerformance": "Performance",
+  "powerModePersistedFooter": "Performance keeps full clocks and motion. Balanced lowers SoC load and heat by capping clocks and reducing decorative animation.",
+  "powerModePreferenceUnavailable": "Power Mode settings are temporarily unavailable.",
+  "powerModeSettingText": "Power Mode",
   "productDisclaimerContent": "Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user's failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.",
   "productDisclaimerInfo": "I have read and agree to the above",
   "productDisclaimerTitle": "Product Disclaimer",
@@ -1149,7 +1206,7 @@
   "straightTrackTemperatureAlarmContent": "Inspect the collimating lens. If the collimating lens has burn marks, replace it immediately.",
   "swingWidthLabel": "Scan Width",
   "syncNow": "Sync Now",
-  "systemVersion": "System Version",
+  "systemVersion": "OS Version",
   "tempBoardRefrigerationCommAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
   "tempBoardRefrigerationCommAlarmTitle": "Temperature Board–Cooling Communication Fault",
   "thicknessLabel": "Thickness",

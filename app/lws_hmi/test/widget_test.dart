@@ -23,7 +23,7 @@ final _demoSysInfo = StubSysInfo(
   snapshotData: const SysInfoSnapshot(
     serialNumber: 'test-sn',
     kernelRelease: '6.1.0-test',
-    appVersion: kSystemVersion,
+    appVersion: kHmiVersion,
     thermal: [
       ThermalZone(
         id: 'thermal_zone0',
@@ -194,7 +194,7 @@ void main() {
     expect(_textAnywhere('System Version'), findsOneWidget);
     expect(_textAnywhere('Kernel Version'), findsOneWidget);
     expect(_textAnywhere('Control Card Version'), findsOneWidget);
-    expect(_textAnywhere(kSystemVersion), findsOneWidget);
+    expect(_textAnywhere(kHmiVersion), findsOneWidget);
     expect(_textAnywhere('6.1.0-test'), findsOneWidget);
     expect(find.text(kUnavailableDisplay), findsWidgets);
     expect(find.text('Modbus Link'), findsOneWidget);

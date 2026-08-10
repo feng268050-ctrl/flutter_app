@@ -54,7 +54,7 @@ LAN SSH debug SHALL control on-demand LAN/WLAN SSH via `SshDebug` (not persisted
 
 ### Requirement: Language selection applies UI locale and lists supported endonyms
 
-Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `zh-TW` with endonym labels (English / 简体中文 / 繁體中文). Selecting a locale SHALL persist via `CommonSettingsStore` and apply both Flutter UI locale and CyberIME language mapping. Language Settings and Common Settings Language summary MUST NOT claim that Language applies only to the soft keyboard once UI localization for that surface has shipped.
+Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `zh-TW` with endonym labels (English / 简体中文 / 繁體中文). Selecting a locale SHALL persist via **HAL locale PreferredLanguage** (`package:cyber_hal/locale.dart`, key `language` in `/var/lib/hal/locale.conf`) and apply both Flutter UI locale and CyberIME language mapping. Language Settings and General (Common Settings) Language summary MUST NOT claim that Language applies only to the soft keyboard once UI localization for that surface has shipped.
 
 #### Scenario: Language page lists three locales
 
@@ -64,16 +64,17 @@ Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `z
 #### Scenario: Selecting Simplified Chinese updates UI and summary
 
 - **WHEN** the operator selects 简体中文
-- **THEN** the choice is persisted
-- **AND** Common Settings Language summary shows the matching endonym
+- **THEN** the choice is persisted in `locale.conf`
+- **AND** General Settings Language summary shows the matching endonym
 - **AND** migrated Settings chrome uses Simplified Chinese strings
 
 ### Requirement: Common Settings exposes display, sound, date-time, and input controls
 
-Common Settings SHALL expose:
+General Settings (Common Settings; en label **General**) SHALL expose:
 
-- Display & Sound (untitled card): **Country/Region**, Language, Unit, and **Text Size** as persisted controls backed by `/var/lib/hmi/common-settings.json`; Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings`; Language drives Flutter UI locale and CyberIME for three locales; Text Size drives App-wide reading UI scale (`small` / `medium` / `large`) per `frostui-typography`; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then **Text Size**, then Sound.
-- RGB LED + Camera (untitled card, after Display & Sound, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
+- Display & Sound (untitled card): **Country/Region**, Language, and Unit as persisted controls backed by **`/var/lib/hal/locale.conf`** through HAL locale (`Region` / `region`, `PreferredLanguage` / `language`, `UnitSystem` / `unit`); Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings` / `hal-locale`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then Sound.
+- **Power Mode** (untitled card, **own group**, after Display & Sound and before RGB LED + Camera): a single nav row (same chrome pattern as **Unit**) with trailing summary of the current mode; tapping opens a Power Mode sub-page (see Power Mode requirement). Persistence remains `/var/lib/hal/power.conf` via HAL (not `common-settings.json` / not `locale.conf` for power).
+- RGB LED + Camera (untitled card, after Power Mode, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
 - Date & Time (untitled card): Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController` (lws-ui parity).
 - Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera + RGB LED group requirement).
 - Operator-visible labels SHALL come from App localization. Group section titles MUST NOT be shown.
@@ -88,6 +89,12 @@ Common Settings SHALL expose:
 - **WHEN** the user selects an Auto Screen Off option on the Display page other than the current policy
 - **THEN** HAL `AutoSleep` is asked to set the corresponding policy and the choice is persisted
 
+#### Scenario: Power Mode group is separate from Display and Sound
+
+- **WHEN** the operator opens Common Settings
+- **THEN** Power Mode appears as its own untitled card (not a row inside Display & Sound)
+- **AND** that card is after Display & Sound and before RGB LED + Camera
+
 #### Scenario: Sound effect is not a stub
 
 - **WHEN** the user selects a Sound Effect option on the Sound page
@@ -97,29 +104,17 @@ Common Settings SHALL expose:
 
 - **WHEN** the operator opens Common Settings
 - **THEN** the Display & Sound card lists Country/Region above Language
-- **AND** Country/Region summary reflects the persisted Country preference
+- **AND** Country/Region summary reflects the persisted Region preference
 
 #### Scenario: Language is persisted
 
 - **WHEN** the user selects a Language option other than the current value
-- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json` and Common Settings shows the matching Language summary or segment
+- **THEN** the choice is persisted in `/var/lib/hal/locale.conf` via HAL locale and Common Settings shows the matching Language summary or segment
 
 #### Scenario: Unit is persisted
 
 - **WHEN** the user selects a Unit option other than the current value
-- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json`
-
-#### Scenario: Text Size appears between Display and Sound
-
-- **WHEN** the operator opens Common Settings
-- **THEN** the Display & Sound card lists Text Size after Display and before Sound
-- **AND** Text Size summary reflects the persisted text size preference
-
-#### Scenario: Text Size is persisted and applies without restart
-
-- **WHEN** the user selects Text Size `large` (or other non-current value)
-- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json`
-- **AND** reading UI scale updates for the current session without requiring an App process restart
+- **THEN** the choice is persisted in `/var/lib/hal/locale.conf` via HAL locale UnitSystem
 
 #### Scenario: Date and time sync actions invoke controllers
 
@@ -142,34 +137,37 @@ Common Settings SHALL expose:
 - **WHEN** Language is `zh-CN` and the operator opens Common Settings
 - **THEN** migrated row titles and control labels render in Simplified Chinese via App localization
 
-### Requirement: Text Size selection lists Small Medium Large
+### Requirement: Common Settings Power Mode nav opens a Unit-style sub-page
 
-Text Size Settings SHALL offer three options—Small, Medium, Large—mapped to wire values `small`, `medium`, and `large`. Selecting an option SHALL persist via `CommonSettingsStore` and update the App root `MediaQuery.textScaler` for reading UI. Common Settings Text Size summary MUST show the selected option label. Default when unset is Medium.
+Common Settings SHALL present **Power Mode** (localized; en: Power Mode; zh-CN: 效能模式) as a **SettingsNavRow** in its own untitled card. The row SHALL show a trailing summary of the active profile (Performance / Balanced, localized 性能 / 均衡). Tapping SHALL push a dedicated Power Mode settings sub-page (same navigation chrome pattern as **Unit** → `UnitSettingsPage`). The sub-page SHALL list the two options `performance` and `balanced` for selection. Selecting an option SHALL call the HAL load-profile API (persist + apply) and update the in-App continuous-paint policy; the Common Settings trailing summary SHALL refresh to match. Operator-facing copy MUST NOT present the mode primarily as energy saving / 省电.
 
-#### Scenario: Text Size page lists three options
+#### Scenario: Power Mode opens sub-page like Unit
 
-- **WHEN** the operator opens Text Size settings
-- **THEN** Small, Medium, and Large are available
+- **WHEN** the operator taps Power Mode on Common Settings
+- **THEN** a Power Mode sub-page opens (not an inline dropdown on the Common Settings list)
+- **AND** the navigation pattern matches Unit (nav row → push settings page)
 
-#### Scenario: Default summary is Medium
+#### Scenario: Sub-page lists performance and balanced
 
-- **WHEN** Text Size preference is unset or `medium` and the operator opens Common Settings
-- **THEN** Text Size summary indicates Medium (or localized equivalent)
+- **WHEN** the operator opens the Power Mode sub-page
+- **THEN** Performance (性能) and Balanced (均衡) options are available
+- **AND** selecting Balanced invokes HAL setMode(`balanced`) and persists `/var/lib/hal/power.conf`
+- **AND** returning to Common Settings shows the Balanced trailing summary
 
 ### Requirement: Country/Region selection lists all markets and applies region effects
 
-Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory catalog (plus `XK`) with human-readable labels (English / Simplified Chinese by UI locale) and search. Selecting a country SHALL persist via `CommonSettingsStore` and trigger region apply (wireless regulatory and Country-linked timezone/NTP defaults). Common Settings Country/Region summary MUST show the selected country label (or code). Country/Region MUST appear as a nav row before Language on the Common Settings Display & Sound card. Operator-visible title SHALL be Country/Region (zh: 国家/地区).
+Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory catalog (plus `XK`) with human-readable labels (English / Simplified Chinese by UI locale) and search. Selecting a country SHALL persist via **HAL locale Region** (`region=` in `locale.conf`) and trigger HAL Region apply (wireless regulatory and Region-linked timezone/NTP defaults). General Settings Country/Region summary MUST show the selected country label (or code). Country/Region MUST appear as a nav row before Language on the Display & Sound card. Operator-visible title SHALL be Country/Region (zh: 国家/地区).
 
 #### Scenario: Country page lists options with US default summary
 
-- **WHEN** Country preference is `US` and the operator opens Common Settings
+- **WHEN** Region preference is `US` and the operator opens Common Settings
 - **THEN** Country/Region summary indicates United States (or localized equivalent)
 - **AND** opening Country/Region Settings shows `US` among the selectable options
 
 #### Scenario: Selecting Germany updates summary and apply path
 
 - **WHEN** the operator selects Germany (`DE`) on Country/Region Settings
-- **THEN** the choice is persisted
+- **THEN** the choice is persisted as `region=DE` via HAL locale
 - **AND** Common Settings Country/Region summary shows the matching label
 - **AND** region apply runs for regulatory / linked clock defaults
 
@@ -178,17 +176,18 @@ Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory
 Device Information SHALL display device identity and version rows in **untitled CyberUI card groups** (no section header text; same Settings chrome vocabulary as Common Settings), in this order:
 
 1. **Identity:** Device Model (with device QR affordance), Device SN  
-2. **Versions:** System Version (navigation into System Upgrade), Camera Version, Firmware Version (control-card / firmware Modbus display, navigation into Control Board Upgrade), Laser Version, Wire Feeder Version  
+2. **Versions:** **OS Version** (navigation into System Upgrade), **HMI Version** (navigation into HMI Upgrade), Camera Version, Firmware Version (control-card / firmware Modbus display, navigation into Control Board Upgrade), Laser Version, Wire Feeder Version, **Auto-Check for Updates** (master switch, last row)  
 3. **Storage:** used/available capacity with an iOS-style segmented bar (see Device Information storage requirement)  
 4. **Accessory:** Welding Gun SN, Focus Scale Reference  
 
-Device Model SHALL be `brand + " " + model` from HAL product identity (Vendor Storage via `ProductInfo`), with each missing part shown as `-`; if both parts are missing (computed value `- -`), the row SHALL display a single `-`. Device SN SHALL use product identity SN resolution (non-empty Vendor Storage SN, else chip/board serial). Focus Scale Reference SHALL come from App-resolved `focus_scale_ref` (`ProductInfo.get` + product default `0`) (empty after defaults still → `-` only if intentionally blanked). Camera Version SHALL use the same normalized camera software version as Camera settings (shared cache / bounded device-info read), or `-` when unavailable. Camera Type MUST NOT appear on this tab. Kernel Version and Process Library Version MUST NOT appear on this tab (they SHALL appear on System Upgrade). The tab MUST NOT show a Modbus Link row. Missing or empty values SHALL show `-`. OTA check-update controls SHALL appear per the Device Information card-set requirement (on System Upgrade, not as a Device Information footer).
+Device Model SHALL be `brand + " " + model` from HAL product identity (Vendor Storage via `ProductInfo`), with each missing part shown as `-`; if both parts are missing (computed value `- -`), the row SHALL display a single `-`. Device SN SHALL use product identity SN resolution (non-empty Vendor Storage SN, else chip/board serial). Focus Scale Reference SHALL come from App-resolved `focus_scale_ref` (`ProductInfo.get` + product default `0`) (empty after defaults still → `-` only if intentionally blanked). Camera Version SHALL use the same normalized camera software version as Camera settings (shared cache / bounded device-info read), or `-` when unavailable. Camera Type MUST NOT appear on this tab. Kernel Version and Process Library Version MUST NOT appear on this tab (Kernel on System Upgrade; Process Library on HMI Upgrade). The tab MUST NOT show a Modbus Link row. Missing or empty values SHALL show `-`. Manual **Check for Updates** SHALL live on System Upgrade / HMI Upgrade / peripheral upgrade pages; the **Auto-Check for Updates** master switch SHALL live on Device Information Versions (not as checkboxes on those upgrade pages).
 
 #### Scenario: Device Information lists regrouped core rows
 
 - **WHEN** the user opens the Device Information tab
 - **THEN** Device Model and Device SN appear in the first card
-- **AND** System Version and Camera Version appear in the versions card
+- **AND** OS Version and HMI Version appear in the versions card
+- **AND** Auto-Check for Updates is the last row of the versions card
 - **AND** Kernel Version and Process Library Version are not shown on Device Information
 - **AND** a storage card with a capacity bar is visible after the versions card
 - **AND** Welding Gun SN and Focus Scale Reference appear together in the last card
@@ -208,7 +207,7 @@ Device Model SHALL be `brand + " " + model` from HAL product identity (Vendor St
 #### Scenario: Device QR opens identity payload
 
 - **WHEN** the user activates the device QR control on the Device Model row
-- **THEN** a dismissible dialog SHALL show a QR encoding `SN|2|Model|SystemVersion` (v2), with `|` characters in fields replaced by `_`
+- **THEN** a dismissible dialog SHALL show a QR encoding the documented v2 identity payload (including version fields as specified by device-registration / remote snapshot after the OS/HMI split), with `|` characters in fields replaced by `_`
 
 #### Scenario: Focus scale from properties.ini
 
@@ -218,13 +217,7 @@ Device Model SHALL be `brand + " " + model` from HAL product identity (Vendor St
 #### Scenario: Missing focus scale uses App default
 
 - **WHEN** `focus_scale_ref` is absent from `properties.ini`
-- **THEN** Focus Scale Reference SHALL display `0`
-
-#### Scenario: Camera Version on Device Information
-
-- **WHEN** the camera device-info read returns a normalized app version
-- **THEN** Device Information Camera Version SHALL display that value
-- **AND** Camera Type is still not listed on Device Information
+- **THEN** Focus Scale Reference SHALL display the App default (`0` unless product docs say otherwise)
 
 ### Requirement: Advanced and Custom Home tabs are structurally present
 
@@ -513,13 +506,14 @@ Device Information and Common Settings SHALL render settings groups with CyberUI
 
 ### Requirement: Common Settings Display and Sound — Display and Sound sub-pages
 
-Within Common Settings, Language and Unit remain as list/nav rows. **Brightness** and **Auto Screen Off** SHALL be merged into a single **Display** nav row. **Volume** and **Sound Effect** SHALL be merged into a single **Sound** nav row. Display SHALL provide Brightness via `CyberSlider` (drag-value chrome) → HAL `Backlight`, and Auto Screen Off as a dropdown → HAL `AutoSleep`. Sound SHALL provide Volume via left-label / right `CyberVolumeSlider` (speaker icons retained; no play-test card) → HAL media audio, and Sound Effect as a dropdown → `ButtonFeedback` / sound-effect store. Language SHALL continue to offer **three** App locales (`en-US`, `zh-CN`, `zh-TW`).
+Within Common Settings, Language and Unit remain as list/nav rows. **Brightness** and **Auto Screen Off** SHALL be merged into a single **Display** nav row. **Volume** and **Sound Effect** SHALL be merged into a single **Sound** nav row. Display SHALL provide Brightness via `CyberSlider` (drag-value chrome) → HAL `Backlight`, and Auto Screen Off as a dropdown → HAL `AutoSleep`. Sound SHALL provide Volume via left-label / right `CyberVolumeSlider` (speaker icons retained; no play-test card) → HAL media audio, and Sound Effect as a dropdown → `ButtonFeedback` / sound-effect store. Language SHALL continue to offer **three** App locales (`en-US`, `zh-CN`, `zh-TW`). Power Mode / load-profile selection MUST NOT live on the Display sub-page (see Power Mode requirement).
 
 #### Scenario: Display opens brightness and screen-off
 
 - **WHEN** the operator opens Common Settings → Display
 - **THEN** Brightness can be adjusted with a CyberSlider
 - **AND** Auto Screen Off can be chosen from a dropdown without a separate screen-off page
+- **AND** the Display page MUST NOT host the Power Mode / performance / balanced selector
 
 #### Scenario: Sound opens volume and sound effect
 
@@ -562,13 +556,13 @@ Common Settings SHALL present Date & Time in an untitled CyberUI card. The Commo
 
 ### Requirement: Camera shares an untitled card with RGB LED (not under Input)
 
-Common Settings SHALL present **Camera** in the same untitled card as **RGB LED**, placed **after** Display & Sound and **before** Date & Time. Camera MUST NOT be nested under Input. The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). Input SHALL retain Mouse, Keyboard, and USB OTG only (no Camera row under Input).
+Common Settings SHALL present **Camera** in the same untitled card as **RGB LED**, placed **after** Power Mode (and Display & Sound) and **before** Date & Time. Camera MUST NOT be nested under Input. The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). Input SHALL retain Mouse, Keyboard, and USB OTG only (no Camera row under Input).
 
 #### Scenario: Camera with RGB LED before Date & Time
 
 - **WHEN** the operator opens Common Settings
 - **THEN** RGB LED and Camera navigation rows appear in the same card group
-- **AND** that card is after Display & Sound and before Date & Time
+- **AND** that card is after Power Mode and before Date & Time
 - **AND** the Input card group does not list Camera / IP Camera
 
 #### Scenario: Camera label
@@ -581,11 +575,11 @@ Common Settings SHALL present **Camera** in the same untitled card as **RGB LED*
 Device Information SHALL show CyberUI untitled cards with:
 
 1. Identity: Device Model (QR), Device SN  
-2. Versions: System Version, Camera Version, Firmware Version (existing control-card / firmware Modbus value), Laser Version, Wire Feeder Version  
+2. Versions: **OS Version**, **HMI Version**, Camera Version, Firmware Version (existing control-card / firmware Modbus value), Laser Version, Wire Feeder Version, **Auto-Check for Updates** (switch, last)  
 3. Storage: iOS-style capacity bar with `{used} of {total} used` summary and HAL `SysInfo.storage` (System = GPT system partitions; Available = `/userdata` free)  
 4. Accessory (last): Welding Gun SN, Focus Scale Reference  
 
-Device Information MUST NOT show Camera Type. Device Information MUST NOT show Kernel Version or Process Library Version. Device Information SHALL expose **System Version** as a navigation row into **System Upgrade**. Check for Updates and Automatically check for updates SHALL live on System Upgrade (not as a Device Information footer). Auto-check may open System Upgrade when a newer package exists but MUST NOT auto-apply. When cloud services are disabled or the API origin is not pinned, Check for Updates MUST show an unavailable outcome on System Upgrade (not a false “up to date”). They MUST NOT report a false success, and MUST NOT remain permanently deferred/unavailable once whole-device OTA is implemented on the device image. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
+Device Information MUST NOT show Camera Type. Device Information MUST NOT show Kernel Version or Process Library Version. Device Information SHALL expose **OS Version** as a navigation row into **System Upgrade** and **HMI Version** as a navigation row into **HMI Upgrade**. Manual Check for Updates SHALL live on System Upgrade, HMI Upgrade, and peripheral upgrade pages. **Auto-Check for Updates** SHALL be the Device Information Versions master switch and SHALL gate Product Home auto tips plus auto-check-on-open for System / HMI / control-board / camera upgrade pages. Auto-check MUST NOT auto-apply. Check for Updates SHALL fetch public CDN `release.json` manifests and MUST NOT require cloud services enabled or a pinned Worker API origin; when the CDN is unreachable, the check outcome MUST show failed/unavailable (not a false “up to date”). They MUST NOT report a false success, and MUST NOT remain permanently deferred/unavailable once whole-device OTA is implemented on the device image. Device Model QR and registration flows SHALL share the v2 identity payload. Cloud environment tier MUST be changed via Device SN 5×-tap (not a permanent Settings row).
 
 #### Scenario: No Camera Type on Device Information
 
@@ -600,16 +594,21 @@ Device Information MUST NOT show Camera Type. Device Information MUST NOT show K
 - **THEN** a Welding Gun SN (or localized equivalent) row is visible with a value or `-`
 - **AND** it appears in the last card with Focus Scale Reference
 
-#### Scenario: System Version opens System Upgrade
+#### Scenario: OS Version opens System Upgrade
 
-- **WHEN** the operator activates the System Version row on Device Information
+- **WHEN** the operator activates the OS Version row on Device Information
 - **THEN** System Upgrade is shown (shared Settings scaffold)
 
-#### Scenario: Check unavailable when cloud off
+#### Scenario: HMI Version opens HMI Upgrade
 
-- **WHEN** cloud services are disabled and the operator activates Check for Updates on System Upgrade
-- **THEN** System Upgrade indicates the check is unavailable in the content card
-- **AND** MUST NOT claim the system is up to date
+- **WHEN** the operator activates the HMI Version row on Device Information
+- **THEN** HMI Upgrade is shown (shared Settings scaffold)
+
+#### Scenario: Check works when cloud services off
+
+- **WHEN** cloud services are disabled and the operator activates Check for Updates on System Upgrade and the CDN manifest is reachable
+- **THEN** System Upgrade runs the check against `https://cdn.lasercyber.com/{artifact}/release.json`
+- **AND** MUST NOT claim the check is unavailable solely because cloud services are off
 
 #### Scenario: No permanent cloud environment row
 
@@ -624,19 +623,20 @@ Device Information MUST NOT show Camera Type. Device Information MUST NOT show K
 
 ### Requirement: System Upgrade uses CyberUI Settings chrome
 
-System Upgrade SHALL use the shared **Settings scaffold** and a content **SettingsPanel** that fills the remaining viewport height below the status bar (same blur / transparency / margins as other Settings pages). When not in progress-only / apply mode, the card SHALL include current system version, **Kernel Version**, **Process Library Version** (value or `-`), Check for Updates, and Automatically check for updates; check outcomes and Update Now / Later SHALL render in the card (not dialogs). Apply progress SHALL use the same full-height card. Host `make upgrade` SHALL use progress-only (no check footer); progress-only mode is not required to show Kernel / Process Library rows.
+System Upgrade SHALL use the shared **Settings scaffold** and a content **SettingsPanel** that fills the remaining viewport height below the status bar (same blur / transparency / margins as other Settings pages). When not in progress-only / apply mode, the card SHALL include current **OS Version**, **Kernel Version** (value or `-`), and **Check for Updates**; check outcomes and Update Now / Later SHALL render in the card (not dialogs). **Process Library Version MUST NOT appear on System Upgrade**. The Auto-Check for Updates switch MUST NOT appear on System Upgrade (it lives on Device Information). Apply progress SHALL use the same full-height card. Host `make upgrade` SHALL use progress-only (no check footer); progress-only mode is not required to show Kernel rows.
 
 #### Scenario: Upgrade scaffold matches Settings
 
-- **WHEN** the operator opens System Upgrade from Device Information System Version
+- **WHEN** the operator opens System Upgrade from Device Information OS Version
 - **THEN** the top chrome is the CyberUI page status bar with back and the System Upgrade title
 - **AND** the content card fills remaining height with Settings / CyberUI panel chrome
 
-#### Scenario: Check mode shows kernel and process library versions
+#### Scenario: Check mode shows kernel but not process library
 
 - **WHEN** the operator opens System Upgrade in check mode (not progress-only)
-- **THEN** Kernel Version and Process Library Version rows are visible with a value string (possibly `-`)
-- **AND** System Version remains visible
+- **THEN** Kernel Version is visible with a value string (possibly `-`)
+- **AND** OS Version remains visible
+- **AND** Process Library Version is not listed
 
 ### Requirement: RGB LED Settings forces Off on enter
 
@@ -655,7 +655,7 @@ When the operator opens the Common Settings RGB LED page, the App SHALL suppress
 
 ### Requirement: Device Information changes cloud environment tier via Device SN 5×-tap
 
-Device Information SHALL NOT show a permanent Cloud Environment row. The operator SHALL open the app environment tier picker by tapping the **Device SN** value five times within five seconds (lws-ui `SecretTapTracker` parity). The picker SHALL offer at least Test and Prod, and MAY offer Dev. Choosing a tier MUST persist the selection and trigger a fresh API-origin probe / WebSocket reconnect when cloud runtime is active. OTA footer controls call `cyber_ota` (see Device Information card-set requirement) and are unchanged by this cloud/LAN change.
+Device Information SHALL NOT show a permanent Cloud Environment row. The operator SHALL open the app environment tier picker by tapping the **Device SN** value five times within five seconds (lws-ui `SecretTapTracker` parity). The picker SHALL offer at least Test and Prod, and MAY offer Dev. Choosing a tier MUST persist the selection and trigger a fresh API-origin probe / WebSocket reconnect when cloud runtime is active. Manual Check for Updates on System Upgrade / peripheral pages uses public CDN `release.json` URLs and is independent of this tier picker (tier affects Worker API for 云服务 only); Auto-Check for Updates remains the Device Information Versions master switch.
 
 #### Scenario: Five taps on Device SN opens tier picker
 

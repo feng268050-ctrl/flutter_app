@@ -929,7 +929,7 @@ final class _QuickModePageState extends State<QuickModePage> {
                     return ListenableBuilder(
                       listenable: unitStore,
                       builder: (context, _) => pick(
-                        LengthUnitConvert.isMetric(unitStore.unit),
+                        LengthUnitConvert.isMetric(unitStore.unitWire),
                       ),
                     );
                   },

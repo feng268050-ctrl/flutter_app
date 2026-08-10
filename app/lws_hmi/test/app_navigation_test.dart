@@ -169,7 +169,7 @@ AppServices _testServices() {
       snapshotData: const SysInfoSnapshot(
         serialNumber: 'test-sn',
         kernelRelease: '6.1.0-test',
-        appVersion: kSystemVersion,
+        appVersion: kHmiVersion,
         memoryTotalBytes: 512 * 1024 * 1024,
         memoryAvailableBytes: 256 * 1024 * 1024,
         uptime: Duration(hours: 2, minutes: 15),

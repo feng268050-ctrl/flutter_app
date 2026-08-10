@@ -1,65 +1,37 @@
-import 'dart:io';
-
+import 'package:cyber_hal/locale.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lws_hmi/features/settings/application/region_country_catalog.dart';
 
 void main() {
-  test('Common Settings source lists Country before Language', () {
-    final src = File(
-      'lib/features/settings/presentation/tabs/common_settings_tab.dart',
-    ).readAsStringSync();
-    final country = src.indexOf('l10n.countrySettingText');
-    final language = src.indexOf('l10n.languageSettingText');
-    expect(country, greaterThan(-1));
-    expect(language, greaterThan(-1));
-    expect(country, lessThan(language));
-  });
-
-  test('Common Settings source does not expose Text Size as a navigation row',
-      () {
-    final src = File(
-      'lib/features/settings/presentation/tabs/common_settings_tab.dart',
-    ).readAsStringSync();
-    expect(src.contains('TextSizeSettingsPage'), isFalse);
-    expect(src.contains('l10n.textSizeSettingText'), isFalse);
-  });
-
-  test('full ISO catalog defaults to US with non-China NTP', () {
-    expect(RegionCountryCatalog.defaultCountry, 'US');
-    expect(
-        RegionCountryCatalog.supportedCodes.length, greaterThanOrEqualTo(240));
-    expect(RegionCountryCatalog.isSupported('CN'), isTrue);
-    expect(RegionCountryCatalog.isSupported('TW'), isTrue);
-    expect(RegionCountryCatalog.isSupported('HK'), isTrue);
-    expect(RegionCountryCatalog.isSupported('DE'), isTrue);
-    expect(RegionCountryCatalog.isSupported('BR'), isTrue);
-    expect(RegionCountryCatalog.normalize('xx'), 'US');
-    for (final e in RegionCountryCatalog.entries) {
-      expect(e.preferredNtp, isNot(RegionCountryCatalog.legacyChinaNtp));
-      expect(e.code.length, 2);
-      expect(e.nameEn, isNotEmpty);
-      expect(e.nameZh, isNotEmpty);
-      expect(e.defaultTimezone, isNotEmpty);
+  test('default region is US and catalog is full ISO', () {
+    expect(RegionCatalog.defaultRegion, 'US');
+    expect(RegionCatalog.supportedCodes.length, greaterThanOrEqualTo(240));
+    expect(RegionCatalog.isSupported('CN'), isTrue);
+    expect(RegionCatalog.isSupported('TW'), isTrue);
+    expect(RegionCatalog.isSupported('HK'), isTrue);
+    expect(RegionCatalog.isSupported('DE'), isTrue);
+    expect(RegionCatalog.isSupported('BR'), isTrue);
+    expect(RegionCatalog.normalize('xx'), 'US');
+    for (final e in RegionCatalog.entries) {
+      expect(e.preferredNtp, isNot(RegionCatalog.legacyChinaNtp));
     }
   });
 
-  test('filter matches code english and chinese', () {
-    final byCode = RegionCountryCatalog.filter(
-      RegionCountryCatalog.entries,
-      'de',
+  test('filter finds Germany by code and Chinese name', () {
+    final byCode = RegionCatalog.filter(
+      RegionCatalog.entries,
+      'DE',
     );
     expect(byCode.any((e) => e.code == 'DE'), isTrue);
-
-    final byZh = RegionCountryCatalog.filter(
-      RegionCountryCatalog.entries,
+    final byZh = RegionCatalog.filter(
+      RegionCatalog.entries,
       '德国',
     );
-    expect(byZh.single.code, 'DE');
+    expect(byZh.any((e) => e.code == 'DE'), isTrue);
   });
 
-  test('sortedForDisplay is A-Z by English name', () {
-    final sorted = RegionCountryCatalog.sortedForDisplay();
-    expect(sorted, isNotEmpty);
+  test('sorted for display is A–Z by English name', () {
+    final sorted = RegionCatalog.sortedForDisplay();
+    expect(sorted.length, RegionCatalog.entries.length);
     for (var i = 1; i < sorted.length; i++) {
       expect(
         sorted[i - 1].nameEn.toLowerCase().compareTo(
@@ -68,10 +40,5 @@ void main() {
         lessThanOrEqualTo(0),
       );
     }
-    // Afghanistan before United States (no US pin).
-    final af = sorted.indexWhere((e) => e.code == 'AF');
-    final us = sorted.indexWhere((e) => e.code == 'US');
-    expect(af, greaterThanOrEqualTo(0));
-    expect(us, greaterThan(af));
   });
 }

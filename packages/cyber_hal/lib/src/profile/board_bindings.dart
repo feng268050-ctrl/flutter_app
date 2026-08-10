@@ -160,6 +160,16 @@ final class BoardBindings {
     );
   }
 
+  LinuxLoadProfile loadProfile({
+    String preferencePath = OutputPrefs.powerConf,
+    List<String> setPowerModeCommand = const <String>['set-power-mode'],
+  }) {
+    return LinuxLoadProfile(
+      preferencePath: preferencePath,
+      setPowerModeCommand: setPowerModeCommand,
+    );
+  }
+
   LinuxKeyboard keyboard() => LinuxKeyboard();
 
   LinuxMouseSettingsController mouse() {

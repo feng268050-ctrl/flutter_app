@@ -27,6 +27,7 @@ BR_PKG_BLUEZ5_UTILS="$SDK/buildroot/package/bluez5_utils"
 BR_PKG_BLUEZ5_UTILS_HEADERS="$SDK/buildroot/package/bluez5_utils-headers"
 BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
 BR_PKG_MESON="$SDK/buildroot/package/meson"
+BR_PKG_SYSTEMD="$SDK/buildroot/package/systemd"
 BR_PKG_GSTREAMER1="$SDK/buildroot/package/gstreamer1"
 BR_PKG_LIBOPENSSL="$SDK/buildroot/package/libopenssl"
 LWS_ROCKCHIP_BLUEZ_PATCH_STASH=".lws-rockchip-bluez-patch-disabled"
@@ -146,7 +147,9 @@ sync_fs_overlay() {
   rm -f \
     "$BR_OVERLAY_ROOT/usr/libexec/hmi/debug-boot.sh" \
     "$BR_OVERLAY_ROOT/usr/libexec/hmi/boot-kpi-watch.sh" \
-    "$BR_OVERLAY_ROOT/usr/libexec/hmi/configure-camera-eth0.sh"
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/configure-camera-eth0.sh" \
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/push-app-apply-and-restart.sh" \
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/upgrade-app-apply-and-restart.sh"
 }
 
 sync_purge_retired_script() {
@@ -506,17 +509,15 @@ sync_flutter_embedded_linux_package() {
 }
 
 
-# libserialport 0.1.1 probes removed Linux termiox → sp_open ENOTTY on kernel 6.1+.
+# libserialport: overlay used to ship 0002-dont-check-termiox.patch for 0.1.1
+# (termiox removed from Linux). Buildroot 2025.02.x ships 0.1.2 with that fix
+# upstream — no overlay patch. Keep the sync no-op so old trees drop the file.
 sync_libserialport_package() {
-  local src="$OVERLAY/buildroot/package/libserialport/0002-dont-check-termiox.patch"
-  if [[ ! -f "$src" ]]; then
-    return 0
+  local stale="$BR_PKG_LIBSERIALPORT/0002-dont-check-termiox.patch"
+  if [[ -d "$BR_PKG_LIBSERIALPORT" && -f "$stale" ]]; then
+    rm -f "$stale"
+    echo "overlay: removed obsolete libserialport termiox patch (0.1.2+)"
   fi
-  if [[ ! -d "$BR_PKG_LIBSERIALPORT" ]]; then
-    echo "overlay: skip libserialport patch (package dir missing)" >&2
-    return 0
-  fi
-  install_file "$src" "$BR_PKG_LIBSERIALPORT/0002-dont-check-termiox.patch"
 }
 
 # Upstream BlueZ Device1.Connect/Disconnect are empty-arg. Rockchip's
@@ -674,7 +675,13 @@ backup_sdk_script() {
 
 sync_source_han_sans_cn_package() {
   local src="$OVERLAY/buildroot/package/source-han-sans-cn/source-han-sans-cn.mk"
+  local br_pkg_cfg="$SDK/buildroot/package/Config.in"
+  local source_line='	source "package/source-han-sans/Config.in"'
   if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -d "$SDK/buildroot/package/source-han-sans" ]]; then
+    echo "WARNING: overlay source-han-sans-cn.mk present but SDK package/source-han-sans missing" >&2
     return 0
   fi
   if [[ ! -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" ]]; then
@@ -682,6 +689,29 @@ sync_source_han_sans_cn_package() {
       "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig"
   fi
   install_file "$src" "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk"
+
+  # Vendor package tree exists under package/source-han-sans/, but stock
+  # Buildroot 2025.02 package/Config.in does not source it — then
+  # BR2_PACKAGE_SOURCE_HAN_SANS_CN=y is dropped by olddefconfig and the
+  # rootfs ships DejaVu only (CJK tofu). Re-wire into the Fonts menu.
+  if [[ -f "$br_pkg_cfg" ]] && ! grep -qF 'package/source-han-sans/Config.in' "$br_pkg_cfg"; then
+    if grep -qF 'package/wqy-zenhei/Config.in' "$br_pkg_cfg"; then
+      # Insert after wqy-zenhei (last stock font entry in Fonts comment).
+      local tmp
+      tmp="$(mktemp)"
+      awk -v line="$source_line" '
+        { print }
+        $0 ~ /package\/wqy-zenhei\/Config\.in/ && !done {
+          print line
+          done=1
+        }
+      ' "$br_pkg_cfg" >"$tmp"
+      mv -f "$tmp" "$br_pkg_cfg"
+      echo "overlay: wired package/source-han-sans into package/Config.in"
+    else
+      echo "WARNING: could not wire source-han-sans (wqy-zenhei anchor missing in package/Config.in)" >&2
+    fi
+  fi
 }
 
 # GStreamer 1.28.5 needs host Meson ≥ 1.4; SDK ships 1.3.1.
@@ -718,6 +748,22 @@ sync_meson_package() {
     echo "overlay: stashed Rockchip meson patches (overlay Meson ≥ 1.4)"
   fi
   echo "overlay: meson package synced ($(grep -E '^MESON_VERSION' "$pkg/meson.mk" | awk '{print $3}'))"
+}
+
+# systemd 256 + Rockchip GCC 10.3 UAPI 4.20: enable networkd (chips claim headers
+# ≥ 5.4) and ship sockios *_OLD compat so networkd compiles against 4.20 UAPI.
+sync_systemd_package() {
+  local src="$OVERLAY/buildroot/package/systemd/0003-basic-linux-sockios-compat-old-uapi.patch"
+  local pkg="$BR_PKG_SYSTEMD"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -d "$pkg" ]]; then
+    echo "overlay: skip systemd sockios patch (package missing)" >&2
+    return 0
+  fi
+  install_file "$src" "$pkg/0003-basic-linux-sockios-compat-old-uapi.patch"
+  echo "overlay: systemd sockios UAPI compat patch synced"
 }
 
 # OpenSSL CVE pin (3.5.7 LTS). Replace Rockchip SDK 3.2.1 recipe; stash vendor patches
@@ -1253,6 +1299,7 @@ sync_bluez5_utils_stock
 sync_bluez_alsa_package
 sync_source_han_sans_cn_package
 sync_meson_package
+sync_systemd_package
 sync_libopenssl_package
 sync_gstreamer1_package
 sync_gstreamer1_rockchip_package

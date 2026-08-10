@@ -92,7 +92,8 @@ void main() {
     c.dispose();
   });
 
-  testWidgets('playMotion false paints static fallback asset', (tester) async {
+  testWidgets('playMotion false hides paced plate (no oversized static frames)',
+      (tester) async {
     final c = PacedHomeWebpController(layers: layers, playMotion: false);
     await c.start();
 
@@ -115,15 +116,8 @@ void main() {
       ),
     );
 
-    final image = tester.widget<Image>(find.byType(Image));
-    final provider = image.image;
-    final asset = switch (provider) {
-      AssetImage(:final assetName) => assetName,
-      ResizeImage(:final imageProvider) when imageProvider is AssetImage =>
-        imageProvider.assetName,
-      _ => null,
-    };
-    expect(asset, 'a_static.webp');
+    expect(find.byType(Image), findsNothing);
+    expect(find.byType(RawImage), findsNothing);
     c.dispose();
   });
 }

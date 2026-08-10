@@ -19,7 +19,7 @@ make check-prebuilt
 
 - **Runtime** (`make build-runtime-deps`): flutter-engine, display runners, **gstreamer (MPP+RTSP)**, OpenCV sources, `prebuilt/rknn-rt`
 - **MediaMTX** (product): `make build-mediamtx` → `prebuilt/`; shipped as `/opt/hmi/bin/mediamtx` by `make build-app` (App `cyber_pm` child — not rootfs)
-- **AI daemon** (product): `make build-opencv` + `make build-ai` → `prebuilt/`; shipped as `/opt/hmi/bin/lws_ai_daemon` (+ `/opt/hmi/lib`) by `make build-app` (`cyber_pm` + `/run/hmi/ai` socks — not rootfs)
+- **AI daemon** (product): daily `make build-ai` (incremental) → `prebuilt/ai/`; then `make build-app` ships `/opt/hmi/bin/lws_ai_daemon` (+ `/opt/hmi/lib`). Use `make rebuild-ai` / `FORCE=1` to wipe cmake. Soft-skip if daemon binary missing; `REQUIRE_AI=1` fails the bundle (`cyber_pm` + `/run/hmi/ai` socks — not rootfs)
 - **Dev host** (`make build-dev-deps`): `FLUTTER_SDK`, RKNN-Toolkit（仅 x86 转模型）
 - **`make build-rootfs`** 安装 defconfig 已接入的 prebuilt；`check-prebuilt` 校验全部 runtime 项
 

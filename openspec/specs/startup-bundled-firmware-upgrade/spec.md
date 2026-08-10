@@ -106,17 +106,17 @@ If the operator dismisses the dialog (Later) or opens Settings from it, the syst
 
 ### Requirement: Host helper can trigger control-board-only upgrade without version gate
 
-The repository SHALL provide a host helper named `make upgrade-control-board` that selects the newest (or explicitly overridden) control-board `.bin` under `assets/firmware/control-board/`, uploads it to the running device over SSH, and triggers the in-app control-board Modbus transfer without Home confirmation or same-version gate.
+The repository SHALL provide a host helper named `make upgrade-control-board` that selects the newest (or explicitly overridden) control-board `.bin` under `assets/firmware/control-board/`, **signs it with the system OTA Ed25519 tooling**, **serves the `.bin` and sibling `.sig` over ephemeral host HTTP**, and triggers the in-app control-board Modbus transfer without Home confirmation or same-version gate via `/run/hmi/upgrade-control-board.cmd` using **`download <url>`**.
 
-The helper SHALL communicate via a device tmpfs command file under `/run/hmi/` (watched by the HMI). It SHALL remain a strict subset of the broader host `make upgrade` naming family: it MUST target only control-board firmware and MUST NOT stream or modify rootfs, boot, OEM, GPT, or factory images.
+The helper SHALL communicate via a device tmpfs command file under `/run/hmi/` (watched by the HMI). It SHALL remain a strict subset of the broader host `make upgrade` naming family: it MUST target only control-board firmware and MUST NOT stream or modify rootfs, boot, OEM, GPT, or factory images. SSH SHALL NOT be used as the bulk transfer path for the `.bin`.
 
-The App SHALL map this host entry to **`cyber_upgrade_ui` update policy with version check skipped** (and confirmation skipped) while still showing progress UI during Modbus transfer.
+The App SHALL map this host entry to **`cyber_upgrade_ui` update policy with version check skipped** (and confirmation skipped) while still showing progress UI during Modbus transfer. Before Modbus transfer, the App MUST Ed25519-verify the downloaded `.bin`.
 
 #### Scenario: Host helper upgrades control board directly
 
 - **WHEN** the operator runs `make upgrade-control-board`
-- **THEN** the host SHALL upload one selected `LSW01H####S####.bin` to the running device
-- **AND** the App SHALL start the control-board Modbus firmware transfer without waiting for a Product Home confirm dialog
+- **THEN** the host SHALL serve one selected `LSW01H####S####.bin` (and `.sig`) over HTTP and write `download <url>` for the running device
+- **AND** the App SHALL download, verify, and start the control-board Modbus firmware transfer without waiting for a Product Home confirm dialog
 - **AND** the helper SHALL ignore same-version gate
 - **AND** the App SHALL treat the session as skip-version policy for `cyber_upgrade_ui`
 
@@ -161,14 +161,24 @@ Progress and result dialogs SHALL use **`cyber_upgrade_ui` single-phase progress
 
 ### Requirement: Bundled firmware does not use product OTA download flow
 
-The bundled firmware feature SHALL NOT require HTTP download, zip extraction, Settings “Check for Updates”, or cloud `command.check_update` / `command.update_system` solely to apply firmware from App assets.
+The bundled-from-assets apply path SHALL NOT require HTTP download, Settings “Check for Updates”, or cloud `command.check_update` / `command.update_system` solely to apply firmware that is already present in App assets.
 
-Device Information OTA footer controls MAY remain unavailable/deferred and MUST NOT be required for bundled firmware upgrade.
+Cloud check/download for control-board firmware (when offered) is a separate path documented by `peripheral-firmware-cloud-ota` and MUST NOT be required for offline bundled apply. Device Information system OTA controls MUST NOT be required for bundled firmware upgrade.
 
 #### Scenario: Settings check-update is not required
 
 - **WHEN** a bundled firmware candidate is applied from Home
-- **THEN** the flow SHALL complete without invoking the Settings OTA check-update client
+- **THEN** the flow SHALL complete without invoking the Settings system OTA check-update client
+
+### Requirement: Home and Settings select newest of bundled and cloud control-board candidates
+
+When evaluating whether to offer a control-board firmware update (Product Home tip or Settings control-board upgrade page), the system SHALL consider both the bundled matching-HW candidate and, when cloud check is possible, the cloud `control-board/release.json` candidate, and SHALL offer the newer of the two (prefer bundled on equal version). Apply of a cloud-selected candidate MUST verify Ed25519 before Modbus transfer.
+
+#### Scenario: Home tip may use newer cloud control-board firmware
+
+- **WHEN** Product Home is visible, Modbus versions are available, cloud release offers a HW-matching SW newer than both device and bundled, and cloud origin is reachable
+- **THEN** the system SHALL treat the cloud payload as the upgrade candidate for the Home tip
+- **AND** SHALL start Modbus transfer only after operator confirmation and successful verify
 
 ### Requirement: Bundled firmware mutex with future in-app OTA flash
 
@@ -217,3 +227,28 @@ The App SHALL implement the control-board offline version gate (filename HW matc
 - **WHEN** Product Home evaluates bundled firmware and finds a newer matching-HW candidate
 - **THEN** the offer presented in the confirm dialog is produced through the control-board `cyber_upgrade_ui` check path
 - **AND** Modbus transfer still runs only after confirm (operator policy)
+
+### Requirement: Product Home may offer bundled camera firmware updates
+
+In addition to control-board bundled firmware, the system SHALL evaluate bundled camera program firmware when Product Home is visible, the camera HTTP path is reachable, and ship assets include a valid camera ZIP.
+
+Camera Home tips SHALL use `cyber_upgrade_ui` dialog primitives and App camera-upgrade l10n. Confirm SHALL start the camera CGI flash + reboot + wait-online path (not Modbus).
+
+Home auto-detect for camera SHALL share the once-per-HMI-process tip budget family with control-board: after a camera tip is shown or a no-candidate check completes for camera in that process, returning to Home MUST NOT re-prompt camera until the next process start (unless implemented as a separate once flag that still prevents spam).
+
+When both control-board and camera candidates are present, the system SHALL present the control-board tip first and SHALL NOT show the camera tip until the control-board tip flow has settled (confirmed, dismissed, or no CB candidate).
+
+#### Scenario: Home offers camera when newer ZIP bundled
+
+- **WHEN** Product Home is visible, camera deviceinfo is available, bundled camera ZIP is newer than live `appVersion`, and no control-board tip is pending
+- **THEN** the system SHALL show a camera firmware update confirm tip
+
+#### Scenario: Control-board tip takes priority
+
+- **WHEN** both control-board and camera upgrade candidates exist on Product Home
+- **THEN** the system SHALL present the control-board bundled-firmware tip before any camera tip
+
+#### Scenario: Camera dismiss does not flash
+
+- **WHEN** the operator dismisses the camera Home tip
+- **THEN** the system SHALL NOT start CGI camera upgrade from that dismissal

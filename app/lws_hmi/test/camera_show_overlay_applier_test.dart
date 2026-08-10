@@ -49,6 +49,19 @@ final class _FakeOsdHttp implements CameraOsdHttpClient {
   }
 
   @override
+  Future<CameraOsdHttpResponse> postMultipartFile(
+    Uri uri, {
+    required String authorization,
+    required String fieldName,
+    required String fileName,
+    required List<int> fileBytes,
+    String fileContentType = 'application/octet-stream',
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    throw UnimplementedError('postMultipartFile');
+  }
+
+  @override
   void close() {}
 }
 

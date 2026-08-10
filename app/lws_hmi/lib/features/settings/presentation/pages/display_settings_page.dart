@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/settings/application/app_text_size.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_pill_dropdown.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -155,7 +155,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
 }
 
 /// Discrete text-size control. Its local value deliberately does not update
-/// [CommonSettingsStore] until the gesture ends, so the app's MediaQuery scale
+/// [TextSizeSettingsStore] until the gesture ends, so the app's MediaQuery scale
 /// cannot relayout this page while the thumb is being dragged.
 class _TextSizeSliderCard extends StatefulWidget {
   const _TextSizeSliderCard();
@@ -169,18 +169,18 @@ class _TextSizeSliderCardState extends State<_TextSizeSliderCard> {
 
   AppTextSize get _selectedSize =>
       _localSize ??
-      CommonSettingsScope.maybeOf(context)?.textSize ??
-      CommonSettingsStore.defaultTextSize;
+      TextSizeSettingsScope.maybeOf(context)?.textSize ??
+      TextSizeSettingsStore.defaultTextSize;
 
   static double _sliderValue(AppTextSize size) =>
-      CommonSettingsStore.supportedTextSizes.indexOf(size).toDouble();
+      TextSizeSettingsStore.supportedTextSizes.indexOf(size).toDouble();
 
   static AppTextSize _sizeForSliderValue(double value) {
     final index = value
         .round()
-        .clamp(0, CommonSettingsStore.supportedTextSizes.length - 1)
+        .clamp(0, TextSizeSettingsStore.supportedTextSizes.length - 1)
         .toInt();
-    return CommonSettingsStore.supportedTextSizes[index];
+    return TextSizeSettingsStore.supportedTextSizes[index];
   }
 
   void _select(double value) {
@@ -190,7 +190,7 @@ class _TextSizeSliderCardState extends State<_TextSizeSliderCard> {
   void _commit(double value) {
     final size = _sizeForSliderValue(value);
     setState(() => _localSize = size);
-    final store = CommonSettingsScope.maybeOf(context);
+    final store = TextSizeSettingsScope.maybeOf(context);
     if (store != null) {
       unawaited(store.setTextSize(size));
     }
@@ -199,7 +199,7 @@ class _TextSizeSliderCardState extends State<_TextSizeSliderCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final store = CommonSettingsScope.maybeOf(context);
+    final store = TextSizeSettingsScope.maybeOf(context);
     final selected = _selectedSize;
     final labels = <String>[
       l10n.textSizeOptionSmall,
@@ -262,7 +262,8 @@ class _TextSizeSliderCardState extends State<_TextSizeSliderCard> {
                             child: Text(
                               labels[i],
                               textScaler: TextScaler.linear(
-                                CommonSettingsStore.supportedTextSizes[i].scale,
+                                TextSizeSettingsStore
+                                    .supportedTextSizes[i].scale,
                               ),
                               style: context.hmiTypography.supporting.copyWith(
                                 color: _sliderValue(selected) == i

@@ -4,9 +4,8 @@ import 'package:cyber_ota/cyber_ota.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
-import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
+import 'package:lws_hmi/features/upgrade_safety/upgrade_safety.dart';
 
 typedef OtaManifestUrlResolver = String? Function();
 typedef OtaProgressSink = void Function(OtaProgress progress);
@@ -26,6 +25,7 @@ final class SystemOtaCoordinator {
   StreamSubscription<OtaProgress>? _progressSub;
   Future<void>? _runFuture;
   final _uiProgressController = StreamController<OtaProgress>.broadcast();
+  UpgradeRadioSnapshot _radioSnapshot = UpgradeRadioSnapshot.none;
 
   /// UI + cloud WS progress (fed only from [OtaSession.progress]).
   Stream<OtaProgress> get uiProgress => _uiProgressController.stream;
@@ -53,7 +53,10 @@ final class SystemOtaCoordinator {
         phase == OtaPhase.ok;
   }
 
-  /// Stop laser work and mark whole-device OTA in progress (mutex vs control-board flash).
+  /// Stop laser/jobs and mark whole-device OTA in progress (mutex vs peripheral).
+  ///
+  /// Wi‑Fi/BT are quiesced later via [OtaSession.beforeExtract] after download
+  /// so cloud/host HTTP transfer can still use the network.
   Future<void> safeShutdown() async {
     final services = _services;
     if (services == null) {
@@ -62,16 +65,7 @@ final class SystemOtaCoordinator {
     if (FirmwareUpgradeCoordinator.isBundledUpgradeInProgress) {
       throw StateError('bundled_upgrade_in_progress');
     }
-    try {
-      await services.ensureModbusLive();
-      await services.modbus.writeAttribute(
-        LaserWorkGuard.laserEnableAttribute,
-        false,
-      );
-    } catch (e) {
-      debugPrint('SystemOtaCoordinator: laser disarm soft-failed: $e');
-    }
-    await services.disarmLaserEnableForSafety(reason: 'system-ota');
+    await UpgradeSafety.stopWork(services, reason: 'system-ota');
     FirmwareUpgradeCoordinator.setOtaUpgradeInProgress(true);
   }
 
@@ -88,6 +82,8 @@ final class SystemOtaCoordinator {
   }
 
   /// Manifest check only — no partition writes.
+  ///
+  /// Compares cloud OS channel version to [SysInfoSnapshot.osVersion].
   Future<CheckUpdateResult> checkForUpdate({String? manifestUrl}) async {
     final url = manifestUrl ?? _manifestUrlResolver?.call();
     if (url == null || url.trim().isEmpty) {
@@ -96,8 +92,23 @@ final class SystemOtaCoordinator {
     final session = _ensureSession();
     return session.checkForUpdate(
       manifestUrl: url,
-      currentVersion: kSystemVersion,
+      currentVersion: await _currentOsVersion(),
     );
+  }
+
+  Future<String> _currentOsVersion() async {
+    final services = _services;
+    if (services == null) {
+      return '';
+    }
+    try {
+      final snap = await services.sysInfo.snapshot();
+      final v = snap.osVersion?.trim();
+      if (v != null && v.isNotEmpty) {
+        return v;
+      }
+    } catch (_) {}
+    return '';
   }
 
   /// Cloud OTA after safe shutdown + upgrade page (Settings / WS).
@@ -207,7 +218,14 @@ final class SystemOtaCoordinator {
   }
 
   OtaSession _ensureSession() {
-    _session ??= OtaSession();
+    final services = _services;
+    _session ??= OtaSession(
+      beforeExtract: services == null
+          ? null
+          : () async {
+              _radioSnapshot = await UpgradeSafety.quiesceRadios(services);
+            },
+    );
     return _session!;
   }
 
@@ -225,6 +243,14 @@ final class SystemOtaCoordinator {
       debugPrint('SystemOtaCoordinator: session failed: $e\n$stack');
     } finally {
       final rebootPending = _session?.lastProgress?.phase == OtaPhase.ok;
+      final services = _services;
+      final radios = _radioSnapshot;
+      _radioSnapshot = UpgradeRadioSnapshot.none;
+      // Always restore: quiesce clears wifi/bt wanted markers, and those
+      // radios are not systemd wants — reboot alone will not bring them back.
+      if (services != null) {
+        await UpgradeSafety.restoreRadios(services, radios);
+      }
       _tearDownSession(keepOtaFlag: rebootPending);
       _runFuture = null;
     }

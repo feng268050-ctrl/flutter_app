@@ -5,20 +5,29 @@ Dedicated whole-device upgrade page: safe shutdown, download/verify/extract/burn
 ## Requirements
 ### Requirement: Settings check-for-updates uses cyber_ota
 
-Device Information SHALL expose **System Version** as navigation into **System Upgrade**. System Upgrade SHALL host **Check for Updates** and **Automatically check for updates**, invoke `cyber_ota` against the **cloud channel manifest** for the active environment tier, and render check outcomes **in the content card** using **`cyber_upgrade_ui` check-card primitives** — not as dialogs. When not in progress-only / apply mode, System Upgrade SHALL also display read-only **Kernel Version** and **Process Library Version** rows (value or `-`) alongside the current System Version, so upgrade-related version detail lives on this page rather than Device Information. When a newer package exists, the card SHALL present an **Update Now** (and dismiss/later) gate (version / optional notes). **Update Now** SHALL start cloud download+apply via safe-shutdown with progress on the **same** System Upgrade page (`runCloudUpdate`, no remount required). Controls MUST NOT report a false success when cloud services or API origin are unavailable, MUST NOT report “up to date” when the check could not run, and MUST NOT remain permanently deferred once this capability is implemented. Auto-check MUST NOT apply an update without operator confirmation via Update Now (or equivalent confirm); when auto-check finds a newer package it MAY open System Upgrade already in the available state.
+Device Information SHALL expose **OS Version** as navigation into **System Upgrade** (OS / whole-device upgrade) and **HMI Version** as navigation into **HMI Upgrade**. System Upgrade SHALL host **Check for Updates** (manual) for the **OS / whole-device** channel, invoke `cyber_ota` against the **public CDN channel manifest** at **`https://cdn.lasercyber.com/{artifact}/release.json`** (default artifact `lws-hmi`), compare against the running **OS Version**, and render check outcomes **in the content card** using **`cyber_upgrade_ui` check-card primitives** — not as dialogs. Check for Updates MUST NOT require cloud services enabled, Worker API origin pin, or environment-tier staging/release selection. When not in progress-only / apply mode, System Upgrade SHALL also display a read-only **Kernel Version** row (value or `-`) alongside the current OS Version. **Process Library Version MUST NOT appear on System Upgrade** (it belongs on HMI Upgrade). When a newer OS package exists, the card SHALL present an **Update Now** (and dismiss/later) gate. **Update Now** SHALL start cloud/CDN download+apply via safe-shutdown with progress on the **same** System Upgrade page (`runCloudUpdate`, no remount required). Controls MUST NOT report a false success when the CDN manifest is unreachable, MUST NOT report “up to date” when the check could not run, and MUST NOT remain permanently deferred once this capability is implemented.
 
-#### Scenario: Check for Updates runs manifest check
+**Auto-Check for Updates** SHALL be a single master switch on Device Information (Versions group, last row)—not a checkbox on System Upgrade / HMI Upgrade / control-board / camera upgrade pages. When that switch is on, Product Home tips and opening those upgrade pages MAY auto-run a version check; Auto-check MUST NOT apply an update without operator confirmation via Update Now (or equivalent confirm).
 
-- **WHEN** the operator activates Check for Updates on System Upgrade and cloud services are enabled with a pinned API origin and reachable channel manifest
-- **THEN** the content card reflects whether an update is available based on `cyber_ota` version compare against the running HMI app version
+#### Scenario: Check for Updates runs OS manifest check
+
+- **WHEN** the operator activates Check for Updates on System Upgrade and `https://cdn.lasercyber.com/lws-hmi/release.json` is reachable
+- **THEN** the content card reflects whether an update is available based on `cyber_ota` version compare against the running **OS Version**
 - **AND** the check outcome is presented via `cyber_upgrade_ui` check-card UI
+- **AND** the resolved manifest URL MUST NOT depend on cloud services enable or pinned Worker API origin
 
-#### Scenario: Unavailable cloud does not claim up to date
+#### Scenario: Unreachable CDN does not claim up to date
 
-- **WHEN** the operator activates Check for Updates and no channel manifest URL can be resolved (cloud services off or API origin not pinned)
-- **THEN** the System Upgrade content card reports that the check is unavailable
+- **WHEN** the operator activates Check for Updates and the CDN channel manifest cannot be fetched (network error or HTTP failure)
+- **THEN** the System Upgrade content card reports that the check failed or is unavailable
 - **AND** MUST NOT claim the device is already up to date
 - **AND** MUST NOT use a dialog for that outcome
+
+#### Scenario: Check works with cloud services disabled
+
+- **WHEN** cloud services are disabled and the operator activates Check for Updates on System Upgrade and the CDN manifest is reachable
+- **THEN** the check runs against `https://cdn.lasercyber.com/{artifact}/release.json`
+- **AND** MUST NOT require enabling cloud services
 
 #### Scenario: Update Now starts cloud download on System Upgrade
 
@@ -27,15 +36,25 @@ Device Information SHALL expose **System Version** as navigation into **System U
 
 #### Scenario: Auto-check never auto-applies
 
-- **WHEN** Automatically check for updates is enabled and a newer manifest is found
-- **THEN** the HMI may open System Upgrade with the available state
-- **AND** MUST NOT start partition writes until the operator confirms with Update Now (or equivalent)
+- **WHEN** Auto-Check for Updates is enabled on Device Information and a newer manifest is found
+- **THEN** the HMI may open System Upgrade or HMI Upgrade with the available state (or an equivalent confirm tip)
+- **AND** MUST NOT start partition writes or HMI install until the operator confirms with Update Now (or equivalent)
 
-#### Scenario: Kernel and process library versions on System Upgrade
+#### Scenario: Kernel on System Upgrade; Process Library not
 
 - **WHEN** the operator opens System Upgrade in check mode from Device Information
-- **THEN** Kernel Version and Process Library Version are visible on System Upgrade
-- **AND** Device Information does not list those rows
+- **THEN** Kernel Version is visible on System Upgrade
+- **AND** Process Library Version is not listed on System Upgrade
+- **AND** Device Information does not list Kernel or Process Library rows
+
+### Requirement: HMI Upgrade page is part of Settings upgrade UX
+
+The product App SHALL provide **HMI Upgrade** per `hmi-app-cloud-ota`: Device Information **HMI Version** navigates there; check/progress use `cyber_upgrade_ui`; Auto-Check master switch on Device Information MAY auto-check-on-open for HMI Upgrade without auto-apply.
+
+#### Scenario: HMI Version opens HMI Upgrade
+
+- **WHEN** the operator activates the HMI Version row on Device Information
+- **THEN** HMI Upgrade is shown with Settings chrome
 
 ### Requirement: Dedicated upgrade page unifies transfer as download progress
 
@@ -67,7 +86,7 @@ Whole-device OTA progress SHALL be shown on the **System Upgrade** page driven b
 
 ### Requirement: Safe shutdown navigates to the dedicated upgrade page
 
-Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at download start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and ensure the **System Upgrade** page is showing progress. When the operator is already on System Upgrade (Update Now), navigation MUST NOT remount a separate progress route unnecessarily. When started from host `make upgrade` / cleared stack, the HMI SHALL navigate **directly** to System Upgrade (progress-only) and MUST NOT use Home as an intermediate destination. Partition writes MUST NOT begin until this safe shutdown and upgrade-page presentation have completed (or the session fails closed without writing).
+Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at download start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and ensure the **System Upgrade** page is showing progress. After package download and signature verify succeed (and before extract/partition writes), the HMI SHALL also turn off the Wi‑Fi radio and Bluetooth adapter (Ethernet / USB-SSH networking MAY remain). When the OTA session ends (failure, cancel, **or** successful reboot-armed completion), the HMI SHALL restore radios that were enabled before quiesce. Radio restore MUST NOT be skipped on reboot-armed success: Wi‑Fi/BT are operator-wanted (not systemd `wants`), and quiesce clears their wanted markers — reboot alone will not re-enable them. When the operator is already on System Upgrade (Update Now), navigation MUST NOT remount a separate progress route unnecessarily. When started from host `make upgrade` / cleared stack, the HMI SHALL navigate **directly** to System Upgrade (progress-only) and MUST NOT use Home as an intermediate destination. Partition writes MUST NOT begin until this safe shutdown and upgrade-page presentation have completed (or the session fails closed without writing).
 
 #### Scenario: make upgrade trigger stops work and opens upgrade page
 
@@ -80,6 +99,19 @@ Before starting whole-device transfer or verify-and-apply (including when trigge
 
 - **WHEN** the operator activates Update Now on System Upgrade while a work session is active
 - **THEN** the HMI performs the same safe shutdown and shows apply progress on System Upgrade before download/apply proceeds
+
+#### Scenario: Radios off before extract/burn
+
+- **WHEN** a cloud or host HTTP OTA package has been downloaded and Ed25519-verified
+- **THEN** before extract or partition writes begin, the HMI turns off Wi‑Fi and Bluetooth
+- **AND** soft-fails radio disable when the board has no radio stack
+
+#### Scenario: Radios restored when OTA session ends
+
+- **WHEN** Wi‑Fi and/or Bluetooth were enabled before the pre-extract radio quiesce
+- **AND** the whole-device OTA session ends (failure, cancel, or success with reboot armed)
+- **THEN** the HMI SHALL restore those radios that were previously enabled (rewriting wanted markers and re-enabling)
+- **AND** MUST NOT skip restore solely because reboot-after-arm was requested
 
 ### Requirement: Whole-device OTA excludes concurrent control-board flash
 

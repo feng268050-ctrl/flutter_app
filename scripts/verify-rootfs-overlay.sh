@@ -277,13 +277,19 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/hmi (App/UI only) ---"
-	for f in hmi-launch.sh hmi-stop-and-wait.sh push-app-apply-and-restart.sh \
+	for f in hmi-launch.sh hmi-stop-and-wait.sh \
 		debug-app-apply.sh debug-app-run.sh debug-runtime-install.sh \
 		diagnose-hmi.sh extract-video-frame; do
 		if [[ -x "$libexec_hmi/$f" ]]; then
 			echo "OK:  hmi/$f"
 		else
 			echo "FAIL: hmi/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+	for stale in push-app-apply-and-restart.sh upgrade-app-apply-and-restart.sh; do
+		if [[ -e "$libexec_hmi/$stale" ]]; then
+			echo "FAIL: removed helper still under hmi/$stale (App owns install+restart)" >&2
 			missing=1
 		fi
 	done
@@ -582,6 +588,7 @@ enable-ssh-debug /usr/libexec/ssh/enable-ssh-debug.sh
 disable-ssh-debug /usr/libexec/ssh/disable-ssh-debug.sh
 usb-otg-mode /usr/libexec/usb/usb-otg-mode.sh
 set-performance-mode /usr/libexec/board/set-performance-mode.sh
+set-power-mode /usr/libexec/board/set-performance-mode.sh
 apply-mouse-settings /usr/libexec/display/apply-mouse-settings.sh
 EOF
 	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply change-backlight change-volume apply-proxy sync-time; do
@@ -1307,10 +1314,19 @@ EOF
 	# full target root (BR output), require it; overlay-only checks skip.
 	if [[ -x "$target/usr/bin/openssl" ]]; then
 		echo "OK:  /usr/bin/openssl present (OTA verify via cyber_ota)"
-	elif [[ -d "$target/usr/libexec/ab" && ! -e "$target/etc/os-release" ]]; then
+	elif [[ -d "$target/usr/libexec/ab" ]] && \
+		[[ ! -x "$target/usr/bin/systemctl" && ! -x "$target/bin/systemctl" ]]; then
 		echo "OK:  openssl CLI deferred (fs-overlay check; ensure BR2_PACKAGE_LIBOPENSSL_BIN in rootfs)"
 	else
 		echo "FAIL: missing /usr/bin/openssl (enable BR2_PACKAGE_LIBOPENSSL_BIN; dirclean rebuild libopenssl)" >&2
+		missing=1
+	fi
+	if [[ -f "$target/etc/os-release" ]] && \
+		grep -q '^ID=cyberos$' "$target/etc/os-release" && \
+		grep -q '^NAME="Cyber OS"$' "$target/etc/os-release"; then
+		echo "OK:  /etc/os-release is Cyber OS"
+	else
+		echo "FAIL: /etc/os-release must identify Cyber OS (NAME/ID)" >&2
 		missing=1
 	fi
 	if grep -q 'enable ab-boot-confirm.service' \
@@ -1450,6 +1466,31 @@ EOF
 			missing=1
 		else
 			echo "OK:  rknn_common_test absent"
+		fi
+	fi
+	if grep -qF '#include "chips/lws_hmi_font.config"' "$def" 2>/dev/null; then
+		echo ""
+		echo "--- CJK fonts (lws_hmi_font.config) ---"
+		local han_dir="$target/usr/share/fonts/source-han-sans-cn"
+		local han_otf
+		if [[ ! -d "$han_dir" ]]; then
+			echo "FAIL: $han_dir missing (Source Han Sans CN; CJK will tofu). Fix: apply-overlay must wire package/source-han-sans into package/Config.in, then: bash scripts/br-make-packages.sh fonts source-han-sans-cn && make build-rootfs" >&2
+			missing=1
+		else
+			for han_otf in SourceHanSansCN-Regular.otf SourceHanSansCN-Medium.otf SourceHanSansCN-Bold.otf; do
+				if [[ -f "$han_dir/$han_otf" ]]; then
+					echo "OK:  fonts/source-han-sans-cn/$han_otf"
+				else
+					echo "FAIL: fonts/source-han-sans-cn/$han_otf missing" >&2
+					missing=1
+				fi
+			done
+		fi
+		if [[ ! -d "$target/usr/share/fonts/dejavu" ]]; then
+			echo "FAIL: fonts/dejavu missing" >&2
+			missing=1
+		else
+			echo "OK:  fonts/dejavu"
 		fi
 	fi
 

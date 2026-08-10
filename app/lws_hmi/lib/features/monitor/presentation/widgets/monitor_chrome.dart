@@ -516,7 +516,7 @@ class MonitorTempMetricCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     Widget card() {
-      final unit = common?.unit;
+      final unit = common?.unitWire;
       final hasValue = series.lastCelsius != null;
       final String value;
       if (overTemp && !hasValue) {

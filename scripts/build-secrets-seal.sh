@@ -191,7 +191,8 @@ do_build() {
 		"-I$staging/usr/include")
 	local ldflags=("--sysroot=$sysroot"
 		"-L$staging/usr/lib" "-L$staging/lib" -lteec)
-	# Prefer rpath-less dynamic link; device has libteec in /lib.
+	# Prefer rpath-less dynamic link; device has libteec in /lib (SONAME follows
+	# optee-client — rebuild CA after BR/optee-client bumps, e.g. .so.1 → .so.2).
 	"$cc" "${cflags[@]}" -o "$CACHE/secrets-seal-ca" \
 		"$ROOT/native/secrets_seal/host/secrets_seal_ca.c" \
 		"${ldflags[@]}"
@@ -221,7 +222,7 @@ if [[ "$FORCE" == "1" ]]; then
 		"$OVERLAY_ROOT/usr/libexec/hmi/secrets-seal-ca"
 fi
 
-# macOS: compile inside builder (linux/amd64) with SDK toolchain.
+# macOS: compile inside builder against Docker-volume SDK staging (libteec SONAME).
 if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
 	# Resolve on the host first, then remap into the docker bind mount.
 	ta_sign_key="$(resolve_ta_sign_key)"
@@ -238,6 +239,7 @@ if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
 	fi
 	exec env LWS_HMI_SKIP_OVERLAY=1 FORCE="$FORCE" OPTEE_OS_VER="$OPTEE_OS_VER" \
 		BUILD_JOBS="${BUILD_JOBS:-8}" TA_SIGN_KEY="$ta_sign_key" \
+		LWS_HMI_SDK_DIR=/work/sdk \
 		bash "$ROOT/scripts/docker-run.sh" \
 		bash /work/lws-hmi/scripts/build-secrets-seal.sh
 fi

@@ -12,8 +12,6 @@ import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.d
 import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
 import 'package:lws_hmi/features/system_ota/presentation/system_upgrade_page.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
-import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
@@ -97,15 +95,7 @@ abstract final class SystemOtaHomeBootstrap {
   }
 
   static String? _resolveManifestUrl(BuildContext context) {
-    final cloudStore = CloudSettingsScope.maybeOf(context);
-    if (cloudStore == null) {
-      return null;
-    }
-    final runtime = CloudLocalRuntimeScope.maybeOf(context);
-    return OtaManifestUrl.resolve(
-      cloudSettings: cloudStore,
-      pinnedApiBase: runtime?.pinnedApiBase,
-    );
+    return OtaManifestUrl.resolve();
   }
 
   static Future<bool> _showGoToSettingsTip({

@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/settings/application/app_text_size.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
@@ -25,7 +25,7 @@ class TextSizeSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final store = CommonSettingsScope.maybeOf(context);
+    final store = TextSizeSettingsScope.maybeOf(context);
     return SettingsScaffold(
       title: l10n.textSizeSettingText,
       body: store == null
@@ -44,7 +44,7 @@ class TextSizeSettingsPage extends StatelessWidget {
                       bottomInset: 0,
                       children: [
                         for (final size
-                            in CommonSettingsStore.supportedTextSizes)
+                            in TextSizeSettingsStore.supportedTextSizes)
                           SettingsOptionTile(
                             title: labelFor(l10n, size),
                             selected: selected == size,

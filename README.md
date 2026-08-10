@@ -392,14 +392,17 @@ make shell                      # interactive root shell; SN=... when multiple b
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL_ONLY=1
 make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
 make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=factory_test → /opt/factory_test
-make push-app                   # SN=... when multiple boards; hot-swap selected APP
+make upgrade-app                # SN=... when multiple boards; signed app OTA (push-app is alias)
+make package-app                # tar.gz overlay APP → output/firmware/<APP>/v*.tar.gz
 APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/firmware/<APP>/; factory→…/<APP>/<sku>/
-make version                    # print app/<APP> pubspec versionName+build (default APP=lws_hmi; host-only)
-make version-bump VERSION=1.0.40  # bump pubspec (+ app_version.dart when present); 5-digit build encode
+make version                    # print OS Version (default); APP=<id> → Flutter pubspec name+build
+make version-bump VERSION=1.0.0 # bump OS Version; APP=lws_hmi VERSION=… bumps Flutter (5-digit)
 make build-rootfs               # → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)
 make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img
 make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= override
-make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
+make upgrade-control-board      # sign+HTTP serve control-board bin; device download/verify (HMI running)
+make upgrade-camera             # sign+HTTP serve camera zip; device download/verify (HMI running)
+make publish-app                # package+sign+upload app tar.gz → lws-hmi/app/release.json
 make upgrade-process-library    # push process-library for device model; force import (HMI running)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make migrate-secrets            # re-seal software Wi‑Fi vault + cloud Ed25519 → OP-TEE (SCOPE=all|wifi|cloud)
@@ -423,9 +426,10 @@ make ota-release-keys               # release Ed25519 keys → keys/ota/ + overl
 make ota-package                    # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig]
 make upgrade                        # ota-package + host HTTP; device downloads tar.gz+.sig → verify/apply; or RockUSB di
 UPGRADE_TRANSPORT=rockusb make upgrade  # force RockUSB path after make reboot-loader / Maskrom
-make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign on api-prod; staging.json)
-RELEASE=1 make publish              # same → release.json (no -beta)
+make publish                        # REQUIRE_OTA_SIG ota-package + R2 upload (presign; release.json)
 make publish-only                   # upload existing output/firmware/<APP>/ota-package.tar.gz +.sig
+make publish-control-board-firmware # sign+upload newest CB bin → lws-hmi/control-board/release.json
+make publish-camera-firmware        # sign+upload newest camera zip → lws-hmi/camera/release.json
 ```
 
 Device selection: use **`SN=`** (matches `make devices` **SN**). Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** / **`UPGRADE_TRANSPORT=`** in `.env` for IDE / daily use.
@@ -450,7 +454,7 @@ make disconnect 192.168.1.50
 `IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** (`make devices` columns: MODE / SN / LocationID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is chip-ID fallback. USB-SSH/SSH/EMU **SN** prefers Vendor Storage SN, else chip serial. Android adb / RockUSB loader rows use the adb/SerialNo as SN. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade` / `make write-identity`. Product identity (`brand` / `model` / `sn`) lives in Rockchip **Vendor Storage** — provision with **`make write-identity BRAND=… MODEL=… PRODUCT_SN=…`** after flash (geometry frozen; `factory.img` must not package vendor payloads). Optional macOS RockUSB `upgrade_tool SN` / `RSN` is **SN-only**; brand/model still need `write-identity`. `make set-prop` / `del-prop` refuse identity keys.
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) auto-selects **SSH stream** (inactive FIT + rootfs) when a Linux SSH target is up, or **RockUSB `di`** of OTA-equivalent images (`boot`/`boot_b`/both rootfs letters/optional oem) when the board is in Loader/Maskrom — **not** `upgrade_tool uf` / `factory.img` (use **`make flash`** for GPT / U-Boot / MiniLoader storage / misc) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Force with `UPGRADE_TRANSPORT=ssh|rockusb`. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
+`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` is an alias of **`make upgrade-app`**: package/sign the app `tar.gz`, serve over ephemeral host HTTP, device `download <url>` + Ed25519 verify, install `/opt/hmi`, restart `hmi.service` (unsigned SCP removed). The flashed image must include the apply helper and DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`) and `OTA_SIGNING_KEY`. `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) auto-selects **SSH stream** (inactive FIT + rootfs) when a Linux SSH target is up, or **RockUSB `di`** of OTA-equivalent images (`boot`/`boot_b`/both rootfs letters/optional oem) when the board is in Loader/Maskrom — **not** `upgrade_tool uf` / `factory.img` (use **`make flash`** for GPT / U-Boot / MiniLoader storage / misc) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Force with `UPGRADE_TRANSPORT=ssh|rockusb`. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / upgrade-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
 
 ### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 
@@ -470,7 +474,7 @@ make debug-app                   # SN=... or IP=... when multiple boards
 
 Or open `app/lws_hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make prepare-debug-host`: for registered `IP=` / `MODE=SSH` / **`MODE=EMU`** it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
 
-`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts the HMI with VM Service over SSH port forwarding (USB-SSH, registered IP, or **EMU** hostfwd). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
+`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts the HMI with VM Service over SSH port forwarding (USB-SSH, registered IP, or **EMU** hostfwd). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make upgrade-app`.
 
 Host-only checks:
 
@@ -538,7 +542,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
 | OpenCV + ximgproc | `.cache/opencv/` sources → `make build-opencv` → `prebuilt/opencv/linux-arm64/` | 链进 `lws_ai_daemon` |
-| AI daemon | `native/lws_ai` → `make build-ai` → `prebuilt/ai/` → **`build-app` → `/opt/hmi`** | App 经 `cyber_pm` 监护 |
+| AI daemon | `native/lws_ai` → **增量** `make build-ai` → `prebuilt/ai/` → **`build-app` → `/opt/hmi`**（日常）；`make rebuild-ai` / `FORCE=1` 清 cmake 全量重编 | App 经 `cyber_pm` 监护 |
 | RKNN runtime | `prebuilt/rknn-rt/` + SDK rknpu2 | NPU 推理（rootfs + AI 链接） |
 | **P2/P3/P5 平台库** | `prebuilt/platform-packages/` | libmodbus、yaml-cpp、sqlite、avahi |
 
@@ -550,7 +554,8 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | `make build-platform-packages` | libmodbus + yaml-cpp + sqlite + avahi |
 | `make fetch-opencv` / `fetch-opencv-ximgproc` | OpenCV 源码 |
 | `make build-opencv` | aarch64 OpenCV → `prebuilt/opencv/linux-arm64` |
-| `make build-ai` | `lws_ai_daemon` → `prebuilt/ai/linux-arm64`（需 opencv + rknn-rt） |
+| `make build-ai` | 增量编译 `lws_ai_daemon` → `prebuilt/ai/linux-arm64`（需 opencv + rknn-rt；日常改 AI 源码用此命令） |
+| `make rebuild-ai` | `FORCE=1`：wipe `.cache/lws_ai` cmake 后全量重编（非日常） |
 | `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
 | `make fetch-btop` | aarch64 musl `btop` → prebuilt + fs-overlay |
 | `make build-umtprd` | aarch64 static `umtprd` → prebuilt + fs-overlay（MTP） |
@@ -587,7 +592,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 
 权威阶段表与旧号映射：[`docs/flutter-linux-hmi-plan.md` §1](docs/flutter-linux-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
 
-Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
+Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`（`set-power-mode`：`performance` / `balanced` load profile）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
 
 仍待移植：lensinspector / AI daemon、`probe-dual-stream.sh`、IPC 专链 eth0 配网细节（**P4.1**）。
 
@@ -732,7 +737,8 @@ App deploy without reflash:
 ```bash
 make build-app
 make push-app                  # SN=... or IP=... when multiple devices
-make upgrade-control-board    # push latest control-board bin and trigger upgrade (no version gate)
+make upgrade-control-board    # sign+HTTP serve control-board bin; device download/verify (no version gate)
+make upgrade-camera           # sign+HTTP serve camera zip; device download/verify (no version gate)
 make upgrade-process-library  # push process-library for device Vendor Storage model; force import
 make reset-process-library    # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make migrate-secrets          # re-seal software Wi‑Fi vault + cloud key → OP-TEE (SCOPE=all|wifi|cloud)

@@ -415,7 +415,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get applyToDevice => 'Apply To Device';
 
   @override
-  String get autoCheckOtaUpdate => 'Automatically check for updates';
+  String get autoCheckOtaUpdate => 'Auto-Check for Updates';
 
   @override
   String autoOtaUpdateDialogMessage(String version) {
@@ -433,6 +433,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get autoControlBoardUpdateDialogTitle =>
       'Control Board Firmware Available';
+
+  @override
+  String autoCameraProgramUpdateDialogMessage(String version) {
+    return 'Camera firmware $version is available. Go to Settings to review and install the update.';
+  }
+
+  @override
+  String get autoCameraProgramUpdateDialogTitle => 'Camera Firmware Available';
 
   @override
   String get goToSettings => 'Go to Settings';
@@ -583,6 +591,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cameraVersion => 'Camera Version';
+
+  @override
+  String cameraProgramAlreadyUpToDate(String version) {
+    return 'Camera firmware $version is up to date.';
+  }
+
+  @override
+  String get cameraProgramCheckFailed =>
+      'Could not check camera firmware. Verify camera network connection.';
+
+  @override
+  String get cameraProgramCheckUnavailable =>
+      'Camera firmware check is not available right now.';
+
+  @override
+  String cameraProgramDialogMessage(String currentVersion, String newVersion) {
+    return 'A newer camera firmware is available ($currentVersion → $newVersion).\nKeep power connected and don’t operate the device during the upgrade.';
+  }
+
+  @override
+  String get cameraProgramFailedMessage =>
+      'Camera firmware update failed. Try again later.';
+
+  @override
+  String get cameraProgramFailedTitle => 'Camera Update Failed';
+
+  @override
+  String cameraProgramNewVersionHeadline(String version) {
+    return 'New camera firmware $version';
+  }
+
+  @override
+  String get cameraProgramRebootTitle => 'Rebooting Camera';
+
+  @override
+  String get cameraProgramSuccessMessage => 'Camera firmware has been updated.';
+
+  @override
+  String get cameraProgramSuccessTitle => 'Camera Updated';
+
+  @override
+  String get cameraProgramTransferTitle => 'Transferring Camera Firmware';
+
+  @override
+  String get cameraProgramUpgradeIdleHint =>
+      'Check for newer camera firmware bundled with this App.';
+
+  @override
+  String get cameraProgramUpgradeTitle => 'Camera Upgrade';
+
+  @override
+  String get cameraProgramUpgradingMessage =>
+      'Keep power connected and don’t operate the device during the upgrade.';
+
+  @override
+  String get cameraProgramWaitOnlineTitle => 'Waiting for Camera';
 
   @override
   String get cancelText => 'Cancel';
@@ -1189,6 +1253,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get holdToEnableLaser => 'Hold To Enable Laser';
 
   @override
+  String get hmiUpgradeTitle => 'HMI Upgrade';
+
+  @override
+  String get hmiVersion => 'HMI Version';
+
+  @override
   String get homeAiVisionLabel => 'AI Vision';
 
   @override
@@ -1748,12 +1818,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onLabel => 'On';
 
   @override
+  String get osVersion => 'OS Version';
+
+  @override
   String get otaCheckUnavailable =>
       'Software update check is not available on this build.';
 
   @override
   String get otaCheckFailed =>
-      'Could not check for updates. Verify network and cloud settings.';
+      'Could not check for updates. Verify network connectivity.';
 
   @override
   String get otaSessionActive => 'A system upgrade is already in progress.';
@@ -1824,6 +1897,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get otaUpgradeStatusApk => 'Installing app…';
+
+  @override
+  String get otaUpgradeStatusRestarting => 'Restarting application…';
 
   @override
   String get otaUpgradeStatusDownloading => 'Downloading update…';
@@ -2274,6 +2350,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processWheelWideCleaning => 'Wide-Area Cleaning';
 
   @override
+  String get powerModeOptionBalanced => 'Balanced';
+
+  @override
+  String get powerModeOptionPerformance => 'Performance';
+
+  @override
+  String get powerModePersistedFooter =>
+      'Performance keeps full clocks and motion. Balanced lowers SoC load and heat by capping clocks and reducing decorative animation.';
+
+  @override
+  String get powerModePreferenceUnavailable =>
+      'Power Mode settings are temporarily unavailable.';
+
+  @override
+  String get powerModeSettingText => 'Power Mode';
+
+  @override
   String get productDisclaimerContent =>
       'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.';
 
@@ -2602,7 +2695,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncNow => 'Sync Now';
 
   @override
-  String get systemVersion => 'System Version';
+  String get systemVersion => 'OS Version';
 
   @override
   String get tempBoardRefrigerationCommAlarmContent =>

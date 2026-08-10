@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/monitor/application/work_information_display.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/work_information_tab.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_models.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_repository.dart';
@@ -68,7 +68,7 @@ void main() {
       // 300 mm → 1 ft (25 mm/in × 12).
       final d = WorkInformationDisplay.fromAggregate(
         _agg(wireMm: 300),
-        unitWire: CommonSettingsStore.unitImperial,
+        unitWire: UnitSystem.imperial.wire,
       );
       expect(d.wireNumber, '1');
       expect(d.wireUnit, 'ft');
@@ -127,8 +127,8 @@ void main() {
         wireMm: 5000,
       ),
     );
-    final settings = CommonSettingsStore(
-      preferencePath: '/tmp/lws-hmi-work-info-test-settings.json',
+    final settings = LocaleSettings(
+      preferencePath: '/tmp/lws-hmi-work-info-test-locale.conf',
     )..warmRead();
 
     await tester.pumpWidget(

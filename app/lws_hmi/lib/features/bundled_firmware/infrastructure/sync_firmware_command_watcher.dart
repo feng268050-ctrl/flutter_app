@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cyber_ota/cyber_ota.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
+import 'package:lws_hmi/features/upgrade_safety/upgrade_safety.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
 /// Host helper (`make upgrade-control-board`) command watcher.
 ///
 /// File format (one command per line):
-/// - `upgrade /run/hmi/control-board-upgrade/LSW01H####S####.bin`
+/// - `download http://host:port/LSW01H####S####.bin`
+/// - `upgrade /run/hmi/control-board-upgrade/LSW01H####S####.bin` (legacy)
 /// - `clean`
 final class SyncFirmwareCommandWatcher {
   SyncFirmwareCommandWatcher({
@@ -18,7 +21,8 @@ final class SyncFirmwareCommandWatcher {
     required this.navigatorContext,
     this.path = defaultPath,
     this.pollInterval = const Duration(milliseconds: 400),
-  });
+    SignedBlobFetch? signedFetch,
+  }) : _signedFetch = signedFetch ?? SignedBlobFetch();
 
   static const defaultPath = '${OsPaths.runHmi}/upgrade-control-board.cmd';
 
@@ -29,6 +33,7 @@ final class SyncFirmwareCommandWatcher {
 
   final String path;
   final Duration pollInterval;
+  final SignedBlobFetch _signedFetch;
 
   Timer? _timer;
   bool _busy = false;
@@ -85,6 +90,10 @@ final class SyncFirmwareCommandWatcher {
     }
     final op = parts.first.toLowerCase();
     switch (op) {
+      case 'download':
+        if (parts.length < 2) return;
+        await _downloadAndUpgrade(parts[1]);
+        break;
       case 'upgrade':
         if (parts.length < 2) return;
         await _sync(parts[1]);
@@ -93,6 +102,35 @@ final class SyncFirmwareCommandWatcher {
         break;
       default:
         break;
+    }
+  }
+
+  Future<void> _downloadAndUpgrade(String packageUrl) async {
+    try {
+      if (!FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
+        return;
+      }
+      final uri = Uri.tryParse(packageUrl);
+      if (uri == null ||
+          !(uri.scheme == 'http' || uri.scheme == 'https') ||
+          uri.host.isEmpty) {
+        return;
+      }
+      var fileName = uri.pathSegments.isEmpty
+          ? ''
+          : Uri.decodeComponent(uri.pathSegments.last);
+      if (fileName.isEmpty || !fileName.toLowerCase().endsWith('.bin')) {
+        return;
+      }
+      await UpgradeSafety.stopWork(services, reason: 'control-board-host');
+      final verified = await _signedFetch.downloadAndVerify(
+        packageUrl: packageUrl,
+        stagingDir: kControlBoardStagingDir,
+        fileName: fileName,
+      );
+      await ControlBoardUpgradeCoordinator.instance.startHostUpgrade(verified);
+    } catch (_) {
+      // Keep watcher alive; host will retry if needed.
     }
   }
 

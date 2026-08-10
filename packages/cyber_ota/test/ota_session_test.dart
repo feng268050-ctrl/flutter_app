@@ -9,6 +9,7 @@ final class _FakeVerify extends OtaVerify {
 
   int calls = 0;
   Object? error;
+  void Function()? onCall;
 
   @override
   Future<void> verifyPackage({
@@ -16,6 +17,7 @@ final class _FakeVerify extends OtaVerify {
     required String sigPath,
   }) async {
     calls++;
+    onCall?.call();
     final err = error;
     if (err != null) {
       throw err;
@@ -27,6 +29,7 @@ final class _FakeExtract extends OtaExtract {
   _FakeExtract() : super(processRunner: ProcessRunner());
 
   int calls = 0;
+  void Function()? onCall;
 
   @override
   Future<void> extractArchive({
@@ -35,6 +38,7 @@ final class _FakeExtract extends OtaExtract {
     ExtractProgress? onProgress,
   }) async {
     calls++;
+    onCall?.call();
     onProgress?.call(0, 1);
     onProgress?.call(1, 1);
   }
@@ -165,28 +169,51 @@ void main() {
       expect(events.map((e) => e.phase), contains(OtaPhase.checking));
     });
 
-    test('checkForUpdate accepts publish-shaped url channel JSON', () async {
+    test('checkForUpdate ignores empty current version', () async {
+      final result = await session.checkForUpdate(
+        manifestUrl: 'https://cdn.example/manifest.json',
+        currentVersion: '',
+      );
+
+      expect(result.hasUpdate, isFalse);
+    });
+
+    test('checkForUpdate strips v prefix before compare', () async {
       http.manifestJson = <String, dynamic>{
-        'version': 'v1.0.41-beta',
-        'filename': 'v1.0.41-beta.tar.gz',
-        'published_at': '2026-08-06T08:00:00Z',
-        'url': 'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+        'version': 'v1.0.0',
+        'url': 'https://cdn.example/lws-hmi/v1.0.0.tar.gz',
       };
 
       final result = await session.checkForUpdate(
-        manifestUrl: 'https://api.example/view/lws-hmi/staging.json',
+        manifestUrl: 'https://cdn.example/manifest.json',
+        currentVersion: '1.0.0',
+      );
+
+      expect(result.hasUpdate, isFalse);
+    });
+
+    test('checkForUpdate accepts publish-shaped url channel JSON', () async {
+      http.manifestJson = <String, dynamic>{
+        'version': '1.0.41',
+        'filename': 'v1.0.41.tar.gz',
+        'published_at': '2026-08-06T08:00:00Z',
+        'url': 'https://cdn.example/lws-hmi/v1.0.41.tar.gz',
+      };
+
+      final result = await session.checkForUpdate(
+        manifestUrl: 'https://api.example/r2/lws-hmi/release.json',
         currentVersion: '1.0.40',
       );
 
       expect(result.hasUpdate, isTrue);
-      expect(result.manifest?.version, 'v1.0.41-beta');
+      expect(result.manifest?.version, '1.0.41');
       expect(
         result.manifest?.packageUrl,
-        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz',
+        'https://cdn.example/lws-hmi/v1.0.41.tar.gz',
       );
       expect(
         result.manifest?.sigUrlResolved,
-        'https://cdn.example/lws-hmi/v1.0.41-beta.tar.gz.sig',
+        'https://cdn.example/lws-hmi/v1.0.41.tar.gz.sig',
       );
     });
 
@@ -212,6 +239,30 @@ void main() {
       expect(apply.fullCalls, 1);
       expect(http.downloads, contains('https://cdn.example/ota.tar.gz'));
       expect(http.downloads, contains('https://cdn.example/ota.tar.gz.sig'));
+    });
+
+    test('beforeExtract runs after verify and before extract', () async {
+      final order = <String>[];
+      verify.onCall = () => order.add('verify');
+      extract.onCall = () => order.add('extract');
+      final hooked = OtaSession(
+        stagingDir: '${staging.path}/hooked/',
+        httpClient: http,
+        verify: verify,
+        extract: extract,
+        apply: apply,
+        beforeExtract: () async {
+          order.add('beforeExtract');
+        },
+      );
+      await hooked.runCloudUpdate(
+        manifest: OtaManifest.fromJson(<String, dynamic>{
+          'version': '2.0.0',
+          'package_url': 'https://cdn.example/ota.tar.gz',
+        }),
+      );
+      await hooked.close();
+      expect(order, ['verify', 'beforeExtract', 'extract']);
     });
 
     test('cloud verify failure refuses apply', () async {

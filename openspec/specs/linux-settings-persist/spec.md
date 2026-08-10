@@ -11,10 +11,10 @@ The image SHALL document and use:
 - **`/var/lib/wpa_supplicant/`** — Wi‑Fi wanted, `wpa_supplicant.conf`, wlan0 IPv4/DNS
 - **`/var/lib/network/`** — eth0 wanted, eth0 IPv4/DNS; system proxy
 - **`/var/lib/bluetooth/`** — BT wanted, A2DP sink/volume prefs
-- **`/var/lib/hal/`** — `display.conf` / `sound.conf`, mouse/keyboard settings, `datetime.conf` (sync mode + timezone), `properties.ini` (`display.conf` keys include `backlight`, `auto_sleep`, `orientation`). Legacy `product.ini` SHALL be migrated to `properties.ini` when the latter is absent.
-- **`/var/lib/hmi/`** — HMI App stores (`common-settings.json`, `misc-settings.json`, `advanced-settings.json`, alarm history DB) and push/debug/A-B staging
+- **`/var/lib/hal/`** — `display.conf` / `sound.conf`, mouse/keyboard settings, `datetime.conf` (sync mode + timezone), `power.conf` (`mode` = `performance` / `balanced`), **`locale.conf`** (`language`, `unit`, `region`), `properties.ini` (`display.conf` keys include `backlight`, `auto_sleep`, `orientation`). Legacy `product.ini` SHALL be migrated to `properties.ini` when the latter is absent.
+- **`/var/lib/hmi/`** — HMI App stores (`common-settings.json` for non-locale future peers if any, `misc-settings.json`, `advanced-settings.json`, alarm history DB) and push/debug/A-B staging
 
-LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse preferences MUST be re-applied when `hmi.service` starts; they do NOT require a separate network-style restore oneshot. `common-settings.json` is App-owned and is NOT applied by `settings-restore.service` (Language / Unit are read by the HMI process on start).
+LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse preferences MUST be re-applied when `hmi.service` starts; they do NOT require a separate network-style restore oneshot. **`locale.conf` is HAL-owned and is NOT applied by `settings-restore.service`** (PreferredLanguage / UnitSystem / Region are read by the HMI process on start; Region side effects are applied by HAL locale). Leftover `common-settings.json` Language / Unit / Country keys MUST be ignored. Load / thermal profile MUST be restored by the early `cpu-performance.service` oneshot (board helper), not by `settings-restore.service` alone.
 
 #### Scenario: Cold boot without wifi-wanted
 
@@ -36,10 +36,16 @@ LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse p
 - **WHEN** an operator sets portrait via `change-orientation`
 - **THEN** `/var/lib/hal/display.conf` contains `orientation=portrait` and MUST NOT rely on a standalone `display-orientation` primary write
 
-#### Scenario: Common product prefs use common-settings.json
+#### Scenario: Locale prefs use locale.conf under hal
 
-- **WHEN** an operator changes Language or Unit via Common Settings
-- **THEN** the HMI App persists under `/var/lib/hmi/common-settings.json` rather than under `/var/lib/hal/` or `misc-settings.json`
+- **WHEN** an operator changes Language, Unit, or Country/Region via General Settings
+- **THEN** HAL persists under `/var/lib/hal/locale.conf` (`language` / `unit` / `region`) rather than under `/var/lib/hmi/common-settings.json` as the primary store
+
+#### Scenario: Load profile uses power.conf
+
+- **WHEN** an operator selects balanced
+- **THEN** `/var/lib/hal/power.conf` contains `mode=balanced`
+- **AND** cold boot restores that mode via the board load-profile oneshot before HMI start
 
 ### Requirement: Simple HW prefs written by shell apply helpers
 

@@ -245,29 +245,60 @@ else
 fi
 
 echo ""
-echo "--- performance governors ---"
+echo "--- load profile / governors ---"
+POWER_CONF="${POWER_CONF:-/var/lib/hal/power.conf}"
+power_mode=performance
+if [ -f "$POWER_CONF" ]; then
+	raw="$(
+		grep -E '^[[:space:]]*mode=' "$POWER_CONF" 2>/dev/null |
+			head -n1 |
+			cut -d= -f2- |
+			tr -d '[:space:]' || true
+	)"
+	case "$raw" in
+	performance | balanced)
+		power_mode="$raw"
+		;;
+	esac
+fi
+echo "power.conf mode: $power_mode"
 if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
 	cpu_gov="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo unknown)"
-	if [ "$cpu_gov" = performance ]; then
-		pass "CPU cpufreq governor is performance"
+	if [ "$power_mode" = performance ]; then
+		if [ "$cpu_gov" = performance ]; then
+			pass "CPU cpufreq governor is performance"
+		else
+			warn "CPU cpufreq governor is $cpu_gov (expected performance)"
+		fi
 	else
-		warn "CPU cpufreq governor is $cpu_gov (expected performance)"
+		# balanced: must not require performance; WARN if still locked to it.
+		if [ "$cpu_gov" = performance ]; then
+			warn "CPU cpufreq governor still performance (mode=balanced)"
+		else
+			pass "CPU cpufreq governor is $cpu_gov (balanced)"
+		fi
 	fi
 else
 	warn "CPU cpufreq sysfs missing — skip governor check"
 fi
 if [ -d /sys/class/devfreq ]; then
 	devfreq_ok=1
+	devfreq_any=0
 	for gov in /sys/class/devfreq/*/governor; do
 		[ -f "$gov" ] || continue
+		devfreq_any=1
 		name="$(basename "$(dirname "$gov")")"
 		cur="$(cat "$gov" 2>/dev/null || echo unknown)"
 		echo "devfreq/$name: $cur"
+		# Both modes expect performance on all devfreq (balanced heat cut is
+		# CPU + App paint policy; GPU ondemand blacks Weston wallpaper at boot).
 		if [ "$cur" != performance ]; then
 			devfreq_ok=0
 		fi
 	done
-	if [ "$devfreq_ok" -eq 1 ]; then
+	if [ "$devfreq_any" -eq 0 ]; then
+		warn "no devfreq governors found"
+	elif [ "$devfreq_ok" -eq 1 ]; then
 		pass "all devfreq governors are performance"
 	else
 		warn "some devfreq governors are not performance"

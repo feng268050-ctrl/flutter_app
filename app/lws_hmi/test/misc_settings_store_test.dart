@@ -123,6 +123,36 @@ void main() {
     await dir.delete(recursive: true);
   });
 
+  test('migrates per-channel auto-check flags into master switch', () async {
+    final dir = await Directory.systemTemp.createTemp('misc-');
+    final path = '${dir.path}/misc-settings.json';
+    await File(path).writeAsString(
+      '${const JsonEncoder.withIndent('  ').convert({
+            'showStartupSelfCheck': true,
+            'showSystemStatusOverlay': false,
+            'showGroundLockAlarm': false,
+            'autoCheckOtaUpdate': false,
+            'autoCheckControlBoardUpdate': true,
+            'autoCheckCameraProgramUpdate': false,
+          })}\n',
+    );
+
+    final store = MiscSettingsStore(
+      preferencePath: path,
+      legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+      legacyAutoCheckOtaPath: '${dir.path}/auto-check-ota.json',
+    );
+    store.warmRead();
+    expect(store.autoCheckOtaUpdate, isTrue);
+
+    final decoded = jsonDecode(await File(path).readAsString()) as Map;
+    expect(decoded['autoCheckOtaUpdate'], isTrue);
+    expect(decoded.containsKey('autoCheckControlBoardUpdate'), isFalse);
+    expect(decoded.containsKey('autoCheckCameraProgramUpdate'), isFalse);
+
+    await dir.delete(recursive: true);
+  });
+
   test('corrupt JSON soft-fails to defaults', () async {
     final dir = await Directory.systemTemp.createTemp('misc-');
     final path = '${dir.path}/misc-settings.json';

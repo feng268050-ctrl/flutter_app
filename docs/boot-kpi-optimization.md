@@ -52,7 +52,7 @@ systemd-analyze critical-chain hmi.service
 verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep 组件）
 ```
 
-**`verify-boot` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；无 rootfs `mediamtx.service` / `/usr/bin/mediamtx`；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-wayland-client` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
+**`verify-boot` 期望**：`hmi` + `mainserver` + `cpu-performance` + `pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；无 rootfs `mediamtx.service` / `/usr/bin/mediamtx`；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-wayland-client` running；CPU/devfreq governors follow `/var/lib/hal/power.conf` mode（缺省/`performance` → 期望 `performance` governors；`balanced` → 不要求 `performance`，仍锁在 `performance` 时 WARN）。
 
 **秒表**（填 §6 表格）：上电 → logo；上电 → multi-user；上电 → 首页首帧。
 
@@ -179,8 +179,8 @@ P0（done）
 | `overlay/.../06-systemd.sh` | enable/disable unit、mask、fstab noatime |
 | `overlay/.../08-systemd-finalize.sh` | 收尾清理 SDK post-hook 重新 enable 的 unit（如 `log-guardian`）和退役脚本 |
 | `overlay/.../99-appliance.preset` | preset-all 后保持 Plan A disable 列表 |
-| `overlay/.../cpu-performance.service` | 首帧前拉满 CPU/DMC/GPU 频率 |
-| `overlay/.../set-performance-mode.sh` | 写 cpufreq + devfreq governor |
+| `overlay/.../cpu-performance.service` | 首帧前恢复 CPU/DMC/GPU **load profile**（默认 performance；可读 `/var/lib/hal/power.conf`） |
+| `overlay/.../set-performance-mode.sh` | 写 cpufreq + devfreq governor / mid OPP / cpuidle；`set-power-mode` 同脚本 |
 | `overlay/.../pwrkey-poweroff.service` | 板载 pwrkey 触发关机 |
 | `overlay/.../pwrkey-poweroff.sh` | 监听 `KEY_POWER` → `shutdown.sh poweroff` |
 | `overlay/.../shutdown.sh` | 跳过 HMI teardown；sync 后使用 SysRq `s/u/o` 或 `s/u/b` |

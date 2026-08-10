@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
@@ -149,7 +148,7 @@ final class CameraShowOverlayResult {
       );
 }
 
-/// Minimal HTTP surface for camera OSD (injectable in tests).
+/// Minimal HTTP surface for camera OSD / CGI upgrade (injectable in tests).
 abstract interface class CameraOsdHttpClient {
   Future<CameraOsdHttpResponse> get(
     Uri uri, {
@@ -160,6 +159,17 @@ abstract interface class CameraOsdHttpClient {
     Uri uri, {
     required String authorization,
     Object? body,
+  });
+
+  /// Multipart POST with a single file field (camera CGI firmware upload).
+  Future<CameraOsdHttpResponse> postMultipartFile(
+    Uri uri, {
+    required String authorization,
+    required String fieldName,
+    required String fileName,
+    required List<int> fileBytes,
+    String fileContentType = 'application/octet-stream',
+    void Function(int sent, int total)? onSendProgress,
   });
 
   void close();
@@ -182,9 +192,11 @@ final class CameraOsdHttpResponse {
 final class DartCameraOsdHttpClient implements CameraOsdHttpClient {
   DartCameraOsdHttpClient({
     Duration timeout = const Duration(seconds: 8),
+    Duration uploadTimeout = const Duration(minutes: 5),
     Future<Socket> Function(String host, int port, {Duration? timeout})?
         connect,
   })  : _timeout = timeout,
+        _uploadTimeout = uploadTimeout,
         _connect = connect ??
             ((host, port, {Duration? timeout}) => Socket.connect(
                   host,
@@ -193,6 +205,7 @@ final class DartCameraOsdHttpClient implements CameraOsdHttpClient {
                 ));
 
   final Duration _timeout;
+  final Duration _uploadTimeout;
   final Future<Socket> Function(String host, int port, {Duration? timeout})
       _connect;
 
@@ -224,15 +237,54 @@ final class DartCameraOsdHttpClient implements CameraOsdHttpClient {
     );
   }
 
+  @override
+  Future<CameraOsdHttpResponse> postMultipartFile(
+    Uri uri, {
+    required String authorization,
+    required String fieldName,
+    required String fileName,
+    required List<int> fileBytes,
+    String fileContentType = 'application/octet-stream',
+    void Function(int sent, int total)? onSendProgress,
+  }) {
+    final boundary =
+        '----lwsCameraUpgrade${DateTime.now().microsecondsSinceEpoch}';
+    final preamble = ascii.encode(
+      '--$boundary\r\n'
+      'Content-Disposition: form-data; name="$fieldName"; '
+      'filename="$fileName"\r\n'
+      'Content-Type: $fileContentType\r\n'
+      '\r\n',
+    );
+    final epilogue = ascii.encode('\r\n--$boundary--\r\n');
+    final bodyLength = preamble.length + fileBytes.length + epilogue.length;
+    return _request(
+      method: 'POST',
+      uri: uri,
+      authorization: authorization,
+      bodyParts: [preamble, fileBytes, epilogue],
+      contentType: 'multipart/form-data; boundary=$boundary',
+      contentLength: bodyLength,
+      timeout: _uploadTimeout,
+      onSendProgress: onSendProgress,
+    );
+  }
+
   Future<CameraOsdHttpResponse> _request({
     required String method,
     required Uri uri,
     required String authorization,
     List<int>? body,
+    List<List<int>>? bodyParts,
+    String? contentType,
+    int? contentLength,
     bool forceEmptyBody = false,
+    Duration? timeout,
+    void Function(int sent, int total)? onSendProgress,
   }) async {
+    final effectiveTimeout = timeout ?? _timeout;
     final path = _requestTarget(uri);
-    final hostPort = uri.port == 0 ? uri.host : '${uri.host}:${uri.port}';
+    final hostPort = _hostHeader(uri);
     final headerLines = <String>[
       '$method $path HTTP/1.1',
       'Host: $hostPort',
@@ -240,45 +292,113 @@ final class DartCameraOsdHttpClient implements CameraOsdHttpClient {
       'Accept: */*',
       'Connection: close',
     ];
-    if (body != null) {
-      headerLines.add('Content-Type: application/json');
-      headerLines.add('Content-Length: ${body.length}');
+
+    final parts = bodyParts ?? (body != null ? [body] : null);
+    final length = contentLength ??
+        parts?.fold<int>(0, (sum, p) => sum + p.length);
+
+    if (parts != null && length != null) {
+      headerLines.add('Content-Type: ${contentType ?? 'application/json'}');
+      headerLines.add('Content-Length: $length');
     } else if (forceEmptyBody) {
       headerLines.add('Content-Length: 0');
     }
 
-    final builder = BytesBuilder(copy: false);
-    builder.add(ascii.encode('${headerLines.join('\r\n')}\r\n\r\n'));
-    if (body != null && body.isNotEmpty) {
-      builder.add(body);
-    }
-    final packet = builder.takeBytes();
+    final headerBytes =
+        ascii.encode('${headerLines.join('\r\n')}\r\n\r\n');
+    final totalBytes = headerBytes.length + (length ?? 0);
     debugPrint(
-      'camera-show-overlay: $method $uri packet=${packet.length} '
-      'body=${body?.length ?? 0}',
+      'camera-osd-http: $method $uri packet≈$totalBytes '
+      'body=${length ?? 0}',
     );
 
     final socket = await _connect(
       uri.host,
       uri.port,
-      timeout: _timeout,
-    ).timeout(_timeout);
+      timeout: effectiveTimeout,
+    ).timeout(effectiveTimeout);
+    var sendCompleted = false;
     try {
-      socket.add(packet);
-      await socket.flush().timeout(_timeout);
+      var sent = 0;
+      void report() {
+        onSendProgress?.call(sent, totalBytes);
+      }
+
+      // Embedded camera CGI has a small TCP window; apply backpressure with
+      // modest chunks + flush so we do not flood and trigger peer RST.
+      const chunkSize = 8 * 1024;
+      Future<void> writeBytes(List<int> bytes) async {
+        var offset = 0;
+        while (offset < bytes.length) {
+          final end = (offset + chunkSize < bytes.length)
+              ? offset + chunkSize
+              : bytes.length;
+          socket.add(bytes.sublist(offset, end));
+          await socket.flush().timeout(effectiveTimeout);
+          sent += end - offset;
+          offset = end;
+          report();
+        }
+      }
+
+      await writeBytes(headerBytes);
+      if (parts != null) {
+        for (final part in parts) {
+          await writeBytes(part);
+        }
+      }
+      sendCompleted = true;
+
       final responseBytes = await socket.fold<List<int>>(
         <int>[],
         (prev, chunk) => prev..addAll(chunk),
-      ).timeout(_timeout);
+      ).timeout(effectiveTimeout);
       final parsed = _parseHttpResponse(responseBytes);
       debugPrint(
-        'camera-show-overlay: $method ${parsed.statusCode} '
+        'camera-osd-http: $method ${parsed.statusCode} '
         'bytes=${parsed.body.length}',
       );
       return parsed;
+    } on SocketException catch (e) {
+      // Some camera CGI stacks RST after accepting a large upload instead of
+      // returning HTTP 200. If the full request was queued, treat as OK and
+      // let the applicator proceed to reboot / wait-online.
+      if (sendCompleted && _isConnectionReset(e)) {
+        debugPrint(
+          'camera-osd-http: $method peer reset after full send; '
+          'treating as HTTP 200 ($e)',
+        );
+        return const CameraOsdHttpResponse(statusCode: 200, body: '');
+      }
+      rethrow;
     } finally {
       socket.destroy();
     }
+  }
+
+  static bool _isConnectionReset(SocketException e) {
+    final msg = e.message.toLowerCase();
+    if (msg.contains('connection reset') || msg.contains('broken pipe')) {
+      return true;
+    }
+    final os = e.osError;
+    if (os == null) {
+      return false;
+    }
+    // Linux ECONNRESET=104, EPIPE=32; macOS ECONNRESET=54.
+    return os.errorCode == 104 ||
+        os.errorCode == 54 ||
+        os.errorCode == 32;
+  }
+
+  static String _hostHeader(Uri uri) {
+    // Boa (camera webServerPort 80) is picky; omit default ports like curl.
+    if (uri.hasPort &&
+        !((uri.scheme == 'http' && uri.port == 80) ||
+            (uri.scheme == 'https' && uri.port == 443))) {
+      return '${uri.host}:${uri.port}';
+    }
+    return uri.host;
   }
 
   static String _requestTarget(Uri uri) {
@@ -292,12 +412,10 @@ final class DartCameraOsdHttpClient implements CameraOsdHttpClient {
   static CameraOsdHttpResponse _parseHttpResponse(List<int> raw) {
     final text = utf8.decode(raw, allowMalformed: true);
     final split = text.indexOf('\r\n\r\n');
-    if (split < 0) {
-      return CameraOsdHttpResponse(statusCode: 0, body: text);
-    }
-    final head = text.substring(0, split);
-    final body = text.substring(split + 4);
-    final statusLine = head.split('\r\n').first;
+    final head = split < 0 ? text : text.substring(0, split);
+    final body = split < 0 ? '' : text.substring(split + 4);
+    // Boa sometimes emits a second garbage status line; use the first.
+    final statusLine = head.split(RegExp(r'\r?\n')).first;
     final parts = statusLine.split(' ');
     final code = parts.length >= 2 ? int.tryParse(parts[1]) ?? 0 : 0;
     return CameraOsdHttpResponse(statusCode: code, body: body);

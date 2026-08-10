@@ -111,12 +111,52 @@ final class WarnAlarmController {
   StreamSubscription? _cameraHealthSub;
   Timer? _activePoll;
   bool _started = false;
+  int _cameraFirmwareQuietDepth = 0;
 
   Stream<List<AlarmLogEntry>> watchHistory({int? limit}) =>
       log.watch(limit: limit);
 
   Future<void> clearHistory() => log.clear();
 
+  /// Pause camera health probes and suppress C002 for firmware upgrade downtime.
+  ///
+  /// Nestable (host download + apply). Pair with [endCameraFirmwareUpgradeQuiet].
+  Future<void> beginCameraFirmwareUpgradeQuiet() async {
+    _cameraFirmwareQuietDepth++;
+    if (_cameraFirmwareQuietDepth > 1) {
+      return;
+    }
+    _cameraAdapter.setSuppressed(true);
+    monitor.setCameraCommFault(false);
+    try {
+      final session = await services.ensureIpCamera();
+      session.camera.suspendProbes();
+    } catch (e) {
+      debugPrint('warn-alarm: camera quiet suspend soft-failed: $e');
+    }
+  }
+
+  /// Resume probes and re-arm C002 from live health after firmware upgrade.
+  Future<void> endCameraFirmwareUpgradeQuiet({
+    bool cameraLikelyOnline = false,
+  }) async {
+    if (_cameraFirmwareQuietDepth <= 0) {
+      return;
+    }
+    _cameraFirmwareQuietDepth--;
+    if (_cameraFirmwareQuietDepth > 0) {
+      return;
+    }
+    try {
+      final session = await services.ensureIpCamera();
+      session.camera.resumeProbes(configurePingOk: cameraLikelyOnline);
+      _cameraAdapter.setSuppressed(false);
+      _applyCameraHealthToMonitor(session.camera.currentHealth);
+    } catch (e) {
+      debugPrint('warn-alarm: camera quiet resume soft-failed: $e');
+      _cameraAdapter.setSuppressed(false);
+    }
+  }
   Future<void> start() async {
     if (_started) {
       return;

@@ -9,22 +9,19 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
-import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/device/display_value.dart';
-import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_upgrade_mapping.dart';
 import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
-import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// System Upgrade — Settings chrome; one content card fills remaining height.
 ///
-/// - From Device Information (System Version): check + auto-check + apply.
+/// - From Device Information (OS Version): check + apply (auto-check master
+///   switch lives on Device Info → Version).
 /// - Host `make upgrade` / cleared-stack: [progressOnly] with
 ///   [SystemOtaUpgradeMapping.hostForcePolicy] (no version check).
 class SystemUpgradePage extends StatefulWidget {
@@ -52,8 +49,8 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
   OtaManifest? _availableManifest;
   UpgradeCheckUiState _checkUi = UpgradeCheckUiState.idle;
   bool _applyUi = false;
+  String _osVersion = kUnavailableDisplay;
   String _kernelVersion = kUnavailableDisplay;
-  String _processLibVersion = kUnavailableDisplay;
 
   /// Effective policy for this page entry.
   UpgradePolicy get _policy => widget.progressOnly
@@ -115,11 +112,12 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!widget.progressOnly) {
         _startVersionWatch();
-        _refreshProcessLib();
       }
-      if (widget.autoCheckOnOpen &&
+      if (!widget.progressOnly &&
           widget.initialManifest == null &&
-          !widget.progressOnly) {
+          (widget.autoCheckOnOpen ||
+              (MiscSettingsScope.maybeOf(context)?.autoCheckOtaUpdate ??
+                  false))) {
         unawaited(_runCheck());
       }
     });
@@ -135,31 +133,11 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
           return;
         }
         setState(() {
+          _osVersion = update.snapshot.osVersion ?? kUnavailableDisplay;
           _kernelVersion =
               update.snapshot.kernelRelease ?? kUnavailableDisplay;
         });
       }, onError: (_) {});
-    } catch (_) {}
-  }
-
-  void _refreshProcessLib() {
-    try {
-      final lib = ProcessLibraryScope.of(context);
-      final fromPreset = lib.presets
-          .map((p) => p.libraryVersion)
-          .whereType<String>()
-          .where((v) => v.trim().isNotEmpty)
-          .cast<String?>()
-          .firstWhere((_) => true, orElse: () => null);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _processLibVersion =
-            (fromPreset == null || fromPreset.isEmpty)
-                ? kUnavailableDisplay
-                : fromPreset;
-      });
     } catch (_) {}
   }
 
@@ -170,17 +148,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     super.dispose();
   }
 
-  String? _resolveManifestUrl() {
-    final cloudStore = CloudSettingsScope.maybeOf(context);
-    if (cloudStore == null) {
-      return null;
-    }
-    final runtime = CloudLocalRuntimeScope.maybeOf(context);
-    return OtaManifestUrl.resolve(
-      cloudSettings: cloudStore,
-      pinnedApiBase: runtime?.pinnedApiBase,
-    );
-  }
+  String? _resolveManifestUrl() => OtaManifestUrl.resolve();
 
   Future<void> _runCheck() async {
     if (_checkUi == UpgradeCheckUiState.checking ||
@@ -191,7 +159,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
       return;
     }
     final url = _resolveManifestUrl();
-    if (url == null) {
+    if (url == null || url.isEmpty) {
       setState(() {
         _checkUi = UpgradeCheckUiState.unavailable;
         _availableManifest = null;
@@ -301,8 +269,8 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                     children: [
                       if (!inProgress) ...[
                         SettingsValueRow(
-                          title: l10n.systemVersion,
-                          value: kSystemVersion,
+                          title: l10n.osVersion,
+                          value: _osVersion,
                         ),
                         const Divider(
                           height: SettingsDimens.sectionDividerHeight,
@@ -314,17 +282,6 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
                         SettingsValueRow(
                           title: l10n.kernelVersion,
                           value: _kernelVersion,
-                        ),
-                        const Divider(
-                          height: SettingsDimens.sectionDividerHeight,
-                          thickness: SettingsDimens.sectionDividerHeight,
-                          indent: 20,
-                          endIndent: 20,
-                          color: SettingsDimens.sectionDividerColor,
-                        ),
-                        SettingsValueRow(
-                          title: l10n.processLibVersion,
-                          value: _processLibVersion,
                         ),
                         const Divider(
                           height: SettingsDimens.sectionDividerHeight,
@@ -362,12 +319,14 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     final headlineStyle = context.hmiTypography.sectionTitle.copyWith(
       color: CyberColors.textPrimary,
     );
+    final currentLabel =
+        _osVersion == kUnavailableDisplay ? '' : _osVersion;
 
     return UpgradeCheckCard(
       state: _checkUi,
       idleHint: l10n.otaUpgradeIdleHint,
       checkingLabel: l10n.checkingStatus,
-      upToDateMessage: l10n.otaAlreadyUpToDate(kSystemVersion),
+      upToDateMessage: l10n.otaAlreadyUpToDate(currentLabel),
       unavailableMessage: l10n.otaCheckUnavailable,
       failedMessage: l10n.otaCheckFailed,
       availableHeadline: available == null
@@ -378,7 +337,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
           : ((available.content?.trim().isNotEmpty ?? false)
               ? available.content!.trim()
               : l10n.otaUpdateAvailableMessage(
-                  kSystemVersion,
+                  currentLabel,
                   available.version,
                 )),
       statusStyle: style,
@@ -445,33 +404,6 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
               ),
             ),
           ],
-          const SizedBox(height: 14),
-          Center(
-            child: Builder(
-              builder: (context) {
-                final misc = MiscSettingsScope.maybeOf(context);
-                if (misc == null) {
-                  return SettingsCheckboxRow(
-                    title: l10n.autoCheckOtaUpdate,
-                    value: false,
-                    onChanged: null,
-                  );
-                }
-                return ListenableBuilder(
-                  listenable: misc,
-                  builder: (context, _) {
-                    return SettingsCheckboxRow(
-                      title: l10n.autoCheckOtaUpdate,
-                      value: misc.autoCheckOtaUpdate,
-                      onChanged: (v) {
-                        unawaited(misc.setAutoCheckOtaUpdate(v ?? false));
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
         ],
       ),
     );

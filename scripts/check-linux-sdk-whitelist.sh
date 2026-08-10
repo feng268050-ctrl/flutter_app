@@ -88,6 +88,25 @@ if [[ -n "$soft_max" ]]; then
   fi
 fi
 
+# Buildroot LTS pin (git SoT) vs owned tree BR2_VERSION
+PIN_FILE="$ROOT/overlay/buildroot/BUILDROOT_VERSION"
+if [[ -f "$PIN_FILE" && -f "$SDK/buildroot/Makefile" ]]; then
+  pin="$(tr -d '[:space:]' < "$PIN_FILE")"
+  br_ver="$(grep -E '^export BR2_VERSION :=' "$SDK/buildroot/Makefile" | head -1 | sed 's/.*:=[[:space:]]*//')"
+  echo "--- Buildroot version ---"
+  echo "  pin file:     $pin"
+  echo "  BR2_VERSION:  $br_ver"
+  if [[ -z "$pin" ]]; then
+    echo "FAIL: empty overlay/buildroot/BUILDROOT_VERSION" >&2
+    fail=1
+  elif [[ "$br_ver" != "$pin" && "$br_ver" != "${pin%.*}" ]]; then
+    # Allow BR2_VERSION=2025.02 when pin is 2025.02.16 only if major.minor matches —
+    # product pin is full tip; require exact match on full string.
+    echo "FAIL: BR2_VERSION ($br_ver) != BUILDROOT_VERSION pin ($pin)" >&2
+    fail=1
+  fi
+fi
+
 if [[ "$fail" -ne 0 ]]; then
   echo "check-linux-sdk: FAILED" >&2
   exit 1

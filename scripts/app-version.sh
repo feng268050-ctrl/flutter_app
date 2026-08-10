@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
-# Read or bump Flutter app version in app/<APP>/pubspec.yaml (and optional app_version.dart).
-# Combined display: versionName+buildNumber (e.g. 1.0.40+10040).
+# Print or bump product versions:
+#   OS Version  — /etc/os-release VERSION= (Cyber OS; default)
+#   Flutter app — app/<APP>/pubspec.yaml (+ optional app_version.dart) when print-app/bump-app
+#
+# Combined Flutter display: versionName+buildNumber (e.g. 1.0.40+10040).
 # Build = major*10000 + minor*100 + patch (major 0–9, minor 0–99, patch 0–99).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/app-select.sh
 source "$ROOT/scripts/app-select.sh"
+
+OS_RELEASE_SOT="${OS_RELEASE_SOT:-$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/os-release}"
 
 die() {
 	echo "ERROR: $*" >&2
@@ -19,6 +24,50 @@ pubspec_path() {
 
 dart_version_path() {
 	printf '%s\n' "${APP_DIR}/lib/app_version.dart"
+}
+
+# Parse KEY= or KEY="..." from os-release into REPLY.
+os_release_get() {
+	local key="$1" file="${2:-$OS_RELEASE_SOT}" line val
+	[[ -f "$file" ]] || die "missing $file"
+	line="$(grep -E "^${key}=" "$file" | head -n1 || true)"
+	[[ -n "$line" ]] || die "missing ${key}= in $file"
+	val="${line#*=}"
+	if [[ "$val" == \"*\" ]]; then
+		val="${val:1:${#val}-2}"
+	fi
+	REPLY="$val"
+}
+
+read_os_version() {
+	# Product OS Version for OTA / Settings is VERSION= (full SemVer).
+	os_release_get VERSION
+	local line="$REPLY"
+	[[ -n "$line" ]] || die "empty VERSION in $OS_RELEASE_SOT"
+	if [[ ! "$line" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+		die "invalid VERSION in $OS_RELEASE_SOT (expected x.y.z, got '$line')"
+	fi
+	printf '%s\n' "$line"
+}
+
+write_os_version() {
+	local name="$1"
+	local major minor
+	if [[ ! "$name" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+		die "invalid OS Version: expected x.y.z (got '$name')"
+	fi
+	major="${BASH_REMATCH[1]}"
+	minor="${BASH_REMATCH[2]}"
+	# VERSION_ID is major.minor (distro series); VERSION is full SemVer.
+	mkdir -p "$(dirname "$OS_RELEASE_SOT")"
+	cat >"$OS_RELEASE_SOT" <<EOF
+NAME="Cyber OS"
+ID=cyberos
+ID_LIKE="buildroot"
+VERSION="${name}"
+VERSION_ID=${major}.${minor}
+PRETTY_NAME="Cyber OS ${name}"
+EOF
 }
 
 # Read combined version: name+build from pubspec `version:` line.
@@ -35,17 +84,11 @@ read_combined() {
 	printf '%s\n' "$name_build"
 }
 
-print_combined() {
-	read_combined
-}
-
-# Encode x.y.z -> major*10000 + minor*100 + patch (e.g. 1.0.40 -> 10040).
 encode_build() {
 	local major="$1" minor="$2" patch="$3"
 	printf '%d' $((major * 10000 + minor * 100 + patch))
 }
 
-# Parse name into PARSED_MAJOR / PARSED_MINOR / PARSED_PATCH; fail on overflow.
 parse_semver_triplet() {
 	local name="$1"
 	if [[ ! "$name" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
@@ -56,7 +99,6 @@ parse_semver_triplet() {
 	minor="$((10#${BASH_REMATCH[2]}))"
 	patch="$((10#${BASH_REMATCH[3]}))"
 
-	# Digit-budget check after numeric parse (1.00.40 OK; 1.100.0 / 10.0.0 / 1.0.100 fail).
 	if ((major > 9)); then
 		die "invalid version name: major exceeds 9 (got $major)"
 	fi
@@ -67,7 +109,6 @@ parse_semver_triplet() {
 		die "invalid version name: patch exceeds 99 (got $patch)"
 	fi
 
-	# Canonical display name without leading zeros on components.
 	PARSED_MAJOR="$major"
 	PARSED_MINOR="$minor"
 	PARSED_PATCH="$patch"
@@ -76,14 +117,15 @@ parse_semver_triplet() {
 
 resolve_bump_args() {
 	local version="$1"
+	local allow_build="${2:-1}"
 	[[ -n "$version" ]] || die "VERSION is required (e.g. VERSION=1.0.40 or VERSION=1.0.40+10040)"
 
 	local name build
 	if [[ "$version" == *+* ]]; then
+		[[ "$allow_build" == "1" ]] || die "OS Version bump expects x.y.z (no +build); got '$version'"
 		name="${version%%+*}"
 		build="${version#*+}"
 		[[ "$build" =~ ^[0-9]+$ ]] || die "invalid VERSION: build must be a non-negative integer"
-		# Reject extra '+' segments.
 		if [[ "$version" == *+*+* ]]; then
 			die "invalid VERSION: expected x.y.z or x.y.z+build (got '$version')"
 		fi
@@ -99,7 +141,6 @@ resolve_bump_args() {
 	if [[ -z "$build" ]]; then
 		build="$expected"
 	else
-		# Compare numerically so leading zeros on explicit build still match.
 		if ((10#$build != expected)); then
 			die "invalid VERSION: +${build} does not match encoded build ${expected} for ${PARSED_NAME} (use VERSION=${PARSED_NAME} or VERSION=${PARSED_NAME}+${expected})"
 		fi
@@ -111,7 +152,6 @@ resolve_bump_args() {
 }
 
 sed_inplace() {
-	# Portable in-place sed: Darwin needs sed -i '', GNU accepts sed -i.
 	if [[ "$(uname -s)" == Darwin ]]; then
 		sed -i '' "$@"
 	else
@@ -135,13 +175,24 @@ write_dart_version() {
 	name="$1"
 	build="$2"
 	sed_inplace \
-		-e "s/^const String kSystemVersion = '.*';/const String kSystemVersion = '${name}';/" \
-		-e "s/^const int kSystemVersionCode = [0-9][0-9]*;/const int kSystemVersionCode = ${build};/" \
+		-e "s/^const String kHmiVersion = '.*';/const String kHmiVersion = '${name}';/" \
+		-e "s/^const int kHmiVersionCode = [0-9][0-9]*;/const int kHmiVersionCode = ${build};/" \
 		"$dart"
 }
 
-bump_version() {
-	resolve_bump_args "$1"
+bump_os_version() {
+	resolve_bump_args "$1" 0
+	write_os_version "$RESOLVED_NAME"
+	local after
+	after="$(read_os_version)"
+	if [[ "$after" != "$RESOLVED_NAME" ]]; then
+		die "post-bump OS verification failed (expected ${RESOLVED_NAME}, got ${after})"
+	fi
+	printf '%s\n' "$after"
+}
+
+bump_app_version() {
+	resolve_bump_args "$1" 1
 
 	write_pubspec_version "$RESOLVED_NAME" "$RESOLVED_BUILD"
 	write_dart_version "$RESOLVED_NAME" "$RESOLVED_BUILD"
@@ -158,30 +209,58 @@ bump_version() {
 usage() {
 	cat >&2 <<'EOF'
 Usage:
-  app-version.sh print
-  app-version.sh bump <x.y.z> | <x.y.z+build>
+  app-version.sh print-os | print-app
+  app-version.sh bump-os <x.y.z>
+  app-version.sh bump-app <x.y.z> | <x.y.z+build>
 
-APP= selects app/<APP> (default lws_hmi) via app-select.sh.
-Build is encoded as major*10000 + minor*100 + patch (1.0.40 -> 10040).
-Ranges: major 0–9, minor 0–99, patch 0–99.
-If +build is omitted, it is computed automatically.
-When app/<APP>/lib/app_version.dart exists, bump also syncs kSystemVersion / kSystemVersionCode.
+  Legacy (APP set → app; else → OS):
+  app-version.sh print
+  app-version.sh bump <version>
+
+print-os / bump-os: overlay etc/os-release (Cyber OS; VERSION= SemVer, VERSION_ID=major.minor).
+print-app / bump-app: APP= selects app/<APP> (default lws_hmi) via app-select.sh.
+Flutter build is major*10000 + minor*100 + patch (1.0.40 -> 10040).
+When app/<APP>/lib/app_version.dart exists, bump-app syncs kHmiVersion / kHmiVersionCode.
 EOF
 	exit 1
 }
 
 main() {
-	app_select_resolve || exit 1
-
 	local cmd="${1:-}"
 	shift || true
 	case "$cmd" in
+	print-os)
+		read_os_version
+		;;
+	bump-os)
+		[[ $# -eq 1 ]] || usage
+		bump_os_version "$1"
+		;;
+	print-app)
+		app_select_resolve || exit 1
+		read_combined
+		;;
+	bump-app)
+		[[ $# -eq 1 ]] || usage
+		app_select_resolve || exit 1
+		bump_app_version "$1"
+		;;
 	print)
-		print_combined
+		if [[ -n "${APP:-}" ]]; then
+			app_select_resolve || exit 1
+			read_combined
+		else
+			read_os_version
+		fi
 		;;
 	bump)
 		[[ $# -eq 1 ]] || usage
-		bump_version "$1"
+		if [[ -n "${APP:-}" ]]; then
+			app_select_resolve || exit 1
+			bump_app_version "$1"
+		else
+			bump_os_version "$1"
+		fi
 		;;
 	*)
 		usage

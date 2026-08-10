@@ -14,8 +14,9 @@ The image SHALL provide board helpers under `/usr/libexec/hmi/` that both apply 
 | `change-volume.sh` | `sound.conf` (`volume`) (0–100) |
 | `change-orientation.sh` | `display.conf` (`orientation` = `portrait` / `landscape`) |
 | `apply-mouse-settings.sh` | `mouse.conf` |
+| `set-performance-mode.sh` / `set-power-mode` (board) | `power.conf` (`mode` = `performance` / `balanced`) |
 
-Each shipped helper MUST write the preference file under `/var/lib/hal/` as part of a successful apply. For backlight, successful HAL writes MAY persist logical `0`, and apply/restore of that value MUST keep the panel above absolute hardware zero. AutoSleep blanking MAY write absolute sysfs `0` transiently without updating this preference file.
+Each shipped helper MUST write the preference file under `/var/lib/hal/` as part of a successful apply. For backlight, successful HAL writes MAY persist logical `0`, and apply/restore of that value MUST keep the panel above absolute hardware zero. AutoSleep blanking MAY write absolute sysfs `0` transiently without updating this preference file. For power mode, invoking the helper **with an explicit mode argument** MUST persist `mode=`; boot restore with **no** argument MUST apply the persisted mode without forcing a rewrite to `performance`.
 
 #### Scenario: Logical zero preference does not black out panel
 
@@ -31,4 +32,9 @@ Each shipped helper MUST write the preference file under `/var/lib/hal/` as part
 
 - **WHEN** `apply-mouse-settings` is invoked with a valid settings payload or flags representing natural scroll on
 - **THEN** `/var/lib/hal/mouse.conf` is updated accordingly for the eLinux HMI to apply on HMI start
+
+#### Scenario: Power mode helper writes power.conf
+
+- **WHEN** `set-power-mode balanced` (or `set-performance-mode balanced`) succeeds
+- **THEN** `/var/lib/hal/power.conf` contains `mode=balanced`
 

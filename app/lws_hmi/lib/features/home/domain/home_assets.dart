@@ -13,8 +13,6 @@ abstract final class HomeAssets {
   static const rightStatic = 'assets/home/home_right_img.webp';
   static const quickMode = 'assets/home/home_fast.webp';
   static const engineerMode = 'assets/home/home_engine.webp';
-  static const quickModeTextEn = 'assets/home/home_fast_text_en.webp';
-  static const engineerModeTextEn = 'assets/home/home_engine_text_en.webp';
   static const settingsIcon = 'assets/home/home_settings.webp';
   static const monitorIcon = 'assets/home/home_monitor.webp';
   static const aiVisionIcon = 'assets/home/ai_vision_home.webp';

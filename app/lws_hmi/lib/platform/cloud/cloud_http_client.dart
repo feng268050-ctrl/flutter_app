@@ -33,7 +33,7 @@ final class CloudHttpResponse {
 final class CloudHttpClient {
   CloudHttpClient({
     required this.http,
-    this.appVersion = kSystemVersion,
+    this.appVersion = kHmiVersion,
     this.deviceAccessToken,
     this.refreshDeviceAccessToken,
   });

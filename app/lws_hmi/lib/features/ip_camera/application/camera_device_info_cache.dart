@@ -70,35 +70,51 @@ final class CameraDeviceInfoCache {
   String? _cachedHost;
   Future<String>? _inFlight;
 
+  String? _cachedRaw;
   String get currentOrDash => _cached ?? kUnavailableDisplay;
+
+  /// Last successful raw `appVersion` (for SemVer+build upgrade gate).
+  String? get currentRawOrNull => _cachedRaw;
 
   /// Drop cached success so the next [fetch] hits the network.
   void invalidate() {
     _cached = null;
+    _cachedRaw = null;
     _cachedHost = null;
   }
 
   Future<String> fetch(String cameraHost) async {
+    final raw = await fetchRawAppVersion(cameraHost);
+    if (raw == null) {
+      return kUnavailableDisplay;
+    }
+    return parseCameraAppVersionDisplay(raw);
+  }
+
+  /// Raw `appVersion` / `app_version` from deviceinfo, or null if unreachable.
+  Future<String?> fetchRawAppVersion(String cameraHost) async {
     final host = cameraHost.trim();
     if (host.isEmpty) {
       _cached = null;
+      _cachedRaw = null;
       _cachedHost = null;
-      return kUnavailableDisplay;
+      return null;
     }
     if (_cachedHost == host &&
-        _cached != null &&
-        _cached!.isNotEmpty &&
-        _cached != kUnavailableDisplay) {
-      return _cached!;
+        _cachedRaw != null &&
+        _cachedRaw!.isNotEmpty) {
+      return _cachedRaw;
     }
     final existing = _inFlight;
     if (existing != null && _cachedHost == host) {
-      return existing;
+      await existing;
+      return _cachedRaw;
     }
     final done = _fetchOnce(host);
     _inFlight = done;
     try {
-      return await done;
+      await done;
+      return _cachedRaw;
     } finally {
       if (identical(_inFlight, done)) {
         _inFlight = null;
@@ -128,12 +144,11 @@ final class CameraDeviceInfoCache {
           'camera-deviceinfo: HTTP ${res.statusCode} from $host',
         );
         await res.drain<void>();
-        final viaWget = await _wgetFallback(host);
+        final viaWget = await _wgetFallbackRaw(host);
         if (viaWget != null) {
-          _cached = viaWget;
-          _cachedHost = host;
+          _storeSuccess(host, viaWget);
           debugPrint('camera-deviceinfo: ok via wget → $viaWget');
-          return viaWget;
+          return parseCameraAppVersionDisplay(viaWget);
         }
         return kUnavailableDisplay;
       }
@@ -145,30 +160,34 @@ final class CameraDeviceInfoCache {
       final raw = decoded['appVersion']?.toString() ??
           decoded['app_version']?.toString();
       final version = parseCameraAppVersionDisplay(raw);
-      if (version == kUnavailableDisplay) {
+      if (version == kUnavailableDisplay || raw == null || raw.trim().isEmpty) {
         return kUnavailableDisplay;
       }
-      _cached = version;
-      _cachedHost = host;
-      debugPrint('camera-deviceinfo: ok → $version');
+      _storeSuccess(host, raw.trim());
+      debugPrint('camera-deviceinfo: ok → $version (raw=$raw)');
       return version;
     } catch (e, st) {
       debugPrint('camera-deviceinfo: $e\n$st');
       try {
-        final viaWget = await _wgetFallback(host);
+        final viaWget = await _wgetFallbackRaw(host);
         if (viaWget != null) {
-          _cached = viaWget;
-          _cachedHost = host;
+          _storeSuccess(host, viaWget);
           debugPrint('camera-deviceinfo: ok via wget → $viaWget');
-          return viaWget;
+          return parseCameraAppVersionDisplay(viaWget);
         }
       } catch (_) {}
       return kUnavailableDisplay;
     }
   }
 
+  void _storeSuccess(String host, String raw) {
+    _cachedRaw = raw;
+    _cached = parseCameraAppVersionDisplay(raw);
+    _cachedHost = host;
+  }
+
   /// BusyBox wget backup when Dart [HttpClient] auth headers misbehave.
-  Future<String?> _wgetFallback(String host) async {
+  Future<String?> _wgetFallbackRaw(String host) async {
     try {
       final r = await Process.run('wget', <String>[
         '-qO-',
@@ -191,8 +210,11 @@ final class CameraDeviceInfoCache {
       }
       final raw = decoded['appVersion']?.toString() ??
           decoded['app_version']?.toString();
+      if (raw == null || raw.trim().isEmpty) {
+        return null;
+      }
       final version = parseCameraAppVersionDisplay(raw);
-      return version == kUnavailableDisplay ? null : version;
+      return version == kUnavailableDisplay ? null : raw.trim();
     } catch (e) {
       debugPrint('camera-deviceinfo: wget fallback failed: $e');
       return null;

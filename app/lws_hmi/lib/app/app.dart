@@ -53,7 +53,11 @@ import 'package:lws_hmi/features/ai/application/live_weld_stream_detect_coordina
 import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dart';
 import 'package:lws_hmi/features/settings/application/app_cyber_ime_language_provider.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/text_size_settings_store.dart';
+import 'package:cyber_hal/locale.dart';
+import 'package:lws_hmi/features/settings/application/load_profile_controller.dart';
+import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
 import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
@@ -69,8 +73,16 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.da
 import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgrade_coordinator.dart';
+import 'package:lws_hmi/features/bundled_firmware/infrastructure/peripheral_firmware_manifest_url.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/sync_firmware_command_watcher.dart';
 import 'package:lws_hmi/features/bundled_firmware/presentation/control_board_upgrade_page.dart';
+import 'package:lws_hmi/features/camera_update/application/camera_program_upgrade_coordinator.dart';
+import 'package:lws_hmi/features/camera_update/infrastructure/upgrade_camera_command_watcher.dart';
+import 'package:lws_hmi/features/camera_update/presentation/camera_program_upgrade_page.dart';
+import 'package:lws_hmi/features/hmi_app_ota/application/hmi_app_upgrade_coordinator.dart';
+import 'package:lws_hmi/features/hmi_app_ota/infrastructure/hmi_app_manifest_url.dart';
+import 'package:lws_hmi/features/hmi_app_ota/infrastructure/upgrade_app_command_watcher.dart';
+import 'package:lws_hmi/features/hmi_app_ota/presentation/hmi_upgrade_page.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/upgrade_process_library_command_watcher.dart';
 import 'package:lws_hmi/features/secrets/infrastructure/migrate_secrets_command_watcher.dart';
 import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
@@ -119,7 +131,7 @@ class LwsHmiApp extends StatefulWidget {
   final MiscSettingsStore? miscSettingsStore;
 
   /// Optional override for tests (inject fake Common JSON path / store).
-  final CommonSettingsStore? commonSettingsStore;
+  final LocaleSettings? commonSettingsStore;
 
   /// Optional override for tests (inject fake Advanced JSON path / store).
   final AdvancedSettingsStore? advancedSettingsStore;
@@ -150,8 +162,14 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   late final MiscSettingsStore _miscSettingsStore =
       widget.miscSettingsStore ?? MiscSettingsStore();
 
-  late final CommonSettingsStore _commonSettingsStore =
-      widget.commonSettingsStore ?? CommonSettingsStore();
+  late final LocaleSettings _commonSettingsStore =
+      widget.commonSettingsStore ?? LocaleSettings();
+
+  late final TextSizeSettingsStore _textSizeSettingsStore =
+      TextSizeSettingsStore();
+
+  late final LoadProfileController _loadProfileController =
+      LoadProfileController(backend: _services.loadProfile);
 
   late final AdvancedSettingsStore _advancedSettingsStore =
       widget.advancedSettingsStore ?? AdvancedSettingsStore();
@@ -244,6 +262,18 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     navigatorContext: () => _navKey.currentContext,
   );
 
+  late final UpgradeCameraCommandWatcher _upgradeCameraCommandWatcher =
+      UpgradeCameraCommandWatcher(
+    services: _services,
+    navigatorContext: () => _navKey.currentContext,
+  );
+
+  late final UpgradeAppCommandWatcher _upgradeAppCommandWatcher =
+      UpgradeAppCommandWatcher(
+    services: _services,
+    navigatorContext: () => _navKey.currentContext,
+  );
+
   late final UpgradeProcessLibraryCommandWatcher
       _upgradeProcessLibraryCommandWatcher =
       UpgradeProcessLibraryCommandWatcher(
@@ -289,6 +319,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     _soundEffectStore.warmRead();
     _miscSettingsStore.warmRead();
     _commonSettingsStore.warmRead();
+    _textSizeSettingsStore.warmRead();
+    unawaited(_loadProfileController.load());
     _advancedSettingsStore.warmRead();
     _thresholdsController.warmFromStore();
     _bootSelfCheckSettings.warmRead();
@@ -332,10 +364,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       SystemOtaCoordinator.instance.configure(
         navigatorKey: _navKey,
         services: _services,
-        manifestUrlResolver: () => OtaManifestUrl.resolve(
-          cloudSettings: _cloudSettingsStore,
-          pinnedApiBase: _cloudLocalRuntime.pinnedApiBase,
-        ),
+        manifestUrlResolver: () => OtaManifestUrl.resolve(),
         progressSink: (progress) {
           unawaited(
             _cloudLocalRuntime.emitOtaProgress(progress.toJson()),
@@ -345,8 +374,25 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       ControlBoardUpgradeCoordinator.instance.configure(
         navigatorKey: _navKey,
         services: _services,
+        cloudManifestUrlResolver: () =>
+            PeripheralFirmwareManifestUrl.resolveControlBoard(),
+      );
+      CameraProgramUpgradeCoordinator.instance.configure(
+        navigatorKey: _navKey,
+        services: _services,
+        deviceInfoCache: _cameraDeviceInfoCache,
+        warnAlarm: _warnAlarm,
+        cloudManifestUrlResolver: () =>
+            PeripheralFirmwareManifestUrl.resolveCamera(),
+      );
+      HmiAppUpgradeCoordinator.instance.configure(
+        navigatorKey: _navKey,
+        services: _services,
+        manifestUrlResolver: () => HmiAppManifestUrl.resolve(),
       );
       _syncFirmwareCommandWatcher.start();
+      _upgradeCameraCommandWatcher.start();
+      _upgradeAppCommandWatcher.start();
       _upgradeProcessLibraryCommandWatcher.start();
       _upgradeOtaCommandWatcher.start();
       _migrateSecretsCommandWatcher.start();
@@ -509,6 +555,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_jobRuntimeStatistics.dispose());
     unawaited(_warnAlarm.dispose());
     unawaited(_syncFirmwareCommandWatcher.dispose());
+    unawaited(_upgradeCameraCommandWatcher.dispose());
+    unawaited(_upgradeAppCommandWatcher.dispose());
     unawaited(_upgradeProcessLibraryCommandWatcher.dispose());
     unawaited(_upgradeOtaCommandWatcher.dispose());
     unawaited(_migrateSecretsCommandWatcher.dispose());
@@ -558,11 +606,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   /// When embedder DPR is ~1 (Weston path), scale the widget tree to match the
   /// existing simulator's physical density.
-  ///
-  /// [mq] is the app [MediaQueryData] (24h + textScaler already applied).
-  /// Density may rewrite size / DPR only — never drop textScaler or 24h.
-  Widget _matchFlutterPiDensity(MediaQueryData mq, Widget? child) {
+  Widget _matchFlutterPiDensity(BuildContext context, Widget? child) {
     final content = child ?? const SizedBox.shrink();
+    final mq = MediaQuery.of(context);
     final dpr = mq.devicePixelRatio;
     final isSimulator = widget.boardProfile.info.boardId == 'sim';
     final targetDpr = isSimulator
@@ -587,6 +633,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
           width: logical.width,
           height: logical.height,
           child: MediaQuery(
+            // copyWith keeps disableAnimations / textScaler / etc. from [mq].
             data: mq.copyWith(
               size: logical,
               devicePixelRatio: dpr * scale,
@@ -602,21 +649,47 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     return ListenableBuilder(
       listenable: Listenable.merge([
         _services.wallClock,
-        _commonSettingsStore,
+        _loadProfileController,
+        _textSizeSettingsStore,
       ]),
       builder: (context, _) {
-        final appMq = MediaQuery.of(context).copyWith(
-          alwaysUse24HourFormat: _services.wallClock.use24HourFormat,
-          textScaler: TextScaler.linear(_commonSettingsStore.textSize.scale),
-        );
+        final mq = MediaQuery.of(context);
+        final reduceMotion = _loadProfileController.disableAnimations;
+        final themed = Theme.of(context);
         return MediaQuery(
-          data: appMq,
-          child: SystemStatusOverlayHost(
-            store: _miscSettingsStore,
-            child: GpioLedOverlayHost(
-              // P3.2 QEMU / sim OEM only — never on ynh960 (or other) hardware.
-              enabled: widget.boardProfile.info.boardId == 'sim',
-              child: _matchFlutterPiDensity(appMq, child),
+          data: mq.copyWith(
+            alwaysUse24HourFormat: _services.wallClock.use24HourFormat,
+            disableAnimations: reduceMotion ? true : mq.disableAnimations,
+            textScaler:
+                TextScaler.linear(_textSizeSettingsStore.textSize.scale),
+          ),
+          // Balanced: flat press dim (Home QA gray) instead of expanding ripple —
+          // covers InkWell / ListTile / Material buttons that use Theme splash.
+          child: Theme(
+            data: themed.copyWith(
+              splashFactory: reduceMotion
+                  ? CyberPressInkSplash.splashFactory
+                  : themed.splashFactory,
+              splashColor: reduceMotion
+                  ? CyberPressFeedback.overlay
+                  : themed.splashColor,
+              highlightColor:
+                  reduceMotion ? Colors.transparent : themed.highlightColor,
+            ),
+            // Density rescale must read MediaQuery *below* the disableAnimations
+            // override — using the outer builder context re-wraps mq without it
+            // and re-enables CyberButton InkRipple on device (DPR≈1 path).
+            child: Builder(
+              builder: (innerContext) {
+                return SystemStatusOverlayHost(
+                  store: _miscSettingsStore,
+                  child: GpioLedOverlayHost(
+                    // P3.2 QEMU / sim OEM only — never on ynh960 (or other) hardware.
+                    enabled: widget.boardProfile.info.boardId == 'sim',
+                    child: _matchFlutterPiDensity(innerContext, child),
+                  ),
+                );
+              },
             ),
           ),
         );
@@ -628,86 +701,100 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return AppScope(
       services: _services,
-      child: CloudLocalRuntimeScope(
-        runtime: _cloudLocalRuntime,
-        child: CloudSettingsScope(
-          store: _cloudSettingsStore,
-          child: RemoteLockScope(
-            store: _remoteLockStore,
-            child: ProcessLibraryScope(
-              controller: _processLibrary,
-              child: GlobalPromptScope(
-                queue: _promptQueue,
-                child: WarnAlarmScope(
-                  controller: _warnAlarm,
-                  child: MiscSettingsScope(
-                    store: _miscSettingsStore,
-                    child: CommonSettingsScope(
-                      store: _commonSettingsStore,
-                      child: AdvancedSettingsScope(
-                        store: _advancedSettingsStore,
-                        aiAssistance: _aiAssistanceSettings,
-                        dangerousOperations: _dangerousOperationsSettings,
-                        thresholds: _thresholdsController,
-                        child: BootSelfCheckScope(
-                          settings: _bootSelfCheckSettings,
-                          child: SoundEffectScope(
-                            store: _soundEffectStore,
-                            clickSound: _clickSound,
-                            child: Listener(
-                              behavior: HitTestBehavior.translucent,
-                              onPointerDown: (_) => _noteUserActivity(),
-                              onPointerMove: (_) {
-                                // Moves reset idle only while awake; blanked wake is double-tap.
-                                if (!_services.autoSleep.isBlanked) {
-                                  _noteUserActivity();
-                                }
-                              },
-                              child: ListenableBuilder(
-                                listenable: _commonSettingsStore,
-                                builder: (context, _) {
-                                  return MaterialApp(
-                                    title: 'HMI',
-                                    theme: buildAppTheme(),
-                                    scrollBehavior: const AppScrollBehavior(),
-                                    locale: _commonSettingsStore.locale,
-                                    supportedLocales: kAppSupportedLocales,
-                                    localeListResolutionCallback:
-                                        (locales, supported) {
-                                      final preferred =
-                                          locales == null || locales.isEmpty
-                                              ? null
-                                              : locales.first;
-                                      return resolveAppLocale(
-                                            preferred,
-                                            supported,
-                                          ) ??
-                                          supported.first;
+      child: LoadProfileScope(
+        controller: _loadProfileController,
+        child: CloudLocalRuntimeScope(
+          runtime: _cloudLocalRuntime,
+          child: CloudSettingsScope(
+            store: _cloudSettingsStore,
+            child: RemoteLockScope(
+              store: _remoteLockStore,
+              child: ProcessLibraryScope(
+                controller: _processLibrary,
+                child: GlobalPromptScope(
+                  queue: _promptQueue,
+                  child: WarnAlarmScope(
+                    controller: _warnAlarm,
+                    child: MiscSettingsScope(
+                      store: _miscSettingsStore,
+                      child: CommonSettingsScope(
+                        store: _commonSettingsStore,
+                        child: TextSizeSettingsScope(
+                          store: _textSizeSettingsStore,
+                          child: AdvancedSettingsScope(
+                            store: _advancedSettingsStore,
+                            aiAssistance: _aiAssistanceSettings,
+                            dangerousOperations: _dangerousOperationsSettings,
+                            thresholds: _thresholdsController,
+                            child: BootSelfCheckScope(
+                              settings: _bootSelfCheckSettings,
+                              child: SoundEffectScope(
+                                store: _soundEffectStore,
+                                clickSound: _clickSound,
+                                child: Listener(
+                                  behavior: HitTestBehavior.translucent,
+                                  onPointerDown: (_) => _noteUserActivity(),
+                                  onPointerMove: (_) {
+                                    // Moves reset idle only while awake; blanked wake is double-tap.
+                                    if (!_services.autoSleep.isBlanked) {
+                                      _noteUserActivity();
+                                    }
+                                  },
+                                  child: ListenableBuilder(
+                                    listenable: Listenable.merge([
+                                      _commonSettingsStore,
+                                      _textSizeSettingsStore,
+                                    ]),
+                                    builder: (context, _) {
+                                      return MaterialApp(
+                                        title: 'HMI',
+                                        theme: buildAppTheme(),
+                                        scrollBehavior:
+                                            const AppScrollBehavior(),
+                                        locale: localeFromLanguageTag(
+                                          _commonSettingsStore.languageWire,
+                                        ),
+                                        supportedLocales: kAppSupportedLocales,
+                                        localeListResolutionCallback:
+                                            (locales, supported) {
+                                          final preferred =
+                                              locales == null || locales.isEmpty
+                                                  ? null
+                                                  : locales.first;
+                                          return resolveAppLocale(
+                                                preferred,
+                                                supported,
+                                              ) ??
+                                              supported.first;
+                                        },
+                                        localizationsDelegates: const [
+                                          AppLocalizations.delegate,
+                                          GlobalMaterialLocalizations.delegate,
+                                          GlobalWidgetsLocalizations.delegate,
+                                          GlobalCupertinoLocalizations.delegate,
+                                        ],
+                                        builder: _appBuilder,
+                                        navigatorKey: _navKey,
+                                        navigatorObservers: [
+                                          appRouteObserver,
+                                          homeWebpCoverageGate,
+                                          _promptQueue.navigatorObserver,
+                                        ],
+                                        initialRoute:
+                                            SafetyTipsGate.initialRoute,
+                                        // One route only — do not let default
+                                        // initialRoutes push `/` under `/safety-tips`.
+                                        onGenerateInitialRoutes:
+                                            (initialRoute) =>
+                                                generateAppInitialRoutes(
+                                          initialRoute,
+                                          _onGenerateRoute,
+                                        ),
+                                        onGenerateRoute: _onGenerateRoute,
+                                      );
                                     },
-                                    localizationsDelegates: const [
-                                      AppLocalizations.delegate,
-                                      GlobalMaterialLocalizations.delegate,
-                                      GlobalWidgetsLocalizations.delegate,
-                                      GlobalCupertinoLocalizations.delegate,
-                                    ],
-                                    builder: _appBuilder,
-                                    navigatorKey: _navKey,
-                                    navigatorObservers: [
-                                      appRouteObserver,
-                                      homeWebpCoverageGate,
-                                      _promptQueue.navigatorObserver,
-                                    ],
-                                    initialRoute: SafetyTipsGate.initialRoute,
-                                    // One route only — do not let default
-                                    // initialRoutes push `/` under `/safety-tips`.
-                                    onGenerateInitialRoutes: (initialRoute) =>
-                                        generateAppInitialRoutes(
-                                      initialRoute,
-                                      _onGenerateRoute,
-                                    ),
-                                    onGenerateRoute: _onGenerateRoute,
-                                  );
-                                },
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -732,6 +819,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         final videoArgs = settings.arguments;
         return buildAppSlideRoute<void>(
           settings: settings,
+          snap: _loadProfileController.snapPageTransitions,
           builder: (_) => videoArgs is ProcessVideoDetailArgs
               ? ProcessVideoDetailPage(args: videoArgs)
               : const MonitorPage(),
@@ -739,12 +827,14 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       case AppRoutes.aiVisionChoose:
         return buildAppSlideRoute<void>(
           settings: settings,
+          snap: _loadProfileController.snapPageTransitions,
           builder: (_) => const AiVisionVideoChoosePage(),
         );
       case AppRoutes.productDisclaimer:
         // lws-ui UseSafetyTipsActivity — L/R slide over Safety Tips.
         return buildAppSlideRoute<void>(
           settings: settings,
+          snap: _loadProfileController.snapPageTransitions,
           builder: (_) => const ProductDisclaimerPage(),
         );
       case AppRoutes.engineerMode:
@@ -754,6 +844,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         if (engineerArgs is EngineerModeRouteArgs) {
           return buildAppSlideRoute<void>(
             settings: settings,
+            snap: _loadProfileController.snapPageTransitions,
             builder: (_) => _LockedModeGate(
               lockStore: _remoteLockStore,
               child: EngineerModePage(
@@ -805,8 +896,16 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         page = const SystemUpgradePage(
           progressOnly: true,
         );
+      case AppRoutes.hmiUpgrade:
+        page = const HmiUpgradePage(
+          progressOnly: true,
+        );
       case AppRoutes.controlBoardUpgrade:
         page = const ControlBoardUpgradePage(
+          progressOnly: true,
+        );
+      case AppRoutes.cameraProgramUpgrade:
+        page = const CameraProgramUpgradePage(
           progressOnly: true,
         );
       case AppRoutes.home:
@@ -816,6 +915,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     return buildAppPageRoute(
       settings: settings,
       child: page,
+      snap: _loadProfileController.snapPageTransitions,
     );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:cyber_hal/locale.dart';
 
 /// Advanced Settings temperature display helpers (lws-ui `TemperatureUnitConvertUtil`).
 ///
@@ -6,7 +6,7 @@ import 'package:lws_hmi/features/settings/application/common_settings_store.dart
 /// Common Settings unit is Imperial.
 abstract final class TemperatureUnitConvert {
   static bool isMetric(String? unitWire) =>
-      unitWire == null || unitWire == CommonSettingsStore.unitMetric;
+      unitWire == null || unitWire == UnitSystem.metric.wire;
 
   static int celsiusToFahrenheit(int celsius) =>
       (celsius * 9 / 5 + 32).round();

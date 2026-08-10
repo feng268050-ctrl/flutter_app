@@ -27,6 +27,7 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/displa
 |--------|--------|-------------------|
 | `package:cyber_hal/output/display.dart` | backlight, auto-sleep, orientation | `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) |
 | `package:cyber_hal/output/sound.dart` | volume, button-feedback (+ media audio) | `/var/lib/hal/sound.conf` |
+| `package:cyber_hal/output/load_profile.dart` | load / thermal profile (`performance` / `balanced`) | `/var/lib/hal/power.conf` (`mode`) |
 
 ## Portability (D11b / D22)
 
@@ -90,7 +91,7 @@ dependencies:
 
 HAL mid-session writes use existing FHS:
 
-- `/var/lib/hal/` — mouse, keyboard, usb-debug, properties.ini; **output prefs** as `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) and `/var/lib/hal/sound.conf`; **datetime** as `/var/lib/hal/datetime.conf`
+- `/var/lib/hal/` — mouse, keyboard, usb-debug, properties.ini; **output prefs** as `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) and `/var/lib/hal/sound.conf`; **load profile** as `/var/lib/hal/power.conf`; **datetime** as `/var/lib/hal/datetime.conf`
 - `/var/lib/hmi/` — **App-owned** only (misc/advanced JSON, alarm SQLite, debug/push staging)
 - `/var/lib/network/` — ethernet/proxy (after network wave)
 - `/var/lib/wpa_supplicant/` — Wi‑Fi wanted / networks

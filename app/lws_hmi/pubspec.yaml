@@ -130,6 +130,7 @@ flutter:
     # are rewritten by prepare-hmi-ship-assets.sh between the markers below.
     # BEGIN generated-ship-assets
     - assets/.generated/firmware/control-board/
+    - assets/.generated/firmware/camera/
     - assets/.generated/process-library/
     - assets/.generated/process-library/L1_Pro/
     # END generated-ship-assets
@@ -141,13 +142,9 @@ flutter:
     - assets/home/home_right_img.webp
     - assets/home/home_fast.webp
     - assets/home/home_engine.webp
-    - assets/home/home_fast_text_en.webp
-    - assets/home/home_engine_text_en.webp
     - assets/home/home_settings.webp
     - assets/home/home_monitor.webp
     - assets/home/ai_vision_home.webp
-    # Custom Home editor shell + card frames (lws-ui mipmap-xxxhdpi WebP stack).
-    - assets/settings/custom_home/
     # Work-mode status bar icons (from lws-ui EquipmentStatusBar mipmaps).
     - assets/work-mode/
     # Process-mode chrome (Quick wheel / Engineer tabs; from lws-ui mipmap-xxxhdpi).

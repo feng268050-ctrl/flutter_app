@@ -65,6 +65,7 @@ final class SysInfoSnapshot {
     this.boardModel,
     this.kernelRelease,
     this.osReleaseId,
+    this.osVersion,
     this.appVersion,
     this.cpuCoreCount,
     this.cpuFreqMhz,
@@ -94,6 +95,11 @@ final class SysInfoSnapshot {
   final String? boardModel;
   final String? kernelRelease;
   final String? osReleaseId;
+
+  /// Product OS Version from `/etc/os-release` `VERSION=`; null if missing.
+  /// Must not fall back to [appVersion].
+  final String? osVersion;
+
   final String? appVersion;
   final int? cpuCoreCount;
   final double? cpuFreqMhz;
@@ -336,6 +342,7 @@ class LinuxSysInfo implements SysInfo {
       boardModel: await _readBoardModel(),
       kernelRelease: await _readKernelRelease(),
       osReleaseId: await _readOsReleaseId(),
+      osVersion: await _readOsVersion(),
       appVersion: appVersion,
       cpuCoreCount: await _readCpuCoreCount(),
       cpuFreqMhz: await _readCpuFreqMhz(),
@@ -486,6 +493,24 @@ class LinuxSysInfo implements SysInfo {
             v = v.substring(1, v.length - 1);
           }
           return v;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Product OS Version from `/etc/os-release` `VERSION=` (Cyber OS SemVer).
+  Future<String?> _readOsVersion() async {
+    try {
+      final lines = await File('/etc/os-release').readAsLines();
+      for (final line in lines) {
+        if (line.startsWith('VERSION=') && !line.startsWith('VERSION_ID=')) {
+          var v = line.substring('VERSION='.length).trim();
+          if (v.startsWith('"') && v.endsWith('"')) {
+            v = v.substring(1, v.length - 1);
+          }
+          v = v.trim();
+          return v.isEmpty ? null : v;
         }
       }
     } catch (_) {}

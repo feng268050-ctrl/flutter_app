@@ -16,7 +16,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gat
 import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
-import 'package:lws_hmi/features/settings/application/region_settings_applier.dart';
+import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/gpio/rgb_led_policy_driver.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
@@ -40,6 +40,7 @@ final class AppServices {
     BacklightController? backlightController,
     AutoSleep? autoSleep,
     ButtonFeedback? buttonFeedback,
+    LoadProfile? loadProfile,
     EthernetController? ethernetController,
     WifiController? wifiController,
     HttpClientController? httpClientController,
@@ -68,7 +69,7 @@ final class AppServices {
       _frameTimingSampler = frameTimingSampler ?? FlutterFrameTimingSampler();
       this.sysInfo = b.sysInfo(
         deviceSnReader: deviceSnReader,
-        appVersion: kSystemVersion,
+        appVersion: kHmiVersion,
         frameTimingSampler: _frameTimingSampler,
         productInfo: productInfo,
       );
@@ -96,6 +97,7 @@ final class AppServices {
     backlight = backlightController ?? b.backlight();
     this.autoSleep = autoSleep ?? b.autoSleep();
     this.buttonFeedback = buttonFeedback ?? b.buttonFeedback(mediaAudio: audio);
+    this.loadProfile = loadProfile ?? b.loadProfile();
     ethernet = ethernetController ?? b.ethernetSession();
     wifi = wifiController ?? b.wifiSession();
     primaryNetwork = b.primaryNetwork(wifi: wifi, ethernet: ethernet);
@@ -118,7 +120,7 @@ final class AppServices {
   final BoardBindings bindings;
   final DeviceSnReader deviceSnReader;
 
-  /// Country → Wi‑Fi regulatory + linked timezone / NTP.
+  /// Region → Wi‑Fi regulatory + linked timezone / NTP.
   late final RegionSettingsApplier regionSettings;
 
   ProductInfo? _productInfoOverride;
@@ -164,6 +166,7 @@ final class AppServices {
   late final BacklightController backlight;
   late final AutoSleep autoSleep;
   late final ButtonFeedback buttonFeedback;
+  late final LoadProfile loadProfile;
   late final EthernetController ethernet;
   late final WifiController wifi;
   late final PrimaryNetworkController primaryNetwork;

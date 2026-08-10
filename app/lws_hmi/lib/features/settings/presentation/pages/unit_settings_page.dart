@@ -1,22 +1,19 @@
 import 'dart:async';
 
+import 'package:cyber_hal/locale.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 class UnitSettingsPage extends StatelessWidget {
   const UnitSettingsPage({super.key});
 
-  static String _unitLabel(AppLocalizations l10n, String unit) {
+  static String _unitLabel(AppLocalizations l10n, UnitSystem unit) {
     switch (unit) {
-      case CommonSettingsStore.unitImperial:
-        // lws-ui `unit_option_imperial`
+      case UnitSystem.imperial:
         return l10n.unitOptionImperial;
-      case CommonSettingsStore.unitMetric:
-      default:
-        // lws-ui `unit_option_metric`
+      case UnitSystem.metric:
         return l10n.unitOptionMetric;
     }
   }
@@ -42,7 +39,7 @@ class UnitSettingsPage extends StatelessWidget {
                     SettingsGroup(
                       bottomInset: 0,
                       children: [
-                        for (final u in CommonSettingsStore.supportedUnits)
+                        for (final u in UnitSystem.supported)
                           SettingsOptionTile(
                             title: _unitLabel(l10n, u),
                             selected: unit == u,

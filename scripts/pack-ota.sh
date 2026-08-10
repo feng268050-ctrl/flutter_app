@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build whole-device OTA tar.gz (+ optional .sig) under output/firmware/<APP>/.
-# Usage: APP=lws_hmi [OEM_ONLY=1] [REQUIRE_OTA_SIG=1] bash scripts/ota-package.sh
+# Usage: APP=lws_hmi [OEM_ONLY=1] [REQUIRE_OTA_SIG=1] bash scripts/pack-ota.sh
 # Env:
 #   OTA_SIGNING_KEY   PEM private key → emit sibling .sig when set
 #   REQUIRE_OTA_SIG=1 fail if signing unset/unusable (publish/CI)
@@ -106,7 +106,7 @@ file_size() {
 }
 
 mkdir -p "$OUT_DIR"
-STAGE="$(mktemp -d "${TMPDIR:-/tmp}/lws-ota-package.XXXXXX")"
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/lws-pack-ota.XXXXXX")"
 
 MEMBERS=()
 
@@ -155,7 +155,7 @@ fi
 } >"$STAGE/manifest.json"
 MEMBERS+=(manifest.json)
 
-echo "ota-package: APP=$APP OEM_ONLY=$OEM_ONLY → $ARCHIVE"
+echo "pack-ota: APP=$APP OEM_ONLY=$OEM_ONLY → $ARCHIVE"
 for name in "${MEMBERS[@]}"; do
 	ls -lh "$STAGE/$name"
 done
@@ -179,21 +179,21 @@ fi
 
 if [[ -z "${OTA_SIGNING_KEY:-}" && -r "$ROOT/keys/ota/ed25519.pem" ]]; then
 	OTA_SIGNING_KEY="$ROOT/keys/ota/ed25519.pem"
-	echo "ota-package: using default OTA_SIGNING_KEY=$OTA_SIGNING_KEY"
+	echo "pack-ota: using default OTA_SIGNING_KEY=$OTA_SIGNING_KEY"
 fi
 
 if [[ -n "${OTA_SIGNING_KEY:-}" ]]; then
 	OTA_SIGNING_KEY="$OTA_SIGNING_KEY" bash "$ROOT/scripts/ota-sign.sh" "$ARCHIVE" "$SIG" \
 		|| die "signing failed"
 elif [[ "$REQUIRE_OTA_SIG" == "1" ]]; then
-	die "REQUIRE_OTA_SIG=1 but OTA_SIGNING_KEY unset — run: make ota-release-keys (or set OTA_SIGNING_KEY=)"
+	die "REQUIRE_OTA_SIG=1 but OTA_SIGNING_KEY unset — run: make sign-keys (or set OTA_SIGNING_KEY=)"
 else
-	echo "ota-package: OTA_SIGNING_KEY unset — archive only (unsigned; SSH make upgrade / publish need .sig)"
+	echo "pack-ota: OTA_SIGNING_KEY unset — archive only (unsigned; SSH make upgrade / publish need .sig)"
 fi
 
 ls -lh "$ARCHIVE"
 [[ -f "$SIG" ]] && ls -lh "$SIG"
-echo "ota-package: done"
+echo "pack-ota: done"
 echo "  archive=$ARCHIVE"
 [[ -f "$SIG" ]] && echo "  signature=$SIG"
 echo "  note: SSH make upgrade and make publish need archive + .sig; RockUSB di does not"

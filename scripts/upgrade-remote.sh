@@ -25,7 +25,7 @@ PREFLIGHT_REMOTE="/usr/libexec/ab/ab-preflight.sh"
 CMD_PATH="/run/hmi/upgrade-ota.cmd"
 ARCHIVE_REMOTE="$OTA_DIR/ota-package.tar.gz"
 OEM_ONLY="${OEM_ONLY:-0}"
-# UPGRADE_PACKAGE= alternate tarball (skip make ota-package). See upgrade-package-env.
+# UPGRADE_PACKAGE= alternate tarball (skip make pack-ota). See upgrade-package-env.
 # UPGRADE_TRANSPORT defaulted after .env load; optional: auto|ssh|rockusb
 
 # Deprecated alias → OEM_IMG
@@ -57,7 +57,7 @@ Usage: $0
 Firmware upgrade over SSH staged package or RockUSB Loader/Maskrom.
 
 SSH (default when a Linux USB-SSH / registered SSH target is selected):
-  Ensures OTA tar.gz + .sig via ota-package (unless UPGRADE_PACKAGE= + sibling .sig),
+  Ensures OTA tar.gz + .sig via pack-ota (unless UPGRADE_PACKAGE= + sibling .sig),
   starts an ephemeral HTTP server on the host, triggers the HMI to download the package
   (same path as cloud OTA), waits until archive+.sig have been fully GET (host send
   progress on stderr), then returns. Device verify/apply/reboot continue on the board;
@@ -74,13 +74,13 @@ OEM_ONLY=1:
 
 For app-only iteration, use make push-app.
 For GPT / U-Boot / MiniLoader storage / factory reset, use make flash.
-SSH upgrade needs archive + .sig (OTA_SIGNING_KEY / make ota-release-keys); RockUSB di does not.
+SSH upgrade needs archive + .sig (OTA_SIGNING_KEY / make sign-keys); RockUSB di does not.
 
 Env (also in repo-root \`.env\`; command-line env overrides \`.env\`):
   APP                       Flutter product under app/ (default: lws_hmi)
   SN / IP                   select board
   UPGRADE_TRANSPORT         auto|ssh|rockusb (default: auto)
-  UPGRADE_PACKAGE           existing .tar/.tar.gz/.tgz; skips ota-package rebuild.
+  UPGRADE_PACKAGE           existing .tar/.tar.gz/.tgz; skips pack-ota rebuild.
                             SSH: also needs sibling <path>.sig (host HTTP + device pull).
                             RockUSB: host extracts then di (no .sig required).
                             Members: boot.img + boot_b.img + rootfs.img [/oem.img];
@@ -340,17 +340,17 @@ ensure_ota_package() {
 		return 0
 	fi
 
-	echo "upgrade: running ota-package (archive + .sig for SSH staged verify)..."
+	echo "upgrade: running pack-ota (archive + .sig for SSH staged verify)..."
 	APP="$APP" OEM_ONLY="$OEM_ONLY" \
 		OEM_IMG="${OEM_IMG-}" \
 		LWS_HMI_FIRMWARE_DIR="$FIRMWARE" \
 		REQUIRE_OTA_SIG=1 \
-		bash "$ROOT/scripts/ota-package.sh" \
-		|| die "ota-package failed — set OTA_SIGNING_KEY= or run: make ota-release-keys"
+		bash "$ROOT/scripts/pack-ota.sh" \
+		|| die "pack-ota failed — set OTA_SIGNING_KEY= or run: make sign-keys"
 	OTA_ARCHIVE="$APP_FIRMWARE_DIR/ota-package.tar.gz"
 	OTA_SIG="${OTA_ARCHIVE}.sig"
-	[[ -f "$OTA_ARCHIVE" ]] || die "missing OTA archive after ota-package: $OTA_ARCHIVE"
-	[[ -f "$OTA_SIG" ]] || die "missing OTA signature after ota-package: $OTA_SIG"
+	[[ -f "$OTA_ARCHIVE" ]] || die "missing OTA archive after pack-ota: $OTA_ARCHIVE"
+	[[ -f "$OTA_SIG" ]] || die "missing OTA signature after pack-ota: $OTA_SIG"
 	echo "upgrade: archive=$OTA_ARCHIVE ($(file_size "$OTA_ARCHIVE") bytes)"
 	echo "upgrade: signature=$OTA_SIG ($(file_size "$OTA_SIG") bytes)"
 }

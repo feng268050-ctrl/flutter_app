@@ -210,7 +210,7 @@ def main() -> None:
     if not os.path.isfile(archive_path):
         fail(f"archive not found: {archive_path}")
     if not os.path.isfile(sig_path):
-        fail(f"signature not found: {sig_path} (need OTA_SIGNING_KEY / REQUIRE_OTA_SIG=1 make ota-package)")
+        fail(f"signature not found: {sig_path} (need OTA_SIGNING_KEY / REQUIRE_OTA_SIG=1 make pack-ota)")
 
     base = args.base_url.rstrip("/")
     artifact = args.artifact.strip().strip("/")

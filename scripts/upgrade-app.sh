@@ -19,7 +19,7 @@ usage() {
 	cat <<EOF
 Usage: make upgrade-app [APP_PACKAGE=/abs/path/to/vX.Y.Z.tar.gz]
 
-By default packages the current overlay app tree (make package-app) then
+By default packages the current overlay app tree (make pack-app) then
 signs with OTA_SIGNING_KEY (default keys/ota/ed25519.pem), serves over
 ephemeral host HTTP, and writes:
   /run/hmi/upgrade-app.cmd  →  download <url>
@@ -42,8 +42,8 @@ CMD_PATH="/run/hmi/upgrade-app.cmd"
 [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && usage && exit 0
 
 if [[ -z "${APP_PACKAGE:-}" ]]; then
-	chmod +x "$ROOT/scripts/package-app.sh"
-	APP_PACKAGE="$(APP="$APP" bash "$ROOT/scripts/package-app.sh" | tail -n1)"
+	chmod +x "$ROOT/scripts/pack-app.sh"
+	APP_PACKAGE="$(APP="$APP" bash "$ROOT/scripts/pack-app.sh" | tail -n1)"
 fi
 
 [[ -n "$APP_PACKAGE" ]] || die "APP_PACKAGE empty"

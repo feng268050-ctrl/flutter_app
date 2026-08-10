@@ -1,6 +1,239 @@
 #!/usr/bin/env bash
-# Deprecated entrypoint: unsigned SCP removed. Delegates to upgrade-app.sh.
+# Deploy Flutter app artifacts to target over USB-SSH or registered remote SSH (make push-app).
+# Convention: *_hmi → /opt/hmi + hmi.service restart; other APP → /opt/<APP> (no hmi restart).
 set -euo pipefail
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-echo "NOTE: push-app is an alias of upgrade-app (signed HTTP path)." >&2
-exec bash "$ROOT/scripts/upgrade-app.sh" "$@"
+# shellcheck source=scripts/usb-ssh-session.sh
+source "$ROOT/scripts/usb-ssh-session.sh"
+# shellcheck source=scripts/app-select.sh
+source "$ROOT/scripts/app-select.sh"
+
+app_select_resolve
+
+STAGING="/var/lib/hmi/push-app-staging"
+APPLY_SCRIPT="/usr/libexec/hmi/push-app-apply-and-restart.sh"
+APPLY_SCRIPT_HOST="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/push-app-apply-and-restart.sh"
+APPLY_LOG="/var/lib/hmi/push-app-restart.log"
+APPLY_STATUS="/var/lib/hmi/push-app-apply.status"
+OVERLAY_APP_TREE="$OVERLAY_APP"
+LIBAPP="$OVERLAY_APP_TREE/lib/libapp.so"
+ASSETS="$OVERLAY_APP_TREE/data/flutter_assets"
+# Detach apply: LAN SSH over Wi-Fi must not hold the session through hmi stop
+# (legacy images killed wpa/dhcp in the hmi cgroup). Same poll path for USB/LAN.
+APPLY_WAIT_SEC=120
+
+die() {
+	echo "ERROR: $*" >&2
+	exit 1
+}
+
+usage() {
+	cat <<EOF
+Usage: $0
+
+Deploy libapp.so + flutter_assets for APP (default: lws_hmi).
+  APP=*_hmi    → /opt/hmi (+ companions), then restart hmi.service
+  APP=<other>  → /opt/<APP> only (no hmi.service restart)
+
+Env:
+  APP                            Flutter project under app/ (default: lws_hmi).
+                                 HMI apps MUST use suffix _hmi (install path /opt/hmi).
+  SN                         select board when multiple devices
+  IP                         registered SSH only (make connect <ip>)
+  USB_SSH_PASS           root password (default: rockchip)
+
+Prereq: APP=\$APP make build-app (artifacts in overlay $DEVICE_APP)
+Host: sshpass required (see error message if missing)
+
+The board must include the DRM GEM teardown fix before using in-place HMI restart.
+EOF
+}
+
+remote() {
+	usb_ssh_session_run_ssh "$ROOT" "$IFACE" "$@"
+}
+
+upload_with_progress() {
+	local src="$1"
+	local dest="$2"
+	python3 "$ROOT/scripts/stream-file-progress.py" "$src" |
+		remote "cat >'$dest'"
+}
+
+apply_ok() {
+	local st="$1" log="$2"
+	[[ "$st" == "ok" ]] && return 0
+	# Compat: older boards without status file.
+	printf '%s\n' "$log" | grep -q 'restart complete'
+}
+
+apply_fail() {
+	local st="$1" log="$2"
+	[[ "$st" == "fail" ]] && return 0
+	printf '%s\n' "$log" | grep -qE 'did not recover|failed to activate'
+}
+
+wait_line_rendered=0
+# Same single-line progress style as stream-file-progress.py (stderr + \r).
+# Do not pad to a fixed width: %-100s wraps on narrow terminals and \r cannot
+# rewind past the wrap, so each tick looks like a new line.
+clear_wait_line() {
+	if [[ "$wait_line_rendered" -eq 1 ]]; then
+		printf '\r\033[K' >&2
+		wait_line_rendered=0
+	fi
+}
+
+render_wait_line() {
+	local msg="$1"
+	local cols
+	cols="$(tput cols 2>/dev/null || echo 80)"
+	[[ "$cols" =~ ^[0-9]+$ ]] || cols=80
+	((cols < 20)) && cols=20
+	if ((${#msg} >= cols)); then
+		msg="${msg:0:$((cols - 1))}"
+	fi
+	printf '\r\033[K%s' "$msg" >&2
+	wait_line_rendered=1
+}
+
+# Stage overlay release tree onto the board under $1 (remote staging dir).
+stage_overlay_tree() {
+	local staging="$1"
+
+	# Avoid macOS AppleDouble junk in streamed tarballs.
+	export COPYFILE_DISABLE=1
+
+	echo "Transferring libapp.so..."
+	remote "rm -rf $staging && mkdir -p $staging/lib $staging/bin $staging/data/flutter_assets"
+	upload_with_progress "$LIBAPP" "$staging/lib/libapp.so"
+
+	if [[ -d "$OVERLAY_APP_TREE/bin" ]]; then
+		echo "Transferring $DEVICE_APP/bin companions..."
+		BIN_TAR="$STAGE/app-bin.tar"
+		tar --exclude='._*' --exclude='.DS_Store' -C "$OVERLAY_APP_TREE/bin" -cf "$BIN_TAR" .
+		upload_with_progress "$BIN_TAR" "$staging/app-bin.tar"
+		remote "tar -xf '$staging/app-bin.tar' -C '$staging/bin' && rm -f '$staging/app-bin.tar' && chmod 0755 '$staging/bin'/* 2>/dev/null || true"
+	fi
+	if [[ -d "$OVERLAY_APP_TREE/lib" ]]; then
+		echo "Transferring $DEVICE_APP/lib companions (excl. libapp.so)..."
+		LIB_TAR="$STAGE/app-lib.tar"
+		tar --exclude='._*' --exclude='.DS_Store' --exclude='libapp.so' \
+			-C "$OVERLAY_APP_TREE/lib" -cf "$LIB_TAR" .
+		upload_with_progress "$LIB_TAR" "$staging/app-lib.tar"
+		remote "tar -xf '$staging/app-lib.tar' -C '$staging/lib' && rm -f '$staging/app-lib.tar'"
+	fi
+
+	echo "Transferring flutter_assets..."
+	ASSETS_TAR="$STAGE/flutter_assets.tar"
+	tar --exclude='._*' --exclude='.DS_Store' -C "$ASSETS" -cf "$ASSETS_TAR" .
+	upload_with_progress "$ASSETS_TAR" "$staging/flutter_assets.tar"
+	remote "tar -xf '$staging/flutter_assets.tar' -C '$staging/data/flutter_assets' && rm -f '$staging/flutter_assets.tar'"
+
+	if [[ -f "$OVERLAY_APP_TREE/runtime-mode.json" ]]; then
+		upload_with_progress "$OVERLAY_APP_TREE/runtime-mode.json" "$staging/runtime-mode.json"
+	fi
+}
+
+[[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && usage && exit 0
+
+[[ -f "$LIBAPP" ]] || die "missing $LIBAPP (run: APP=$APP make build-app)"
+[[ -d "$ASSETS" ]] || die "missing $ASSETS (run: APP=$APP make build-app)"
+
+usb_ssh_session_load_env "$ROOT"
+usb_ssh_session_select "$ROOT"
+
+if usb_ssh_session_is_remote; then
+	echo "SSH push-app: APP=$APP target=$TARGET_USER@$TARGET_ADDR → $DEVICE_APP"
+else
+	echo "USB-SSH push-app: APP=$APP iface=$IFACE target=$TARGET_USER@$TARGET_ADDR → $DEVICE_APP"
+fi
+usb_ssh_session_configure_link
+usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
+
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/hmi-push-app.XXXXXX")"
+cleanup() { rm -rf "$STAGE"; }
+trap cleanup EXIT
+
+# --- Non-HMI apps: tar overlay tree → DEVICE_APP (no hmi.service restart) ---
+if [[ "$APP_IS_HMI" != "1" ]]; then
+	echo "push-app: non-HMI APP=$APP → $DEVICE_APP (no hmi.service restart)"
+	APP_TAR="$STAGE/app-tree.tar"
+	export COPYFILE_DISABLE=1
+	tar --exclude='._*' --exclude='.DS_Store' -C "$OVERLAY_APP_TREE" -cf "$APP_TAR" .
+	remote "rm -rf '$DEVICE_APP' && mkdir -p '$DEVICE_APP'"
+	upload_with_progress "$APP_TAR" "/tmp/push-app-$APP_OPT_NAME.tar"
+	remote "tar -xf '/tmp/push-app-$APP_OPT_NAME.tar' -C '$DEVICE_APP' && rm -f '/tmp/push-app-$APP_OPT_NAME.tar' && chmod 0755 '$DEVICE_APP/bin'/* 2>/dev/null || true"
+	echo "push-app: done (APP=$APP → $DEVICE_APP; hmi.service not restarted)."
+	exit 0
+fi
+
+# --- Product HMI: existing apply helper + hmi.service restart ---
+stage_overlay_tree "$STAGING"
+
+echo "Installing staged app and restarting hmi.service..."
+if [[ ! -f "$APPLY_SCRIPT_HOST" ]]; then
+	die "missing host apply script: $APPLY_SCRIPT_HOST"
+fi
+# Refresh board helper each push so HMI recovery checks stay current
+# without requiring a full rootfs rebuild for script-only fixes.
+upload_with_progress "$APPLY_SCRIPT_HOST" "$APPLY_SCRIPT"
+remote "chmod 0755 '$APPLY_SCRIPT'"
+
+if ! remote "test -x $APPLY_SCRIPT"; then
+	die "$APPLY_SCRIPT not found on board (rebuild rootfs and flash the DRM teardown fix)"
+fi
+
+# Detach on the board so push-app survives brief SSH loss while hmi restarts
+# (Wi-Fi must live outside hmi cgroup; host still polls completion). USB + LAN.
+remote "rm -f $APPLY_LOG $APPLY_STATUS; \
+	setsid nohup $APPLY_SCRIPT >$APPLY_LOG 2>&1 </dev/null & \
+	echo PUSH_APP_APPLY_STARTED"
+
+echo "Waiting for board apply (max ${APPLY_WAIT_SEC}s)..."
+deadline=$((SECONDS + APPLY_WAIT_SEC))
+spinner_frame=0
+status_poll_tick=0
+st=""
+log=""
+tail1=""
+while ((SECONDS < deadline)); do
+	spinner_frame=$((spinner_frame % 3 + 1))
+	case "$spinner_frame" in
+	1) dots=".  " ;;
+	2) dots=".. " ;;
+	3) dots="..." ;;
+	esac
+	elapsed=$((APPLY_WAIT_SEC - (deadline - SECONDS)))
+	detail=""
+	if [[ -n "$tail1" ]]; then
+		detail=" — ${tail1:0:60}"
+	fi
+	render_wait_line "  Waiting for board apply${dots} (${elapsed}s)${detail}"
+
+	if [[ "$status_poll_tick" -eq 0 ]]; then
+		# Silence ssh client stderr so host warnings do not break the \r line.
+		st="$(remote "cat $APPLY_STATUS 2>/dev/null || true" 2>/dev/null | tr -d '\r' | head -n1 || true)"
+		log="$(remote "cat $APPLY_LOG 2>/dev/null || true" 2>/dev/null || true)"
+		if apply_ok "$st" "$log"; then
+			clear_wait_line
+			printf '%s\n' "$log"
+			echo "push-app: done (hmi.service restarted with the new app)."
+			exit 0
+		fi
+		if apply_fail "$st" "$log"; then
+			clear_wait_line
+			printf '%s\n' "$log" >&2
+			die "board apply failed (see $APPLY_LOG on device)"
+		fi
+		tail1="$(printf '%s\n' "$log" | tail -n1 | tr -d '\r')"
+	fi
+
+	status_poll_tick=$(( (status_poll_tick + 1) % 4 ))
+	sleep 0.25
+done
+
+clear_wait_line
+printf '%s\n' "$(remote "cat $APPLY_LOG 2>/dev/null || true" || true)" >&2
+die "timed out waiting for board apply after ${APPLY_WAIT_SEC}s (see $APPLY_LOG on device)"

@@ -3,7 +3,7 @@
 # into rootfs overlay at /etc/ota/ed25519.pub.
 # Private key stays under keys/ota/ (gitignored). Never copy private key to overlay.
 # There is no separate lab/dev keypair — cloud verify uses this release pubkey only.
-# Usage: make ota-release-keys   OR   bash scripts/ota-release-keys.sh
+# Usage: make sign-keys   OR   bash scripts/sign-keys.sh
 # Env: FORCE=1 to overwrite existing private key (breaks previously signed packages).
 set -euo pipefail
 
@@ -23,19 +23,19 @@ command -v openssl >/dev/null 2>&1 || die "openssl not found on PATH"
 mkdir -p "$KEY_DIR" "$(dirname "$PUB_OVERLAY")"
 
 if [[ -f "$PRIV" && "${FORCE:-0}" != "1" ]]; then
-	echo "ota-release-keys: keeping existing $PRIV (FORCE=1 to regenerate — invalidates old .sig)"
+	echo "sign-keys: keeping existing $PRIV (FORCE=1 to regenerate — invalidates old .sig)"
 else
 	openssl genpkey -algorithm Ed25519 -out "$PRIV"
 	chmod 600 "$PRIV"
-	echo "ota-release-keys: wrote $PRIV"
+	echo "sign-keys: wrote $PRIV"
 fi
 
 openssl pkey -in "$PRIV" -pubout -out "$PUB_HOST"
 cp -f "$PUB_HOST" "$PUB_OVERLAY"
 chmod 644 "$PUB_OVERLAY" "$PUB_HOST"
 
-echo "ota-release-keys: host pubkey     $PUB_HOST"
-echo "ota-release-keys: overlay pubkey  $PUB_OVERLAY"
-echo "ota-release-keys: private key MUST NOT be committed or shipped in rootfs"
-echo "ota-release-keys: sign publish packages with:"
-echo "  OTA_SIGNING_KEY=$PRIV REQUIRE_OTA_SIG=1 make ota-package"
+echo "sign-keys: host pubkey     $PUB_HOST"
+echo "sign-keys: overlay pubkey  $PUB_OVERLAY"
+echo "sign-keys: private key MUST NOT be committed or shipped in rootfs"
+echo "sign-keys: sign publish packages with:"
+echo "  OTA_SIGNING_KEY=$PRIV REQUIRE_OTA_SIG=1 make pack-ota"

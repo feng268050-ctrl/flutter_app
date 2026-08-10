@@ -7,10 +7,10 @@
 #
 # Always writes release.json with plain OS Version semver (no staging / -beta / RELEASE=).
 #
-# Inherits ota-package layout:
+# Inherits pack-ota layout:
 #   output/firmware/<APP>/ota-package.tar.gz
 #   output/firmware/<APP>/ota-package.tar.gz.sig
-# Env: OEM_ONLY / OTA_SIGNING_KEY / REQUIRE_OTA_SIG apply only to make ota-package (publish prereq).
+# Env: OEM_ONLY / OTA_SIGNING_KEY / REQUIRE_OTA_SIG apply only to make pack-ota (publish prereq).
 # Channel version comes from /etc/os-release VERSION= (Cyber OS), not Flutter pubspec.
 set -euo pipefail
 
@@ -27,7 +27,7 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 usage() {
 	cat <<'EOF'
 Usage:
-  make publish                 # ota-package then upload release.json
+  make publish                 # pack-ota then upload release.json
   make publish-only            # upload existing ota-package.tar.gz + .sig
   APP=<id>_hmi make publish    # R2 prefix = APP with _ → - (default lws_hmi → lws-hmi)
   PUBLISH_ARTIFACT=<slug>      # override artifact prefix (also allows non-*_hmi APP)
@@ -66,8 +66,8 @@ else
 fi
 [[ -n "$ARTIFACT" ]] || die "empty artifact slug"
 
-[[ -f "$ARCHIVE" ]] || die "OTA archive missing: $ARCHIVE (run: make ota-package)"
-[[ -f "$SIG" ]] || die "OTA signature missing: $SIG (run: OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make ota-package)"
+[[ -f "$ARCHIVE" ]] || die "OTA archive missing: $ARCHIVE (run: make pack-ota)"
+[[ -f "$SIG" ]] || die "OTA signature missing: $SIG (run: OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make pack-ota)"
 
 OS_RELEASE_SOT="${OS_RELEASE_SOT:-$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/os-release}"
 [[ -f "$OS_RELEASE_SOT" ]] || die "missing OS release SoT: $OS_RELEASE_SOT"

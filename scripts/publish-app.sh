@@ -44,15 +44,15 @@ PACK_VERSION="${SEMVER}"
 PACK_NAME="v${SEMVER}.tar.gz"
 VERSION_PREFIX="v"
 
-OUT_DIR="${APP_FIRMWARE_DIR:-$ROOT/output/firmware/$APP}"
+OUT_DIR="${APP_PACKAGE_DIR:-$ROOT/output/app/$APP}"
 PACKAGE="${APP_PACKAGE:-$OUT_DIR/$PACK_NAME}"
 
 if [[ "$ONLY" != "1" ]]; then
-	chmod +x "$ROOT/scripts/package-app.sh"
-	PACKAGE="$(APP="$APP" bash "$ROOT/scripts/package-app.sh" | tail -n1)"
+	chmod +x "$ROOT/scripts/pack-app.sh"
+	PACKAGE="$(APP="$APP" bash "$ROOT/scripts/pack-app.sh" | tail -n1)"
 fi
 
-[[ -f "$PACKAGE" ]] || die "app package missing: $PACKAGE (run: make package-app / make build-app)"
+[[ -f "$PACKAGE" ]] || die "app package missing: $PACKAGE (run: make pack-app / make build-app)"
 
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/lws-publish-app.XXXXXX")"
 WORK_PKG="$WORK_DIR/$(basename "$PACKAGE")"

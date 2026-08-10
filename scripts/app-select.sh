@@ -30,6 +30,7 @@ app_select_opt_name() {
 # Exports:
 #   APP, APP_DIR, APP_OPT_NAME, OVERLAY_APP, DEVICE_APP, APP_IS_HMI
 #   APP_FIRMWARE_DIR (output/firmware/<APP>), APP_ROOTFS_IMG
+#   APP_PACKAGE_DIR (output/app/<APP> — pack-app / publish-app tar.gz)
 #   OVERLAY_OPT_ROOT (…/rootfs-overlay/opt)
 #   APP_IS_PRODUCT_HMI — alias of APP_IS_HMI (compat)
 app_select_resolve() {
@@ -71,6 +72,7 @@ app_select_resolve() {
 	DEVICE_APP="/opt/$opt_name"
 	APP_FIRMWARE_DIR="$root/output/firmware/$app"
 	APP_ROOTFS_IMG="$APP_FIRMWARE_DIR/rootfs.img"
+	APP_PACKAGE_DIR="$root/output/app/$app"
 	if app_select_is_hmi "$app"; then
 		APP_IS_HMI=1
 	else
@@ -79,7 +81,7 @@ app_select_resolve() {
 	APP_IS_PRODUCT_HMI="$APP_IS_HMI"
 
 	export APP APP_DIR APP_OPT_NAME OVERLAY_OPT_ROOT OVERLAY_APP DEVICE_APP \
-		APP_FIRMWARE_DIR APP_ROOTFS_IMG APP_IS_HMI APP_IS_PRODUCT_HMI
+		APP_FIRMWARE_DIR APP_ROOTFS_IMG APP_PACKAGE_DIR APP_IS_HMI APP_IS_PRODUCT_HMI
 }
 
 # True if app/factory_test is a valid Flutter project (auto-include for rootfs).

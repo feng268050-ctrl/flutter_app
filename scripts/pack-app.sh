@@ -12,10 +12,10 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 
 usage() {
 	cat <<EOF
-Usage: make package-app | bash scripts/package-app.sh
+Usage: make pack-app | bash scripts/pack-app.sh
 
 Packages OVERLAY_APP (\$OVERLAY_APP) into:
-  output/firmware/<APP>/v{semver}.tar.gz
+  output/app/<APP>/v{semver}.tar.gz
 
 Prereq: APP=\$APP make build-app
 Env: APP= (default lws_hmi), APP_PACKAGE= override output path
@@ -35,7 +35,7 @@ VERSION_LINE="$(sed -n 's/^[[:space:]]*version:[[:space:]]*\([^[:space:]#]*\).*/
 SEMVER="${VERSION_LINE%%+*}"
 [[ "$SEMVER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "unparsable semver in $PUBSPEC (got '$VERSION_LINE')"
 
-OUT_DIR="${APP_FIRMWARE_DIR:-$ROOT/output/firmware/$APP}"
+OUT_DIR="${APP_PACKAGE_DIR:-$ROOT/output/app/$APP}"
 mkdir -p "$OUT_DIR"
 PACK_NAME="v${SEMVER}.tar.gz"
 OUT="${APP_PACKAGE:-$OUT_DIR/$PACK_NAME}"

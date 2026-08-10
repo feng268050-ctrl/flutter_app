@@ -21,7 +21,7 @@ peripheral_ota_resolve_signing_key() {
 		OTA_SIGNING_KEY="$default_key"
 		return 0
 	fi
-	peripheral_ota_die "OTA_SIGNING_KEY unset and $default_key missing — run: make ota-release-keys"
+	peripheral_ota_die "OTA_SIGNING_KEY unset and $default_key missing — run: make sign-keys"
 }
 
 peripheral_ota_sign() {

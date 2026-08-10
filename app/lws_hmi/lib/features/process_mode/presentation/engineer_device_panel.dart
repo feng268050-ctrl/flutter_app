@@ -21,6 +21,7 @@ import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_adaptive_icon_label.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
 ///
@@ -951,50 +952,23 @@ final class _EngineerDeviceActionButtonState
                       ),
                     ),
                   ),
-                // Icon+label as one group with equal side insets (same as
-                // Engineer Feed/Retract and Quick Auto Wire).
-                Builder(
-                  builder: (context) {
-                    final edgeInset =
-                        ((widget.height - iconSize) / 2).clamp(0.0, widget.height);
-                    return Padding(
-                      padding: EdgeInsets.symmetric(horizontal: edgeInset),
-                      child: Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                widget.icon,
-                                color: isVisuallyEnabled
-                                    ? foreground
-                                    : disabledForeground,
-                                size: iconSize,
-                              ),
-                              const SizedBox(
-                                width: ProcessModeOutlineChrome.iconLabelGap,
-                              ),
-                              Text(
-                                widget.label,
-                                maxLines: 1,
-                                softWrap: false,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: isVisuallyEnabled
-                                      ? foreground
-                                      : disabledForeground,
-                                  fontSize: labelSize,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.0,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                HmiAdaptiveIconLabel(
+                  label: widget.label,
+                  style: TextStyle(
+                    color: isVisuallyEnabled ? foreground : disabledForeground,
+                    fontSize: labelSize,
+                    fontWeight: FontWeight.w600,
+                    height: 1.0,
+                  ),
+                  iconSize: iconSize,
+                  buttonHeight: widget.height,
+                  horizontalPadding: ((widget.height - iconSize) / 2)
+                      .clamp(0.0, widget.height),
+                  leading: Icon(
+                    widget.icon,
+                    color: isVisuallyEnabled ? foreground : disabledForeground,
+                    size: iconSize,
+                  ),
                 ),
               ],
             ),

@@ -8,6 +8,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
+import 'package:lws_hmi/ui/hmi/hmi_adaptive_icon_label.dart';
 
 /// Engineer Retract/Feed outline chrome — reused by Quick Mode side ops.
 ///
@@ -29,8 +30,7 @@ abstract final class ProcessModeOutlineChrome {
   static const double laserEnableLabelSize = HmiTypography.buttonJumboFontSize;
   static const double laserEnableIconSize = HmiButtonMetrics.jumboIconSize;
 
-  /// Gap between leading icon and label when [groupIconWithLabel] is used.
-  static const double iconLabelGap = 8.0;
+  static const double iconLabelGap = HmiIconLabelLayout.iconLabelGap;
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;
 }
@@ -45,9 +45,6 @@ final class ProcessModeOutlineButton extends StatelessWidget {
     required this.enabled,
     required this.onPressed,
     this.height = ProcessModeOutlineChrome.defaultHeight,
-    /// When true (Auto Wire), center icon+label as one group with equal side
-    /// insets. Otherwise label is button-centered and icon uses left inset.
-    this.groupIconWithLabel = false,
   });
 
   final String label;
@@ -56,7 +53,6 @@ final class ProcessModeOutlineButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onPressed;
   final double height;
-  final bool groupIconWithLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -74,8 +70,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
                   onPressed?.call();
                 }
               : null,
-          borderRadius:
-              BorderRadius.circular(ProcessModeOutlineChrome.radius),
+          borderRadius: BorderRadius.circular(ProcessModeOutlineChrome.radius),
           child: Opacity(
             opacity: enabled ? 1 : 0.55,
             child: _OutlineFace(
@@ -84,7 +79,6 @@ final class ProcessModeOutlineButton extends StatelessWidget {
               enabled: enabled,
               leading: leading,
               label: label,
-              groupIconWithLabel: groupIconWithLabel,
             ),
           ),
         ),
@@ -200,7 +194,8 @@ final class _ProcessModeOutlineWireButtonState
       return;
     }
     if (widget.laserBlocked) {
-      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(AppLocalizations.of(context)!));
+      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(
+          AppLocalizations.of(context)!));
       return;
     }
     CyberClickSoundRegistry.playClick();
@@ -213,9 +208,7 @@ final class _ProcessModeOutlineWireButtonState
   }
 
   void _pointerUp() {
-    if (!widget.enabled ||
-        widget.controller.busy ||
-        widget.laserBlocked) {
+    if (!widget.enabled || widget.controller.busy || widget.laserBlocked) {
       return;
     }
     final wasLatched = _gesture.latched;
@@ -273,9 +266,6 @@ final class _ProcessModeOutlineWireButtonState
             continuousRipple: latched,
             // Continuous Feed chrome: label only (no leading icon).
             showLeading: !latched,
-            // Quick Feed/Retract: label centered, icon left inset = top/bottom
-            // (same as Manual Gas). Do not use groupIconWithLabel — that is
-            // Auto Wire / Engineer only.
           ),
         ),
       ),
@@ -294,7 +284,6 @@ final class _OutlineFace extends StatelessWidget {
     this.progressForcesReadableLabel = false,
     this.continuousRipple = false,
     this.showLeading = true,
-    this.groupIconWithLabel = false,
   });
 
   final double height;
@@ -306,16 +295,13 @@ final class _OutlineFace extends StatelessWidget {
   final bool progressForcesReadableLabel;
   final bool continuousRipple;
   final bool showLeading;
-  final bool groupIconWithLabel;
 
   @override
   Widget build(BuildContext context) {
     final onFill = highlight || progressForcesReadableLabel;
     final foreground = !enabled
         ? ProcessModeOutlineChrome.disabledForeground
-        : (onFill
-            ? Colors.white
-            : ProcessModeOutlineChrome.actionOrange);
+        : (onFill ? Colors.white : ProcessModeOutlineChrome.actionOrange);
     final style = TextStyle(
       color: foreground,
       fontSize: ProcessModeOutlineChrome.labelSize,
@@ -323,15 +309,7 @@ final class _OutlineFace extends StatelessWidget {
       height: 1.0,
     );
     const iconSize = ProcessModeOutlineChrome.iconSize;
-    // Left inset matches top/bottom inset to the button edge.
     final edgeInset = ((height - iconSize) / 2).clamp(0.0, height);
-    final labelText = Text(
-      label,
-      maxLines: 1,
-      softWrap: false,
-      textAlign: TextAlign.center,
-      style: style,
-    );
     final tintedLeading = ColorFiltered(
       colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
       child: leading,
@@ -361,45 +339,15 @@ final class _OutlineFace extends StatelessWidget {
                 color: ProcessModeOutlineChrome.actionOrange,
               ),
             if (continuousRipple) const FeedContinuousRipple(),
-            if (groupIconWithLabel && showLeading)
-              // Icon+label as one group: equal left/right margin to the face.
-              // Min side inset matches top/bottom (edgeInset); scaleDown if
-              // the group is wider than the remaining width.
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: edgeInset),
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: iconSize,
-                          height: iconSize,
-                          child: tintedLeading,
-                        ),
-                        const SizedBox(
-                          width: ProcessModeOutlineChrome.iconLabelGap,
-                        ),
-                        labelText,
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else ...[
-              // Label centered on the full button; icon height-matched left inset
-              // (Manual Gas).
-              Center(child: labelText),
-              if (showLeading)
-                Positioned(
-                  left: edgeInset,
-                  top: edgeInset,
-                  width: iconSize,
-                  height: iconSize,
-                  child: tintedLeading,
-                ),
-            ],
+            HmiAdaptiveIconLabel(
+              label: label,
+              style: style,
+              iconSize: iconSize,
+              buttonHeight: height,
+              horizontalPadding: edgeInset,
+              leading: showLeading ? tintedLeading : null,
+              allowGroupedTrailingInsetCollapse: true,
+            ),
           ],
         ),
       ),

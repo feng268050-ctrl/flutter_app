@@ -149,10 +149,11 @@ flowchart TB
 
 #### 显示和声音
 
-| # | 顶层行 | 与 HMI |
-| ---- | ---- | ---- |
-| 1 | **Display** | **拷贝** |
-| 2 | **Sound** | **拷贝** |
+| # | 顶层行 | 与 HMI | 说明 |
+| ---- | ---- | ---- | ---- |
+| 1 | **Display** | **拷贝** | |
+| 2 | **Sound** | **拷贝** | |
+| 3 | **Power Mode** | **拷贝** | 自 HMI General（效能模式）拷贝；HAL `/var/lib/hal/power.conf`；HMI **保留** |
 
 #### 输入
 
@@ -171,7 +172,7 @@ flowchart TB
 
 **本计划明确迁移（HMI 须移除）：** Ethernet、Bluetooth、SSH、Keyboard、Mouse、USB OTG。
 
-**本计划明确拷贝（HMI 保留）：** About 相关只读（Brand/Model/SN 等已在 Device Info）、Wi‑Fi、Proxy、日期和时间、Country/Region、Language、Unit、Display、Sound。
+**本计划明确拷贝（HMI 保留）：** About 相关只读（Brand/Model/SN 等已在 Device Info）、Wi‑Fi、Proxy、日期和时间、Country/Region、Language、Unit、Display、Sound、Power Mode。
 
 **HMI 独留（不进 Settings）：** Advanced（Modbus 阈值等）、Custom Home、云服务、产品外设版本（相机/控制板/送丝等）、工艺相关、HMI App OTA 入口等。
 
@@ -328,9 +329,9 @@ systemctl start hmi
 
 1. **拷贝** 日期和时间、Country/Region、Language、Unit。
 
-### Phase E — 显示和声音（🔲）
+### Phase E — 显示和声音 / 效能（🔲）
 
-1. **拷贝** Display、Sound。
+1. **拷贝** Display、Sound、Power Mode（自 HMI General）。
 
 ### Phase F — 输入迁移（🔲）
 
@@ -358,7 +359,7 @@ systemctl start hmi
 | 7 | Storage 显示 Secrets Seal `software` \| `op-tee`。 |
 | 8 | Bluetooth 本机名称为 Brand + 空格 + Model。 |
 | 9 | HMI **不再**提供：Ethernet、Bluetooth、SSH、Keyboard、Mouse、USB OTG。 |
-| 10 | HMI **仍**提供拷贝项：Wi‑Fi、Proxy、日期时间、区域/语言/单位、Display、Sound，以及产品 Advanced / Custom Home 等。 |
+| 10 | HMI **仍**提供拷贝项：Wi‑Fi、Proxy、日期时间、区域/语言/单位、Display、Sound、Power Mode，以及产品 Advanced / Custom Home 等。 |
 | 11 | 竖屏 / 横屏均可完成主导航。 |
 
 ---
@@ -370,7 +371,7 @@ systemctl start hmi
 | 两 App 争用显示 | 双向 `Conflicts=`；CLI 默认拒绝抢显 |
 | 拷贝页双份漂移 | 优先抽 shared feature package；短期可复制，tasks 标明收敛 |
 | 迁移后 HMI 深链断裂 | 全局搜路由 / `pushSettingsPage`；Demo 一并删 |
-| Language/Unit 双 App | 共用 HAL persist；切回 HMI 时重新读 store |
+| Language/Unit/Power Mode 双 App | 共用 HAL persist（`locale.conf` / `power.conf`）；切回 HMI 时重新读 store |
 | Keyboard 重启 | 只重启 Settings 进程或 document `systemctl restart settings`；勿 `start hmi` 抢显 |
 | 版本 probe 脆弱 | 软失败；字符串解析单测；禁止在 UI isolate 硬依赖 |
 | rootfs 体积 | Settings 无焊机素材；禁 bundle 打 engine；盯 ext2 预算 |

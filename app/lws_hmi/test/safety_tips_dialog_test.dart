@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/app_routes.dart';
@@ -55,15 +56,17 @@ void main() {
 
     expect(find.byType(SafetyTipsPage), findsOneWidget);
     expect(find.text('Safety Tips'), findsOneWidget);
-    // Body is word-boundary wrapped (one Text per English token).
-    expect(find.text('bystanders,'), findsOneWidget);
+    // Body is Markdown (structured lists / headings from ARB).
+    expect(find.byType(MarkdownBody), findsOneWidget);
+    expect(find.textContaining('bystanders'), findsOneWidget);
     expect(SafetyTipsGate.isActive, isTrue);
 
     // Product Disclaimer is a named route (slide), not a nested dialog.
     await tester.tap(find.byKey(const ValueKey('safety-tips-disclaimer-link')));
     await tester.pumpAndSettle();
     expect(find.text('Product Disclaimer'), findsOneWidget);
-    expect(find.text('Dear'), findsWidgets);
+    expect(find.textContaining('Dear User'), findsOneWidget);
+    expect(find.textContaining('Safety Warning'), findsOneWidget);
     expect(find.byType(ProductDisclaimerPage), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('product-disclaimer-agree-btn')));

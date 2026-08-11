@@ -33,8 +33,26 @@ void main() {
     );
     expect(ProcessVideoFormat.duration(125000), '02:05');
     final l10n = AppLocalizationsEn();
-    expect(ProcessVideoFormat.workMode(ProcessType.spotWelding, l10n), 'Spot welding');
+    expect(ProcessVideoFormat.workMode(ProcessType.spotWelding, l10n), 'Spot Welding');
     expect(ProcessVideoFormat.material(record, l10n), 'Stainless Steel');
+
+    final chineseNameRecord = ProcessVideoRecord(
+      id: 2,
+      videoId: 'v2',
+      videoPath: '/tmp/b.mp4',
+      processType: ProcessType.continuousWelding,
+      materialType: MaterialType.stainlessSteel,
+      processParametersJson: ProcessVideoSnapshot(
+        processType: ProcessType.continuousWelding,
+        materialType: MaterialType.stainlessSteel,
+        materialName: '不锈钢',
+        parameters: const ProcessParameters.empty(),
+      ).toJsonString(),
+      fileSize: 10,
+      durationMs: 60000,
+      createTimeMs: DateTime.utc(2026, 7, 28, 11, 0).millisecondsSinceEpoch,
+    );
+    expect(ProcessVideoFormat.material(chineseNameRecord, l10n), 'Stainless Steel');
   });
 
   testWidgets('empty Videos tab', (tester) async {

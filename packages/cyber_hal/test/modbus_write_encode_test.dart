@@ -111,6 +111,13 @@ ModbusConfig _writeConfig({
         decode: ModbusDecode(type: 'bit', bit: 0),
       ),
       ModbusAttributeConfig(
+        id: 'control.wire_manual_mode',
+        access: 'rw',
+        group: 'control',
+        register: ModbusRegisterBinding(space: 'holding', address: 0x0058),
+        decode: ModbusDecode(type: 'bit', bit: 4),
+      ),
+      ModbusAttributeConfig(
         id: 'upgrade.data',
         access: 'w',
         group: 'control',
@@ -126,6 +133,36 @@ ModbusConfig _writeConfig({
 }
 
 void main() {
+  test('writeAttribute field_1 refreshes sibling bit attr cache for watch prime',
+      () async {
+    final config = _writeConfig();
+    final fake = FakeWriteTransport(config.transport);
+    // Seed group so readGroup caches wire_manual_mode=false.
+    fake.holdingByStart[0x0050] = List<int>.filled(9, 0);
+    final hal = ModbusHal.fromConfig(config, transport: fake);
+
+    await hal.readGroup('control');
+
+    // DeviceControlController.setAutoWireFeed writes the whole word (bit4).
+    await hal.writeAttribute('control.field_1', 0x0010);
+
+    final primed = <Object?>[];
+    final sub = hal.watchAttributes(ids: ['control.wire_manual_mode']).listen(
+      (batch) {
+        for (final c in batch) {
+          if (c.id == 'control.wire_manual_mode') {
+            primed.add(c.value);
+          }
+        }
+      },
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(primed, isNotEmpty);
+    expect(primed.first, isTrue);
+    await sub.cancel();
+    await hal.close();
+  });
+
   test('writeAttribute encodes percent power with scale 0.01', () async {
     final config = _writeConfig();
     final fake = FakeWriteTransport(config.transport);

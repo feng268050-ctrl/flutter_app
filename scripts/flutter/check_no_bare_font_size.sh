@@ -68,4 +68,15 @@ if [[ -n "$cyber_override_hits" ]]; then
   echo "$cyber_override_hits" >&2
 fi
 
+# copyWith(fontSize: <number>) in business UI breaks semantic typography SoT.
+COPYWITH_SIZE_PATTERN='copyWith\([^)]*fontSize:\s*[0-9]+(\.[0-9]+)?'
+copywith_hits="$(
+  rg -n "${COMMON_GLOBS[@]}" -e "$COPYWITH_SIZE_PATTERN" "$LIB/features" "$LIB/ui" 2>/dev/null || true
+)"
+
+if [[ -n "$copywith_hits" ]]; then
+  echo "[warn] copyWith(fontSize:…) in features/ui (prefer HmiTypography roles):" >&2
+  echo "$copywith_hits" >&2
+fi
+
 echo "[ok] typography: no bare fontSize; business AppTypography.*Size clean"

@@ -675,7 +675,8 @@ final class _EngineerWireActionButtonState
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
     final labelSize = ProcessModeOutlineChrome.labelSize;
-    const iconSize = ProcessModeOutlineChrome.iconSize;
+    const layoutIconSize = ProcessModeOutlineChrome.iconSize;
+    const visualIconSize = ProcessModeOutlineChrome.engineerWireIconVisualSize;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel(l10n)
         : widget.label;
@@ -739,11 +740,11 @@ final class _EngineerWireActionButtonState
                           return Center(child: labelText);
                         }
                         final edgeInset =
-                            ((constraints.maxHeight - iconSize) / 2)
+                            ((constraints.maxHeight - layoutIconSize) / 2)
                                 .clamp(0.0, constraints.maxHeight);
                         final iconFace = SizedBox(
-                          width: iconSize,
-                          height: iconSize,
+                          width: layoutIconSize,
+                          height: layoutIconSize,
                           child: Transform.flip(
                             flipX: widget.retract,
                             child: Icon(
@@ -751,7 +752,7 @@ final class _EngineerWireActionButtonState
                               color: widget.enabled
                                   ? foreground
                                   : disabledForeground,
-                              size: iconSize,
+                              size: visualIconSize,
                             ),
                           ),
                         );

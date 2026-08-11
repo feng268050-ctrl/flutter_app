@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
@@ -19,6 +20,12 @@ final class CncConnectionGuide extends StatelessWidget {
 
   /// Average luminance sampled from `cnc_bg.webp` perimeter (bright edge).
   static const Color _frameEdge = Color(0xFF5B5B5B);
+
+  /// Title (between `largeDialogTitle` 36 and `display` 44).
+  static const double _titleSize = 38;
+
+  /// Step labels and footer note.
+  static const double _bodySize = AppTypography.navigationSize; // 24
 
   /// lws-ui `cnc_step_image` height (198dp); keep near Android so art sits high.
   static const double _stepImageHeight = 180;
@@ -58,6 +65,7 @@ final class CncConnectionGuide extends StatelessWidget {
               textAlign: TextAlign.center,
               style: context.hmiTypography.displayAction.copyWith(
                 color: Colors.white,
+                fontSize: _titleSize,
                 height: 1.0,
                 fontWeight: FontWeight.w500,
               ),
@@ -108,6 +116,7 @@ final class CncConnectionGuide extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: context.hmiTypography.body.copyWith(
                   color: Colors.white,
+                  fontSize: _bodySize,
                   height: 1.2,
                 ),
               ),
@@ -160,6 +169,7 @@ final class _CncStepColumn extends StatelessWidget {
           textAlign: TextAlign.center,
           style: context.hmiTypography.supporting.copyWith(
             color: Colors.white,
+            fontSize: CncConnectionGuide._bodySize,
             height: 1.25,
           ),
         ),

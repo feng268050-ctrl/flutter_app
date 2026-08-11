@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_importer.dart';
@@ -21,6 +22,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/ui/hmi/hmi_adaptive_icon_label.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -173,6 +175,7 @@ void main() {
       find.byKey(const ValueKey('engineer-action-reset-default')),
     );
     expect(resetButton.shape, CyberButtonShape.rounded);
+    expect(resetButton.forceTextBandCentered, isTrue);
     expect(
       resetButton.borderGradientCenter,
       CyberBorderGradientCenter.uniform,
@@ -181,6 +184,40 @@ void main() {
       resetButton.borderColor ?? CyberColors.buttonRim,
       CyberColors.buttonRim,
     );
+    final saveButton = tester.widget<HmiButton>(
+      find.byKey(const ValueKey('engineer-action-save-favorite')),
+    );
+    expect(saveButton.forceTextBandCentered, isTrue);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('engineer-action-reset-default')),
+        matching: find.byKey(const ValueKey('hmi-icon-label-label-centered')),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('engineer-action-save-favorite')),
+    );
+    await tester.pump();
+
+    final resetRect = tester.getRect(
+      find.byKey(const ValueKey('engineer-action-reset-default')),
+    );
+    final resetLabel = tester.getRect(find.descendant(
+      of: find.byKey(const ValueKey('engineer-action-reset-default')),
+      matching: find.textContaining('Reset'),
+    ));
+    final resetIcon = tester.getRect(find.descendant(
+      of: find.byKey(const ValueKey('engineer-action-reset-default')),
+      matching: find.byIcon(Icons.restart_alt),
+    ));
+    const resetEdgeInset = (HmiButtonMetrics.largeHeight -
+            HmiButtonMetrics.largeIconSize) /
+        2;
+    final resetIconGap = resetLabel.left - resetIcon.right;
+    expect(resetIcon.left - resetRect.left, closeTo(resetIconGap, 1.5));
+    expect(resetIcon.top - resetRect.top, closeTo(resetEdgeInset, 1));
 
     expect(find.byKey(const ValueKey('engineer-param-process.laser_power')),
         findsOneWidget);

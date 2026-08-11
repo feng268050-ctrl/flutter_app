@@ -1165,6 +1165,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                                   .rounded,
                                                           icon:
                                                               Icons.restart_alt,
+                                                          // Label centered; icon
+                                                          // with equal L/R spacing.
+                                                          forceTextBandCentered:
+                                                              true,
                                                           onPressed:
                                                               _resetToDefault,
                                                         ),
@@ -1189,6 +1193,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                                   .rounded,
                                                           icon: Icons
                                                               .bookmark_add,
+                                                          forceTextBandCentered:
+                                                              true,
                                                           onPressed: controller
                                                                   .applying
                                                               ? null

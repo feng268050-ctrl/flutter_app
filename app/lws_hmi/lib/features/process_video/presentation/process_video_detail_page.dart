@@ -308,7 +308,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
                                 child: _ParameterColumn(
                                   record: record,
                                   title: l10n.processVideoParametersTitle,
-                                  backLabel: l10n.details,
+                                  backLabel: l10n.equipmentStatusBack,
                                   uploadLabel: l10n.uploadText,
                                   deleteLabel: l10n.deleteText,
                                   labelWidth: 230 * scale,
@@ -340,7 +340,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
   }
 }
 
-/// Left column: Details chrome + Frost param card + Upload / Delete.
+/// Left column: Back chrome + Frost param card + Upload / Delete.
 final class _ParameterColumn extends StatelessWidget {
   const _ParameterColumn({
     required this.record,

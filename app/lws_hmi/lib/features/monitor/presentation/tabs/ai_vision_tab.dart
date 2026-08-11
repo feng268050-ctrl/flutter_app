@@ -703,25 +703,24 @@ class _AiVisionTabState extends State<AiVisionTab> {
                           ),
                         ),
                         Expanded(
-                          child: Scrollbar(
-                            thumbVisibility: true,
-                            child: ListView(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              children: [
-                                _InfoBlock(
-                                  label: l10n.aiVisionProcessTypeText,
-                                  value: info.$1,
-                                ),
-                                _InfoBlock(
-                                  label: l10n.aiVisionMaterialTypeText,
-                                  value: info.$2,
-                                ),
-                                _InfoBlock(
-                                  label: l10n.processVideoRecordingTime,
-                                  value: info.$3,
-                                ),
-                              ],
-                            ),
+                          // Fade when idle — same as Alarm Log ListView
+                          // (MaterialScrollBehavior desktop scrollbar).
+                          child: ListView(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            children: [
+                              _InfoBlock(
+                                label: l10n.aiVisionProcessTypeText,
+                                value: info.$1,
+                              ),
+                              _InfoBlock(
+                                label: l10n.aiVisionMaterialTypeText,
+                                value: info.$2,
+                              ),
+                              _InfoBlock(
+                                label: l10n.processVideoRecordingTime,
+                                value: info.$3,
+                              ),
+                            ],
                           ),
                         ),
                       ],

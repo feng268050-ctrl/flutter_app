@@ -40,10 +40,10 @@
 操作员 tip（Frost Operation-failed，卡片局部高斯模糊 + 浅 tint 背景透视）与急停作业 halt：
 
 
-| 事件 | 立刻 | Tip（Operation failed） | 告警 frost（H029 等） |
-|------|------|-------------------------|------------------------|
-| 按 E-stop | `halt` + 退出 Laser Enable 会话 UI | **按下**一次「Device is in E-stop」 | **复位后**再出（mask + settle） |
-| Laser Enable 开着时关钥匙 | 退出 Laser Enable UI（写失败也保持关） | **关断时**「Key switch is off」 | 与钥匙相关的告警仍按复位/电平策略（非本 tip） |
+| 事件 | 立刻 | Tip / 安全 Frost | 告警 frost（H029 等） |
+|------|------|------------------|------------------------|
+| 按 E-stop | `halt` + 退出 Laser Enable 会话 UI | **按下**一次 Operation-failed LIGHT cream tip | **复位后**再出（mask + settle） |
+| Laser Enable 开着时关钥匙 | 退出 Laser Enable UI（写失败也保持关） | **关断时** Operation-failed LIGHT cream tip「Key switch is off」 | 与钥匙相关的告警仍按复位/电平策略（非本 tip） |
 | 钥匙 / E-stop 复位 | 不自动恢复 Laser Enable | 不再为 tip 复弹 | 按告警适配器 |
 
 **不要**再把钥匙 tip 延到「钥匙重新打开」——那是 tip / 告警时机反了；E-stop tip 保持按下即出。
@@ -89,7 +89,8 @@
 
 | 类型 | 载体 | 时机 |
 |------|------|------|
-| Tip | `DeviceControlSafetyEvent` → Operation-failed 深色霜（卡片局部高斯 + 背景透视） | E-stop 按下；钥匙关（Laser Enable 曾开） |
+| E-stop / key tip | `DeviceControlSafetyEvent` → Operation-failed LIGHT cream glass | E-stop 按下；钥匙关（Laser Enable 曾开） |
+| Laser Enable 预检拦阻 | Operation-failed LIGHT cream glass | 钥匙关 / E-stop 未复位时长按 Enable |
 | 告警 | `WarnAlarmCoordinator` + frost warn | 码位有效边沿；急停相关 mask 在复位 + settle + 电平读后 |
 
 禁止再次把 tip 延到「开关复位」来「代替」告警，或把 H022 误 rising 当成 tip。

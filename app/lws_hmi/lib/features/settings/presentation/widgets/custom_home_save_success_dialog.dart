@@ -11,7 +11,7 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 enum _CustomHomeSaveStatus { success, failure }
 
-/// Custom Home save tip — Self-Check dark frost (pass / fail content icons).
+/// Custom Home save tip — LIGHT cream glass (pass / fail content icons).
 Future<void> showCustomHomeSaveSuccessDialog(BuildContext context) =>
     _showCustomHomeSaveStatusDialog(
       context,
@@ -71,6 +71,9 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
   static const _iconSize = 80.0;
   static const _confirmMinWidth = 500.0;
 
+  static const _titleInk = Color(0xFF1A1A1A);
+  static const _bodyInk = Color(0xCC1A1A1A);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -83,17 +86,15 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
     final icon = success
         ? ProcessModeAssets.dialogSuccess
         : ProcessModeAssets.dialogError;
-    final textColor = CyberColors.textPrimary;
-    final bodyColor = CyberColors.textSecondary;
     final titleStyle = context.hmiTypography.dialogTitle.copyWith(
-      color: textColor,
+      color: _titleInk,
       fontWeight: FontWeight.w700,
       height: 1.15,
       letterSpacing: 0.02 * (context.hmiTypography.dialogTitle.fontSize ?? 0),
       decoration: TextDecoration.none,
     );
     final messageStyle = context.hmiTypography.dialogBody.copyWith(
-      color: bodyColor,
+      color: _bodyInk,
       fontWeight: FontWeight.w400,
       height: 1.2,
       decoration: TextDecoration.none,
@@ -114,18 +115,7 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
             style: titleStyle,
           ),
           const SizedBox(height: CyberDimens.contentPadding),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0x0068686C),
-                  CyberColors.dividerCenter,
-                  Color(0x0068686C),
-                ],
-              ),
-            ),
-            child: SizedBox(height: 1, width: double.infinity),
-          ),
+          const TipFrostDivider(),
           const SizedBox(height: CyberDimens.contentPadding),
           Center(
             child: Image(
@@ -146,18 +136,7 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: CyberDimens.contentPadding),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0x0068686C),
-                  CyberColors.dividerCenter,
-                  Color(0x0068686C),
-                ],
-              ),
-            ),
-            child: SizedBox(height: 1, width: double.infinity),
-          ),
+          const TipFrostDivider(),
           const SizedBox(height: CyberDimens.contentPadding),
           Center(
             child: ConstrainedBox(

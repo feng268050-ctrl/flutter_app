@@ -309,7 +309,7 @@ As CyberUI gains switch, checkbox, slider, segmented, stepper, and dialog-host w
 #### Scenario: Settings checkbox stays Cyber large
 
 - **WHEN** a Settings row presents a checkbox control
-- **THEN** it uses `CyberCheckbox` at `CyberDimens.checkboxLargeSize` (28)
+- **THEN** it uses `CyberCheckbox` at `CyberDimens.checkboxLargeSize` (26)
 
 ### Requirement: Misc Show Startup Self-Check is persisted
 

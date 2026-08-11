@@ -54,8 +54,8 @@ abstract final class CyberDimens {
   /// Small checkbox face edge length (24).
   static const checkboxSmallSize = 24.0;
 
-  /// Large checkbox face edge length (28).
-  static const checkboxLargeSize = 28.0;
+  /// Large checkbox face edge length (26).
+  static const checkboxLargeSize = 26.0;
 
   static const dialogFadeInMs = 220;
   static const dialogFadeOutMs = 160;

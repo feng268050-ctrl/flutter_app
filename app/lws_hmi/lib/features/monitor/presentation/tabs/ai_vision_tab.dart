@@ -27,7 +27,6 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/process_parameters_snapshot_store.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -646,15 +645,15 @@ class _AiVisionTabState extends State<AiVisionTab> {
       } catch (_) {}
     }
     String material = l10n.aiVisionWorkInfoUnavailable;
-    final name = snap['materialName']?.toString().trim();
-    if (name != null && name.isNotEmpty) {
-      material = name;
+    final mt = snap['materialType'];
+    if (mt is int) {
+      try {
+        material = MaterialType.fromStorageValue(mt).localizedLabel(l10n);
+      } catch (_) {}
     } else {
-      final mt = snap['materialType'];
-      if (mt is int) {
-        try {
-          material = MaterialType.fromStorageValue(mt).localizedLabel(l10n);
-        } catch (_) {}
+      final name = snap['materialName']?.toString().trim();
+      if (name != null && name.isNotEmpty) {
+        material = MaterialTypeAliases.localizeStored(name, l10n);
       }
     }
     return (process, material, l10n.aiVisionWorkInfoUnavailable);
@@ -1057,7 +1056,10 @@ class _AiBoxesPainter extends CustomPainter {
       }
       labelStyle.text = TextSpan(
         text: label,
-        style: AppTypography.supporting.copyWith(color: Colors.white),
+        style: TextStyle(
+          fontSize: HmiTypography.supportingSize,
+          color: Colors.white,
+        ),
       );
       labelStyle.layout();
       final padH = labelStyle.height * 0.35;

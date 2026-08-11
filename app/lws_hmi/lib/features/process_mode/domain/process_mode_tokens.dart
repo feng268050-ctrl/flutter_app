@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
@@ -119,9 +119,9 @@ abstract final class ProcessModeDimens {
   static const double wheelHeight = 280;
   static const double wheelItemHeight = 168 / 3; // 56 — was 136/3; more row gap
   /// Mode / material selected label → sectionTitle (22).
-  static const double wheelSelectedTextSize = 22.0;
+  static const double wheelSelectedTextSize = HmiTypography.sectionTitleSize;
   /// Mode / material unselected label → control (20).
-  static const double wheelUnselectedTextSize = 20.0;
+  static const double wheelUnselectedTextSize = HmiTypography.controlSize;
   /// Full-page mode / material highlight length (lws-ui 400dp) plus a little
   /// past the scale *image* box so the fill peak meets the visible ticks after
   /// [QuickModePickerDimens.scaleImageVisualScale] shrinks the asset.
@@ -213,7 +213,7 @@ abstract final class ProcessModeDimens {
   static const double dashboardTitleSize = 22.0; // sectionTitle
   static const double dashboardValueSize =
       HmiDisplayTypography.dashboardValueSize;
-  static const double dashboardUnitSize = 16.0; // supporting
+  static const double dashboardUnitSize = HmiTypography.supportingSize;
 
   /// Keep content rhythm proportional to the enlarged pressure panel.
   static const double dashboardContentTop = 50 * dashboardInnerSize / 372;
@@ -228,7 +228,7 @@ abstract final class ProcessModeDimens {
   static const double quickLaserButtonWidth = 564;
   static const double quickLaserButtonHeight = 223;
   static const double quickLaserButtonIconSize = 67;
-  static const double quickLaserButtonLabelSize = 44.0; // display
+  static const double quickLaserButtonLabelSize = HmiTypography.displaySize;
 
   /// Trapezoid clip inside the laser button (matches `_QuickLaserTrapezoid`).
   static const double quickLaserTrapezoidTopWidthRatio = 0.5;
@@ -322,8 +322,8 @@ abstract final class ProcessModeDimens {
   static const double engineerTabUnderlineHeight = 1.5;
   static const double engineerTabUnderlineInset = 18;
 
-  /// Aliases [AppTypography.navigationSize] (primary top-tab label SoT).
-  static const double engineerTabLabelSize = AppTypography.navigationSize;
+  /// Aliases [HmiTypography.navigationSize] (primary top-tab label SoT).
+  static const double engineerTabLabelSize = HmiTypography.navigationSize;
 
 
   /// Horizontal inset around the Engineer device + parameters row.

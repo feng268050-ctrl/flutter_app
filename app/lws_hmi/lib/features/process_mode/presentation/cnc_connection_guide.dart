@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
@@ -21,14 +21,23 @@ final class CncConnectionGuide extends StatelessWidget {
   /// Average luminance sampled from `cnc_bg.webp` perimeter (bright edge).
   static const Color _frameEdge = Color(0xFF5B5B5B);
 
-  /// Title (between `largeDialogTitle` 36 and `display` 44).
-  static const double _titleSize = 38;
+  /// Title — [HmiTypography.cncGuideTitleSize] (38).
+  static const double _titleSize = HmiTypography.cncGuideTitleSize;
 
-  /// Step labels and footer note.
-  static const double _bodySize = AppTypography.navigationSize; // 24
+  static const double _bodyLineHeight = 1.25;
+
+  /// Shared min height so step 1/2/3 labels align across columns.
+  static const double _stepLabelMinHeight =
+      HmiTypography.sectionTitleSize * _bodyLineHeight * 3;
 
   /// lws-ui `cnc_step_image` height (198dp); keep near Android so art sits high.
   static const double _stepImageHeight = 180;
+
+  static TextStyle _bodyStyle(HmiTypography typography) =>
+      typography.sectionTitle.copyWith(
+        color: Colors.white,
+        height: _bodyLineHeight,
+      );
 
   String? get _statusAsset {
     switch (linkStatus) {
@@ -44,6 +53,7 @@ final class CncConnectionGuide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final bodyStyle = _bodyStyle(context.hmiTypography);
     return DecoratedBox(
       key: const ValueKey('quick-mode-cnc-guide'),
       decoration: BoxDecoration(
@@ -82,6 +92,8 @@ final class CncConnectionGuide extends StatelessWidget {
                     statusAsset: _statusAsset,
                     label: l10n?.cncConnectionGuideStep1 ??
                         '1. Verify the RS485 connection.',
+                    labelStyle: bodyStyle,
+                    labelMinHeight: _stepLabelMinHeight,
                     imageHeight: _stepImageHeight,
                   ),
                 ),
@@ -92,6 +104,8 @@ final class CncConnectionGuide extends StatelessWidget {
                     statusAsset: null,
                     label: l10n?.cncConnectionGuideStep2 ??
                         '2. Verify the cutting nozzle sensor cable.',
+                    labelStyle: bodyStyle,
+                    labelMinHeight: _stepLabelMinHeight,
                     imageHeight: _stepImageHeight,
                   ),
                 ),
@@ -102,6 +116,8 @@ final class CncConnectionGuide extends StatelessWidget {
                     statusAsset: null,
                     label: l10n?.cncConnectionGuideStep3 ??
                         '3. Confirm that the welding gun and fixture are securely connected.',
+                    labelStyle: bodyStyle,
+                    labelMinHeight: _stepLabelMinHeight,
                     imageHeight: _stepImageHeight,
                   ),
                 ),
@@ -114,11 +130,7 @@ final class CncConnectionGuide extends StatelessWidget {
                 l10n?.cncConnectionGuideNote ??
                     'Note: After connecting, further adjustments are made on the CNC.',
                 textAlign: TextAlign.center,
-                style: context.hmiTypography.body.copyWith(
-                  color: Colors.white,
-                  fontSize: _bodySize,
-                  height: 1.2,
-                ),
+                style: bodyStyle.copyWith(height: 1.2),
               ),
             ),
           ],
@@ -133,44 +145,54 @@ final class _CncStepColumn extends StatelessWidget {
     required this.stepAsset,
     required this.statusAsset,
     required this.label,
+    required this.labelStyle,
+    required this.labelMinHeight,
     required this.imageHeight,
   });
 
   final String stepAsset;
   final String? statusAsset;
   final String label;
+  final TextStyle labelStyle;
+  final double labelMinHeight;
   final double imageHeight;
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
           height: imageHeight,
           width: double.infinity,
-          child: Image.asset(stepAsset, fit: BoxFit.contain),
+          child: Center(
+            child: Image.asset(stepAsset, fit: BoxFit.contain),
+          ),
         ),
         SizedBox(
           height: 44,
+          width: double.infinity,
           child: statusAsset == null
               ? const SizedBox.shrink()
               : Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: Image.asset(
-                    statusAsset!,
-                    height: 36,
-                    fit: BoxFit.contain,
+                  child: Center(
+                    child: Image.asset(
+                      statusAsset!,
+                      height: 36,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
         ),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: context.hmiTypography.supporting.copyWith(
-            color: Colors.white,
-            fontSize: CncConnectionGuide._bodySize,
-            height: 1.25,
+        SizedBox(
+          height: labelMinHeight,
+          width: double.infinity,
+          child: Text(
+            label,
+            textAlign: TextAlign.start,
+            style: labelStyle,
           ),
         ),
       ],

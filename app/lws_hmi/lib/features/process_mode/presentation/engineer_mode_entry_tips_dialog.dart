@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -85,10 +84,10 @@ final class _EngineerModeEntryTipsBodyState
   static const _iconSize = 140.0;
 
   /// `frost_dialog_prompt_title_text_size` → [HmiTypography.engineerTipTitle].
-  static const _titleSize = AppTypography.criticalTitleSize;
+  static const _titleSize = HmiTypography.criticalTitleSize;
 
   /// `dialog_frost_body_prompt` content → [HmiTypography.engineerTipBody].
-  static const _bodySize = AppTypography.largeDialogTitleSize;
+  static const _bodySize = HmiTypography.largeDialogTitleSize;
 
   /// `frost_dialog_prompt_content_inset` / `engineer_mode_entry_dialog_content_padding`.
   static const _contentInset = 36.0;

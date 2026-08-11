@@ -160,6 +160,9 @@ void main() {
     expect(t.settingsRowTitle.fontSize, 20);
     expect(t.supporting.fontSize, 16);
     expect(t.navigation.fontSize, 24);
+    expect(t.settingsHelpFooter.fontSize, 20);
+    expect(t.settingsPreviewCaption.fontSize, 20);
+    expect(t.upgradeDescription.fontSize, 22);
     expect(t.sectionTitle.fontSize, 22);
     expect(t.pageTitle.fontSize, 28);
     expect(t.metricLabel.fontSize, 20);

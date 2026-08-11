@@ -17,6 +17,9 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     this.settingsRowValue = AppTypography.control,
     this.body = AppTypography.body,
     this.supporting = AppTypography.supporting,
+    this.upgradeDescription = AppTypography.sectionTitle,
+    this.settingsHelpFooter = AppTypography.control,
+    this.settingsPreviewCaption = AppTypography.control,
     this.caption = AppTypography.caption,
     this.technicalMeta = AppTypography.micro,
 
@@ -82,6 +85,19 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
   /// Frozen Medium 100% Hero label size (product baseline).
   static const buttonHeroFontSize = 24.0;
   static const buttonJumboFontSize = 32.0;
+
+  /// Reading ladder sizes — alias [AppTypography] for feature token files.
+  static const pageTitleSize = AppTypography.pageTitleSize;
+  static const sectionTitleSize = AppTypography.sectionTitleSize;
+  static const controlSize = AppTypography.controlSize;
+  static const supportingSize = AppTypography.supportingSize;
+  static const navigationSize = AppTypography.navigationSize;
+  static const displaySize = AppTypography.displaySize;
+  static const largeDialogTitleSize = AppTypography.largeDialogTitleSize;
+  static const criticalTitleSize = AppTypography.criticalTitleSize;
+
+  /// CNC connection guide title (between largeDialogTitle and display).
+  static const cncGuideTitleSize = 38.0;
 
   /// “Don't show again” / dialog option labels (off ladder).
   static const dialogOptionLabelSize = 26.0;
@@ -171,6 +187,16 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
   final TextStyle settingsRowValue;
   final TextStyle body;
   final TextStyle supporting;
+
+  /// Important explanatory copy in upgrade workflows (100% baseline: 22).
+  final TextStyle upgradeDescription;
+
+  /// Important help copy below settings cards (100% baseline: 20).
+  final TextStyle settingsHelpFooter;
+
+  /// Gray caption under settings preview cards (keyboard layout preview, etc.).
+  final TextStyle settingsPreviewCaption;
+
   final TextStyle caption;
   final TextStyle technicalMeta;
 
@@ -233,6 +259,9 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     TextStyle? settingsRowValue,
     TextStyle? body,
     TextStyle? supporting,
+    TextStyle? upgradeDescription,
+    TextStyle? settingsHelpFooter,
+    TextStyle? settingsPreviewCaption,
     TextStyle? caption,
     TextStyle? technicalMeta,
     TextStyle? primaryTabLabel,
@@ -284,6 +313,10 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
       settingsRowValue: settingsRowValue ?? this.settingsRowValue,
       body: body ?? this.body,
       supporting: supporting ?? this.supporting,
+      upgradeDescription: upgradeDescription ?? this.upgradeDescription,
+      settingsHelpFooter: settingsHelpFooter ?? this.settingsHelpFooter,
+      settingsPreviewCaption:
+          settingsPreviewCaption ?? this.settingsPreviewCaption,
       caption: caption ?? this.caption,
       technicalMeta: technicalMeta ?? this.technicalMeta,
       primaryTabLabel: primaryTabLabel ?? this.primaryTabLabel,
@@ -342,6 +375,10 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
       settingsRowValue: L(settingsRowValue, other.settingsRowValue),
       body: L(body, other.body),
       supporting: L(supporting, other.supporting),
+      upgradeDescription: L(upgradeDescription, other.upgradeDescription),
+      settingsHelpFooter: L(settingsHelpFooter, other.settingsHelpFooter),
+      settingsPreviewCaption:
+          L(settingsPreviewCaption, other.settingsPreviewCaption),
       caption: L(caption, other.caption),
       technicalMeta: L(technicalMeta, other.technicalMeta),
       primaryTabLabel: L(primaryTabLabel, other.primaryTabLabel),

@@ -404,6 +404,10 @@ class AppLocalizationsZh extends AppLocalizations {
       'Secrets Seal 显示本机如何保护已保存的机密信息（如 Wi‑Fi 密码和云密钥）。software 表示软件加密；op-tee 表示安全芯片。';
 
   @override
+  String get selinuxHelp =>
+      'SELinux 是 Linux 的安全策略层。Disabled 表示关闭；Permissive 表示违规只记录不拦截；Enforcing 表示按策略强制执行。';
+
+  @override
   String get wallpaperSectionHelp => '壁纸用于桌面背景及应用界面。更改后会短暂重启设置，以加载新壁纸。';
 
   @override
@@ -802,6 +806,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   @override
   String get secretsSealHelp =>
       'Secrets Seal 顯示本機如何保護已儲存的機密資訊（如 Wi‑Fi 密碼與雲金鑰）。software 表示軟體加密；op-tee 表示安全晶片。';
+
+  @override
+  String get selinuxHelp =>
+      'SELinux 是 Linux 的安全策略層。Disabled 表示關閉；Permissive 表示違規只記錄不攔截；Enforcing 表示依策略強制執行。';
 
   @override
   String get wallpaperSectionHelp => '桌布用於桌面背景及應用介面。變更後會短暫重新啟動設定，以載入新桌布。';

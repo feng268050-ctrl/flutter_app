@@ -1,10 +1,14 @@
 import 'dart:async';
 
+import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/material.dart';
 import 'package:os_settings/app/os_settings_app.dart';
 import 'package:os_settings/chrome/settings_chrome.dart';
 
 /// About — Brand / Model / Serial Number from product identity.
+///
+/// Uses the root-shell-warmed [OsSettingsServices.cachedProductInfo] when
+/// present (identity does not change at runtime); cold path loads once.
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
 
@@ -17,13 +21,26 @@ class _AboutPageState extends State<AboutPage> {
   String _model = kUnavailable;
   String _sn = kUnavailable;
   bool _loading = true;
+  bool _hydrated = false;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_load());
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hydrated) return;
+    _hydrated = true;
+    final cached = OsSettingsScope.of(context).cachedProductInfo;
+    if (cached != null) {
+      _applyProduct(cached);
+      return;
+    }
+    unawaited(_load());
+  }
+
+  void _applyProduct(ProductInfo product) {
+    _brand = dashOr(product.brand);
+    _model = dashOr(product.model);
+    _sn = dashOr(product.sn);
+    _loading = false;
   }
 
   Future<void> _load() async {
@@ -31,12 +48,7 @@ class _AboutPageState extends State<AboutPage> {
       final services = OsSettingsScope.of(context);
       final product = await services.productInfo();
       if (!mounted) return;
-      setState(() {
-        _brand = dashOr(product.brand);
-        _model = dashOr(product.model);
-        _sn = dashOr(product.sn);
-        _loading = false;
-      });
+      setState(() => _applyProduct(product));
     } catch (_) {
       try {
         final services = OsSettingsScope.of(context);

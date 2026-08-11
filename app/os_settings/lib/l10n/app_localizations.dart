@@ -873,6 +873,12 @@ abstract class AppLocalizations {
   /// **'Secrets Seal shows how this device protects saved secrets such as Wi‑Fi passwords and cloud keys. software means software encryption; op-tee means the secure hardware chip.'**
   String get secretsSealHelp;
 
+  /// No description provided for @selinuxHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'SELinux is the Linux security policy layer. Disabled means it is off. Permissive means policy violations are logged but not blocked. Enforcing means the policy is enforced.'**
+  String get selinuxHelp;
+
   /// No description provided for @wallpaperSectionHelp.
   ///
   /// In en, this message translates to:

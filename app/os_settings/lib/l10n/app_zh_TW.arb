@@ -116,6 +116,7 @@
   "wlanLabel": "WLAN",
   "connectingLabel": "Connecting…",
   "secretsSealHelp": "Secrets Seal 顯示本機如何保護已儲存的機密資訊（如 Wi‑Fi 密碼與雲金鑰）。software 表示軟體加密；op-tee 表示安全晶片。",
+  "selinuxHelp": "SELinux 是 Linux 的安全策略層。Disabled 表示關閉；Permissive 表示違規只記錄不攔截；Enforcing 表示依策略強制執行。",
   "wallpaperSectionHelp": "桌布用於桌面背景及應用介面。變更後會短暫重新啟動設定，以載入新桌布。",
   "keyboardApplyConfirmOsBody": "將儲存鍵盤配置，並重新啟動設定，以便匹配的實體鍵盤正常運作。",
   "keyboardLayoutHelpOs": "預覽顯示螢幕鍵盤配置。點「套用」儲存後，設定會重新啟動，以便匹配的實體鍵盤正常運作。",

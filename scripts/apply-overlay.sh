@@ -229,6 +229,17 @@ sync_flutter_elinux_script() {
   echo "overlay: $dest"
 }
 
+sync_buildroot_version_script() {
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/sync-buildroot-version.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/sync-buildroot-version.sh"
+  if [[ ! -f "$src" ]]; then
+    echo "ERROR: $src missing (required by post-build)" >&2
+    return 1
+  fi
+  install -m 0755 "$src" "$dest"
+  echo "overlay: $dest"
+}
+
 sync_kernel_display_dts() {
   local kernel_dts="$SDK/kernel/arch/arm64/boot/dts/rockchip"
   local customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
@@ -1314,6 +1325,7 @@ sync_post_fakeroot_script
 sync_strip_fstab_script
 sync_flutter_engine_script
 sync_flutter_elinux_script
+sync_buildroot_version_script
 if [[ "$skip_platform_overlay" == "1" ]]; then
   echo "overlay: skip platform kernel/device patches (.lws-owned-tree present; FORCE_PLATFORM_OVERLAY=1 to re-apply)"
   sync_kernel_overlay_sources

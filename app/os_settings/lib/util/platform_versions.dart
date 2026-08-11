@@ -32,9 +32,9 @@ List<PlatformVersionSection> platformVersionSections(
     PlatformVersionSection(
       titleKey: 'osSecuritySection',
       rows: [
-        ('selinuxLabel', (s) => s.selinuxMode),
         ('opensslLabel', (s) => s.opensslVersion),
         ('opensshLabel', (s) => s.opensshVersion),
+        ('selinuxLabel', (s) => s.selinuxMode),
       ],
     ),
     PlatformVersionSection(

@@ -412,6 +412,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Secrets Seal shows how this device protects saved secrets such as Wi‑Fi passwords and cloud keys. software means software encryption; op-tee means the secure hardware chip.';
 
   @override
+  String get selinuxHelp =>
+      'SELinux is the Linux security policy layer. Disabled means it is off. Permissive means policy violations are logged but not blocked. Enforcing means the policy is enforced.';
+
+  @override
   String get wallpaperSectionHelp =>
       'Wallpaper is used for the desktop background and in apps. Changing it briefly restarts Settings so the new image can load.';
 

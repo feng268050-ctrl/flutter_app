@@ -157,7 +157,7 @@ class _OsSettingsShellState extends State<OsSettingsShell> {
   Future<void> _refreshOsAndStorage(OsSettingsServices services) async {
     try {
       final snap = await services.sysInfo().snapshot();
-      final versions = await services.platformVersions().snapshot();
+      final versions = await services.platformVersionsSnapshot();
       final storage = summarizeStorage(snap.storage);
       if (!mounted) return;
       setState(() {
@@ -167,7 +167,7 @@ class _OsSettingsShellState extends State<OsSettingsShell> {
       });
     } catch (_) {
       try {
-        final versions = await services.platformVersions().snapshot();
+        final versions = await services.platformVersionsSnapshot();
         if (!mounted) return;
         setState(() => _osSummary = versions.operatingSystem);
       } catch (_) {}

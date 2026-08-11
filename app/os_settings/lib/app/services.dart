@@ -44,6 +44,20 @@ final class OsSettingsServices {
   LinuxLoadProfile? _loadProfile;
   RegionSettingsApplier? _regionSettings;
 
+  /// Warmed by the root shell; identity does not change for the process lifetime.
+  ProductInfo? _productInfo;
+  Future<ProductInfo>? _productInfoFuture;
+
+  /// Warmed by the root shell; OS / stack pins do not change at runtime.
+  PlatformVersionsSnapshot? _platformVersions;
+  Future<PlatformVersionsSnapshot>? _platformVersionsFuture;
+
+  /// Sync hit after [productInfo] / shell summary load has completed.
+  ProductInfo? get cachedProductInfo => _productInfo;
+
+  /// Sync hit after [platformVersionsSnapshot] / shell summary load has completed.
+  PlatformVersionsSnapshot? get cachedPlatformVersions => _platformVersions;
+
   /// Region → Wi‑Fi regulatory + linked timezone / NTP.
   RegionSettingsApplier regionSettings() {
     return _regionSettings ??= RegionSettingsApplier(
@@ -62,7 +76,22 @@ final class OsSettingsServices {
     );
   }
 
-  Future<ProductInfo> productInfo() => bindings.productInfo();
+  /// Product identity — loaded once per [OsSettingsServices] lifetime.
+  Future<ProductInfo> productInfo() {
+    if (_productInfo != null) {
+      return Future<ProductInfo>.value(_productInfo!);
+    }
+    return _productInfoFuture ??= () async {
+      try {
+        final p = await bindings.productInfo();
+        _productInfo = p;
+        return p;
+      } catch (_) {
+        _productInfoFuture = null;
+        rethrow;
+      }
+    }();
+  }
 
   LocaleSettings locale() => _locale ??= LocaleSettings();
 
@@ -114,6 +143,18 @@ final class OsSettingsServices {
       _bluetooth ??= bindings.bluetooth();
 
   LinuxPlatformVersions platformVersions() => bindings.platformVersions();
+
+  /// OS / stack version inventory — probed once per [OsSettingsServices] lifetime.
+  Future<PlatformVersionsSnapshot> platformVersionsSnapshot() {
+    if (_platformVersions != null) {
+      return Future<PlatformVersionsSnapshot>.value(_platformVersions!);
+    }
+    return _platformVersionsFuture ??=
+        bindings.platformVersions().snapshot().then((s) {
+      _platformVersions = s;
+      return s;
+    });
+  }
 
   String secretsSealStatus() => bindings.secretsSealStatus();
 

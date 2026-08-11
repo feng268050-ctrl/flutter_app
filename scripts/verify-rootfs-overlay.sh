@@ -889,6 +889,24 @@ EOF
 	else
 		echo "OK:  flutter-engine.version at /usr/share/flutter/ (no /etc/hmi stamp)"
 	fi
+	br_pin="$ROOT/overlay/buildroot/BUILDROOT_VERSION"
+	br_stamp="$target/usr/share/buildroot/BUILDROOT_VERSION"
+	if [[ ! -f "$br_pin" ]]; then
+		echo "FAIL: missing git pin $br_pin" >&2
+		missing=1
+	elif [[ ! -f "$br_stamp" ]]; then
+		echo "FAIL: /usr/share/buildroot/BUILDROOT_VERSION missing (post-build sync-buildroot-version)" >&2
+		missing=1
+	else
+		pin_ver="$(tr -d '[:space:]' <"$br_pin")"
+		stamp_ver="$(tr -d '[:space:]' <"$br_stamp")"
+		if [[ -z "$pin_ver" || "$pin_ver" != "$stamp_ver" ]]; then
+			echo "FAIL: BUILDROOT_VERSION stamp ($stamp_ver) != pin ($pin_ver)" >&2
+			missing=1
+		else
+			echo "OK:  Buildroot pin at /usr/share/buildroot/BUILDROOT_VERSION ($stamp_ver)"
+		fi
+	fi
 	if [[ "$has_weston" -eq 1 ]]; then
 		echo "OK:  weston image (flutter-wayland-client)"
 		# Unpatched GStreamer video plugin SIGSEGVs on live RTSP initialize.

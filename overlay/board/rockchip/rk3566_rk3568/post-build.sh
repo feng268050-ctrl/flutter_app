@@ -41,6 +41,14 @@ if [ -f "$SYNC_ELINUX" ]; then
 	sh "$SYNC_ELINUX" "$TARGET_DIR"
 fi
 
+SYNC_BR_VER="$(dirname "$0")/sync-buildroot-version.sh"
+if [ -f "$SYNC_BR_VER" ]; then
+	sh "$SYNC_BR_VER" "$TARGET_DIR"
+else
+	echo "post-build: sync-buildroot-version.sh missing" >&2
+	exit 1
+fi
+
 # Install operator-facing device commands before rootfs image copies are made.
 BUILD_LOADER="$LWS_HMI_ROOT/scripts/build-reboot-rockusb-loader.sh"
 if [ ! -f "$BUILD_LOADER" ]; then

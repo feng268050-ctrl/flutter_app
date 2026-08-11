@@ -92,13 +92,20 @@ class ProductPageStatusBar extends StatelessWidget
                       accent: backAccent,
                       label: backLabel!,
                       enabled: backEnabled,
+                      // Content-sized like Quick/Engineer: press fill must
+                      // match icon+label, not the legacy 160dp rail.
+                      expandWidth: false,
                       // Settings / Monitor: no orange top/bottom edge glow.
                       showEdgeAccent: false,
                       onPressed: onBack!,
                     )
                   : null,
-              leadingWidth:
-                  useCallBackHome ? CallBackHomeButton.railWidth : null,
+              leadingWidth: useCallBackHome
+                  ? CallBackHomeButton.widthForLabel(
+                      backLabel!,
+                      textScaler: MediaQuery.textScalerOf(context),
+                    )
+                  : null,
               statusItems: items,
               actions: actions,
               bottom: bottom,

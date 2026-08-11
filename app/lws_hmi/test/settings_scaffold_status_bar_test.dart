@@ -53,6 +53,7 @@ void main() {
     );
     expect(backBtn.label, 'Back');
     expect(backBtn.showEdgeAccent, isFalse);
+    expect(backBtn.expandWidth, isFalse);
     expect(find.text('Back'), findsOneWidget);
     // Page title is in the AppBar title slot (not the leading label).
     expect(find.text('Wi‑Fi'), findsOneWidget);

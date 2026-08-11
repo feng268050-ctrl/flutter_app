@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_cloud_metadata.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_upload_r2_keys.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_uploading_ws_throttle.dart';
 import 'package:lws_hmi/features/process_video/application/video_cover_extractor.dart';
@@ -11,6 +12,7 @@ import 'package:lws_hmi/features/process_video/domain/process_video_repository.d
 import 'package:lws_hmi/platform/cloud/device_api_origin_prober.dart';
 import 'package:lws_hmi/platform/cloud/device_r2_put_object_client.dart';
 import 'package:lws_hmi/platform/cloud/device_r2_sts_client.dart';
+import 'package:lws_hmi/platform/cloud/device_video_metadata_client.dart';
 import 'package:lws_hmi/platform/cloud/device_ws_connection_manager.dart';
 import 'package:lws_hmi/platform/cloud/device_ws_envelope.dart';
 
@@ -31,6 +33,7 @@ final class ProcessVideoCloudUploadCoordinator {
     required this.r2StsClient,
     required this.r2PutClient,
     required this.ws,
+    this.videoMetadataClient,
     VideoCoverExtractor? coverExtractor,
   }) : _coverExtractor = coverExtractor ?? VideoCoverExtractor();
 
@@ -40,6 +43,7 @@ final class ProcessVideoCloudUploadCoordinator {
   final DeviceR2StsClient r2StsClient;
   final DeviceR2PutObjectClient r2PutClient;
   final DeviceWsConnectionManager ws;
+  final DeviceVideoMetadataClient? videoMetadataClient;
   final VideoCoverExtractor _coverExtractor;
 
   bool _busy = false;
@@ -148,6 +152,7 @@ final class ProcessVideoCloudUploadCoordinator {
             coverUrl: coverUrl,
             videoUrl: row.videoUrl,
           );
+      await _registerVideoMetadataHttp(updated, pin, sn, coverUrl);
       await _emitVideoMetadata(updated);
       return updated;
     } finally {
@@ -378,6 +383,41 @@ final class ProcessVideoCloudUploadCoordinator {
     }
   }
 
+  Future<void> _registerVideoMetadataHttp(
+    ProcessVideoRecord row,
+    Uri pinnedBase,
+    String sn,
+    String coverUrl,
+  ) async {
+    final client = videoMetadataClient;
+    if (client == null) {
+      return;
+    }
+    try {
+      final body = ProcessVideoCloudMetadata.uploadVideoAndProcessDataBody(
+        row: row,
+        deviceSn: sn,
+        coverUrl: coverUrl,
+        videoUrl: row.videoUrl,
+      );
+      final id = await client.uploadVideoAndProcessData(
+        pinnedBase: pinnedBase,
+        body: body,
+      );
+      if (id == null) {
+        debugPrint(
+          'process-video-upload: uploadVideoAndProcessData failed '
+          'videoId=${row.videoId}',
+        );
+      }
+    } catch (e) {
+      debugPrint(
+        'process-video-upload: uploadVideoAndProcessData error '
+        'videoId=${row.videoId}: $e',
+      );
+    }
+  }
+
   Future<void> _emitVideoMetadata(
     ProcessVideoRecord r, {
     String? videoUrlOverride,
@@ -388,7 +428,8 @@ final class ProcessVideoCloudUploadCoordinator {
           type: 'video.metadata',
           payload: {
             'videoId': r.videoId,
-            'processParametersJson': r.snapshot?.toJsonString(),
+            'processParametersJson':
+                ProcessVideoCloudMetadata.processParametersJson(r),
             'processType': r.processType.wireValue,
             'materialType': r.materialType?.storageValue,
             'fileSize': r.fileSize,

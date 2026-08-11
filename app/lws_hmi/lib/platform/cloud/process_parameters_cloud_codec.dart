@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
+import 'package:lws_hmi/platform/cloud/device_remote_snapshot_modbus_mapper.dart';
 
 /// Cloud push JSON (lws-ui Gson camelCase) ↔ HMI process presets.
 abstract final class ProcessParametersCloudCodec {
@@ -102,6 +106,47 @@ abstract final class ProcessParametersCloudCodec {
 
     return ProcessParameters(values);
   }
+
+  /// HMI [ProcessVideoSnapshot] → lws-ui `ProcessParametersData` camelCase map.
+  ///
+  /// Mobile / cloud video catalog parses `processParametersJson` with Gson into
+  /// that shape — not the nested HMI envelope (`parameters.process.*`).
+  static Map<String, Object?> toCloudMap(ProcessVideoSnapshot snapshot) {
+    final process = <String, Object?>{
+      for (final e in snapshot.parameters.values.entries) e.key: e.value,
+    };
+    final out = DeviceRemoteSnapshotModbusMapper.processParametersFromGroup(
+      process,
+      processType: snapshot.processType.wireValue,
+      materialType: snapshot.materialType?.storageValue,
+      materialName: snapshot.materialName,
+      thickness: snapshot.thickness,
+    );
+    final pierceMs = snapshot.parameters.values['process.piercing_duration'];
+    if (pierceMs != null) {
+      out['perforationDuration'] = _piercingDurationToCloud(pierceMs);
+    }
+    if (snapshot.gear != null) {
+      out['gear'] = snapshot.gear;
+    }
+    return {
+      for (final e in out.entries)
+        if (e.value != null) e.key: e.value,
+    };
+  }
+
+  /// Gson-compatible JSON text for `processParametersJson` wire fields.
+  static String? processParametersJsonFromSnapshot(
+    ProcessVideoSnapshot? snapshot,
+  ) {
+    if (snapshot == null) {
+      return null;
+    }
+    return jsonEncode(toCloudMap(snapshot));
+  }
+
+  static num _piercingDurationToCloud(num ms) =>
+      ms <= 20 ? ms : ms / 1000.0;
 
   static ProcessPreset presetFromCloud(
     Map<String, Object?> json, {

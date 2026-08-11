@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/keyboard_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/advanced_settings_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/common_settings_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
@@ -13,14 +12,11 @@ import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Optional [AppRoutes.settings] arguments (keyboard restore / deep-link nested page).
+/// Optional [AppRoutes.settings] arguments (deep-link nested page).
 final class SettingsRouteArgs {
   const SettingsRouteArgs({
-    this.openKeyboardOnLaunch = false,
     this.initialNestedPage,
   });
-
-  final bool openKeyboardOnLaunch;
 
   /// Pushed once after Settings mounts (e.g. System / Control-board Upgrade).
   final Widget? initialNestedPage;
@@ -34,13 +30,9 @@ final class SettingsRouteArgs {
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
-    this.openKeyboardOnLaunch = false,
     this.initialNestedPage,
     this.cameraDeviceInfoCache,
   });
-
-  /// When true (post–XKB restart restore), open Common → Keyboard once.
-  final bool openKeyboardOnLaunch;
 
   /// When set (e.g. Home “Go to Settings” for an update), push this sub-page
   /// once after Settings mounts.
@@ -86,19 +78,16 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _currentTabIndex = widget.openKeyboardOnLaunch ? 1 : 0;
+    _currentTabIndex = 0;
     // Route-level ensure (not only Device Information tab).
     scheduleEnsureModbusLive(context);
-    if (widget.openKeyboardOnLaunch || widget.initialNestedPage != null) {
+    if (widget.initialNestedPage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || _nestedLaunched) {
           return;
         }
         _nestedLaunched = true;
-        final nested = widget.initialNestedPage ??
-            (widget.openKeyboardOnLaunch
-                ? KeyboardSettingsPage(services: AppScope.of(context))
-                : null);
+        final nested = widget.initialNestedPage;
         if (nested == null) {
           return;
         }

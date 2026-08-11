@@ -2,17 +2,25 @@
 
 ## Purpose
 
-Probe and pin the Worker (and optional hyurl) HTTP API base for the active environment tier; derive the device WebSocket URL from the pin. Product cloud traffic MUST NOT invent a static host when no pin exists.
+Probe and pin the Worker (and optional hyurl) HTTP API base for the active environment tier; derive the device WebSocket URL from the pin. Product cloud traffic MUST NOT invent a static host when no pin exists. Candidate lists, concurrent probe, and in-memory pin live in **`cyber_hal`** (`CloudApiOriginConfig` / `CloudApiOriginProber`) so any App can resolve a suitable origin.
+
 ## Requirements
-### Requirement: Probe and pin Worker API origin
 
-The system SHALL maintain an ordered candidate list of Worker (and optional legacy) HTTP API base URLs derived from the active app environment tier. When a suitable network is available, the system SHALL **concurrently** probe candidates and pin the **first successful** origin in memory for the process (lws-ui `invokeAny` / first-wins; a faster fallback MAY outrank a slower primary). Until a pin exists, the system MUST NOT open product cloud WebSocket connections using a fabricated static host. Probe and subsequent product cloud HTTP MUST honor the system HTTP proxy configuration.
+### Requirement: HAL owns multi-origin catalog and probe
 
-#### Scenario: First reachable origin is pinned
+The platform HAL SHALL expose an ordered candidate list of Worker (and optional legacy) HTTP API base URLs per `CloudEnvironmentTier`, a concurrent first-wins probe that pins the first successful base, and URI helpers to join paths and build the device WebSocket URL from the pin. A successful pin SHALL be written to `/run/network/cloud-origin.pin` (boot-scoped tmpfs) so other Apps in the same boot MAY skip re-probe when the stored `environment_tier` matches. Reboot MUST clear that pin. Apps MUST NOT hard-code a Worker host for product cloud traffic when no pin exists. Probe and subsequent product cloud HTTP MUST honor the system HTTP proxy configuration. Device Bearer HTTP, Ed25519 activate/token mint, and device WebSocket connection lifecycle SHALL also live in HAL; product command dispatch remains App-owned.
 
-- **WHEN** a suitable network is available and at least one candidate base responds successfully to the probe
-- **THEN** the system MUST pin that base URL for the process
-- **AND** subsequent Worker HTTP and WebSocket URL construction MUST use the pinned base
+#### Scenario: Boot pin reused across Apps
+
+- **WHEN** a probe has pinned an origin and written `/run/network/cloud-origin.pin` for the active tier
+- **AND** another App in the same boot requests a probe for the same tier
+- **THEN** the HAL prober MUST return the stored origin without a new HTTP probe round
+
+#### Scenario: Reboot clears pin
+
+- **WHEN** the device reboots
+- **THEN** `/run/network/cloud-origin.pin` MUST be absent
+- **AND** the next probe MUST contact candidates again
 
 #### Scenario: Concurrent race prefers first success
 
@@ -25,21 +33,15 @@ The system SHALL maintain an ordered candidate list of Worker (and optional lega
 - **WHEN** no candidate has been successfully pinned in this process
 - **THEN** the device MUST NOT open `/ws/device` solely from a compile-time default host
 
-### Requirement: App environment tier selects candidate set
+### Requirement: Environment tier selects candidate set
 
-The system SHALL support distinct candidate sets for at least test and production Worker origins. Test and production candidate lists MUST include the primary `*.lasercyber.workers.dev` base and the `lasercyber.hyurl.com/{test|prod}` fallback. The active tier SHALL be readable from persisted App settings and/or `properties.ini` / host `set-prop`. Operators SHALL change the tier from Device Information by tapping Device SN five times within five seconds (lws-ui parity), not via a permanent Settings row.
+The system SHALL support distinct candidate sets for at least test and production Worker origins. Test and production candidate lists MUST include the primary `*.lasercyber.workers.dev` base and the `lasercyber.hyurl.com/{test|prod}` fallback. The active tier SHALL be persisted at `/var/lib/network/cloud.conf` (`environment_tier=`) and edited from **OS Settings → Network → Cloud Environment**. Product HMI MUST consume this tier when probing and MUST NOT expose a permanent env-tier picker (product cloud/LAN opt-in toggles remain HMI-owned under `/var/lib/hmi/cloud-settings.json`).
 
 #### Scenario: Tier change updates candidates on next probe
 
-- **WHEN** the operator or host tooling changes the app environment tier and a new probe round runs
+- **WHEN** the operator changes the environment tier in OS Settings and a new probe round runs
 - **THEN** the candidate list MUST match the selected tier
 - **AND** a successful probe MUST replace the previous in-memory pin
-
-#### Scenario: SN five-tap opens tier picker
-
-- **WHEN** the operator taps Device SN five times within five seconds on Device Information
-- **THEN** the environment tier picker is presented
-- **AND** selecting a tier persists it for subsequent probes
 
 #### Scenario: Test tier includes hyurl fallback
 
@@ -65,4 +67,3 @@ Building the device WebSocket URL from the pinned HTTP base SHALL continue to ap
 
 - **WHEN** the App derives the device WebSocket URL after token mint is available
 - **THEN** the path SHALL still end with **`/ws/device`** and query **`sn`**
-

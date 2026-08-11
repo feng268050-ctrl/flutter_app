@@ -146,7 +146,8 @@ void main() {
       final json = File('$boardsRoot/sim.json').readAsStringSync();
       final profile = BoardProfile.fromJsonString(json);
       expect(profile.secretsBackend, 'software');
-      final s = BoardBindings(profile).secrets(
+      final bindings = BoardBindings(profile);
+      final s = bindings.secrets(
         materialReader: () async => const DeviceBindingMaterial(
           chipId: 'SIM-CHIP',
           ethMac: '02:00:00:00:00:01',
@@ -155,6 +156,15 @@ void main() {
       expect(s, isA<SoftwareFallbackKekProvider>());
       expect(s.backendId, SecretsBackendId.softwareFallback);
       expect(s.isHardwareBound, isFalse);
+      expect(
+        bindings.secretsSealStatus(
+          materialReader: () async => const DeviceBindingMaterial(
+            chipId: 'SIM-CHIP',
+            ethMac: '02:00:00:00:00:01',
+          ),
+        ),
+        SecretsSealStatus.software,
+      );
     });
 
     test('portable-smoke selects software', () {
@@ -208,10 +218,12 @@ void main() {
         BoardBindings.resolveSecretsBackend(profile),
         SecretsBackendPreference.optee,
       );
-      final s = BoardBindings(profile).secrets();
+      final bindings = BoardBindings(profile);
+      final s = bindings.secrets();
       expect(s, isA<OpteeKekProvider>());
       expect(s.backendId, SecretsBackendId.optee);
       expect(s.isHardwareBound, isTrue);
+      expect(bindings.secretsSealStatus(), SecretsSealStatus.opTee);
     });
 
     test('optee profile with mocked helper round-trips', () async {

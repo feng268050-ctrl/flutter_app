@@ -1,24 +1,45 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cyber_hal/network/cloud_environment.dart';
 import 'package:flutter/foundation.dart';
-import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
-/// Persisted cloud preferences (`/var/lib/hmi/cloud-settings.json`).
-final class CloudSettingsStore extends ChangeNotifier {
-  CloudSettingsStore({String? preferencePath})
-      : preferencePath =
-            preferencePath ?? '${OsPaths.varHmi}/cloud-settings.json';
+export 'package:cyber_hal/network/cloud_environment.dart'
+    show
+        CloudEnvironmentTier,
+        CloudEnvironmentTierCodec,
+        kCloudEnvironmentTiers;
 
-  static const keyEnvironmentTier = 'environmentTier';
+/// Product cloud opt-in prefs (`/var/lib/hmi/cloud-settings.json`) plus shared
+/// API env tier (`/var/lib/network/cloud.conf` via [CloudEnvironmentPrefs]).
+final class CloudSettingsStore extends ChangeNotifier {
+  CloudSettingsStore({
+    String? preferencePath,
+    String? environmentTierPath,
+    String? legacyEnvironmentJsonPath,
+  })  : preferencePath =
+            preferencePath ?? '${OsPaths.varHmi}/cloud-settings.json',
+        environmentTierPath =
+            environmentTierPath ?? CloudEnvironmentPrefs.confPath,
+        legacyEnvironmentJsonPath = legacyEnvironmentJsonPath ??
+            preferencePath ??
+            '${OsPaths.varHmi}/cloud-settings.json';
+
   static const keyCloudServicesEnabled = 'cloudServicesEnabled';
   static const keyLanEnhancementEnabled = 'lanEnhancementEnabled';
-  static const defaultEnvironmentTier = CloudEnvironmentTier.test;
+  static const defaultEnvironmentTier = CloudEnvironmentTier.prod;
   static const defaultCloudServicesEnabled = false;
   static const defaultLanEnhancementEnabled = false;
 
+  /// HMI-only product toggles (not the shared API tier).
   final String preferencePath;
+
+  /// Shared platform tier (`cloud.conf`).
+  final String environmentTierPath;
+
+  /// Legacy JSON used only to migrate [environmentTier] into [environmentTierPath].
+  final String legacyEnvironmentJsonPath;
 
   CloudEnvironmentTier _environmentTier = defaultEnvironmentTier;
   bool _cloudServicesEnabled = defaultCloudServicesEnabled;
@@ -34,13 +55,18 @@ final class CloudSettingsStore extends ChangeNotifier {
       return;
     }
     try {
+      _environmentTier = CloudEnvironmentPrefs.readOrMigrateSync(
+        conf: environmentTierPath,
+        legacyJson: legacyEnvironmentJsonPath,
+      );
       final f = File(preferencePath);
       if (f.existsSync()) {
-        _applyJson(f.readAsStringSync());
+        _applyProductJson(f.readAsStringSync());
       }
     } catch (e) {
       debugPrint('cloud-settings: warmRead failed: $e');
-      _resetToDefaults();
+      _resetProductDefaults();
+      _environmentTier = defaultEnvironmentTier;
     }
     _warmed = true;
   }
@@ -50,13 +76,18 @@ final class CloudSettingsStore extends ChangeNotifier {
       return;
     }
     try {
+      _environmentTier = await CloudEnvironmentPrefs.readOrMigrate(
+        conf: environmentTierPath,
+        legacyJson: legacyEnvironmentJsonPath,
+      );
       final f = File(preferencePath);
       if (await f.exists()) {
-        _applyJson(await f.readAsString());
+        _applyProductJson(await f.readAsString());
       }
     } catch (e) {
       debugPrint('cloud-settings: read failed: $e');
-      _resetToDefaults();
+      _resetProductDefaults();
+      _environmentTier = defaultEnvironmentTier;
     }
     _warmed = true;
   }
@@ -67,7 +98,7 @@ final class CloudSettingsStore extends ChangeNotifier {
       return;
     }
     _environmentTier = tier;
-    await _writeUnlocked();
+    await CloudEnvironmentPrefs.write(tier, environmentTierPath);
     notifyListeners();
   }
 
@@ -77,7 +108,7 @@ final class CloudSettingsStore extends ChangeNotifier {
       return;
     }
     _cloudServicesEnabled = enabled;
-    await _writeUnlocked();
+    await _writeProductUnlocked();
     notifyListeners();
   }
 
@@ -87,29 +118,23 @@ final class CloudSettingsStore extends ChangeNotifier {
       return;
     }
     _lanEnhancementEnabled = enabled;
-    await _writeUnlocked();
+    await _writeProductUnlocked();
     notifyListeners();
   }
 
-  void _resetToDefaults() {
-    _environmentTier = defaultEnvironmentTier;
+  void _resetProductDefaults() {
     _cloudServicesEnabled = defaultCloudServicesEnabled;
     _lanEnhancementEnabled = defaultLanEnhancementEnabled;
   }
 
-  void _applyJson(String raw) {
-    _resetToDefaults();
+  void _applyProductJson(String raw) {
+    _resetProductDefaults();
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) {
         return;
       }
       final map = Map<String, dynamic>.from(decoded);
-      if (map.containsKey(keyEnvironmentTier)) {
-        _environmentTier = CloudEnvironmentTierCodec.parse(
-          map[keyEnvironmentTier]?.toString(),
-        );
-      }
       if (map.containsKey(keyCloudServicesEnabled)) {
         _cloudServicesEnabled = _asBool(
           map[keyCloudServicesEnabled],
@@ -124,7 +149,7 @@ final class CloudSettingsStore extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('cloud-settings: corrupt JSON, using defaults: $e');
-      _resetToDefaults();
+      _resetProductDefaults();
     }
   }
 
@@ -147,18 +172,17 @@ final class CloudSettingsStore extends ChangeNotifier {
     return fallback;
   }
 
-  Map<String, dynamic> _toJson() => {
-        keyEnvironmentTier: _environmentTier.wireName,
+  Map<String, dynamic> _toProductJson() => {
         keyCloudServicesEnabled: _cloudServicesEnabled,
         keyLanEnhancementEnabled: _lanEnhancementEnabled,
       };
 
-  Future<void> _writeUnlocked() async {
+  Future<void> _writeProductUnlocked() async {
     try {
       final f = File(preferencePath);
       await f.parent.create(recursive: true);
       await f.writeAsString(
-        '${const JsonEncoder.withIndent('  ').convert(_toJson())}\n',
+        '${const JsonEncoder.withIndent('  ').convert(_toProductJson())}\n',
       );
     } catch (e) {
       debugPrint('cloud-settings: write failed: $e');

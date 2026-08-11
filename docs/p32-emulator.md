@@ -2,6 +2,8 @@
 
 Goal: prove **one OS** (`Image` from `make build-kernel` + `rootfs.img` from `make build-rootfs`) works for multiple board×screen SKUs by swapping **OEM** only. Guest OEM = `sim_virt`. Device OEM = `ynh960_…`. Flutter still starts via `oem-compose` → `hmi.service` → `hmi-launch.sh`.
 
+**UI scale:** `display.conf` `ui_scale=1.0` is physical 1:1 (no App hard-coded rematch). To approximate the ynh960 panel on QEMU, set **~113%** in OS Settings → Display (or write `ui_scale=1.13` under `/var/lib/hal/display.conf`).
+
 **Host:** Apple Silicon **QEMU** (`make emulator` / qemu-virgl). An earlier plan used UTM; that path is deprecated — see [`p32-utm-guest.md`](p32-utm-guest.md) (redirect only).
 
 OpenSpec: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`. Plan contract: platform plan §6.3 (three NICs + USB; no OTG).

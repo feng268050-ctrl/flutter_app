@@ -11,8 +11,8 @@ The build system SHALL accept Make/env variable `APP` for `make build-app`, `mak
 
 #### Scenario: Explicit APP builds only that project
 
-- **WHEN** the operator runs `APP=settings make build-app` and `app/settings/pubspec.yaml` exists
-- **THEN** the build MUST assemble only that project into overlay `…/rootfs-overlay/opt/settings`
+- **WHEN** the operator runs `APP=os_settings make build-app` and `app/os_settings/pubspec.yaml` exists
+- **THEN** the build MUST assemble only that project into overlay `…/rootfs-overlay/opt/os_settings`
 - **AND** MUST NOT wipe or rebuild overlay `opt/hmi`
 
 #### Scenario: Unknown APP fails fast
@@ -23,7 +23,7 @@ The build system SHALL accept Make/env variable `APP` for `make build-app`, `mak
 
 ### Requirement: HMI apps use _hmi suffix and install to /opt/hmi
 
-Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc_hmi`). Any such `APP` SHALL install to device/overlay path `/opt/hmi` so `hmi.service` can launch the bundle. A single rootfs SHALL contain at most one HMI payload at `/opt/hmi` (the selected `*_hmi` app) plus an optional non-HMI `settings` at `/opt/settings`. Non-HMI apps SHALL install to `/opt/<APP>`. Product companions (MediaMTX, AI daemon) SHALL install for HMI apps (`*_hmi`). Ship-asset prepare SHALL run when the selected app’s `assets/process-library` or `assets/firmware/control-board` sources exist.
+Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc_hmi`). Any such `APP` SHALL install to device/overlay path `/opt/hmi` so `hmi.service` can launch the bundle. A single rootfs SHALL contain at most one HMI payload at `/opt/hmi` (the selected `*_hmi` app) plus an optional non-HMI `os_settings` at `/opt/os_settings`. Non-HMI apps SHALL install to `/opt/<APP>`. Product companions (MediaMTX, AI daemon) SHALL install for HMI apps (`*_hmi`). Ship-asset prepare SHALL run when the selected app’s `assets/process-library` or `assets/firmware/control-board` sources exist.
 
 #### Scenario: Alternate HMI product still uses /opt/hmi
 
@@ -33,8 +33,8 @@ Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc
 
 #### Scenario: Non-HMI app omits product companions
 
-- **WHEN** `APP=settings make build-app` completes successfully
-- **THEN** overlay `/opt/settings` MUST contain `lib/libapp.so` and `data/flutter_assets`
+- **WHEN** `APP=os_settings make build-app` completes successfully
+- **THEN** overlay `/opt/os_settings` MUST contain `lib/libapp.so` and `data/flutter_assets`
 - **AND** MUST NOT be required to contain `bin/mediamtx` or `bin/lws_ai_daemon`
 
 ### Requirement: push-app deploys only the selected APP
@@ -48,8 +48,8 @@ Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc
 
 #### Scenario: settings push does not restart HMI
 
-- **WHEN** the operator runs `APP=settings make push-app` after a matching build-app
-- **THEN** `/opt/settings` on the board MUST receive `libapp.so` and flutter_assets
+- **WHEN** the operator runs `APP=os_settings make push-app` after a matching build-app
+- **THEN** `/opt/os_settings` on the board MUST receive `libapp.so` and flutter_assets
 - **AND** the push MUST NOT restart `hmi.service` as the primary apply path
 
 ## REMOVED Requirements
@@ -63,14 +63,14 @@ Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc
 
 ### Requirement: build-rootfs ensures APP and optional settings
 
-Before packing rootfs, `make build-rootfs` SHALL ensure the selected `APP` release tree exists under the fs-overlay (`lib/libapp.so`). When the selected APP is an HMI (`*_hmi`), that tree MUST be `/opt/hmi`. When `app/settings` exists with `pubspec.yaml`, `make build-rootfs` SHALL also ensure overlay `/opt/settings` is present (building it if missing) without requiring the operator to set `APP=settings`. Explicit `APP=settings` for `build-app` / `push-app` remains required to build or push only that app interactively.
+Before packing rootfs, `make build-rootfs` SHALL ensure the selected `APP` release tree exists under the fs-overlay (`lib/libapp.so`). When the selected APP is an HMI (`*_hmi`), that tree MUST be `/opt/hmi`. When `app/os_settings` exists with `pubspec.yaml`, `make build-rootfs` SHALL also ensure overlay `/opt/os_settings` is present (building it if missing) without requiring the operator to set `APP=os_settings`. Explicit `APP=os_settings` for `build-app` / `push-app` remains required to build or push only that app interactively.
 
 #### Scenario: Rootfs auto-includes settings when source exists
 
-- **WHEN** `app/settings/pubspec.yaml` exists and the operator runs `make build-rootfs` with default `APP`
-- **THEN** the resulting rootfs staging MUST contain both `/opt/hmi/lib/libapp.so` and `/opt/settings/lib/libapp.so` (building settings into overlay first if it was missing)
+- **WHEN** `app/os_settings/pubspec.yaml` exists and the operator runs `make build-rootfs` with default `APP`
+- **THEN** the resulting rootfs staging MUST contain both `/opt/hmi/lib/libapp.so` and `/opt/os_settings/lib/libapp.so` (building settings into overlay first if it was missing)
 
 #### Scenario: Interactive settings still needs APP for build-app
 
 - **WHEN** the operator wants only to rebuild settings without baking rootfs
-- **THEN** they MUST run `APP=settings make build-app` (default `make build-app` MUST NOT build settings)
+- **THEN** they MUST run `APP=os_settings make build-app` (default `make build-app` MUST NOT build settings)

@@ -674,12 +674,29 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     await _playingCtrl.close();
   }
 
+  /// Resolve a playable filesystem path.
+  ///
+  /// Absolute paths (ButtonFeedback shared samples under `/var/lib/hal/`) are
+  /// used as-is. Flutter asset keys still extract into [cacheDir] for warn /
+  /// product-local clips.
   Future<String> _ensureExtracted(String assetKey) async {
+    final key = assetKey.trim();
+    if (key.isEmpty) {
+      throw ArgumentError('empty audio asset / path');
+    }
+    if (_looksLikeFilesystemPath(key)) {
+      final file = File(key);
+      if (await file.exists()) {
+        _extracted[key] = file.path;
+        return file.path;
+      }
+      throw StateError('audio file missing: $key');
+    }
     final dir = Directory(cacheDir);
     await dir.create(recursive: true);
-    final name = assetKey.split('/').last;
+    final name = key.split('/').last;
     final out = File('${dir.path}/$name');
-    final data = await rootBundle.load(assetKey);
+    final data = await rootBundle.load(key);
     final bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     // Always refresh from the asset bundle so push-app asset updates are not
@@ -687,8 +704,14 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     if (!await out.exists() || await out.length() != bytes.length) {
       await out.writeAsBytes(bytes, flush: true);
     }
-    _extracted[assetKey] = out.path;
+    _extracted[key] = out.path;
     return out.path;
+  }
+
+  static bool _looksLikeFilesystemPath(String key) {
+    return key.startsWith('/') ||
+        key.startsWith('file:') ||
+        (key.length >= 3 && key[1] == ':' && (key[2] == '\\' || key[2] == '/'));
   }
 
   Future<void> _ensurePlaybackPath({bool force = false}) async {

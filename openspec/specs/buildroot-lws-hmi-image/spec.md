@@ -509,19 +509,19 @@ The product rootfs SHALL ship the compiled systemd hardware database at `/usr/li
 - **WHEN** `verify-rootfs-overlay.sh` inspects a staging `target/` that lacks `/usr/lib/udev/hwdb.bin` while the product profile enables systemd hwdb
 - **THEN** verification MUST fail
 
-### Requirement: Rootfs verify optional factory_test app tree
+### Requirement: Rootfs verify optional settings app tree
 
-When repo `app/factory_test/pubspec.yaml` exists, `scripts/verify-rootfs-overlay.sh` after `make build-rootfs` SHALL require staging `target/opt/factory_test/lib/libapp.so` and `target/opt/factory_test/data/flutter_assets` release assets. That tree MUST NOT contain `libflutter_engine.so` or `icudtl.dat` under the app prefix, and MUST NOT contain Flutter JIT blobs (`kernel_blob.bin`, `isolate_snapshot_data`, `vm_snapshot_data`) under `data/flutter_assets/`. When `app/factory_test` is absent, verification MUST NOT require `/opt/factory_test`.
+When repo `app/os_settings/pubspec.yaml` exists, `scripts/verify-rootfs-overlay.sh` after `make build-rootfs` SHALL require staging `target/opt/os_settings/lib/libapp.so` and `target/opt/os_settings/data/flutter_assets` release assets. That tree MUST NOT contain `libflutter_engine.so` or `icudtl.dat` under the app prefix, and MUST NOT contain Flutter JIT blobs (`kernel_blob.bin`, `isolate_snapshot_data`, `vm_snapshot_data`) under `data/flutter_assets/`. When `app/os_settings` is absent, verification MUST NOT require `/opt/os_settings`.
 
-#### Scenario: factory_test present in source and rootfs
+#### Scenario: settings present in source and rootfs
 
-- **WHEN** `app/factory_test/pubspec.yaml` exists and `verify-rootfs-overlay.sh` inspects a staging `target/` after `make build-rootfs`
-- **THEN** verification MUST PASS only if `/opt/factory_test` has release AOT layout without engine/ICU/JIT orphans
+- **WHEN** `app/os_settings/pubspec.yaml` exists and `verify-rootfs-overlay.sh` inspects a staging `target/` after `make build-rootfs`
+- **THEN** verification MUST PASS only if `/opt/os_settings` has release AOT layout without engine/ICU/JIT orphans
 
-#### Scenario: factory_test source absent
+#### Scenario: settings source absent
 
-- **WHEN** `app/factory_test` does not exist
-- **THEN** verification MUST NOT fail solely due to missing `/opt/factory_test`
+- **WHEN** `app/os_settings` does not exist
+- **THEN** verification MUST NOT fail solely due to missing `/opt/os_settings`
 
 ### Requirement: Kernel FIT ships pinned 6.1 LTS version
 

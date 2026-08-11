@@ -9,7 +9,7 @@ trap '' PIPE
 
 . /usr/libexec/board/paths.sh 2>/dev/null || true
 
-BUNDLE=/opt/hmi
+BUNDLE="${BUNDLE:-/opt/hmi}"
 MODE_FILE="$BUNDLE/runtime-mode.json"
 MODE=release
 DISPLAY_CONF="${VAR_HAL:-/var/lib/hal}/display.conf"
@@ -360,13 +360,15 @@ if [ "$is_emulator" -eq 1 ]; then
 	fi
 fi
 
-# desktop-shell.so: paints boot-splash.png until Flutter covers it.
-# VirGL + cocoa,gl=es requires GL renderer scanouts (pixman stays invisible).
+# desktop-shell.so: paints system wallpaper (or boot-splash fallback) until
+# Flutter covers it. Resolution uses weston_resolve_background_image (sourced
+# above with weston_write_hmi_ini).
 HMI_BOOT_SPLASH="${HMI_BOOT_SPLASH:-/usr/share/hmi/boot-splash.png}"
-if [ ! -f "$HMI_BOOT_SPLASH" ]; then
-	echo "hmi-launch: ERROR: boot splash missing: $HMI_BOOT_SPLASH (Weston falls back to white; logo bridge broken)" >&2
+WESTON_BG="$(weston_resolve_background_image)"
+if [ ! -f "$WESTON_BG" ]; then
+	echo "hmi-launch: ERROR: weston background missing: $WESTON_BG (falls back to white)" >&2
 else
-	echo "hmi-launch: splash=$HMI_BOOT_SPLASH" >&2
+	echo "hmi-launch: weston-background=$WESTON_BG" >&2
 fi
 
 # shellcheck disable=SC2086

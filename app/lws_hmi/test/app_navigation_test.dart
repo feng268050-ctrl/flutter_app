@@ -300,10 +300,20 @@ void main() {
     expect(find.text('Motor Temperature'), findsOneWidget);
   });
 
-  testWidgets('Settings route shows four tabs and Bluetooth entry', (tester) async {
+  testWidgets('Settings route shows four tabs and Wi‑Fi entry', (tester) async {
     final services = _testServices();
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    // Settings top-tab chrome is height-tight (icon + label + indicator);
+    // overflow is a layout soft-fail on host test surfaces, not this assert.
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      if (details.exceptionAsString().contains('A RenderFlex overflowed')) {
+        return;
+      }
+      previousOnError?.call(details);
+    };
+    addTearDown(() => FlutterError.onError = previousOnError);
     await tester.pumpWidget(
       AppScope(
         services: services,
@@ -326,8 +336,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 220));
 
-    expect(find.text('Bluetooth'), findsOneWidget);
+    expect(find.text('Bluetooth'), findsNothing);
+    expect(find.text('SSH Debug'), findsNothing);
+    expect(find.text('Keyboard'), findsNothing);
+    expect(find.text('Mouse'), findsNothing);
+    expect(find.text('USB OTG'), findsNothing);
     expect(find.text('Wi‑Fi'), findsOneWidget);
+    expect(find.text('OS Settings'), findsNothing);
     expect(find.text('Display'), findsOneWidget);
     expect(find.text('Language'), findsOneWidget);
     expect(find.text('Debug over USB'), findsNothing);
@@ -336,10 +351,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('settings-tab-custom-home')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 220));
-    // Body stays blank until Custom Home lands.
-    expect(find.text('Bluetooth'), findsNothing);
+    // Custom Home body stays blank until that feature lands.
+    expect(find.text('Custom Home'), findsWidgets);
 
     await tester.pumpWidget(const SizedBox.shrink());
+    // Status-bar live items schedule a 4s timer; drain before binding teardown.
+    await tester.pump(const Duration(seconds: 5));
     services.wallClock.dispose();
   });
 

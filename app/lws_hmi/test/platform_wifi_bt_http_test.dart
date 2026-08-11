@@ -121,13 +121,15 @@ network id / ssid / bssid / flags
         address: '192.168.1.50',
         prefixLength: 24,
         gateway: '192.168.1.1',
-        dns: '8.8.8.8',
+        dnsMode: EthDnsMode.manual,
+        dnsServers: <String>['8.8.8.8'],
       );
       final back = EthIpv4Store.parse(EthIpv4Store.serialize(staticCfg));
       expect(back.mode, EthIpv4Mode.staticMode);
       expect(back.address, '192.168.1.50');
       expect(back.prefixLength, 24);
       expect(back.gateway, '192.168.1.1');
+      expect(back.dnsMode, EthDnsMode.manual);
       expect(back.dns, '8.8.8.8');
     });
   });

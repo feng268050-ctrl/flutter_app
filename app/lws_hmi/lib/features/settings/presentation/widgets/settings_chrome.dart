@@ -2,20 +2,30 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:cyber_settings_ui/cyber_settings_ui.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
-import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/platform/display/system_wallpaper_backdrop.dart';
 import 'package:lws_hmi/ui/hmi/hmi_primary_tab_content.dart';
 import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
+
+export 'package:cyber_settings_ui/cyber_settings_ui.dart'
+    show
+        SettingsBlurHost,
+        SettingsBlurredPageShell,
+        SettingsPageBackdropBlur,
+        SettingsSharedBlurMask,
+        kSettingsPageBlurSigma;
 
 /// Shared Settings chrome (lws-ui InsetList / FrostCard → CyberUI).
 ///
@@ -338,7 +348,7 @@ class SettingsHelpFooter extends StatelessWidget {
 abstract final class SettingsPerspectiveChrome {
   /// Gaussian between Settings wallpaper and foreground chrome.
   /// Owned by [SettingsBlurredPageShell], not by [face].
-  static const blurSigma = 30.0;
+  static const blurSigma = kSettingsPageBlurSigma;
   static const blurIntensity = CyberBlurIntensity.low;
   static const blurTint = CyberBlurTint.dark;
 
@@ -1593,334 +1603,14 @@ class SettingsHomeBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-    final size = MediaQuery.sizeOf(context);
-    final (cacheW, cacheH) = HomeAssets.backdropCachePx(
-      logicalSize: size,
-      devicePixelRatio: dpr,
-    );
-    return Image.asset(
-      HomeAssets.backdrop,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-      filterQuality: FilterQuality.medium,
-      cacheWidth: cacheW,
-      cacheHeight: cacheH,
-      errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFF1A1A1A)),
-    );
+    final path = AppScope.maybeOf(context)?.wallpaper.activePath;
+    return SystemWallpaperBackdrop(path: path);
   }
 }
 
-/// Declares Settings / Monitor page chrome — descendant [SettingsPanel]s use
-/// [SettingsPerspectiveChrome] (tint + rim; page owns Gaussian) instead of
-/// dialog frost.
-class SettingsPageBackdropBlur extends InheritedWidget {
-  const SettingsPageBackdropBlur({
-    super.key,
-    required this.sigma,
-    required super.child,
-  });
-
-  /// Page [ImageFiltered] sigma ([SettingsPerspectiveChrome.blurSigma] = 30).
-  final double sigma;
-
-  static SettingsPageBackdropBlur? maybeOf(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<SettingsPageBackdropBlur>();
-  }
-
-  @override
-  bool updateShouldNotify(SettingsPageBackdropBlur oldWidget) =>
-      oldWidget.sigma != sigma;
-}
-
-/// Settings / Monitor / Engineer page stack: sharp wallpaper (capture) → page
-/// blur plate → [child] chrome.
-///
-/// Capture for tip/IME frost stays on the sharp [CyberBlurBackdropTarget].
-/// Panels use [SettingsPerspectiveChrome] tint/rim/shadow only — no second
-/// BackdropFilter.
-///
-/// **Default blur plate (scheme A / home firstFrame):** bake σ30 once from the
-/// sharp plate (downscaled), then blit [RawImage] every frame. Wallpaper is
-/// static, so live [ImageFiltered] is unnecessary on product pages and costly
-/// on RK3566/QEMU — especially under Cupertino L/R slides.
-///
-/// Set [livePageBlur] true only for rare cases that need per-frame Gaussian
-/// (e.g. animated wallpaper experiments).
-class SettingsBlurredPageShell extends StatelessWidget {
-  const SettingsBlurredPageShell({
-    super.key,
-    required this.child,
-    this.blurSigma = SettingsPerspectiveChrome.blurSigma,
-    this.backdropBuilder,
-    this.livePageBlur = false,
-  });
-
-  final Widget child;
-
-  /// Page wallpaper Gaussian sigma (foreground ↔ background).
-  final double blurSigma;
-
-  /// Wallpaper under capture + blur layer. Called for sharp capture target and
-  /// for the live [ImageFiltered] child when [livePageBlur] is true. Defaults
-  /// to [SettingsHomeBackdrop]. Monitor passes a dimmed stack.
-  final Widget Function()? backdropBuilder;
-
-  /// When false (default), bake a static σ plate once. When true, live
-  /// [ImageFiltered] every frame.
-  final bool livePageBlur;
-
-  /// Capture downscale divisor — matches home [CyberBackdropBlur] / lws-ui.
-  static const captureScaleFactor = 3.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final buildPlate = backdropBuilder ?? () => const SettingsHomeBackdrop();
-    return CyberBlurBackdropScope(
-      child: SettingsPageBackdropBlur(
-        sigma: blurSigma,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Positioned.fill(
-              child: CyberBlurBackdropTarget(
-                child: buildPlate(),
-              ),
-            ),
-            Positioned.fill(
-              child: _SettingsPageBlurPlate(
-                livePageBlur: livePageBlur,
-                blurSigma: blurSigma,
-                buildPlate: buildPlate,
-              ),
-            ),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Live [ImageFiltered] or firstFrame-baked [RawImage] under Settings chrome.
-class _SettingsPageBlurPlate extends StatefulWidget {
-  const _SettingsPageBlurPlate({
-    required this.livePageBlur,
-    required this.blurSigma,
-    required this.buildPlate,
-  });
-
-  final bool livePageBlur;
-  final double blurSigma;
-  final Widget Function() buildPlate;
-
-  @override
-  State<_SettingsPageBlurPlate> createState() => _SettingsPageBlurPlateState();
-}
-
-class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
-  /// Owned clone of the scope's shared blurred capture. Must [dispose] — the
-  /// scope may free `_sharedBlurred` on the next acquire (IME frost / re-bake),
-  /// which would leave a non-cloned handle dead under [RawImage].
-  ui.Image? _baked;
-  bool _bakePending = false;
-  int _bakeGen = 0;
-  int _bakeRetries = 0;
-
-  void _dropBaked() {
-    _baked?.dispose();
-    _baked = null;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!widget.livePageBlur) {
-      _scheduleBake();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _SettingsPageBlurPlate oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.livePageBlur && !oldWidget.livePageBlur) {
-      // Root became current again — drop static plate; live path owns blur.
-      _bakeGen++;
-      _dropBaked();
-      _bakePending = false;
-      _bakeRetries = 0;
-      return;
-    }
-    if (!widget.livePageBlur &&
-        (oldWidget.livePageBlur || oldWidget.blurSigma != widget.blurSigma)) {
-      _dropBaked();
-      _bakeRetries = 0;
-      _scheduleBake();
-    }
-  }
-
-  @override
-  void dispose() {
-    _bakeGen++;
-    _dropBaked();
-    super.dispose();
-  }
-
-  void _scheduleBake({int settlePasses = 2}) {
-    if (_bakePending || !mounted || _baked != null) {
-      return;
-    }
-    final gen = ++_bakeGen;
-    _bakePending = true;
-    void pass(int remaining) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || gen != _bakeGen) {
-          if (gen == _bakeGen) {
-            _bakePending = false;
-          }
-          return;
-        }
-        if (remaining > 1) {
-          pass(remaining - 1);
-          return;
-        }
-        unawaited(_bake(gen));
-      });
-    }
-
-    pass(settlePasses.clamp(1, 4));
-  }
-
-  Future<void> _bake(int gen) async {
-    try {
-      if (!mounted || gen != _bakeGen || widget.livePageBlur) {
-        return;
-      }
-      final scope = CyberBlurBackdropScope.maybeOf(context);
-      final boundary = scope?.renderBoundary;
-      if (scope == null || boundary == null || !boundary.hasSize) {
-        if (gen == _bakeGen && _bakeRetries < 12) {
-          _bakeRetries++;
-          _bakePending = false;
-          _scheduleBake(settlePasses: 1);
-        }
-        return;
-      }
-      // Do NOT read [RenderObject.debugNeedsPaint] here: in profile/release
-      // that getter throws LateInitializationError (assert-stripped late local).
-      final dpr = MediaQuery.devicePixelRatioOf(context);
-      final scale =
-          (dpr / SettingsBlurredPageShell.captureScaleFactor).clamp(0.25, dpr);
-      // Sigma in capture-pixel space (same as CyberBackdropBlur firstFrame).
-      final sigma = widget.blurSigma * scale;
-      ui.Image? shared;
-      try {
-        shared = await scope.acquireBlurredCapture(
-          pixelRatio: scale,
-          sigmaX: sigma,
-          sigmaY: sigma,
-        );
-      } catch (e) {
-        debugPrint('settings-blur-plate: bake capture failed: $e');
-        if (gen == _bakeGen && _bakeRetries < 12) {
-          _bakeRetries++;
-          _bakePending = false;
-          _scheduleBake(settlePasses: 1);
-        }
-        return;
-      }
-      if (!mounted || gen != _bakeGen || widget.livePageBlur) {
-        return;
-      }
-      if (shared == null || shared.width < 1 || shared.height < 1) {
-        if (gen == _bakeGen && _bakeRetries < 12) {
-          _bakeRetries++;
-          _bakePending = false;
-          _scheduleBake(settlePasses: 1);
-        }
-        return;
-      }
-      // Own a clone so CyberBlurBackdropScope can dispose/replace its shared
-      // bitmap (nested IME frost, re-capture) without breaking this RawImage.
-      late final ui.Image owned;
-      try {
-        owned = shared.clone();
-      } catch (e) {
-        debugPrint('settings-blur-plate: clone failed: $e');
-        if (gen == _bakeGen && _bakeRetries < 12) {
-          _bakeRetries++;
-          _bakePending = false;
-          _scheduleBake(settlePasses: 1);
-        }
-        return;
-      }
-      debugPrint(
-        'settings-blur-plate: baked ${owned.width}x${owned.height} '
-        'sigma=${sigma.toStringAsFixed(1)} scale=${scale.toStringAsFixed(2)}',
-      );
-      if (!mounted || gen != _bakeGen) {
-        owned.dispose();
-        return;
-      }
-      setState(() {
-        final previous = _baked;
-        _baked = owned;
-        _bakeRetries = 0;
-        // RenderImage keeps its own clone handle; free our prior ownership.
-        previous?.dispose();
-      });
-    } catch (e) {
-      debugPrint('settings-blur-plate: bake aborted: $e');
-    } finally {
-      if (gen == _bakeGen) {
-        _bakePending = false;
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.livePageBlur) {
-      return IgnorePointer(
-        child: ImageFiltered(
-          imageFilter: ui.ImageFilter.blur(
-            sigmaX: widget.blurSigma,
-            sigmaY: widget.blurSigma,
-            tileMode: ui.TileMode.clamp,
-          ),
-          child: widget.buildPlate(),
-        ),
-      );
-    }
-
-    final baked = _baked;
-    if (baked != null) {
-      return IgnorePointer(
-        child: RawImage(
-          image: baked,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          filterQuality: FilterQuality.medium,
-        ),
-      );
-    }
-
-    // Placeholder until bake completes — opaque enough that gutters do not
-    // flash sharp wallpaper under a sliding nested page.
-    return IgnorePointer(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          widget.buildPlate(),
-          const ColoredBox(color: Color(0xE6101012)),
-        ],
-      ),
-    );
-  }
-}
+// Shared σ bake: SettingsBlurHost / SettingsBlurredPageShell /
+// SettingsPageBackdropBlur / SettingsSharedBlurMask from cyber_settings_ui.
+// Mount SettingsBlurHost above Navigator; route shells blit SettingsSharedBlurMask.
 
 /// 1px hairline under Settings status / tab strips: bright at center, fades
 /// to transparent at L/R (matches Videos column header treatment).
@@ -1998,33 +1688,37 @@ class SettingsScaffold extends StatelessWidget {
     // the operator nested path that disables Back during apply.
     final effectiveBackEnabled = backEnabled && canPop;
     final l10n = AppLocalizations.of(context)!;
-    // Nested Settings: static σ30 plate (shell default). Never live ImageFiltered
-    // under Cupertino L/R — parent root also uses a baked plate.
-    return SettingsBlurredPageShell(
-      child: Scaffold(
+    final scaffold = Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: ProductPageStatusBar(
+        title: title,
+        actions: actions,
         backgroundColor: Colors.transparent,
-        appBar: ProductPageStatusBar(
-          title: title,
-          actions: actions,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          // Back / title row height; hairline rides under this band.
-          toolbarHeight: WorkModeStatusBarDimens.height,
-          bottom: const SettingsStatusBarHairline(),
-          // Back + page title + trailing clock/status (no orange edge accent).
-          backLabel: l10n.equipmentStatusBack,
-          backAccent: WorkModeAccent.weld,
-          backEnabled: effectiveBackEnabled,
-          onBack: () {
-            if (!canPop) {
-              return;
-            }
-            Navigator.of(context).maybePop();
-          },
-        ),
-        // Clip at status-bar hairline so scroll cannot enter the Back row.
-        body: ClipRect(child: body),
+        foregroundColor: Colors.white,
+        // Back / title row height; hairline rides under this band.
+        toolbarHeight: WorkModeStatusBarDimens.height,
+        bottom: const SettingsStatusBarHairline(),
+        // Back + page title + trailing clock/status (no orange edge accent).
+        backLabel: l10n.equipmentStatusBack,
+        backAccent: WorkModeAccent.weld,
+        backEnabled: effectiveBackEnabled,
+        onBack: () {
+          if (!canPop) {
+            return;
+          }
+          Navigator.of(context).maybePop();
+        },
       ),
+      // Clip at status-bar hairline so scroll cannot enter the Back row.
+      body: ClipRect(child: body),
+    );
+    // Blit app-level baked plate inside this opaque route.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const Positioned.fill(child: SettingsSharedBlurMask()),
+        scaffold,
+      ],
     );
   }
 }

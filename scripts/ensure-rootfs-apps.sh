@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Ensure selected APP (and optional factory_test) release trees exist in fs-overlay.
+# Ensure selected APP (and optional os_settings) release trees exist in fs-overlay.
 # Used by make build-rootfs before packing. Builds missing apps via build-app.sh.
 #
-# One rootfs: at most one HMI (*_hmi → /opt/hmi) plus optional factory_test (/opt/factory_test).
+# One rootfs: at most one HMI (*_hmi → /opt/hmi) plus optional os_settings (/opt/os_settings).
 # Selecting APP=cnc_hmi replaces /opt/hmi with that product (same install path as lws_hmi).
 set -euo pipefail
 
@@ -34,13 +34,13 @@ app_select_resolve
 echo "ensure-rootfs-apps: primary APP=$APP → $OVERLAY_APP"
 ensure_app "$APP"
 
-if app_select_factory_test_exists; then
-	if [[ "$APP" != "factory_test" ]]; then
-		echo "ensure-rootfs-apps: auto-include factory_test (app/factory_test present)"
+if app_select_os_settings_exists; then
+	if [[ "$APP" != "os_settings" ]]; then
+		echo "ensure-rootfs-apps: auto-include os_settings (app/os_settings present)"
 	fi
-	ensure_app factory_test
+	ensure_app os_settings
 else
-	echo "ensure-rootfs-apps: skip factory_test (app/factory_test absent)"
+	echo "ensure-rootfs-apps: skip os_settings (app/os_settings absent)"
 fi
 
 echo "ensure-rootfs-apps: done"

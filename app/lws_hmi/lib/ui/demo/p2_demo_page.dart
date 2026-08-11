@@ -15,19 +15,16 @@ import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/linux_bluez_bluetooth_controller.dart';
 import 'package:lws_hmi/platform/http/http_client_controller.dart';
 import 'package:lws_hmi/platform/http/linux_http_client_controller.dart';
-import 'package:lws_hmi/ui/demo/bluetooth_demo_section.dart';
 import 'package:lws_hmi/ui/demo/date_time_demo_section.dart';
 import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
-import 'package:lws_hmi/ui/demo/ethernet_demo_section.dart';
 import 'package:lws_hmi/ui/demo/http_demo_section.dart';
-import 'package:lws_hmi/ui/demo/keyboard_demo_section.dart';
-import 'package:lws_hmi/ui/demo/mouse_demo_section.dart';
 import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
 /// P2 demo: device info, alarms, and Debug smoke.
 ///
-/// Platform settings (network, input, date/time, audio, backlight, RGB LED)
-/// live under product Settings. Pass [skipPlatformSections] when hosted on `/demo`.
+/// Optional platform smoke sections (Wi‑Fi / HTTP / date-time) when
+/// [skipPlatformSections] is false. Ethernet / Bluetooth / Keyboard / Mouse
+/// live in OS Settings — Demo sections removed. Product `/demo` skips these.
 class P2DemoPage extends StatefulWidget {
   const P2DemoPage({
     super.key,
@@ -82,7 +79,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final DateTimeController _dateTime;
   late final HttpClientController _http;
   late final BluetoothController _bluetooth;
-  late final Keyboard _keyboard;
   late final MouseSettingsController _mouse;
   bool _networkSectionsReady = false;
 
@@ -151,7 +147,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
     _bluetooth = widget.bluetoothController ??
         bindings?.bluetooth() ??
         LinuxBluezBluetoothController();
-    _keyboard = bindings?.keyboard() ?? LinuxKeyboard();
     _mouse = bindings?.mouse() ?? LinuxMouseSettingsController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadAfterFirstFrame());
@@ -455,21 +450,11 @@ class _P2DemoPageState extends State<P2DemoPage> {
               ),
               if (_networkSectionsReady) ...[
                 const SizedBox(height: 32),
-                KeyboardDemoSection(keyboard: _keyboard),
-                const SizedBox(height: 32),
-                MouseDemoSection(
-                  controller: _mouse,
-                ),
-                const SizedBox(height: 32),
                 DateTimeDemoSection(controller: _dateTime),
-                const SizedBox(height: 32),
-                EthernetDemoSection(controller: _ethernet),
                 const SizedBox(height: 32),
                 WifiDemoSection(controller: _wifi),
                 const SizedBox(height: 32),
                 HttpDemoSection(controller: _http),
-                const SizedBox(height: 32),
-                BluetoothDemoSection(controller: _bluetooth),
               ],
             ],
             const SizedBox(height: 24),

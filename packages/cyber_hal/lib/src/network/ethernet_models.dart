@@ -11,36 +11,74 @@ enum EthLinkPhase {
 
 enum EthIpv4Mode { dhcp, staticMode }
 
+/// Operator DNS preference for eth (independent of [EthIpv4Mode]).
+enum EthDnsMode { automatic, manual }
+
 class EthIpv4Config {
   const EthIpv4Config({
     required this.mode,
     this.address = '',
     this.prefixLength = 24,
     this.gateway = '',
-    this.dns = '',
+    this.dnsMode = EthDnsMode.automatic,
+    this.dnsServers = const [],
   });
+
+  /// Legacy single-string DNS — non-empty [dns] means Manual.
+  factory EthIpv4Config.withDnsString({
+    required EthIpv4Mode mode,
+    String address = '',
+    int prefixLength = 24,
+    String gateway = '',
+    String dns = '',
+  }) {
+    final servers = splitDnsServers(dns);
+    return EthIpv4Config(
+      mode: mode,
+      address: address,
+      prefixLength: prefixLength,
+      gateway: gateway,
+      dnsMode:
+          servers.isNotEmpty ? EthDnsMode.manual : EthDnsMode.automatic,
+      dnsServers: servers,
+    );
+  }
 
   final EthIpv4Mode mode;
   final String address;
   final int prefixLength;
   final String gateway;
-  final String dns;
+  final EthDnsMode dnsMode;
+  final List<String> dnsServers;
+
+  /// Space-joined DNS servers (legacy / networkd consumers).
+  String get dns => dnsServers.join(' ');
 
   static const dhcpDefault = EthIpv4Config(mode: EthIpv4Mode.dhcp);
+
+  static List<String> splitDnsServers(String raw) {
+    return raw
+        .split(RegExp(r'[\s,]+'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
 
   EthIpv4Config copyWith({
     EthIpv4Mode? mode,
     String? address,
     int? prefixLength,
     String? gateway,
-    String? dns,
+    EthDnsMode? dnsMode,
+    List<String>? dnsServers,
   }) {
     return EthIpv4Config(
       mode: mode ?? this.mode,
       address: address ?? this.address,
       prefixLength: prefixLength ?? this.prefixLength,
       gateway: gateway ?? this.gateway,
-      dns: dns ?? this.dns,
+      dnsMode: dnsMode ?? this.dnsMode,
+      dnsServers: dnsServers ?? this.dnsServers,
     );
   }
 }
@@ -121,21 +159,36 @@ class EthIpv4Store {
     final mode =
         modeToken == 'static' ? EthIpv4Mode.staticMode : EthIpv4Mode.dhcp;
     final prefix = int.tryParse(map['prefix'] ?? '') ?? 24;
+    final servers = EthIpv4Config.splitDnsServers(map['dns'] ?? '');
+    final dnsModeToken = (map['dns_mode'] ?? '').toLowerCase();
+    final EthDnsMode dnsMode;
+    if (dnsModeToken == 'manual') {
+      dnsMode = EthDnsMode.manual;
+    } else if (dnsModeToken == 'automatic') {
+      dnsMode = EthDnsMode.automatic;
+    } else {
+      dnsMode =
+          servers.isNotEmpty ? EthDnsMode.manual : EthDnsMode.automatic;
+    }
     return EthIpv4Config(
       mode: mode,
       address: map['address'] ?? '',
       prefixLength: prefix.clamp(0, 32),
       gateway: map['gateway'] ?? '',
-      dns: map['dns'] ?? '',
+      dnsMode: dnsMode,
+      dnsServers: servers,
     );
   }
 
   static String serialize(EthIpv4Config c) {
     final mode = c.mode == EthIpv4Mode.staticMode ? 'static' : 'dhcp';
+    final dnsMode =
+        c.dnsMode == EthDnsMode.manual ? 'manual' : 'automatic';
     return 'mode=$mode\n'
         'address=${c.address}\n'
         'prefix=${c.prefixLength}\n'
         'gateway=${c.gateway}\n'
+        'dns_mode=$dnsMode\n'
         'dns=${c.dns}\n';
   }
 }

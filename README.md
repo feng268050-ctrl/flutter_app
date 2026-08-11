@@ -390,9 +390,9 @@ After one firmware flash with USB plug-ssh support:
 make shell                      # interactive root shell; SN=... when multiple boards
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL_ONLY=1
 make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
-make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=factory_test → /opt/factory_test
+make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=os_settings → /opt/os_settings
 make upgrade-app                # signed app ship; full list under Cloud + Upgrade
-make push-app                   # debug unsigned hot-swap (see Debug); not an upgrade-app alias
+make push-app                   # debug hot-swap; *_hmi→hmi.service; APP=os_settings→os-settings.service
 APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/firmware/<APP>/; factory→…/<APP>/<sku>/
 make version                    # print OS Version (default); APP=<id> → Flutter pubspec name+build
 make version-bump VERSION=1.0.0 # bump OS Version; APP=lws_hmi VERSION=… bumps Flutter (5-digit)

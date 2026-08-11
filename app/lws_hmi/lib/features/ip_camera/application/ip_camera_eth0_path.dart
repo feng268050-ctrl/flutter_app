@@ -121,7 +121,6 @@ final class LinuxIpCameraEth0Path implements IpCameraEth0Path {
       address: tabletIp,
       prefixLength: 24,
       gateway: '',
-      dns: '',
     );
     try {
       if (ethernet.currentAdmin != EthAdminState.on) {

@@ -5,29 +5,6 @@ import 'package:lws_hmi/platform/cloud/device_ws_connection_manager.dart';
 import 'package:lws_hmi/platform/cloud/device_ws_dispatcher.dart';
 import 'package:lws_hmi/platform/cloud/device_ws_envelope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_http_client.dart';
-import 'package:lws_hmi/platform/http/http_client_controller.dart';
-import 'package:lws_hmi/platform/http/http_proxy_config.dart';
-
-final class _FakeHttp implements HttpClientController {
-  @override
-  Future<HttpProxyConfig> getProxy() async => HttpProxyConfig.disabled;
-
-  @override
-  Future<void> setProxy(HttpProxyConfig config) async {}
-
-  @override
-  Future<HttpProbeResult> request({
-    required String method,
-    required Uri url,
-    int maxBodyBytes = 2048,
-    Duration timeout = const Duration(seconds: 15),
-  }) async {
-    return const HttpProbeResult(ok: true, statusCode: 200);
-  }
-
-  @override
-  Future<void> dispose() async {}
-}
 
 void main() {
   group('DeviceWsDispatcher protocol', () {
@@ -38,7 +15,7 @@ void main() {
       lock = DeviceRemoteLockStore(
         preferencePath: '/tmp/lws-hmi-test-lock-dispatch.json',
       );
-      final cloudHttp = CloudHttpClient(http: _FakeHttp());
+      final cloudHttp = CloudHttpClient(appVersion: 'test');
       final ws = DeviceWsConnectionManager(cloudHttp: cloudHttp);
       dispatcher = DeviceWsDispatcher(
         ws: ws,
@@ -86,7 +63,7 @@ void main() {
 
     test('OTA check_update_ack uses ok/error_code shape', () async {
       final sent = <DeviceWsEnvelope>[];
-      final cloudHttp = CloudHttpClient(http: _FakeHttp());
+      final cloudHttp = CloudHttpClient(appVersion: 'test');
       final ws = DeviceWsConnectionManager(cloudHttp: cloudHttp);
       // Capture sends by wrapping — connection is offline so send drops;
       // instead assert envelope builder used by dispatcher via handle path

@@ -92,15 +92,17 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | **Profile** | `helpers.alsa_volume_controls` — preferred mixer control names (board codec order) |
 | **Profile** | `helpers.alsa_playback_path_control` + `alsa_playback_path_value` — **optional** enum route (e.g. Rockchip `Playback Path` / `RING_SPK_HP`). Omit on boards that have no such control; HAL skips routing when unset |
 | **Helper** | `change_backlight` / `change_volume` — **optional**; default is sysfs / amixer + `/var/lib/hal/` prefs |
-| **Prefs** | `/var/lib/hal/display.conf` — `backlight`, `auto_sleep`, `orientation` (`landscape` \| `portrait`); `/var/lib/hal/sound.conf` — `volume`, `button_feedback` |
-| **Orientation** | Portable `Orientation` API; Linux calls `change-orientation` then optional `systemctl restart hmi`. Mapping stays in `hmi-launch.sh` (Weston transform). |
+| **Prefs** | `/var/lib/hal/display.conf` — `backlight`, `auto_sleep`, `orientation` (`landscape` \| `portrait`), `wallpaper` / `wallpaper_id` (active image under `/var/lib/hal/wallpaper.*`; presets in `/usr/share/hal/wallpapers/`), **`ui_scale`** (operator UI scale multiplier; **`1.0` = physical 1:1 / no rematch**; non-integer OK e.g. `0.85`–`1.25`; **OS Settings** writes; both seats apply via `matchEmbedderDensity`; host/QEMU sim typically sets ~`1.13` to approximate ynh960); `/var/lib/hal/sound.conf` — `volume`, `button_feedback` (**absolute path** to click sample next to conf; product App `installAndSelect`s catalog bytes) |
+| **Orientation** | Portable `Orientation` API; Linux calls `change-orientation` then `restart-flutter-seat.sh` (active HMI or OS Settings). Mapping stays in `hmi-launch.sh` (Weston transform). |
 | **Helper** | `bt_a2dp_volume` — optional A2DP soft-volume when BlueALSA sink is used |
 
 ### `hal/input` — keyboard / mouse
 
 | Need | Detail |
 |------|--------|
-| **OS (keyboard)** | HID keyboard nodes; `xkeyboard-config` for layouts listed by HAL (`us`, `ru` in v1); `systemctl restart hmi` allowed if layout apply restarts UI |
+| **OS (keyboard)** | HID keyboard nodes; `xkeyboard-config` for layouts listed by HAL (`us`, `ru` in v1); `restart-flutter-seat.sh` when layout apply restarts UI |
+| **OS (mouse)** | `apply-mouse-settings` → `mouse.conf`; Weston ini change restarts active Flutter seat via `restart-flutter-seat.sh` |
+| **OS (wallpaper)** | `apply-wallpaper` persists; HAL `setPreset(apply: true)` calls `restart-flutter-seat.sh` |
 | **OS (mouse)** | USB HID mouse (presence probe); prefs in `/var/lib/hal/mouse.conf` |
 | **Helper** | `apply_mouse_settings` — **required**: helper rewrites runtime `weston.ini` via `weston-hmi-config.sh` (`cursor-size`, `[libinput]` accel / natural-scroll / left-handed; **desktop-shell** + splash background unchanged) and restarts `hmi` when needed. Do **not** map `scroll_speed` / `pointer_axes` (Weston ignores them). |
 | **Weston splash bridge** | After Weston takes DRM master the kernel `drm_logo` is gone; `desktop-shell` paints `/usr/share/hmi/boot-splash.png` (**logical landscape** 1280×800 upright for `transform=rotate-270`; from `make build-boot-logo`, **not** a copy of portrait `logo.bmp`) until `flutter-wayland-client` covers it. kiosk-shell cannot show a background image. |

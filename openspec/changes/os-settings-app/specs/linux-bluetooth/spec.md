@@ -2,7 +2,7 @@
 
 ### Requirement: Local adapter alias uses Brand space Model
 
-When the platform Settings app (or HAL helper invoked for Settings) applies the local Bluetooth adapter alias from product identity, the Alias / display name SHALL be `"{Brand} {Model}"` with a single ASCII space, sourced from Vendor Storage identity via `ProductInfo` / equivalent. Missing Brand or Model SHALL yield a documented safe fallback (Model-only or prior adapter default) and MUST NOT require a hardcoded welding product marketing string as the permanent alias. Persistence SHALL use the existing HAL alias / `/var/lib/bluetooth/adapter-alias` path.
+When the OS Settings app (or HAL helper invoked for OS Settings) applies the local Bluetooth adapter alias from product identity, the Alias / display name SHALL be `"{Brand} {Model}"` with a single ASCII space, sourced from Vendor Storage identity via `ProductInfo` / equivalent. Missing Brand or Model SHALL yield a documented safe fallback (Model-only or prior adapter default) and MUST NOT require a hardcoded welding product marketing string as the permanent alias. Persistence SHALL use the existing HAL alias / `/var/lib/bluetooth/adapter-alias` path.
 
 #### Scenario: Brand and Model both present
 

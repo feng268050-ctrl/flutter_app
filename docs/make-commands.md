@@ -181,7 +181,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 ### `make build-app`
 
-- **怎么用：** `make build-app` 或 `APP=factory_test make build-app`
+- **怎么用：** `make build-app` 或 `APP=os_settings make build-app`
 - **何时用：** 改了 Flutter App / `cyber_*` 包 / 随 App 打包的 `bin/` 后；日常热更首选（再 `push-app`）。
 - **做什么：** 先按需跑 `prepare-hmi-ship-assets`（同 `prepare-app-assets`），再 release AOT → overlay（`*_hmi`→`/opt/hmi`），并 `apply-overlay`。
 - **参数：**
@@ -242,7 +242,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **怎么用：** `make build-rootfs` 或 `APP=cnc_hmi make build-rootfs`
 - **何时用：** overlay/systemd/LCD、Bake App 进镜像、Buildroot 用户态变更后。
 - **产物：** `output/firmware/<APP>/rootfs.img`。
-- **参数：** `APP`；若存在 `app/factory_test` 会自动确保 `/opt/factory_test`。
+- **参数：** `APP`；若存在 `app/os_settings` 会自动确保 `/opt/os_settings`。
 - **重要：** 改 `overlay/buildroot/chips/*.config` 等**已有包的编译选项**时，`build-rootfs` **不会**重编该包；需先 `bash scripts/br-make-packages.sh <label> <pkg>…`。
 - **后续：** `make upgrade`。
 
@@ -366,8 +366,8 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make push-app`
 
 - **怎么用：** `make build-app` 后 `make push-app`（多板 `SN=` / `IP=`）
-- **何时用：** **Debug** 热更——无签名，SSH 流式推 overlay APP 到板端 `/opt/hmi`（或 `/opt/<APP>`）并重启 `hmi.service`（仅 `*_hmi`）。**不是** `upgrade-app` 的别名。
-- **行为：** 上传到 `/var/lib/hmi/push-app-staging/` → 刷新并执行 `/usr/libexec/hmi/push-app-apply-and-restart.sh`（host overlay 每次推送刷新）→ 安装 + 重启。
+- **何时用：** **Debug** 热更——无签名，SSH 流式推 overlay APP 到板端 `/opt/hmi`（或 `/opt/<APP>`）并重启对应 systemd unit（`*_hmi` → `hmi.service`；`os_settings` → `os-settings.service`）。**不是** `upgrade-app` 的别名。
+- **行为：** `*_hmi`：上传到 `/var/lib/hmi/push-app-staging/` → 刷新并执行 `/usr/libexec/hmi/push-app-apply-and-restart.sh` → 安装 + 重启 `hmi.service`。`os_settings`：直推 `/opt/os_settings` → `systemctl restart os-settings.service`。
 - **参数：** `APP`、设备选择。
 - **签名发布：** 用 `make upgrade-app` / `make publish-app`。
 

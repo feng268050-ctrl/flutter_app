@@ -4,9 +4,10 @@
 /// `/var/lib/hal/keyboard.conf` (and/or `/etc/default/keyboard`).
 ///
 /// **v1 apply:** [Keyboard.setLayout] persists the preference then restarts
-/// `hmi.service` so XKB is re-read at init. The **App MUST
-/// restore the previous route** after relaunch (persist last route and open
-/// it on startup). HAL does not own navigation.
+/// the active Flutter seat (`hmi.service` or `os-settings.service`) so XKB
+/// is re-read at init. The **App MUST restore the previous route** after
+/// relaunch (persist last route and open it on startup). HAL does not own
+/// navigation.
 ///
 /// Concrete Linux type: [LinuxKeyboard] (exported from `hal/input.dart`).
 library;
@@ -21,13 +22,14 @@ abstract class Keyboard {
 
   /// Persist layout preference (and optionally sync `/etc/default/keyboard`).
   ///
-  /// When [restart] is true (default), also restarts `hmi.service`
+  /// When [restart] is true (default), also restarts the active Flutter seat
   /// so XKB is re-read at init. Product Settings MAY call with `restart: false`
   /// then invoke [restartToApply] from its Restart action.
   /// App MUST restore the previous route after relaunch when restarting.
   Future<void> setLayout(KeyboardLayout layout, {bool restart = true});
 
-  /// Restart HMI so a previously persisted layout is picked up by XKB.
+  /// Restart the active Flutter seat so a previously persisted layout is
+  /// picked up by XKB.
   Future<void> restartToApply();
 
   Future<List<KeyboardLayout>> listLayouts();

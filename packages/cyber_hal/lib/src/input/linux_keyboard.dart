@@ -4,20 +4,16 @@ import 'package:cyber_hal/input/keyboard.dart';
 import 'package:cyber_hal/src/linux/board_helper.dart';
 import 'package:flutter/foundation.dart';
 
-/// Restarts HMI so the embedder re-reads XKB; injectable for tests.
+/// Restarts the active Flutter seat so the embedder re-reads XKB; injectable for tests.
 typedef HmiRestartRunner = Future<int> Function();
 
-Future<int> defaultHmiRestartRunner() async {
-  return defaultBoardHelperRunner('systemctl', const <String>['restart', 'hmi']);
-}
-
-/// Linux keyboard: HID presence + XKB pref + HMI restart (D15 v1).
+/// Linux keyboard: HID presence + XKB pref + seat restart (D15 v1).
 class LinuxKeyboard implements Keyboard {
   LinuxKeyboard({
     this.preferencePath = '/var/lib/hal/keyboard.conf',
     this.etcDefaultKeyboardPath = '/etc/default/keyboard',
     this.probe = const UsbHidKeyboardProbe(),
-    this.restartHmi = defaultHmiRestartRunner,
+    this.restartHmi = defaultFlutterSeatRestartRunner,
     this.syncEtcDefault = true,
     this.applyRestart = true,
   });
@@ -123,7 +119,7 @@ class LinuxKeyboard implements Keyboard {
   Future<void> restartToApply() async {
     final code = await restartHmi();
     if (code != 0) {
-      debugPrint('keyboard: hmi restart exit $code');
+      debugPrint('keyboard: seat restart exit $code');
     }
   }
 

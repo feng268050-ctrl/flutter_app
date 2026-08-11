@@ -14,7 +14,7 @@ final class LinuxOrientation implements Orientation {
   LinuxOrientation({
     this.preferencePath = OutputPrefs.displayConf,
     this.changeOrientationCommand = const <String>['change-orientation'],
-    this.restartCommand = const <String>['systemctl', 'restart', 'hmi'],
+    this.restartCommand = kRestartFlutterSeatCommand,
     this.legacyPreferencePaths = const <String>[
       '/var/lib/hal/display-orientation',
       '/var/lib/hmi/display-orientation',

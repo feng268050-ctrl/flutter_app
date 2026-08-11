@@ -5,6 +5,7 @@ import 'package:cyber_hal/src/sys_info/product_info.dart';
 import 'package:cyber_hal/src/sys_info/storage_part_labels.dart';
 import 'package:flutter/foundation.dart';
 
+export 'package:cyber_hal/src/sys_info/platform_versions.dart';
 export 'package:cyber_hal/src/sys_info/product_info.dart';
 export 'package:cyber_hal/src/sys_info/storage_part_labels.dart';
 

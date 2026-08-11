@@ -4,8 +4,6 @@ import 'package:cyber_hal/sys_info.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/app/theme/hmi_typography.dart';
-import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/device/product_property_defaults.dart';
@@ -22,11 +20,8 @@ import 'package:lws_hmi/features/system_ota/presentation/system_upgrade_page.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
-import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
-import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
-import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/platform/cloud/secret_tap_tracker.dart';
-import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/platform/os_settings/switch_to_os_settings.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// Device Information — CyberUI untitled cards (lws-ui Frost parity).
@@ -243,6 +238,20 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     );
   }
 
+  Future<void> _openOsSettings(AppLocalizations l10n) async {
+    final result = await switchToOsSettings();
+    if (!mounted || result.ok) return;
+    final message = switch (result.failure) {
+      SwitchToOsSettingsFailure.missingBundle =>
+        l10n.osSettingsBundleMissing,
+      SwitchToOsSettingsFailure.commandFailed || null =>
+        l10n.osSettingsSwitchFailed,
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   void dispose() {
     unawaited(_sysSub?.cancel() ?? Future<void>.value());
@@ -282,7 +291,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               clickFeedback: false,
               onTap: () {
                 if (_deviceSnSecretTap.registerTap()) {
-                  unawaited(_showSelectAppEnvDialog(l10n));
+                  unawaited(_openOsSettings(l10n));
                 }
               },
             ),
@@ -369,71 +378,5 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
         ),
       ],
     );
-  }
-
-  Future<void> _showSelectAppEnvDialog(AppLocalizations l10n) async {
-    final store = CloudSettingsScope.maybeOf(context);
-    if (store == null || !mounted) {
-      return;
-    }
-    final current = store.environmentTier;
-    String labelFor(CloudEnvironmentTier tier) => switch (tier) {
-          CloudEnvironmentTier.dev => l10n.cloudEnvironmentTierDev,
-          CloudEnvironmentTier.test => l10n.cloudEnvironmentTierTest,
-          CloudEnvironmentTier.prod => l10n.cloudEnvironmentTierProd,
-        };
-
-    final chosen = await showCyberDialog<CloudEnvironmentTier>(
-      context: context,
-      builder: (ctx) {
-        return ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.cloudEnvironmentTier,
-                style: context.hmiTypography.settingsRowTitle.copyWith(
-                  color: CyberColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              for (final tier in CloudEnvironmentTier.values)
-                ListTile(
-                  title: Text(
-                    labelFor(tier),
-                    style: TextStyle(
-                      color: tier == current
-                          ? CyberColors.textPrimary
-                          : CyberColors.textSecondary,
-                    ),
-                  ),
-                  trailing: tier == current
-                      ? const Icon(
-                          Icons.check,
-                          color: CyberColors.textPrimary,
-                        )
-                      : null,
-                  onTap: () => Navigator.of(ctx).pop(tier),
-                ),
-              const SizedBox(height: 8),
-              HmiButton(
-                label: l10n.closeText,
-                size: HmiButtonSize.small,
-                shape: CyberButtonShape.rounded,
-                onPressed: () => Navigator.of(ctx).pop(),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    if (chosen == null || !mounted) {
-      return;
-    }
-    await store.setEnvironmentTier(chosen);
-    final runtime = CloudLocalRuntimeScope.maybeOf(context);
-    unawaited(runtime?.reprobeAndReconnect());
   }
 }

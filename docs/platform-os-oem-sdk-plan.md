@@ -17,7 +17,7 @@
 | [`hal-portability.md`](hal-portability.md) | HAL / BoardProfile 合同 |
 | [`storage-layout.md`](storage-layout.md) | GPT：`oem` / `boot*` / `rootfs_*` / `userdata` |
 | [`embedder-migration-plan.md`](embedder-migration-plan.md) | Weston + eLinux（设备与模拟器同嵌入器） |
-| [`settings-app-plan.md`](settings-app-plan.md) | **本计划范围外**；独立 Settings App 另案推进 |
+| [`os-settings-app-plan.md`](os-settings-app-plan.md) | **本计划范围外**；独立 OS Settings App 另案推进 |
 
 状态图例：✅ 已具备基础 · 🔲 本计划待做 · ⏸ 明确不做 / 另案
 
@@ -47,7 +47,7 @@
 3. **boot/rootfs 趋向通用**：板/屏差异尽量退出 rootfs；内核仍按 SoC/板选 FIT（DT 不能完全进 OEM）。  
 4. **自有 `linux-sdk/` 进仓**（保留此名）：只留 Buildroot + 必要 kernel/device/external/tools；debian/ubuntu/yocto 等删除；overlay 差异逐步内化；蓝本外置参考。  
 5. **P3.2 = 第二个 board×screen pack**（`sim` + `virt`），Apple Silicon **aarch64 QEMU**（macOS：qemu-virgl）；访客内 **Linux HAL** + USB/网桥接真下位机；**不是** Stub 降级 demo，也 **不是** RK SoC 仿真；**不做** x86_64 host 路径。  
-6. **Settings App**：⏸ **本计划不做**（见 [`settings-app-plan.md`](settings-app-plan.md)）；Settings 复用 OEM profile，不搬产品 gpio/modbus。  
+6. **OS Settings App**：✅ **已实现**（见 [`os-settings-app-plan.md`](os-settings-app-plan.md)、[`settings-apps-roles.md`](settings-apps-roles.md)；`APP=os_settings` → `/opt/os_settings`）。OS Settings 复用 OEM profile，不搬产品 gpio/modbus。
 7. **工厂制品按变体分目录 + 环境变量选择**：不同供应商/板级的 `uboot.img`（及配套 loader）分库存放；`build-oem` / `build-img` / `flash` 用同一套 `FACTORY_SKU`（可覆盖 `UBOOT_ID` / `OEM_ID`）解析路径；整包输出改称 **`factory.img`**（见 §5.6）。
 
 ### 1.3 非目标
@@ -55,7 +55,7 @@
 - 不在 QEMU 访客内仿真 RK356x SoC / Mali / MIPI / AIC 模组。  
 - 不强制第一天自编译量产 U-Boot（默认继续已验证的瑞芯微/板级 `uboot.img`；源码用 `rockchip-linux/u-boot` 备查）。  
 - 不把 `/opt/hmi` 迁入 OEM（App 仍走 rootfs A/B + `push-app`）。  
-- 不在本计划实现 `app/settings`（见另文）。  
+- 不在本计划实现 `app/os_settings`（见 [`os-settings-app-plan.md`](os-settings-app-plan.md)；`APP=os_settings` → `/opt/os_settings`）。  
 - 不一次合入完整 18 G 供应商树进 git。  
 - 不做 x86_64 host 模拟器路径（开发机均为 Apple Silicon；P3.2 仅 aarch64 QEMU）。
 
@@ -627,8 +627,8 @@ W5  多设备树 FIT（一族多板 boot 包装）                    ✅
     ├─ **先于** kernel 6.1 LTS rebase / 大块 overlay 补丁升级
     └─ change: openspec/changes/multi-board-fit-dt
 
-W6  （另案）Settings App                                 ⏸
-    └─ 见 settings-app-plan.md；复用 OEM profile；不搬产品 gpio/modbus
+W6  OS Settings App (`app/os_settings` → `/opt/os_settings`)  ✅
+    └─ 见 [`os-settings-app-plan.md`](os-settings-app-plan.md)、[`settings-apps-roles.md`](settings-apps-roles.md)；复用 OEM profile；不搬产品 gpio/modbus
 ```
 
 依赖关系：
@@ -649,7 +649,7 @@ W4 → W5 ✅ 多 DT FIT（已解除对 kernel-61-lts-rebase 的阻塞）
 | `flutter-linux-hmi-plan.md` | P3.2 条目指向本文；强调 OEM 第二 pack |
 | `hal-portability.md` | 补充：profile 来自 OEM；gpio/modbus 来自 App |
 | `storage-layout.md` | `/oem` 从「optional drop-ins」升级为 SKU 权威 |
-| `settings-app-plan.md` | **暂不实施**（平台本计划外）；Settings 用 OEM profile，不把 gpio/modbus 塞进主板 pack |
+| [`os-settings-app-plan.md`](os-settings-app-plan.md) | **平台本计划外**（另案）；`app/os_settings` → `/opt/os_settings`；复用 OEM profile；不把 gpio/modbus 塞进主板 pack；取代原 `factory_test` 第二 App 槽位 |
 | `openspec/.../board-screen-pack` | 运行时落点改为 OEM；产品 catalogs 归属与本文一致 |
 
 ---
@@ -675,7 +675,7 @@ W4 → W5 ✅ 多 DT FIT（已解除对 kernel-61-lts-rebase 的阻塞）
 2. **模拟器**：`sim_virt` + Linux HAL；三网卡（摄像头桥 + wlan0 L3 + ethssh）；无 OTG；Modbus USB 透传；GPIO LED 悬浮层。 ✅ W4 主路径（见 [`docs/p32-emulator.md`](p32-emulator.md)；USB Wi‑Fi/BT ⏸）  
 3. **构建**：裁剪 linux-sdk 可出与现网等价的 ynh960 镜像（或明确差距清单）。 🟡 W3 工具就绪；本机 trim 后验证  
 4. **工厂变体**：`FACTORY_SKU=… make build-oem` / `build-img` / `flash` 解析同一套路径；产出 `output/firmware/<sku>/factory.img`；uboot 来自 `prebuilt/bootloader/<uboot_id>/`。 ✅（W1）  
-5. **文档**：`make help` / README / AGENTS 重建表含 `build-oem`、`factory.img`、模拟器同事首次步骤；**无** Settings App 强依赖。 ✅  
+5. **文档**：`make help` / README / AGENTS 重建表含 `build-oem`、`factory.img`、模拟器同事首次步骤；**无** OS Settings App 强依赖。 ✅  
 
 ---
 
@@ -693,4 +693,4 @@ W4 → W5 ✅ 多 DT FIT（已解除对 kernel-61-lts-rebase 的阻塞）
 
 ---
 
-**总结**：用 **OEM 组合硬件（含 v1 `product.ini`）、App 持有产品寄存器图、boot/rootfs 做通用 OS、自有 `linux-sdk` 替换补丁机、环境变量选择 uboot/oem 打出分 SKU 的 `factory.img`、aarch64 QEMU 当第二块板+屏**，即可在不仿真瑞芯微 SoC 的前提下，把多主板/多屏幕做成可验证的工程框架。Settings App 不阻塞本路径。
+**总结**：用 **OEM 组合硬件（含 v1 `product.ini`）、App 持有产品寄存器图、boot/rootfs 做通用 OS、自有 `linux-sdk` 替换补丁机、环境变量选择 uboot/oem 打出分 SKU 的 `factory.img`、aarch64 QEMU 当第二块板+屏**，即可在不仿真瑞芯微 SoC 的前提下，把多主板/多屏幕做成可验证的工程框架。OS Settings App 不阻塞本路径。

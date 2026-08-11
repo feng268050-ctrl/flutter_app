@@ -83,7 +83,7 @@ final class WorkModeStatusBar extends StatelessWidget
                 ),
                 child: CallBackHomeButton(
                   key: const ValueKey('work-mode-status-back'),
-                  accent: accent,
+                  accent: accent.statusBarAccent,
                   enabled: backEnabled,
                   expandWidth: false,
                   label: backLabel ??

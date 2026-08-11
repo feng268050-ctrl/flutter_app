@@ -2,7 +2,7 @@
 
 ### Requirement: Demo omits capabilities owned by product Home or Settings
 
-The Demo screen MUST NOT include operator sections for Ethernet, Wi‑Fi, HTTP proxy, Bluetooth, Date & Time, mouse settings, keyboard settings, media volume/play-test, backlight brightness, RGB LED mode controls, host/gun temperature lists, **Debug over USB**, **Debug over LAN**, or USB OTG that product Home, product Settings (`settings-ui`), or the platform Settings app (`settings-app`) own. Those capabilities SHALL be exercised from product Settings, platform Settings, or product Home as applicable. Demo MAY retain device-information rows and Alarm Information **comm status** rows, and MUST continue to omit display-orientation controls. When Demo retains no operator value beyond those rows, the product MAY remove the Demo route entirely.
+The Demo screen MUST NOT include operator sections for Ethernet, Wi‑Fi, HTTP proxy, Bluetooth, Date & Time, mouse settings, keyboard settings, media volume/play-test, backlight brightness, RGB LED mode controls, host/gun temperature lists, **Debug over USB**, **Debug over LAN**, or USB OTG that product Home, product Settings (`settings-ui`), or the OS Settings app (`settings-app`) own. Those capabilities SHALL be exercised from product Settings, OS Settings, or product Home as applicable. Demo MAY retain device-information rows and Alarm Information **comm status** rows, and MUST continue to omit display-orientation controls. When Demo retains no operator value beyond those rows, the product MAY remove the Demo route entirely.
 
 #### Scenario: Migrated controls absent on Demo
 

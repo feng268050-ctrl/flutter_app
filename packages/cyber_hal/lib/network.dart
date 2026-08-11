@@ -1,6 +1,13 @@
 /// Network HAL barrel — ethernet (networkd), wifi (wpa + networkd), proxy, LAN SSH.
 library;
 
+export 'package:cyber_hal/network/cloud_environment.dart';
+export 'package:cyber_hal/network/cloud_headers.dart';
+export 'package:cyber_hal/network/cloud_http_client.dart';
+export 'package:cyber_hal/network/cloud_origin.dart';
+export 'package:cyber_hal/network/device_cloud_auth.dart';
+export 'package:cyber_hal/network/device_ws_connection.dart';
+export 'package:cyber_hal/network/device_ws_envelope.dart';
 export 'package:cyber_hal/network/ethernet.dart';
 export 'package:cyber_hal/network/ethernet_session.dart';
 export 'package:cyber_hal/network/proxy.dart';

@@ -1,3 +1,5 @@
+import 'package:cyber_hal/src/secrets/kek_provider.dart';
+
 /// Queryable Secrets backend identifiers (never key material).
 abstract final class SecretsBackendId {
   /// In-memory host-test fake (hardware unavailable).
@@ -11,6 +13,34 @@ abstract final class SecretsBackendId {
 
   /// OP-TEE-backed seal (`secrets_backend: "optee"`).
   static const optee = 'optee';
+}
+
+/// OS Settings Operating System → Security **Secrets Seal** labels (`software` | `op-tee`).
+///
+/// Read-only mapping from [KekProvider.backendId] / [SecretsBackendId] — does
+/// not seal, unseal, or migrate backends.
+abstract final class SecretsSealStatus {
+  static const software = 'software';
+  static const opTee = 'op-tee';
+
+  /// Map a [KekProvider.backendId] (or preference string) to a UI label.
+  ///
+  /// - [SecretsBackendId.optee] → [opTee]
+  /// - [SecretsBackendId.softwareFallback] / [SecretsBackendId.fake] → [software]
+  static String fromBackendId(String backendId) {
+    final v = backendId.trim().toLowerCase();
+    if (v == SecretsBackendId.optee ||
+        v == SecretsBackendPreference.optee ||
+        v == 'op-tee' ||
+        v == 'optee') {
+      return opTee;
+    }
+    return software;
+  }
+
+  /// Convenience: [fromBackendId] of [provider.backendId] (no I/O).
+  static String fromProvider(KekProvider provider) =>
+      fromBackendId(provider.backendId);
 }
 
 /// Board-profile preference for which Secrets backend to construct.

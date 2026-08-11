@@ -115,7 +115,7 @@ sync_fs_overlay() {
   # Plan A: etc/ (systemd) + usr/ (scripts, merged-usr libs) + var/ (prefs).
   # Do NOT sync a top-level lib/ — Buildroot merged-/usr rejects overlay /lib.
   # OP-TEE TAs live under usr/lib/optee_armtz/ (→ /lib/optee_armtz on target).
-  # system/etc from sync_display_params; opt/hmi from sync_hmi_app_overlay.
+  # system/etc from sync_display_params; opt/{hmi,os_settings} from sync_hmi_app_overlay.
   # Use rsync --delete so removed overlay files (e.g. lws-hmi-debug-boot.service) do not linger in the SDK tree.
   for sub in etc usr var; do
     if [[ -d "$OVERLAY_FS/$sub" ]]; then
@@ -917,20 +917,29 @@ sync_boot_logo() {
   install_file "$BOARD_DIR/logo/logo_kernel.bmp" "$kernel_dir/logo_kernel.bmp"
 }
 
-sync_hmi_app_overlay() {
-  local src="$OVERLAY_FS/opt/hmi"
+# Sync one Flutter app tree under opt/<name> into the Buildroot fs-overlay.
+# Host overlay is the SoT (ensure-rootfs-apps / build-app); BR overlay is a copy.
+sync_opt_app_overlay() {
+  local name="$1"
+  local src="$OVERLAY_FS/opt/$name"
   if [[ ! -d "$src" ]]; then
     return 0
   fi
-  mkdir -p "$BR_OVERLAY_ROOT/opt/hmi"
+  mkdir -p "$BR_OVERLAY_ROOT/opt/$name"
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$src/" "$BR_OVERLAY_ROOT/opt/hmi/"
+    rsync -a --delete "$src/" "$BR_OVERLAY_ROOT/opt/$name/"
   else
-    rm -rf "$BR_OVERLAY_ROOT/opt/hmi"
-    mkdir -p "$BR_OVERLAY_ROOT/opt/hmi"
-    cp -a "$src/." "$BR_OVERLAY_ROOT/opt/hmi/"
+    rm -rf "$BR_OVERLAY_ROOT/opt/$name"
+    mkdir -p "$BR_OVERLAY_ROOT/opt/$name"
+    cp -a "$src/." "$BR_OVERLAY_ROOT/opt/$name/"
   fi
-  echo "overlay: synced $BR_OVERLAY_ROOT/opt/hmi"
+  echo "overlay: synced $BR_OVERLAY_ROOT/opt/$name"
+}
+
+sync_hmi_app_overlay() {
+  sync_opt_app_overlay hmi
+  # Optional second app (auto-included by ensure-rootfs-apps when source exists).
+  sync_opt_app_overlay os_settings
 }
 
 sync_display_params() {

@@ -69,8 +69,11 @@ final class CloudLocalRuntime {
     this.warnLogQuery,
     this.cameraVersionFetch,
   }) {
-    cloudHttp = CloudHttpClient(http: services.http);
-    prober = DeviceApiOriginProber(http: services.http);
+    cloudHttp = CloudHttpClient(
+      proxy: services.bindings.proxy(),
+      appVersion: kHmiVersion,
+    );
+    prober = DeviceApiOriginProber(proxy: services.bindings.proxy());
     usersClient = DeviceUsersClient(cloudHttp: cloudHttp);
     ed25519Client = DeviceCloudEd25519Client(cloudHttp: cloudHttp);
     ed25519 = DeviceCloudEd25519Coordinator(

@@ -277,7 +277,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/hmi (App/UI only) ---"
-	for f in hmi-launch.sh hmi-stop-and-wait.sh \
+	for f in hmi-launch.sh hmi-stop-and-wait.sh restart-flutter-seat.sh \
 		debug-app-apply.sh debug-app-run.sh debug-runtime-install.sh \
 		diagnose-hmi.sh extract-video-frame; do
 		if [[ -x "$libexec_hmi/$f" ]]; then
@@ -300,7 +300,7 @@ run_check() {
 		usb-plug-ssh-recover.sh usb-plug-ssh-diag.sh usb-plug-ssh-vbus-check.sh \
 		usb-mtp-start.sh usb-mtp-stop.sh ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh ab-ota-verify.sh \
 		ab-preflight.sh ab-boot-confirm.sh oem-compose.sh ynh960-display-init.sh weston-hmi-config.sh \
-		change-orientation.sh apply-mouse-settings.sh set-performance-mode.sh bind-prefs.sh \
+		change-orientation.sh apply-wallpaper.sh apply-mouse-settings.sh set-performance-mode.sh bind-prefs.sh \
 		pre-poweroff.sh shutdown.sh pwrkey-poweroff.sh systemctl-poweroff-wrapper.sh \
 		enable-ssh-debug.sh disable-ssh-debug.sh lan-ssh-run.sh ensure-sshd-hostkeys.sh; do
 		if [[ -e "$libexec_hmi/$stale" ]]; then
@@ -381,7 +381,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/display ---"
-	for f in ynh960-display-init.sh weston-hmi-config.sh change-orientation.sh \
+	for f in ynh960-display-init.sh weston-hmi-config.sh change-orientation.sh apply-wallpaper.sh \
 		apply-mouse-settings.sh; do
 		if [[ -x "$libexec_display/$f" ]]; then
 			echo "OK:  display/$f"
@@ -584,6 +584,7 @@ stop-usb-ssh /usr/libexec/usb/usb-plug-ssh-stop.sh
 recover-usb-ssh /usr/libexec/usb/usb-plug-ssh-recover.sh
 reboot-loader /usr/libexec/board/reboot-loader
 change-orientation /usr/libexec/display/change-orientation.sh
+apply-wallpaper /usr/libexec/display/apply-wallpaper.sh
 enable-ssh-debug /usr/libexec/ssh/enable-ssh-debug.sh
 disable-ssh-debug /usr/libexec/ssh/disable-ssh-debug.sh
 usb-otg-mode /usr/libexec/usb/usb-otg-mode.sh
@@ -615,6 +616,10 @@ EOF
 	else
 		echo "FAIL: oem-compose.service missing from target/etc/systemd/system" >&2
 		missing=1
+	fi
+	if [[ ! -f "$target/usr/share/hal/wallpapers/home_back.png" ]]; then
+		echo "FAIL: usr/share/hal/wallpapers/home_back.png missing (system wallpaper preset)" >&2
+		fail=1
 	fi
 	if [[ -e "$target/usr/share/hmi/oem-fallback" ]]; then
 		echo "FAIL: usr/share/hmi/oem-fallback must be removed (no OEM migration fallback)" >&2
@@ -794,38 +799,38 @@ EOF
 	fi
 	unset _hwdb_src _f
 
-	# Optional second Flutter app (factory_test) when source tree exists.
-	if [[ -f "$ROOT/app/factory_test/pubspec.yaml" ]]; then
+	# Optional second Flutter app (os_settings) when source tree exists.
+	if [[ -f "$ROOT/app/os_settings/pubspec.yaml" ]]; then
 		echo ""
-		echo "--- /opt/factory_test (optional Flutter app — no engine) ---"
+		echo "--- /opt/os_settings (optional Flutter app — no engine) ---"
 		for f in \
-			"$target/opt/factory_test/lib/libapp.so" \
-			"$target/opt/factory_test/data/flutter_assets/AssetManifest.bin"; do
+			"$target/opt/os_settings/lib/libapp.so" \
+			"$target/opt/os_settings/data/flutter_assets/AssetManifest.bin"; do
 			if [[ -e "$f" ]]; then
 				echo "OK:  ${f#$target/}"
 			else
-				echo "FAIL: missing ${f#$target/} (app/factory_test present; run: make build-rootfs)" >&2
+				echo "FAIL: missing ${f#$target/} (app/os_settings present; run: make build-rootfs)" >&2
 				missing=1
 			fi
 		done
-		if [[ -f "$target/opt/factory_test/lib/libflutter_engine.so" ]]; then
-			echo "FAIL: opt/factory_test/lib/libflutter_engine.so present (engine belongs in /usr/lib only)" >&2
+		if [[ -f "$target/opt/os_settings/lib/libflutter_engine.so" ]]; then
+			echo "FAIL: opt/os_settings/lib/libflutter_engine.so present (engine belongs in /usr/lib only)" >&2
 			missing=1
 		else
-			echo "OK:  opt/factory_test/lib/libflutter_engine.so absent (system engine)"
+			echo "OK:  opt/os_settings/lib/libflutter_engine.so absent (system engine)"
 		fi
-		if [[ -f "$target/opt/factory_test/data/icudtl.dat" ]]; then
-			echo "FAIL: opt/factory_test/data/icudtl.dat present (use /usr/share/flutter on rootfs)" >&2
+		if [[ -f "$target/opt/os_settings/data/icudtl.dat" ]]; then
+			echo "FAIL: opt/os_settings/data/icudtl.dat present (use /usr/share/flutter on rootfs)" >&2
 			missing=1
 		else
-			echo "OK:  opt/factory_test/data/icudtl.dat absent (system icu)"
+			echo "OK:  opt/os_settings/data/icudtl.dat absent (system icu)"
 		fi
 		for jit in kernel_blob.bin isolate_snapshot_data vm_snapshot_data; do
-			if [[ -f "$target/opt/factory_test/data/flutter_assets/$jit" ]]; then
-				echo "FAIL: opt/factory_test/data/flutter_assets/$jit present (release AOT only)" >&2
+			if [[ -f "$target/opt/os_settings/data/flutter_assets/$jit" ]]; then
+				echo "FAIL: opt/os_settings/data/flutter_assets/$jit present (release AOT only)" >&2
 				missing=1
 			else
-				echo "OK:  opt/factory_test/data/flutter_assets/$jit absent (no JIT)"
+				echo "OK:  opt/os_settings/data/flutter_assets/$jit absent (no JIT)"
 			fi
 		done
 	fi

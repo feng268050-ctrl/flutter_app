@@ -82,22 +82,28 @@ The LWS HMI App SHALL load the effective load profile at startup and keep an app
 - **THEN** the tile MUST NOT scale down on press
 - **AND** the Home-QA gray press overlay SHALL still appear
 
-#### Scenario: Mode switch updates soft policy without reboot
+#### Scenario: Mode switch applies clocks immediately; HMI policy on next seat
 
-- **WHEN** the operator switches from `performance` to `balanced` in Settings while the HMI is running
-- **THEN** the continuous-paint / animation policy updates for subsequent navigation/decoration without requiring an HMI process restart
+- **WHEN** the operator switches from `performance` to `balanced` in OS Settings Power Mode
+- **THEN** the board helper applies the balanced clock/cpuidle policy without requiring a reboot
+- **AND** when product HMI becomes the active seat again it reads `/var/lib/hal/power.conf` and applies continuous-paint / animation policy
 
-### Requirement: Common Settings Power Mode sub-page exposes mode control
+### Requirement: OS Settings Power Mode page exposes mode control
 
-Common Settings SHALL expose **Power Mode** as its own untitled card (after Display & Sound, before RGB LED + Camera) with a Unit-style nav row that opens a Power Mode sub-page. The sub-page SHALL select 性能 / 均衡 (localized: Performance / Balanced; tokens `performance` / `balanced`). Operator-facing copy MUST NOT present the mode primarily as “省电” / energy saving. Changing the selection SHALL call the HAL load-profile API (persist + apply) and update the in-App continuous-paint policy. The mode MUST NOT be nested under Display.
+**OS Settings** SHALL expose **Power Mode** under Display & Sound with a detail page that selects 性能 / 均衡 (localized: Performance / Balanced; tokens `performance` / `balanced`). Operator-facing copy MUST NOT present the mode primarily as “省电” / energy saving. Changing the selection SHALL call the HAL load-profile API (persist + apply). Product HMI Common Settings MUST NOT expose Power Mode; HMI still reads the persisted mode for continuous-paint policy. The mode MUST NOT be nested under the Display brightness page.
 
 #### Scenario: Operator selects均衡 on Power Mode page
 
-- **WHEN** the operator opens Common Settings → Power Mode and selects the balanced / 均衡 option
+- **WHEN** the operator opens OS Settings → Power Mode and selects the balanced / 均衡 option
 - **THEN** HAL setMode(`balanced`) is invoked
-- **AND** the Power Mode nav trailing summary reflects balanced after a successful apply
+- **AND** `/var/lib/hal/power.conf` contains `mode=balanced`
 
 #### Scenario: Mode not on Display page
 
-- **WHEN** the operator opens Common Settings → Display
+- **WHEN** the operator opens OS Settings → Display or HMI Common Settings → Display
 - **THEN** the Display page MUST NOT offer the performance / balanced selector
+
+#### Scenario: HMI Settings has no Power Mode entry
+
+- **WHEN** the operator opens product HMI Common Settings
+- **THEN** Power Mode is not listed

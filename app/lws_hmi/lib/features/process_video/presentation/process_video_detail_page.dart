@@ -259,24 +259,24 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
         unawaited(_handleBack());
       },
       child: SettingsBlurredPageShell(
-        // Same stack as Monitor / AI Vision choose: home wallpaper → σ30 plate.
+        // Shared app-level σ bake; dim specular bands above the plate.
         blurSigma: SettingsPerspectiveChrome.blurSigma,
-        backdropBuilder: () => const Stack(
+        child: Stack(
           fit: StackFit.expand,
           children: [
-            SettingsHomeBackdrop(),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x16000000), Color(0x26000000)],
+            const IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x16000000), Color(0x26000000)],
+                  ),
                 ),
+                child: SizedBox.expand(),
               ),
             ),
-          ],
-        ),
-        child: Scaffold(
+            Scaffold(
           backgroundColor: Colors.transparent,
           body: _loading
               ? const Center(child: CircularProgressIndicator())
@@ -334,6 +334,8 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
                         );
                       },
                     ),
+            ),
+          ],
         ),
       ),
     );
@@ -375,7 +377,7 @@ final class _ParameterColumn extends StatelessWidget {
             height: WorkModeStatusBarDimens.height,
             // Settings / Monitor nested chrome: full title, no orange edges.
             child: CallBackHomeButton(
-              accent: WorkModeAccent.weld,
+              accent: WorkModeAccent.weld.statusBarAccent,
               label: backLabel,
               onPressed: onBack,
               expandWidth: false,

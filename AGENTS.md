@@ -65,9 +65,9 @@ More detail: [`docs/build-optimization.md`](docs/build-optimization.md), [`app/R
 
 **Pipeline rules (do not get wrong):**
 
-- `make build-app` updates the selected app’s overlay install tree and runs `apply-overlay`; it does **not** rebuild rootfs. Default `APP=lws_hmi`. **Convention:** Flutter dirs ending in `_hmi` install to `/opt/hmi` (for `hmi.service`); one rootfs has at most one HMI app plus optional `factory_test` at `/opt/factory_test`.
+- `make build-app` updates the selected app’s overlay install tree and runs `apply-overlay`; it does **not** rebuild rootfs. Default `APP=lws_hmi`. **Convention:** Flutter dirs ending in `_hmi` install to `/opt/hmi` (for `hmi.service`); one rootfs has at most one HMI app plus optional `os_settings` at `/opt/os_settings`.
 - App-only daily iteration: `make build-app` then **`make push-app`** (unsigned Debug hot-swap into `/opt/hmi`) or **`make upgrade-app`** (signed HTTP + device download). Do **not** require `build-rootfs` / `upgrade` unless baking the app into a release image or the board lacks a pushable HMI.
-- `make build-rootfs` ensures the selected `APP` is in overlay; if `app/factory_test` exists it also ensures `/opt/factory_test` (no `APP=` needed for that auto-include). Selecting `APP=cnc_hmi` (etc.) replaces `/opt/hmi` with that product.
+- `make build-rootfs` ensures the selected `APP` is in overlay; if `app/os_settings` exists it also ensures `/opt/os_settings` (no `APP=` needed for that auto-include). Selecting `APP=cnc_hmi` (etc.) replaces `/opt/hmi` with that product.
 - `make build-kernel` builds two hash-valid FITs containing the same Linux kernel: `boot.img` selects `rootfs_a`; `boot_b.img` selects `rootfs_b`. FITs are **multi-configuration** (W5): conf name = `board_id` from `board/rk356x-fit-boards.txt` (default `ynh960`). Publishes bare `Image` alongside for P3.2 emulator. Artifacts go to `output/firmware/` (macOS Docker volume auto-export). Inspect: `bash scripts/verify-boot-fit.sh output/firmware`.
 - `make build-rootfs` bakes fs-overlay (including `/opt/hmi`) into rootfs and publishes `output/firmware/<APP>/rootfs.img` (boot FITs remain shared under `output/firmware/`).
 - **Buildroot package incremental reuse (easy to miss):** Rockchip `./build.sh rootfs` / `make build-rootfs` **reuses already-built packages** in `buildroot/output/...` when their stamps look clean. Changing a Kconfig fragment under `overlay/buildroot/chips/*.config` (e.g. enabling `BR2_PACKAGE_WPA_SUPPLICANT_DBUS`) + `apply-overlay` updates the defconfig / may refresh output `.config`, but **does not rebuild** the package binary. Overlay-only script changes are fine with `apply-overlay` → `build-rootfs`; **option / recipe changes that alter how a package is compiled** need an explicit package rebuild first: `bash scripts/br-make-packages.sh <label> <pkg>…` (re-applies defconfig, **`*-dirclean` each pkg**, then `make <pkg>`), then `make build-rootfs`. Example: `bash scripts/br-make-packages.sh wpa wpa_supplicant`. Verify D-Bus wpa on **device** (`wpa_supplicant -h | grep -- -u`) or `strings` — do not run the aarch64 binary on the macOS/x86 host. This is **userspace Buildroot**, not `make build-kernel`. Nuclear option only when intentionally wiping: `make clean-buildroot-output` → `make lunch` → `make build-rootfs`.
@@ -82,9 +82,9 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 
 | What changed | Commands |
 |--------------|----------|
-| `app/lws_hmi/**`, `scripts/build-app.sh`, `scripts/hmi-bundle-common.sh`, `scripts/upgrade-app.sh`, `scripts/pack-app.sh`, `scripts/push-app.sh`, `scripts/app-select.sh` | `make build-app`, then `make push-app` (Debug unsigned) or `make upgrade-app` (signed). Other apps: `APP=<id> make build-app` / `push-app` / `upgrade-app` |
+| `app/lws_hmi/**`, `scripts/build-app.sh`, `scripts/hmi-bundle-common.sh`, `scripts/upgrade-app.sh`, `scripts/pack-app.sh`, `scripts/push-app.sh`, `scripts/app-select.sh` | `make build-app`, then `make push-app` (Debug unsigned) or `make upgrade-app` (signed). Other apps: `APP=<id> make build-app` / `push-app` / `upgrade-app` (`APP=os_settings` → `os-settings.service`) |
 | `overlay/.../usr/libexec/hmi/push-app-apply-and-restart.sh` | `make apply-overlay`, `make build-rootfs`, `make upgrade` (push-app also refreshes the helper from overlay each push) |
-| `app/factory_test/**` | interactive: `APP=factory_test make build-app` (+ `upgrade-app` if applicable); rootfs auto-includes when source exists: `make build-rootfs` |
+| `app/os_settings/**` | `APP=os_settings make build-app`, then `APP=os_settings make push-app` (restarts `os-settings.service`); rootfs auto-includes when source exists: `make build-rootfs` |
 | `app/lws_hmi/assets/process-library/**`, `app/lws_hmi/assets/firmware/control-board/**`, `app/lws_hmi/assets/firmware/camera/**`, `scripts/prepare-hmi-ship-assets.sh`, `scripts/convert-process-library.py` | `make build-app` (runs prepare); or host-only `make prepare-app-assets` before local flutter test/IDE |
 | `app/lws_hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make upgrade-app` to ship) |
 | `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
@@ -211,7 +211,9 @@ Keep long command examples in **README.md**; keep agent-only rules (rebuild bloc
 
 | Path | Role |
 |------|------|
-| `app/lws_hmi/` | Flutter HMI → `overlay/.../opt/hmi`（含产品 `bin/`，如 mediamtx） |
+| `app/lws_hmi/` | Flutter HMI → `overlay/.../opt/hmi`（含产品 `bin/`，如 mediamtx）；HMI Settings = 简化+定制子集 |
+| `app/os_settings/` | Cyber OS 系统设置 App → `/opt/os_settings`（平台核心；按需 seat） |
+| `docs/settings-apps-roles.md` | OS Settings vs HMI Settings 角色与功能归属（canonical） |
 | `packages/cyber_hal/` | Dart HAL path 包 |
 | `packages/cyber_pm/` | 子进程监护（MediaMTX、AI daemon） |
 | `native/lws_ai/` | AI C++（`lws_ai_daemon`）；产物经 `make build-ai` → `/opt/hmi` |

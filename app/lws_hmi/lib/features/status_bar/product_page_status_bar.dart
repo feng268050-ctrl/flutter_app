@@ -89,7 +89,7 @@ class ProductPageStatusBar extends StatelessWidget
               onBack: useCallBackHome ? null : onBack,
               leading: useCallBackHome
                   ? CallBackHomeButton(
-                      accent: backAccent,
+                      accent: backAccent.statusBarAccent,
                       label: backLabel!,
                       enabled: backEnabled,
                       // Settings / Monitor: no orange top/bottom edge glow.

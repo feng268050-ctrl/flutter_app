@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/output.dart';
+import 'package:cyber_settings_ui/cyber_settings_ui.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
@@ -12,7 +13,9 @@ import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.d
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_pill_dropdown.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Display settings — brightness, auto screen-off, and text size.
+/// Display settings — brightness, auto screen-off, wallpaper, and text size.
+/// UI scale (`display.conf` `ui_scale`) is OS Settings only — see
+/// `docs/settings-apps-roles.md`.
 class DisplaySettingsPage extends StatefulWidget {
   const DisplaySettingsPage({super.key, required this.services});
 
@@ -28,6 +31,10 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   bool _loadingScreenOff = true;
   bool _busyBrightness = false;
   int? _queuedBrightness;
+  List<WallpaperPreset> _wallpapers = const [];
+  String? _appliedWallpaperId;
+  bool _loadingWallpaper = true;
+  bool _wallpaperBusy = false;
 
   List<SettingsPillOption<AutoSleepPolicy>> _screenOffOptions(
     AppLocalizations l10n,
@@ -51,12 +58,20 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         ),
       ];
 
+  String _wallpaperLabel(AppLocalizations l10n, WallpaperPreset preset) {
+    if (preset.id == 'home_back') {
+      return l10n.wallpaperOptionDefault;
+    }
+    return preset.label;
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadBrightness());
       unawaited(_loadScreenOff());
+      unawaited(_loadWallpaper());
     });
   }
 
@@ -80,6 +95,26 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
     }
   }
 
+  Future<void> _loadWallpaper() async {
+    try {
+      final wallpaper = widget.services.wallpaper;
+      wallpaper.warmRead();
+      final presets = await wallpaper.listPresets();
+      var id = wallpaper.activePresetId.trim();
+      if (id.isEmpty && presets.isNotEmpty) {
+        id = presets.first.id;
+      }
+      if (!mounted) return;
+      setState(() {
+        _wallpapers = presets;
+        _appliedWallpaperId = id.isEmpty ? null : id;
+        _loadingWallpaper = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingWallpaper = false);
+    }
+  }
+
   Future<void> _drainBrightness() async {
     if (_busyBrightness) return;
     final next = _queuedBrightness;
@@ -100,6 +135,29 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
     await widget.services.autoSleep.setPolicy(policy);
   }
 
+  Future<void> _applyWallpaper(String presetId) async {
+    setState(() => _wallpaperBusy = true);
+    try {
+      await widget.services.wallpaper.setPreset(presetId);
+      if (mounted) {
+        setState(() => _appliedWallpaperId = presetId);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _wallpaperBusy = false);
+      }
+    }
+  }
+
+  List<SettingsWallpaperOption> _wallpaperOptions(AppLocalizations l10n) => [
+        for (final p in _wallpapers)
+          SettingsWallpaperOption(
+            id: p.id,
+            label: _wallpaperLabel(l10n, p),
+            imagePath: p.path,
+          ),
+      ];
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -110,6 +168,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
           orElse: () => options.last,
         )
         .label;
+    final appliedId = _appliedWallpaperId ??
+        (_wallpapers.isEmpty ? '' : _wallpapers.first.id);
 
     return SettingsScaffold(
       title: l10n.screenSettings,
@@ -148,6 +208,22 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
             borderGradientCenter: CyberBorderGradientCenter.topRightBottomLeft,
             children: const [_TextSizeSliderCard()],
           ),
+          if (_wallpapers.isNotEmpty && appliedId.isNotEmpty) ...[
+            SettingsSectionHeader(l10n.wallpaperSettingText),
+            SettingsGroup(
+              bottomInset: 0,
+              children: [
+                SettingsWallpaperPicker(
+                  options: _wallpaperOptions(l10n),
+                  appliedId: appliedId,
+                  applyLabel: l10n.wifiApply,
+                  busy: _loadingWallpaper || _wallpaperBusy,
+                  onApply: _applyWallpaper,
+                ),
+              ],
+            ),
+            SettingsHelpFooter(l10n.wallpaperApplyRestarts),
+          ],
         ],
       ),
     );

@@ -93,14 +93,46 @@ A successful or failed **full-system A/B upgrade** (`make upgrade` updating boot
 - **WHEN** a full-system upgrade fails verification before letter commit
 - **THEN** `/userdata/{wpa_supplicant,network,bluetooth,hal,hmi}` contents remain intact on the still-active letter’s runtime
 
-### Requirement: Sound-effect asset preference under hmi prefs
+### Requirement: System wallpaper preference under HAL prefs
 
-The image / HAL SHALL persist the UI click **asset key** via `ButtonFeedback` at `/var/lib/hal/sound.conf` (key `button_feedback`). Cold start of the HMI App SHALL warm-read this preference before registering the Cyber click backend so the first taps play the correct sample. Boot `settings-restore.service` is NOT required to apply sound-effect / ButtonFeedback (unlike backlight/volume shell helpers). Sound-effect MUST NOT be relocated into `misc-settings.json` solely because Misc prefs were unified (Sound Effect is Display & Sound, not Misc).
+The image / HAL SHALL persist the active system wallpaper as an **absolute filesystem path** via `Wallpaper` at `/var/lib/hal/display.conf` (keys `wallpaper`, `wallpaper_id`). Packaged presets SHALL live under `/usr/share/hal/wallpapers/` (v1 ships `home_back.png` copied from the product HMI Home backdrop). Selecting a preset MUST copy it to `/var/lib/hal/wallpaper.<ext>` and update conf. Weston `desktop-shell` `background-image` and Flutter seats (product HMI Home / Monitor / Settings / Engineer Mode, OS Settings) SHALL paint the same resolved image. Boot `settings-restore.service` is NOT required to apply wallpaper (seat launch rewrites weston.ini).
+
+#### Scenario: Wallpaper survives relaunch
+
+- **WHEN** the operator selects the Default wallpaper preset and the UI seat restarts
+- **THEN** `/var/lib/hal/display.conf` still encodes the installed wallpaper path and `wallpaper_id`
+- **AND** Weston and Flutter paint that image
+
+### Requirement: Sound-effect sample preference under HAL prefs
+
+The image / HAL SHALL persist the UI click sample as an **absolute filesystem path** via `ButtonFeedback` at `/var/lib/hal/sound.conf` (key `button_feedback`). Selecting an effect MUST copy the product App’s sample bytes next to that conf (same directory) and store the resulting path. Other Apps (e.g. OS Settings) SHALL play from that shared path and MUST NOT need to ship the product click catalog. Cold start of the product HMI App SHALL warm-read this preference before registering the Cyber click backend so the first taps play the correct sample; legacy Flutter asset-key values in conf SHALL be re-installed from the product catalog on warm-read. Boot `settings-restore.service` is NOT required to apply sound-effect / ButtonFeedback (unlike backlight/volume shell helpers). Sound-effect MUST NOT be relocated into `misc-settings.json` solely because Misc prefs were unified (Sound Effect is Display & Sound, not Misc).
 
 #### Scenario: Pref file survives relaunch
 
 - **WHEN** the operator selects Effect 2 and the HMI process restarts
-- **THEN** `/var/lib/hal/sound.conf` (key `button_feedback`) still encodes Effect 2’s asset key
+- **THEN** `/var/lib/hal/sound.conf` (key `button_feedback`) still encodes Effect 2’s installed absolute path under `/var/lib/hal/`
+- **AND** the corresponding `.mp3` file exists next to `sound.conf`
+
+#### Scenario: OS Settings plays without product assets
+
+- **WHEN** product HMI has installed click samples next to `sound.conf`
+- **AND** the operator opens OS Settings Sound and selects an installed sample
+- **THEN** taps play that file via HAL without OS Settings bundling the MP3 catalog
+
+### Requirement: UI scale preference under HAL display prefs
+
+The image / HAL SHALL persist operator UI scale at `/var/lib/hal/display.conf` (key `ui_scale`, default `1.0`, supports non-integer values e.g. `0.85`–`1.25`). **`ui_scale=1.0` SHALL mean physical 1:1** — Flutter MUST NOT apply an additional hard-coded design-density rematch when the value is `1.0`. Values other than `1.0` SHALL be applied as a pure multiplier via `matchEmbedderDensity`. **OS Settings** SHALL expose the UI scale control (factory / after-sales / field service). Product HMI SHALL read the same key at boot and after seat switch — **without** a UI scale slider in HMI Settings Display. This is independent of product text-size (`common-settings.json` `textSize`). Host / QEMU simulator images MAY persist a non-`1.0` value (e.g. ~`1.13`) when operators want visual parity with a physical panel; that MUST be a preference write, not App hard-coding.
+
+#### Scenario: UI scale 1.0 is identity
+
+- **WHEN** `/var/lib/hal/display.conf` has `ui_scale=1.0` (or the key is absent and defaults to `1.0`)
+- **THEN** both OS Settings and product HMI render without FittedBox density rematch from `matchEmbedderDensity`
+
+#### Scenario: UI scale shared across seats
+
+- **WHEN** factory or field service sets UI scale to `1.10` in OS Settings Display
+- **AND** switches to product HMI
+- **THEN** HMI reads `ui_scale=1.10` from `/var/lib/hal/display.conf` and applies the same density multiplier
 
 ### Requirement: AutoSleep preference under hmi prefs
 

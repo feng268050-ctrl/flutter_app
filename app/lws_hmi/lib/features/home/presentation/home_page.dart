@@ -29,6 +29,7 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
+import 'package:lws_hmi/platform/display/system_wallpaper_backdrop.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 
@@ -613,22 +614,8 @@ class _HomeBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-    final size = MediaQuery.sizeOf(context);
-    final (cacheW, cacheH) = HomeAssets.backdropCachePx(
-      logicalSize: size,
-      devicePixelRatio: dpr,
-    );
-    return Image.asset(
-      HomeAssets.backdrop,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-      filterQuality: FilterQuality.medium,
-      cacheWidth: cacheW,
-      cacheHeight: cacheH,
-      errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1A1A1A)),
-    );
+    final path = AppScope.maybeOf(context)?.wallpaper.activePath;
+    return SystemWallpaperBackdrop(path: path);
   }
 }
 

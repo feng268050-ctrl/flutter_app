@@ -1,6 +1,6 @@
 #!/bin/sh
 # Persist mouse.conf (stdin) and apply to Weston when present.
-# Weston needs ini rewrite + HMI restart
+# Weston needs ini rewrite + active Flutter seat restart
 # only when the generated weston.ini content actually changes.
 set -eu
 
@@ -53,8 +53,8 @@ if [ "$ini_changed" -eq 0 ]; then
 fi
 
 # Avoid start-limit-hit loops (e.g. boot restore re-touching conf).
-if [ -f /run/lws-mouse-hmi-restart ]; then
-	age=$(($(date +%s) - $(date -r /run/lws-mouse-hmi-restart +%s 2>/dev/null || echo 0)))
+if [ -f /run/lws-mouse-seat-restart ]; then
+	age=$(($(date +%s) - $(date -r /run/lws-mouse-seat-restart +%s 2>/dev/null || echo 0)))
 	if [ "$age" -ge 0 ] && [ "$age" -lt 15 ]; then
 		echo "apply-mouse-settings: restart suppressed (debounced ${age}s)" >&2
 		exit 0
@@ -62,10 +62,10 @@ if [ -f /run/lws-mouse-hmi-restart ]; then
 fi
 
 if pidof weston >/dev/null 2>&1; then
-	echo "apply-mouse-settings: weston.ini changed → restarting hmi" >&2
-	date +%s >/run/lws-mouse-hmi-restart 2>/dev/null || true
-	if command -v systemctl >/dev/null 2>&1; then
-		nohup systemctl restart hmi >/dev/null 2>&1 &
+	echo "apply-mouse-settings: weston.ini changed → restarting active Flutter seat" >&2
+	date +%s >/run/lws-mouse-seat-restart 2>/dev/null || true
+	if [ -x /usr/libexec/hmi/restart-flutter-seat.sh ]; then
+		/usr/libexec/hmi/restart-flutter-seat.sh
 	fi
 fi
 

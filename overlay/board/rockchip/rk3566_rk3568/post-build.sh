@@ -53,6 +53,9 @@ mkdir -p "$TARGET_DIR/usr/bin"
 ln -sf /usr/libexec/board/boot-verify.sh "$TARGET_DIR/usr/bin/verify-boot"
 ln -sf /usr/libexec/board/env-verify.sh "$TARGET_DIR/usr/bin/verify-env"
 ln -sf /usr/libexec/hmi/diagnose-hmi.sh "$TARGET_DIR/usr/bin/diagnose-hmi"
+ln -sf /usr/libexec/hmi/os-settings-cli.sh "$TARGET_DIR/usr/bin/os-settings"
+ln -sf /usr/libexec/hmi/switch-to-os-settings.sh "$TARGET_DIR/usr/bin/switch-to-os-settings"
+ln -sf /usr/libexec/hmi/switch-to-hmi.sh "$TARGET_DIR/usr/bin/switch-to-hmi"
 ln -sf /usr/libexec/usb/usb-plug-ssh-diag.sh "$TARGET_DIR/usr/bin/diagnose-usb-ssh"
 ln -sf /usr/libexec/board/read-device-serial.sh "$TARGET_DIR/usr/bin/read-serial"
 ln -sf /usr/libexec/board/read-product-identity.sh "$TARGET_DIR/usr/bin/read-identity"
@@ -66,6 +69,7 @@ ln -sf /usr/libexec/usb/usb-plug-ssh-stop.sh "$TARGET_DIR/usr/bin/stop-usb-ssh"
 ln -sf /usr/libexec/usb/usb-plug-ssh-recover.sh "$TARGET_DIR/usr/bin/recover-usb-ssh"
 ln -sf /usr/libexec/board/reboot-loader "$TARGET_DIR/usr/bin/reboot-loader"
 ln -sf /usr/libexec/display/change-orientation.sh "$TARGET_DIR/usr/bin/change-orientation"
+ln -sf /usr/libexec/display/apply-wallpaper.sh "$TARGET_DIR/usr/bin/apply-wallpaper"
 ln -sf /usr/libexec/ssh/enable-ssh-debug.sh "$TARGET_DIR/usr/bin/enable-ssh-debug"
 ln -sf /usr/libexec/ssh/disable-ssh-debug.sh "$TARGET_DIR/usr/bin/disable-ssh-debug"
 ln -sf /usr/libexec/usb/usb-otg-mode.sh "$TARGET_DIR/usr/bin/usb-otg-mode"
@@ -148,21 +152,21 @@ rm -f "$TARGET_DIR/etc/udev/hwdb.bin"
 unset _hwdb_d _hwdb_bin _hwdb_src _hwdb_tool _need_hwdb_rebuild _d
 echo "post-build: purged udev hwdb.d sources (kept usr/lib/udev/hwdb.bin)"
 
-# Optional second Flutter app (factory_test): same no-engine / no-JIT rules.
-if [[ -d "$TARGET_DIR/opt/factory_test" ]]; then
+# Optional second Flutter app (os_settings): same no-engine / no-JIT rules.
+if [[ -d "$TARGET_DIR/opt/os_settings" ]]; then
 	rm -f \
-		"$TARGET_DIR/opt/factory_test/lib/libflutter_engine.so" \
-		"$TARGET_DIR/opt/factory_test/data/icudtl.dat"
+		"$TARGET_DIR/opt/os_settings/lib/libflutter_engine.so" \
+		"$TARGET_DIR/opt/os_settings/data/icudtl.dat"
 	rm -f \
-		"$TARGET_DIR/opt/factory_test/data/flutter_assets/kernel_blob.bin" \
-		"$TARGET_DIR/opt/factory_test/data/flutter_assets/isolate_snapshot_data" \
-		"$TARGET_DIR/opt/factory_test/data/flutter_assets/vm_snapshot_data"
-	rm -f "$TARGET_DIR"/opt/factory_test/lib/librknnrt.so*
-	echo "post-build: purged Flutter orphans under opt/factory_test (if leftover)"
+		"$TARGET_DIR/opt/os_settings/data/flutter_assets/kernel_blob.bin" \
+		"$TARGET_DIR/opt/os_settings/data/flutter_assets/isolate_snapshot_data" \
+		"$TARGET_DIR/opt/os_settings/data/flutter_assets/vm_snapshot_data"
+	rm -f "$TARGET_DIR"/opt/os_settings/lib/librknnrt.so*
+	echo "post-build: purged Flutter orphans under opt/os_settings (if leftover)"
 fi
 
 # Retired Kind C helpers — HAL owns persist/restore for most prefs.
-# apply-mouse-settings is kept: Weston needs ini rewrite + HMI restart.
+# apply-mouse-settings is kept: Weston needs ini rewrite + active seat restart.
 rm -f \
 	"$TARGET_DIR/usr/bin/change-backlight" \
 	"$TARGET_DIR/usr/bin/change-volume" \

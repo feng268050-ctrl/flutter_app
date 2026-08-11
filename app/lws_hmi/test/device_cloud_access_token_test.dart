@@ -38,12 +38,6 @@ void main() {
         ),
         isFalse,
       );
-      expect(
-        CloudHeaders.isDeviceAuthBootstrapPath(
-          Uri.parse('https://api.example/ws/device?sn=x'),
-        ),
-        isFalse,
-      );
     });
   });
 

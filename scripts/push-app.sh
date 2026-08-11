@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deploy Flutter app artifacts to target over USB-SSH or registered remote SSH (make push-app).
-# Convention: *_hmi → /opt/hmi + hmi.service restart; other APP → /opt/<APP> (no hmi restart).
+# Convention: *_hmi → /opt/hmi + hmi.service; os_settings → /opt/os_settings + os-settings.service.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,8 +33,9 @@ usage() {
 Usage: $0
 
 Deploy libapp.so + flutter_assets for APP (default: lws_hmi).
-  APP=*_hmi    → /opt/hmi (+ companions), then restart hmi.service
-  APP=<other>  → /opt/<APP> only (no hmi.service restart)
+  APP=*_hmi       → /opt/hmi (+ companions), restart hmi.service
+  APP=os_settings → /opt/os_settings, restart os-settings.service
+  APP=<other>     → /opt/<APP> only (no unit restart unless mapped)
 
 Env:
   APP                            Flutter project under app/ (default: lws_hmi).
@@ -156,16 +157,37 @@ STAGE="$(mktemp -d "${TMPDIR:-/tmp}/hmi-push-app.XXXXXX")"
 cleanup() { rm -rf "$STAGE"; }
 trap cleanup EXIT
 
-# --- Non-HMI apps: tar overlay tree → DEVICE_APP (no hmi.service restart) ---
+# --- Non-HMI apps: tar overlay tree → DEVICE_APP; restart mapped unit if active ---
 if [[ "$APP_IS_HMI" != "1" ]]; then
-	echo "push-app: non-HMI APP=$APP → $DEVICE_APP (no hmi.service restart)"
+	unit="${APP_PUSH_UNIT:-}"
+	if [[ -n "$unit" ]]; then
+		echo "push-app: APP=$APP → $DEVICE_APP (restart $unit)"
+	else
+		echo "push-app: APP=$APP → $DEVICE_APP (no systemd restart mapped)"
+	fi
 	APP_TAR="$STAGE/app-tree.tar"
 	export COPYFILE_DISABLE=1
 	tar --exclude='._*' --exclude='.DS_Store' -C "$OVERLAY_APP_TREE" -cf "$APP_TAR" .
+	if [[ -n "$unit" ]]; then
+		remote "systemctl stop '$unit' 2>/dev/null || true"
+	fi
 	remote "rm -rf '$DEVICE_APP' && mkdir -p '$DEVICE_APP'"
 	upload_with_progress "$APP_TAR" "/tmp/push-app-$APP_OPT_NAME.tar"
 	remote "tar -xf '/tmp/push-app-$APP_OPT_NAME.tar' -C '$DEVICE_APP' && rm -f '/tmp/push-app-$APP_OPT_NAME.tar' && chmod 0755 '$DEVICE_APP/bin'/* 2>/dev/null || true"
-	echo "push-app: done (APP=$APP → $DEVICE_APP; hmi.service not restarted)."
+	if [[ -n "$unit" ]]; then
+		echo "Restarting $unit..."
+		remote "systemctl reset-failed '$unit' 2>/dev/null || true; systemctl restart '$unit'"
+		deadline=$((SECONDS + 30))
+		while ((SECONDS < deadline)); do
+			if remote "systemctl is-active --quiet '$unit'" 2>/dev/null; then
+				echo "push-app: done (APP=$APP → $DEVICE_APP; $unit restarted)."
+				exit 0
+			fi
+			sleep 0.5
+		done
+		die "$unit did not become active within 30s (check: systemctl status $unit)"
+	fi
+	echo "push-app: done (APP=$APP → $DEVICE_APP)."
 	exit 0
 fi
 

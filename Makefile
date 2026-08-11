@@ -127,7 +127,7 @@ help:
 	@echo "  make l10n                  # sync child ARBs + flutter gen-l10n (app/lws_hmi)"
 	@echo "  make l10n-sync             # regenerate en_US/zh_CN/zh_TW child ARBs only"
 	@echo "  make l10n-gen              # flutter gen-l10n only"
-	@echo "  APP=…                     # app/ dir; *_hmi→/opt/hmi; rootfs/factory under output/firmware/<APP>/ (default lws_hmi)"
+	@echo "  APP=…                     # app/ dir; *_hmi→/opt/hmi; os_settings→/opt/os_settings; rootfs/factory under output/firmware/<APP>/ (default lws_hmi)"
 	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"
 	@echo "  make check-typography      # fail bare fontSize:N / business AppTypography.*Size"
 	@echo "  make sdk-shell             # interactive shell in linux-sdk (native Linux or macOS Docker)"
@@ -153,7 +153,7 @@ help:
 	@echo "  make prepare-debug-host    # USB ECM or registered SSH reachability for debug-app/IDE"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
-	@echo "  make push-app              # debug: SSH stream overlay APP → /opt/hmi + restart (unsigned; not upgrade-app)"
+	@echo "  make push-app              # debug: SSH push APP → /opt/* + restart its unit (*_hmi→hmi; os_settings→os-settings)"
 	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); SERIAL_BAUD=; LOG= (hex)"
 	@echo "                             # TTL=miniterm @1500000 quit Ctrl+]; RS485/RS232=hex+TX bar @115200 quit Esc/:q"
 	@echo "  make serial-ports          # list host /dev/cu.* serial ports"
@@ -260,7 +260,7 @@ help:
 	@echo "  - make publish: same tar.gz+.sig as upgrade; GET presigned-url on CLOUD_API_BASE (api-prod) then PUT R2; manifest has no sha512."
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ only (no host linux-sdk/output/ mirror)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
-	@echo "  - APP= selects HMI product: overlay /opt/hmi + host rootfs/factory under output/firmware/<APP>/ (+ R2 publish prefix)."
+	@echo "  - APP= selects product: *_hmi→/opt/hmi; os_settings→/opt/os_settings; rootfs/factory under output/firmware/<APP>/ (+ R2 publish prefix)."
 	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
 	@echo "  - Emulator: README Make commands → P3.2 emulator (setup → deps → kernel/rootfs → setup-emulator-qemu → fetch-emulator-swgl → build-emulator → emulator)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
@@ -332,7 +332,7 @@ build-kernel:
 
 # Rootfs: Weston + eLinux + Mali wayland-gbm.
 # prepare-rootfs flips Mali/embedder only when the stack stamp differs.
-# Ensures APP (default lws_hmi) + auto factory_test when app/factory_test exists.
+# Ensures APP (default lws_hmi) + auto os_settings when app/os_settings exists.
 build-rootfs: prepare-rootfs
 	@APP='$(APP)' bash scripts/ensure-rootfs-apps.sh
 	@bash scripts/apply-overlay.sh

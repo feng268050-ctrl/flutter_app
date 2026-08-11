@@ -8,6 +8,12 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 |--------|--------|-------------------|
 | `package:cyber_hal/network.dart` | ethernet, wifi, proxy, **ssh_debug** | networkd + wpa (`docs/network-stack.md`); LAN SSH helpers |
 | `package:cyber_hal/network/proxy.dart` | system proxy | `/var/lib/network/proxy.conf` + in-HAL env apply |
+| `package:cyber_hal/network/cloud_environment.dart` | cloud API env tier | `/var/lib/network/cloud.conf` (`environment_tier`) |
+| `package:cyber_hal/network/cloud_origin.dart` | multi-origin catalog + concurrent probe / pin | defaults LaserCyber Workers+hyurl; boot pin `/run/network/cloud-origin.pin`; honors system proxy |
+| `package:cyber_hal/network/cloud_headers.dart` | Worker HTTP/WS headers | `App-Version`, `Device-Type: Linux`, Bearer |
+| `package:cyber_hal/network/cloud_http_client.dart` | Bearer HTTP + 401 remint | uses HAL `Proxy`; App injects `appVersion` + token resolvers |
+| `package:cyber_hal/network/device_cloud_auth.dart` | activate + Ed25519 access_token | on top of `CloudEd25519Identity` |
+| `package:cyber_hal/network/device_ws_*.dart` | WS envelope + connection lifecycle | product command dispatch stays in App |
 | `package:cyber_hal/usb_otg.dart` | OTG modes debug/mtp/host | `/var/lib/hal/usb-otg.conf`; `/etc/usb-otg.ini` |
 | `package:cyber_hal/output.dart` | display + sound barrels | see sub-imports |
 | `package:cyber_hal/input.dart` | keyboard, mouse (USB/serial cameras later) | `/var/lib/hal/keyboard.conf`, `mouse.conf` |
@@ -25,8 +31,8 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/displa
 
 | Import | Domain | Persist / helpers |
 |--------|--------|-------------------|
-| `package:cyber_hal/output/display.dart` | backlight, auto-sleep, orientation | `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) |
-| `package:cyber_hal/output/sound.dart` | volume, button-feedback (+ media audio) | `/var/lib/hal/sound.conf` |
+| `package:cyber_hal/output/display.dart` | backlight, auto-sleep, orientation, wallpaper | `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`, `wallpaper`, `wallpaper_id`); presets `/usr/share/hal/wallpapers/` |
+| `package:cyber_hal/output/sound.dart` | volume, button-feedback (+ media audio) | `/var/lib/hal/sound.conf` (`volume`, `button_feedback` = installed sample path) |
 | `package:cyber_hal/output/load_profile.dart` | load / thermal profile (`performance` / `balanced`) | `/var/lib/hal/power.conf` (`mode`) |
 
 ## Portability (D11b / D22)
@@ -112,8 +118,8 @@ dependencies:
 HAL mid-session writes use existing FHS:
 
 - `/var/lib/hal/` — mouse, keyboard, usb-debug, properties.ini; **output prefs** as `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) and `/var/lib/hal/sound.conf`; **load profile** as `/var/lib/hal/power.conf`; **datetime** as `/var/lib/hal/datetime.conf`
-- `/var/lib/hmi/` — **App-owned** only (misc/advanced JSON, alarm SQLite, debug/push staging)
-- `/var/lib/network/` — ethernet/proxy (after network wave)
+- `/var/lib/network/` — ethernet/proxy/primary/cloud env (after network wave)
+- `/var/lib/hmi/` — **App-owned** only (misc/advanced JSON, product cloud opt-in toggles, alarm SQLite, debug/push staging)
 - `/var/lib/wpa_supplicant/` — Wi‑Fi wanted / networks
 - `/var/lib/bluetooth/` — BT
 

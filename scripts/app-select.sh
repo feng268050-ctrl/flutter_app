@@ -5,8 +5,8 @@
 # Convention:
 #   - HMI apps are named with suffix `_hmi` (e.g. lws_hmi, cnc_hmi).
 #   - All HMI apps install to /opt/hmi so hmi.service can launch them.
-#   - One rootfs has at most one HMI app tree at /opt/hmi (+ optional factory_test).
-#   - Non-HMI apps (e.g. factory_test) install to /opt/<APP>.
+#   - One rootfs has at most one HMI app tree at /opt/hmi (+ optional os_settings).
+#   - Non-HMI apps (e.g. os_settings) install to /opt/<APP>.
 #
 # shellcheck shell=bash
 
@@ -26,9 +26,22 @@ app_select_opt_name() {
 	fi
 }
 
+# systemd unit restarted by make push-app for this APP (empty = deploy only).
+app_select_push_unit() {
+	local app="$1"
+	if app_select_is_hmi "$app"; then
+		printf '%s\n' hmi.service
+	elif [[ "$app" == os_settings ]]; then
+		printf '%s\n' os-settings.service
+	else
+		printf '%s\n' ""
+	fi
+}
+
 # Usage: app_select_resolve   # reads APP from env; defaults to lws_hmi
 # Exports:
 #   APP, APP_DIR, APP_OPT_NAME, OVERLAY_APP, DEVICE_APP, APP_IS_HMI
+#   APP_PUSH_UNIT (systemd unit for push-app restart; empty if none)
 #   APP_FIRMWARE_DIR (output/firmware/<APP>), APP_ROOTFS_IMG
 #   APP_PACKAGE_DIR (output/app/<APP> — pack-app / publish-app tar.gz)
 #   OVERLAY_OPT_ROOT (…/rootfs-overlay/opt)
@@ -79,15 +92,17 @@ app_select_resolve() {
 		APP_IS_HMI=0
 	fi
 	APP_IS_PRODUCT_HMI="$APP_IS_HMI"
+	APP_PUSH_UNIT="$(app_select_push_unit "$app")"
 
 	export APP APP_DIR APP_OPT_NAME OVERLAY_OPT_ROOT OVERLAY_APP DEVICE_APP \
-		APP_FIRMWARE_DIR APP_ROOTFS_IMG APP_PACKAGE_DIR APP_IS_HMI APP_IS_PRODUCT_HMI
+		APP_FIRMWARE_DIR APP_ROOTFS_IMG APP_PACKAGE_DIR APP_IS_HMI APP_IS_PRODUCT_HMI \
+		APP_PUSH_UNIT
 }
 
-# True if app/factory_test is a valid Flutter project (auto-include for rootfs).
-app_select_factory_test_exists() {
+# True if app/os_settings is a valid Flutter project (auto-include for rootfs).
+app_select_os_settings_exists() {
 	local root="${ROOT:-}"
-	[[ -n "$root" && -f "$root/app/factory_test/pubspec.yaml" ]]
+	[[ -n "$root" && -f "$root/app/os_settings/pubspec.yaml" ]]
 }
 
 # Overlay path for a given APP id (does not mutate global APP_*).

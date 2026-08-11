@@ -21,8 +21,9 @@ board/from-device/
 board/logo/logo.bmp
 board/logo/logo_kernel.bmp
 
-# Flutter release bundle (run make build-app)
+# Flutter release bundles (run make build-app / APP=os_settings make build-app)
 overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/
+overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/os_settings/
 
 # Local env (see .env.example)
 .env

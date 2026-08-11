@@ -1,0 +1,23 @@
+name: cyber_settings_ui
+description: >
+  Shared Settings UI widgets for Cyber OS and product HMI apps — nav row
+  typography, wallpaper carousel + apply, optional text-size slot for HMI.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cyber_ui:
+    path: ../cyber_ui
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

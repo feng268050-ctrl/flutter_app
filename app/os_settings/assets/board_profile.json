@@ -1,0 +1,38 @@
+{
+  "board_id": "sim",
+  "display_name": "OS Settings host stub",
+  "model_hint": "host",
+  "secrets_backend": "software",
+  "capabilities": [
+    "ethernet",
+    "wifi",
+    "proxy",
+    "bluetooth",
+    "backlight",
+    "volume",
+    "keyboard",
+    "mouse",
+    "sysInfo",
+    "datetime",
+    "sshDebug",
+    "usbOtg"
+  ],
+  "net_roles": {
+    "ethernet.primary": "eth0",
+    "wifi.station": "wlan0"
+  },
+  "storage_mounts": [
+    "/",
+    "/userdata"
+  ],
+  "route_metrics": {
+    "wlan0": 100,
+    "eth0": 2000
+  },
+  "helpers": {
+    "ssh_debug": "/usr/libexec/ssh/enable-ssh-debug.sh",
+    "backlight_preferred_names": "backlight,acpi_video0",
+    "alsa_volume_controls": "Master,PCM,Speaker,Playback",
+    "apply_mouse_settings": "/usr/bin/apply-mouse-settings"
+  }
+}

@@ -36,7 +36,7 @@ Or from repo root:
 ```bash
 make build-app   # libapp.so + assets → overlay /opt/hmi (any APP=*_hmi; default lws_hmi)
 # APP=cnc_hmi make build-app          # also → /opt/hmi (replaces previous HMI in overlay)
-# APP=factory_test make build-app     # → overlay /opt/factory_test
+# APP=os_settings make build-app      # → overlay /opt/os_settings
 ```
 
 **Must use pinned Flutter `3.41.9`** (`make fetch-flutter-sdk`); `build-app.sh` refuses a mismatched SDK. AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or the HMI exits/hangs with little or no UI.
@@ -141,6 +141,17 @@ Failed reads display `-`. LED rows default to **Off**; Steady / Blink (1 s on / 
 Rebuild notes: app-only → `make build-app` (+ `push-app`). First image after enabling `lws_hmi_p2_io.config` also needs rootfs rebuild so `libserialport.so` is present.
 
 OpenSpec: `openspec/changes/p2-modbus-gpio/`.
+
+## Settings apps (OS Settings vs HMI Settings)
+
+Cyber OS ships two Settings Flutter apps on the same rootfs:
+
+| App | Path | Role |
+|-----|------|------|
+| **OS Settings** | `app/os_settings` → `/opt/os_settings` | Full **platform/system** Settings (Cyber OS core component); on-demand seat |
+| **HMI Settings** | `app/lws_hmi` → `/opt/hmi` | **Simplified + product-customized** subset inside the welding HMI; default boot seat |
+
+Policy and feature matrix: [`docs/settings-apps-roles.md`](../docs/settings-apps-roles.md). HMI → OS Settings via Device Info → **Device SN 5×** (`switch-to-os-settings`).
 
 ## Troubleshooting (splash logo stuck)
 

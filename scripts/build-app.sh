@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build Flutter app release AOT bundle → overlay install prefix (eLinux meta-flutter).
-# Convention: *_hmi → /opt/hmi (hmi.service); other apps (e.g. factory_test) → /opt/<APP>.
+# Convention: *_hmi → /opt/hmi (hmi.service); other apps (e.g. os_settings) → /opt/<APP>.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

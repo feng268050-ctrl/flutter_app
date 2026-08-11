@@ -3,12 +3,16 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 
-/// Persist / consume a one-shot route restore after HMI restart (keyboard XKB).
+/// Persist / consume a one-shot route restore after HMI restart.
+///
+/// Keyboard XKB restart used to write `settings/keyboard` and reopen
+/// Settings → Keyboard. That page migrated to the OS Settings seat, so the
+/// nested deep-link was removed. Stale `settings/*` tokens still open
+/// [AppRoutes.settings] (Device Info tab) without pushing a nested page —
+/// soft no-op for the old keyboard path. Prefer not writing new tokens for
+/// migrated features.
 abstract final class HmiRouteRestore {
   static const preferencePath = '/var/lib/hmi/hmi-restore-route';
-
-  /// Deep-link token for Settings → Keyboard.
-  static const settingsKeyboard = 'settings/keyboard';
 
   static Future<void> write(String token) async {
     try {
@@ -35,9 +39,9 @@ abstract final class HmiRouteRestore {
     }
   }
 
-  /// Map restore token → named [AppRoutes] (nested Keyboard push is App-owned).
+  /// Map restore token → named [AppRoutes].
   static String? namedRouteFor(String token) {
-    if (token == settingsKeyboard || token.startsWith('settings')) {
+    if (token.startsWith('settings')) {
       return AppRoutes.settings;
     }
     if (token == AppRoutes.monitor || token == 'monitor') {
@@ -51,7 +55,4 @@ abstract final class HmiRouteRestore {
     }
     return null;
   }
-
-  static bool wantsKeyboardPage(String? token) =>
-      token == settingsKeyboard;
 }

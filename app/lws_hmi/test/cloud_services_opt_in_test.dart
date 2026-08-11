@@ -13,8 +13,10 @@ void main() {
 
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('cloud-services-summary-');
-    store = CloudSettingsStore(preferencePath: '${dir.path}/cloud-settings.json')
-      ..warmRead();
+    store = CloudSettingsStore(
+      preferencePath: '${dir.path}/cloud-settings.json',
+      environmentTierPath: '${dir.path}/cloud.conf',
+    )..warmRead();
   });
 
   tearDown(() async {

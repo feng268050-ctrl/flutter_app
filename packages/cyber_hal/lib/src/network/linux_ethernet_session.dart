@@ -249,12 +249,15 @@ class LinuxEthernetSession implements EthernetController {
 
   Future<({bool ok, String? message})> _applyIpv4(EthIpv4Config cfg) async {
     final apply = NetworkdIpv4Apply();
+    final manualDns =
+        cfg.dnsMode == EthDnsMode.manual && cfg.dns.isNotEmpty ? cfg.dns : null;
     try {
       if (cfg.mode == EthIpv4Mode.dhcp) {
         await apply.apply(
           iface: iface,
           mode: 'dhcp',
           routeMetric: _metric,
+          dns: manualDns,
           prefPath: ipv4Path,
         );
       } else {
@@ -265,7 +268,7 @@ class LinuxEthernetSession implements EthernetController {
           address: cfg.address,
           prefix: '${cfg.prefixLength}',
           gateway: cfg.gateway.isNotEmpty ? cfg.gateway : null,
-          dns: cfg.dns.isNotEmpty ? cfg.dns : null,
+          dns: manualDns,
           prefPath: ipv4Path,
         );
       }

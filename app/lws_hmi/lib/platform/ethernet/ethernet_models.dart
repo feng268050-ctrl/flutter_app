@@ -1,6 +1,7 @@
 export 'package:cyber_hal/network.dart'
     show
         EthAdminState,
+        EthDnsMode,
         EthIpv4Config,
         EthIpv4Mode,
         EthIpv4Store,

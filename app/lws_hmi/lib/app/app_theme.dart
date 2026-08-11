@@ -1,3 +1,4 @@
+import 'package:cyber_settings_ui/cyber_settings_ui.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
@@ -31,6 +32,7 @@ ThemeData buildAppTheme() {
     extensions: const <ThemeExtension<dynamic>>[
       CyberGlassTheme(),
       HmiTypography(),
+      SettingsTypography(),
     ],
   );
 }

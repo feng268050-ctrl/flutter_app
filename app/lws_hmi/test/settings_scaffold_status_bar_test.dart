@@ -1,3 +1,4 @@
+import 'package:cyber_settings_ui/cyber_settings_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
@@ -6,6 +7,13 @@ import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+
+Widget _wrapWithBlurHost(Widget? child) {
+  return SettingsBlurHost(
+    backdropBuilder: () => const ColoredBox(color: Color(0xFF101218)),
+    child: child ?? const SizedBox.shrink(),
+  );
+}
 
 void main() {
   testWidgets('SettingsScaffold uses Back + page title + trailing clock',
@@ -16,6 +24,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('en'),
+        builder: (context, child) => _wrapWithBlurHost(child),
         home: Builder(
           builder: (context) {
             return Scaffold(
@@ -46,7 +55,7 @@ void main() {
 
     expect(find.byType(ProductPageStatusBar), findsOneWidget);
     expect(find.byType(SettingsStatusBarHairline), findsOneWidget);
-    expect(find.byType(SettingsBlurredPageShell), findsOneWidget);
+    expect(find.byType(SettingsSharedBlurMask), findsWidgets);
 
     final backBtn = tester.widget<CallBackHomeButton>(
       find.byType(CallBackHomeButton),
@@ -68,13 +77,14 @@ void main() {
     expect(clock.data, contains(':'));
   });
 
-  testWidgets('nested SettingsScaffold skips live page ImageFiltered',
+  testWidgets('nested SettingsScaffold reuses shared blur mask (no per-page shell)',
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('en'),
+        builder: (context, child) => _wrapWithBlurHost(child),
         home: Builder(
           builder: (context) {
             return Scaffold(
@@ -103,23 +113,22 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    final shell = tester.widget<SettingsBlurredPageShell>(
-      find.byType(SettingsBlurredPageShell),
-    );
-    // Nested: no live ImageFiltered — shell default bakes a static σ30 plate.
-    expect(shell.livePageBlur, isFalse);
-    expect(find.byType(ImageFiltered), findsNothing);
+    // One app host — nested routes blit SettingsSharedBlurMask, no nested shell.
+    expect(find.byType(SettingsBlurHost), findsOneWidget);
+    expect(find.byType(SettingsBlurredPageShell), findsNothing);
+    expect(find.byType(SettingsSharedBlurMask), findsWidgets);
   });
 
   testWidgets(
     'root SettingsScaffold keeps disabled Back (host upgrade stack clear)',
     (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          locale: Locale('en'),
-          home: SettingsScaffold(
+          locale: const Locale('en'),
+          builder: (context, child) => _wrapWithBlurHost(child),
+          home: const SettingsScaffold(
             title: 'System Upgrade',
             body: SizedBox.shrink(),
           ),

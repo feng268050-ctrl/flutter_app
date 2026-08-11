@@ -9,6 +9,7 @@ import 'package:cyber_hal/output.dart';
 import 'package:cyber_hal/secrets.dart';
 import 'package:cyber_hal/usb_otg.dart';
 import 'package:cyber_hal/src/output/output_prefs.dart';
+import 'package:cyber_hal/src/linux/board_helper.dart';
 import 'package:cyber_hal/src/core/errors.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
 import 'package:flutter/foundation.dart';
@@ -73,6 +74,17 @@ final class BoardBindings {
       frameTimingSampler: frameTimingSampler,
       productIniPath: productIniPath,
       productInfo: productInfo,
+    );
+  }
+
+  /// Read-only OS / stack version probes for OS Settings (soft-fail fields).
+  LinuxPlatformVersions platformVersions({
+    PlatformVersionsProcessRunner? runProcess,
+    PlatformVersionsFileReader? readFile,
+  }) {
+    return LinuxPlatformVersions(
+      runProcess: runProcess,
+      readFile: readFile,
     );
   }
 
@@ -141,13 +153,29 @@ final class BoardBindings {
   LinuxOrientation orientation({
     String preferencePath = OutputPrefs.displayConf,
     List<String> changeOrientationCommand = const <String>['change-orientation'],
-    List<String> restartCommand = const <String>['systemctl', 'restart', 'hmi'],
+    List<String> restartCommand = kRestartFlutterSeatCommand,
   }) {
     return LinuxOrientation(
       preferencePath: preferencePath,
       changeOrientationCommand: changeOrientationCommand,
       restartCommand: restartCommand,
     );
+  }
+
+  LinuxWallpaper wallpaper({
+    String preferencePath = OutputPrefs.displayConf,
+    List<String> applyWallpaperCommand = const <String>['apply-wallpaper'],
+    List<String> restartCommand = kRestartFlutterSeatCommand,
+  }) {
+    return LinuxWallpaper(
+      preferencePath: preferencePath,
+      applyWallpaperCommand: applyWallpaperCommand,
+      restartCommand: restartCommand,
+    );
+  }
+
+  LinuxUiScale uiScale({String preferencePath = OutputPrefs.displayConf}) {
+    return LinuxUiScale(preferencePath: preferencePath);
   }
 
   LinuxButtonFeedback buttonFeedback({
@@ -423,6 +451,29 @@ final class BoardBindings {
     return OpteeKekProvider(
       helperPath: opteeHelperPath ?? OpteeKekProvider.defaultHelperPath,
       runner: opteeRunner,
+    );
+  }
+
+  /// OS Settings Operating System → Security **Secrets Seal** label (`software` | `op-tee`).
+  ///
+  /// Uses [secrets] selection only — no seal/unseal I/O.
+  String secretsSealStatus({
+    KekProvider? override,
+    DeviceBindingMaterialReader? materialReader,
+    ChipIdReader? chipIdReader,
+    DeviceSnReader? deviceSnReader,
+    String? opteeHelperPath,
+    OpteeSealRunner? opteeRunner,
+  }) {
+    return SecretsSealStatus.fromProvider(
+      secrets(
+        override: override,
+        materialReader: materialReader,
+        chipIdReader: chipIdReader,
+        deviceSnReader: deviceSnReader,
+        opteeHelperPath: opteeHelperPath,
+        opteeRunner: opteeRunner,
+      ),
     );
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_ime/cyber_ime.dart';
+import 'package:cyber_settings_ui/cyber_settings_ui.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
@@ -24,6 +25,7 @@ import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_store.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
+import 'package:lws_hmi/platform/display/system_wallpaper_backdrop.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -95,13 +97,6 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-
-/// The existing QEMU screen is the visual reference: DPR 1.358 on its
-/// 1536×960 output. The physical ynh960 panel is 1280×800 at the same size,
-/// so it needs 1/1.2 its DPR to keep every DP control the same physical size.
-/// Weston+eLinux defaults to DPR 1.0; `--force-scale-factor` blacks the frame.
-const double _kSimulatorReferenceDevicePixelRatio = 1.3582342954159592;
-const double _kSimulatorReferenceLongEdgePx = 1536;
 
 /// Root MaterialApp: Home launcher, Settings, Monitor, hidden Demo.
 class LwsHmiApp extends StatefulWidget {
@@ -317,6 +312,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _soundEffectStore.warmRead();
+    _services.wallpaper.warmRead();
+    _services.uiScale.warmRead();
+    _services.uiScaleNotifier.value = _services.uiScale.scale;
     _miscSettingsStore.warmRead();
     _commonSettingsStore.warmRead();
     _textSizeSettingsStore.warmRead();
@@ -514,12 +512,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     if (route == null || route == AppRoutes.home) return;
     final nav = _navKey.currentState;
     if (nav == null) return;
-    nav.pushNamed(
-      route,
-      arguments: HmiRouteRestore.wantsKeyboardPage(token)
-          ? HmiRouteRestore.settingsKeyboard
-          : null,
-    );
+    nav.pushNamed(route);
   }
 
   @override
@@ -604,44 +597,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     );
   }
 
-  /// When embedder DPR is ~1 (Weston path), scale the widget tree to match the
-  /// existing simulator's physical density.
+  /// Apply HAL `ui_scale` (1.0 = physical 1:1; no hard-coded design rematch).
   Widget _matchFlutterPiDensity(BuildContext context, Widget? child) {
-    final content = child ?? const SizedBox.shrink();
-    final mq = MediaQuery.of(context);
-    final dpr = mq.devicePixelRatio;
-    final isSimulator = widget.boardProfile.info.boardId == 'sim';
-    final targetDpr = isSimulator
-        ? _kSimulatorReferenceDevicePixelRatio
-        : _kSimulatorReferenceDevicePixelRatio *
-            (mq.size.longestSide / _kSimulatorReferenceLongEdgePx);
-    // Already at reference density (or host/test with other DPR) — no-op.
-    if ((dpr - targetDpr).abs() < 0.05) {
-      return content;
-    }
-    if ((dpr - 1.0).abs() > 0.05) {
-      return content;
-    }
-    final scale = targetDpr / dpr;
-    final logical = Size(mq.size.width / scale, mq.size.height / scale);
-    return SizedBox(
-      width: mq.size.width,
-      height: mq.size.height,
-      child: FittedBox(
-        fit: BoxFit.fill,
-        child: SizedBox(
-          width: logical.width,
-          height: logical.height,
-          child: MediaQuery(
-            // copyWith keeps disableAnimations / textScaler / etc. from [mq].
-            data: mq.copyWith(
-              size: logical,
-              devicePixelRatio: dpr * scale,
-            ),
-            child: content,
-          ),
-        ),
-      ),
+    return matchEmbedderDensity(
+      context,
+      child,
+      uiScale: _services.uiScaleNotifier.value,
     );
   }
 
@@ -651,6 +612,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         _services.wallClock,
         _loadProfileController,
         _textSizeSettingsStore,
+        _services.uiScaleNotifier,
       ]),
       builder: (context, _) {
         final mq = MediaQuery.of(context);
@@ -681,12 +643,21 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
             // and re-enables CyberButton InkRipple on device (DPR≈1 path).
             child: Builder(
               builder: (innerContext) {
+                final wallpaper = _services.wallpaper;
                 return SystemStatusOverlayHost(
                   store: _miscSettingsStore,
                   child: GpioLedOverlayHost(
                     // P3.2 QEMU / sim OEM only — never on ynh960 (or other) hardware.
                     enabled: widget.boardProfile.info.boardId == 'sim',
-                    child: _matchFlutterPiDensity(innerContext, child),
+                    child: SettingsBlurHost(
+                      blurSigma: kSettingsPageBlurSigma,
+                      backdropBuilder: () => SystemWallpaperBackdrop(
+                        path: wallpaper.activePath,
+                      ),
+                      rebakeListenable: wallpaper.listenable,
+                      rebakeKey: wallpaper.activePath,
+                      child: _matchFlutterPiDensity(innerContext, child),
+                    ),
                   ),
                 );
               },
@@ -864,10 +835,6 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       case AppRoutes.settings:
         final settingsArgs = settings.arguments;
         page = SettingsPage(
-          openKeyboardOnLaunch:
-              settingsArgs == HmiRouteRestore.settingsKeyboard ||
-                  (settingsArgs is SettingsRouteArgs &&
-                      settingsArgs.openKeyboardOnLaunch),
           initialNestedPage: settingsArgs is SettingsRouteArgs
               ? settingsArgs.initialNestedPage
               : null,

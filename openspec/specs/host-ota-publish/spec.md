@@ -74,7 +74,7 @@ Cloud **whole-device / system** publish versioning SHALL use the product **OS Ve
 
 The R2 directory (publish **artifact** segment) SHALL be derived from Make/env **`APP`**: replace underscores with hyphens (default `APP=lws_hmi` → artifact **`lws-hmi`**). Objects SHALL live under **`{artifact}/`** in the app bucket (`tar.gz`, `.sig`, + **`release.json`**). Archive basename SHALL be **`v{semver}.tar.gz`** (version segment only — MUST NOT prefix with `{artifact}_`, MUST NOT include `-beta` / `-alpha`).
 
-`make publish` / `make publish-only` SHALL target HMI product apps (`APP` ending in `_hmi`). Publishing a non-HMI `APP` (e.g. `factory_test`) SHALL fail fast unless an explicitly documented override is used.
+`make publish` / `make publish-only` SHALL target HMI product apps (`APP` ending in `_hmi`). Publishing a non-HMI `APP` (e.g. `os_settings`) SHALL fail fast unless an explicitly documented override is used.
 
 #### Scenario: Default APP maps to lws-hmi prefix
 

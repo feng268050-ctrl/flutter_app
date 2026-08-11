@@ -1,0 +1,39 @@
+name: os_settings
+description: "Platform OS Settings"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cyber_hal:
+    path: ../../packages/cyber_hal
+
+  cyber_ui:
+    path: ../../packages/cyber_ui
+
+  cyber_settings_ui:
+    path: ../../packages/cyber_settings_ui
+
+  cyber_ime:
+    path: ../../packages/cyber_ime
+
+  bluez: ^0.8.3
+  dbus: ^0.7.12
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - assets/board_profile.json

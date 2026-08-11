@@ -41,6 +41,8 @@ final class AppServices {
     AutoSleep? autoSleep,
     ButtonFeedback? buttonFeedback,
     LoadProfile? loadProfile,
+    Wallpaper? wallpaper,
+    UiScale? uiScaleController,
     EthernetController? ethernetController,
     WifiController? wifiController,
     HttpClientController? httpClientController,
@@ -98,6 +100,9 @@ final class AppServices {
     this.autoSleep = autoSleep ?? b.autoSleep();
     this.buttonFeedback = buttonFeedback ?? b.buttonFeedback(mediaAudio: audio);
     this.loadProfile = loadProfile ?? b.loadProfile();
+    this.wallpaper = wallpaper ?? b.wallpaper();
+    uiScale = uiScaleController ?? b.uiScale();
+    uiScaleNotifier = ValueNotifier<double>(uiScale.scale);
     ethernet = ethernetController ?? b.ethernetSession();
     wifi = wifiController ?? b.wifiSession();
     primaryNetwork = b.primaryNetwork(wifi: wifi, ethernet: ethernet);
@@ -167,6 +172,9 @@ final class AppServices {
   late final AutoSleep autoSleep;
   late final ButtonFeedback buttonFeedback;
   late final LoadProfile loadProfile;
+  late final Wallpaper wallpaper;
+  late final UiScale uiScale;
+  late final ValueNotifier<double> uiScaleNotifier;
   late final EthernetController ethernet;
   late final WifiController wifi;
   late final PrimaryNetworkController primaryNetwork;

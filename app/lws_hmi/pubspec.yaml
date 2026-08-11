@@ -42,6 +42,9 @@ dependencies:
   cyber_ui:
     path: ../../packages/cyber_ui
 
+  cyber_settings_ui:
+    path: ../../packages/cyber_settings_ui
+
   # CyberIME overlay keyboard. Path dep until published / submodule.
   cyber_ime:
     path: ../../packages/cyber_ime

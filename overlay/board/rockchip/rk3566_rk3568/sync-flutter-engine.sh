@@ -33,7 +33,7 @@ if [ -f "$ICU_DAT" ]; then
 	mkdir -p "$(dirname "$ICU_LEGACY_LINK")"
 	ln -sf "${RUNTIME_MODE}/data/icudtl.dat" "$ICU_LEGACY_LINK"
 fi
-# Global engine pin (shared by /opt/hmi, factory_test, …) — not under /etc/hmi.
+# Global engine pin (shared by /opt/hmi, /opt/os_settings, …) — not under /etc/hmi.
 mkdir -p "$TARGET_DIR/usr/share/flutter"
 printf '%s\n' "$VER" >"$TARGET_DIR/usr/share/flutter/flutter-engine.version"
 rm -f "$TARGET_DIR/etc/hmi/flutter-engine.version"

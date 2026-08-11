@@ -1,0 +1,17 @@
+[Unit]
+Description=Flutter OS Settings
+DefaultDependencies=yes
+After=local-fs.target cpu-performance.service oem-compose.service
+Wants=oem-compose.service
+# On-demand only — not WantedBy=multi-user.target (static unit).
+Conflicts=hmi.service
+
+[Service]
+Type=simple
+Nice=-5
+ExecStart=/usr/libexec/hmi/os-settings-launch.sh
+Restart=on-failure
+RestartSec=2
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+StandardOutput=journal
+StandardError=journal

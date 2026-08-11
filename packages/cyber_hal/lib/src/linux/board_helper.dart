@@ -2,6 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+/// Restarts whichever Flutter seat owns the display (`hmi.service` or
+/// `os-settings.service`). Implemented by rootfs
+/// `/usr/libexec/hmi/restart-flutter-seat.sh`.
+const kRestartFlutterSeatPath = '/usr/libexec/hmi/restart-flutter-seat.sh';
+
+/// argv for [Process.start] / board HAL `restartCommand` defaults.
+const kRestartFlutterSeatCommand = <String>[kRestartFlutterSeatPath];
+
 /// Runs a board helper (`change-backlight`, `change-volume`, …); injectable for tests.
 typedef BoardHelperRunner = Future<int> Function(
   String executable,
@@ -47,3 +55,11 @@ Future<int> defaultBoardHelperRunnerWithStdin(
     return 127;
   }
 }
+
+/// Default keyboard / display apply restart — active Flutter seat, not HMI-only.
+Future<int> defaultFlutterSeatRestartRunner() async {
+  return defaultBoardHelperRunner(kRestartFlutterSeatPath, const []);
+}
+
+/// Back-compat alias for [defaultFlutterSeatRestartRunner].
+Future<int> defaultHmiRestartRunner() => defaultFlutterSeatRestartRunner();

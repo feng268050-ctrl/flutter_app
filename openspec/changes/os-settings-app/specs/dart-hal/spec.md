@@ -1,8 +1,8 @@
 ## ADDED Requirements
 
-### Requirement: Platform version and SELinux probes for Settings
+### Requirement: Platform version and SELinux probes for OS Settings
 
-The HAL SHALL expose read-only platform inventory fields usable by the Settings Operating System page, including at least: `/etc/os-release` name/version summary; Linux kernel release (existing); SELinux mode as `Disabled` \| `Permissive` \| `Enforcing` (or unavailable); BusyBox version; Glibc version; WPA Supplicant version; BlueZ version; OpenSSL version; OpenSSH version; GStreamer version; Flutter engine/SDK pin string consistent with the image; Buildroot version stamp when baked. Each probe MUST soft-fail independently (null/unavailable) without failing the whole `SysInfo` / platform-versions snapshot. Apps MUST NOT be required to shell out from the UI isolate for these strings when HAL provides them.
+The HAL SHALL expose read-only platform inventory fields usable by the OS Settings Operating System page, including at least: `/etc/os-release` name/version summary; Linux kernel release (existing); SELinux mode as `Disabled` \| `Permissive` \| `Enforcing` (or unavailable); BusyBox version; Glibc version; WPA Supplicant version; BlueZ version; OpenSSL version; OpenSSH version; GStreamer version; Flutter engine/SDK pin string consistent with the image; Buildroot version stamp when baked. Each probe MUST soft-fail independently (null/unavailable) without failing the whole `SysInfo` / platform-versions snapshot. Apps MUST NOT be required to shell out from the UI isolate for these strings when HAL provides them.
 
 #### Scenario: Soft-fail missing BusyBox
 
@@ -14,9 +14,9 @@ The HAL SHALL expose read-only platform inventory fields usable by the Settings 
 - **WHEN** `/sys/fs/selinux/enforce` reports `0` or `1`, or SELinux is not mounted
 - **THEN** the snapshot maps to Permissive, Enforcing, or Disabled/unavailable respectively
 
-### Requirement: Secrets backend status is queryable for Settings Storage
+### Requirement: Secrets backend status is queryable for OS Settings Operating System
 
-Callers SHALL be able to read the active Secrets / KEK backend identifier as `software` or `op-tee` (and hardware-bound flag when already exposed) without performing seal/unseal, for Settings Storage display. This MUST reuse the existing Secrets provider / OEM `secrets_backend` selection and MUST NOT silently switch backends on query failure.
+Callers SHALL be able to read the active Secrets / KEK backend identifier as `software` or `op-tee` (and hardware-bound flag when already exposed) without performing seal/unseal, for OS Settings Operating System → Security display. This MUST reuse the existing Secrets provider / OEM `secrets_backend` selection and MUST NOT silently switch backends on query failure.
 
 #### Scenario: Query software backend
 

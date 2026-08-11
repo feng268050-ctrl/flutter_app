@@ -3377,6 +3377,24 @@ abstract class AppLocalizations {
   /// **'On'**
   String get onLabel;
 
+  /// No description provided for @osSettingsBundleMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'OS Settings is not installed on this device.'**
+  String get osSettingsBundleMissing;
+
+  /// No description provided for @osSettingsSwitchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t open OS Settings.'**
+  String get osSettingsSwitchFailed;
+
+  /// No description provided for @osSettingsText.
+  ///
+  /// In en, this message translates to:
+  /// **'OS Settings'**
+  String get osSettingsText;
+
   /// No description provided for @osVersion.
   ///
   /// In en, this message translates to:
@@ -4337,36 +4355,6 @@ abstract class AppLocalizations {
   /// **'Wide-Area Cleaning'**
   String get processWheelWideCleaning;
 
-  /// No description provided for @powerModeOptionBalanced.
-  ///
-  /// In en, this message translates to:
-  /// **'Balanced'**
-  String get powerModeOptionBalanced;
-
-  /// No description provided for @powerModeOptionPerformance.
-  ///
-  /// In en, this message translates to:
-  /// **'Performance'**
-  String get powerModeOptionPerformance;
-
-  /// No description provided for @powerModePersistedFooter.
-  ///
-  /// In en, this message translates to:
-  /// **'Performance keeps full clocks and motion. Balanced lowers SoC load and heat by capping clocks and reducing decorative animation.'**
-  String get powerModePersistedFooter;
-
-  /// No description provided for @powerModePreferenceUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Power Mode settings are temporarily unavailable.'**
-  String get powerModePreferenceUnavailable;
-
-  /// No description provided for @powerModeSettingText.
-  ///
-  /// In en, this message translates to:
-  /// **'Power Mode'**
-  String get powerModeSettingText;
-
   /// No description provided for @productDisclaimerContent.
   ///
   /// In en, this message translates to:
@@ -4714,6 +4702,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Display'**
   String get screenSettings;
+
+  /// No description provided for @wallpaperSettingText.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper'**
+  String get wallpaperSettingText;
+
+  /// No description provided for @wallpaperOptionDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get wallpaperOptionDefault;
+
+  /// No description provided for @wallpaperApplyRestarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing wallpaper restarts the application.'**
+  String get wallpaperApplyRestarts;
 
   /// No description provided for @selectProcessPrompt.
   ///

@@ -1743,6 +1743,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onLabel => '开启';
 
   @override
+  String get osSettingsBundleMissing => '本机未安装 OS 设置。';
+
+  @override
+  String get osSettingsSwitchFailed => '无法打开 OS 设置。';
+
+  @override
+  String get osSettingsText => 'OS 设置';
+
+  @override
   String get osVersion => '操作系统版本';
 
   @override
@@ -2256,22 +2265,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processWheelWideCleaning => '宽幅清洗';
 
   @override
-  String get powerModeOptionBalanced => '均衡';
-
-  @override
-  String get powerModeOptionPerformance => '性能';
-
-  @override
-  String get powerModePersistedFooter =>
-      '性能模式保持满频与完整动画；均衡模式通过限制时钟并减少装饰动画降低机身发热与负载。';
-
-  @override
-  String get powerModePreferenceUnavailable => '暂时无法更改效能模式。';
-
-  @override
-  String get powerModeSettingText => '效能模式';
-
-  @override
   String get productDisclaimerContent =>
       '尊敬的用户：感谢您选择我们的手持激光焊接产品。在使用本产品前，我们强烈建议您仔细阅读本免责声明，并严格遵守用户手册中的所有说明和安全措施。\n\n1. 安全警告\n激光设备可能对眼睛和皮肤造成严重伤害。在操作过程中，请始终佩戴适当的个人防护装备（PPE），包括但不限于激光防护眼镜和手套，以确保您的安全。\n\n2. 操作说明\n请确保您已充分理解并能够遵守产品手册中的所有操作流程和安全指南。使用不当可能导致设备损坏或人身伤害。\n\n3. 不当操作\n对于用户未遵循产品手册中的说明或未采取适当安全措施而导致的任何伤害或损失，本公司概不负责。\n\n4. 维护\n请定期检查并维护产品，以确保其处于良好工作状态。由于产品维护不当造成的任何事故，本公司不承担责任。\n\n5. 责任免责声明\n虽然本公司提供了全面的使用说明和安全措施，但对于因用户操作不当或违反手册规定而造成的任何伤害或损坏，本公司保留免责权利。我们强烈建议用户在使用本产品前，充分了解并遵守所有相关安全法规和操作标准。\n\n6. 适用法律\n本免责声明的解释、适用和争议解决，应受本公司总部所在地法律管辖。\n\n7. 完整协议\n本免责声明构成您与本公司之间的完整协议，并取代此前任何口头或书面理解或协议。';
 
@@ -2451,6 +2444,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get screenSettings => '屏幕设置';
+
+  @override
+  String get wallpaperSettingText => '壁纸';
+
+  @override
+  String get wallpaperOptionDefault => '默认';
+
+  @override
+  String get wallpaperApplyRestarts => '更改壁纸将重启应用。';
 
   @override
   String get selectProcessPrompt => '选择工艺以查看参数。';
@@ -4659,6 +4661,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get onLabel => '開啓';
 
   @override
+  String get osSettingsBundleMissing => '本機未安裝 OS 設置。';
+
+  @override
+  String get osSettingsSwitchFailed => '無法打開 OS 設置。';
+
+  @override
+  String get osSettingsText => 'OS 設置';
+
+  @override
   String get osVersion => '操作系統版本';
 
   @override
@@ -5128,13 +5139,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get processWheelWideCleaning => '大面積清洗';
 
   @override
-  String get powerModePersistedFooter =>
-      '性能模式保持滿頻與完整動畫；均衡模式透過限制時鐘並減少裝飾動畫降低機身發熱與負載。';
-
-  @override
-  String get powerModePreferenceUnavailable => '暫時無法更改效能模式。';
-
-  @override
   String get productDisclaimerContent =>
       '尊敬的用戶：感謝您選擇我們的手持激光焊接產品。在使用本產品前，我們強烈建議您仔細閱讀本免責聲明，並嚴格遵守用戶手冊中的所有說明和安全措施。\n\n1. 安全警告\n激光設備可能對眼睛和皮膚造成嚴重傷害。在操作過程中，請始終佩戴適當的個人防護裝備（PPE），包括但不限於激光防護眼鏡和手套，以確保您的安全。\n\n2. 操作說明\n請確保您已充分理解並能夠遵守產品手冊中的所有操作流程和安全指南。使用不當可能導致設備損壞或人身傷害。\n\n3. 不當操作\n對於用戶未遵循產品手冊中的說明或未採取適當安全措施而導致的任何傷害或損失，本公司概不負責。\n\n4. 維護\n請定期檢查並維護產品，以確保其處於良好工作狀態。由於產品維護不當造成的任何事故，本公司不承擔責任。\n\n5. 責任免責聲明\n雖然本公司提供了全面的使用說明和安全措施，但對於因用戶操作不當或違反手冊規定而造成的任何傷害或損壞，本公司保留免責權利。我們強烈建議用戶在使用本產品前，充分瞭解並遵守所有相關安全法規和操作標準。\n\n6. 適用法律\n本免責聲明的解釋、適用和爭議解決，應受本公司總部所在地法律管轄。\n\n7. 完整協議\n本免責聲明構成您與本公司之間的完整協議，並取代此前任何口頭或書面理解或協議。';
 
@@ -5281,6 +5285,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get screenSettings => '顯示';
+
+  @override
+  String get wallpaperSettingText => '壁紙';
+
+  @override
+  String get wallpaperOptionDefault => '默認';
+
+  @override
+  String get wallpaperApplyRestarts => '更改壁紙將重啓應用。';
 
   @override
   String get selectProcessPrompt => '選擇工藝以查看參數。';

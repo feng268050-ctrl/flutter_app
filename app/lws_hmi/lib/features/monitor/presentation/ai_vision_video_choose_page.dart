@@ -231,25 +231,25 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    // Same shell as Monitor: wallpaper + static baked σ30 plate.
+    // Shared app-level σ bake; dim specular bands above the plate.
     return SettingsBlurredPageShell(
       blurSigma: SettingsPerspectiveChrome.blurSigma,
-      backdropBuilder: () => const Stack(
+      child: Stack(
         fit: StackFit.expand,
         children: [
-          SettingsHomeBackdrop(),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x16000000), Color(0x26000000)],
+          const IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x16000000), Color(0x26000000)],
+                ),
               ),
+              child: SizedBox.expand(),
             ),
           ),
-        ],
-      ),
-      child: Scaffold(
+          Scaffold(
         backgroundColor: Colors.transparent,
         appBar: ProductPageStatusBar(
           title: l10n.aiVisionChooseBtn,
@@ -352,6 +352,8 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
             const SizedBox(height: 24),
         ],
       ),
+      ),
+        ],
       ),
     );
   }

@@ -9,6 +9,8 @@
 | DNS | **systemd-resolved** | networkd feeds DNS to resolved; `/etc/resolv.conf` → `../run/systemd/resolve/resolv.conf`. LLMNR/mDNS off. **Wall clock (ynh960):** external **PCF8563 on i2c5 @0x51** (`ynh960-rtc.dtsi` → sole `rtc0`; **`CONFIG_RTC_DRV_RK808` unset**). HCTOSYS/SYSTOHC + `rtc-systohc.timer` persist offline time. **Automatic NTP on by default** (`systemd-timesyncd` preset; HAL `sync_mode` → `network`). NTP presets via `10-appliance.conf` + runtime `20-hmi-ntp.conf`. **DNSSEC=allow-downgrade** (validate when upstream supports; curated fallbacks include Cloudflare/Google). **DNSOverTLS=no**. Do **not** hand-write resolv from helpers. |
 | Live UI / HAL status | **D-Bus subscribe** | L2: `fi.w1.wpa_supplicant1` PropertiesChanged. L3: `org.freedesktop.network1` PropertiesChanged for link state; addresses via **`Link.Describe` JSON** (current upstream API, systemd 254) with fallback to legacy Link property **`Addresses`** (`a(iiay)`) on older networkd. **Not** Timer + `wpa_cli`/`ip` as primary. |
 | System proxy | HAL `LinuxProxy` writes conf + env/profile/systemd drop-ins | `/var/lib/network/proxy.conf`; optional `apply-proxy` override; not networkd |
+| Cloud API origin | HAL `CloudApiOriginConfig` + `CloudApiOriginProber` | Tier from `/var/lib/network/cloud.conf`; concurrent first-wins probe; boot pin `/run/network/cloud-origin.pin` (cross-App, cleared on reboot); Apps build Worker HTTP/WS URLs from pin |
+| Cloud HTTP / auth / WS | HAL `CloudHttpClient`, `DeviceCloudEd25519*`, `DeviceWsConnectionManager` | Bearer remint + activate/token + socket lifecycle; product WS commands stay in App |
 
 Do **not** co-manage L3 with `dhcpcd`, BusyBox `udhcpc`, or raw `ip addr` on the same iface while networkd owns it. Helpers that need L3 **fail hard** if `networkctl` is missing — rebuild systemd with `BR2_PACKAGE_SYSTEMD_NETWORKD` + `BR2_PACKAGE_SYSTEMD_RESOLVED` (`bash scripts/br-make-packages.sh systemd systemd`).
 
@@ -85,6 +87,9 @@ Do **not** fold vendor bring-up into the portable HAL default path.
 | `/var/lib/wpa_supplicant/wifi-wanted` | restore brings Wi‑Fi stack up |
 | `/var/lib/hmi/common-settings.json` | App Country / Language / Unit; Country drives wpa `country=` + linked timezone/NTP (default **US**) |
 | `/var/lib/network/proxy.conf` | multi-scheme proxy (migrates from `/var/lib/hmi/http-proxy`) |
+| `/var/lib/network/cloud.conf` | shared cloud API env tier (`environment_tier=prod\|test`); migrates from legacy `/var/lib/hmi/cloud-settings.json` `environmentTier`. Candidate Worker/hyurl bases + concurrent probe live in HAL (`CloudApiOriginConfig` / `CloudApiOriginProber`) |
+| `/run/network/cloud-origin.pin` | boot-scoped pinned Worker origin (`environment_tier` + `pinned_origin`); survives App seat switches; cleared on reboot |
+| `/var/lib/hmi/cloud-settings.json` | product HMI cloud/LAN opt-in toggles only (not the shared API tier) |
 
 ## Helpers (board / interim)
 

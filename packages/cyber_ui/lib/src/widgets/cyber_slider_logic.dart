@@ -32,7 +32,12 @@ abstract final class CyberSliderLogic {
       return min;
     }
     final v = min + fraction.clamp(0.0, 1.0) * (max - min);
-    return v.roundToDouble().clamp(min, max);
+    // Coarse sliders (brightness/volume 0–100, etc.) stay on whole steps.
+    if ((max - min) >= 10) {
+      return v.roundToDouble().clamp(min, max);
+    }
+    // Fine-grained sliders (ui_scale ~0.85–1.25): keep fractional precision.
+    return (v * 1000).roundToDouble() / 1000;
   }
 
   /// Returns the nearest value on an evenly-divided slider track.

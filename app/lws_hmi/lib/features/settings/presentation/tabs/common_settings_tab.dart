@@ -3,31 +3,23 @@ import 'dart:async';
 import 'package:cyber_hal/datetime.dart';
 import 'package:cyber_hal/locale.dart';
 import 'package:cyber_hal/network.dart';
-import 'package:cyber_hal/usb_otg.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/load_profile_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/cloud_services_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/country_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/date_time_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/display_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/http_proxy_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/ip_camera_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/keyboard_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/language_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/lan_ssh_debug_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/led_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/mouse_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/power_mode_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/sound_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/unit_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/usb_otg_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -35,6 +27,14 @@ import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 
 /// Common Settings — CyberUI untitled cards (nav rows → sub-pages).
+///
+/// **Role:** HMI Settings is the simplified + product-customized Settings subset.
+/// Full platform/system Settings live in OS Settings (`app/os_settings`).
+/// Policy: `docs/settings-apps-roles.md`.
+///
+/// OS Settings seat: Device Info → tap Device SN 5× (`switch-to-os-settings`).
+/// Ethernet / Bluetooth / SSH / Keyboard / Mouse / USB OTG / Cloud Env /
+/// Power Mode live in OS Settings, not product HMI.
 class CommonSettingsTab extends StatefulWidget {
   const CommonSettingsTab({
     super.key,
@@ -50,13 +50,13 @@ class CommonSettingsTab extends StatefulWidget {
 }
 
 class _CommonSettingsTabState extends State<CommonSettingsTab> {
+  /// RGB LED row kept for product reopen; hidden from Common Settings for now.
+  static const bool _showRgbLed = false;
+
   /// Semantic trailing state — resolve labels in [build] so locale switches
   /// refresh Off/On without leaving the tab.
   bool _proxyEnabled = false;
   String _proxyEndpoint = '';
-  bool _sshDebugEnabled = false;
-  bool _btPowered = false;
-  UsbOtgMode? _usbOtgMode;
   String _brightnessValue = '';
   String _volumeValue = '';
   TimeSyncMode? _dateTimeMode;
@@ -76,9 +76,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
         setState(() {});
       });
       unawaited(_refreshProxy());
-      unawaited(_refreshSshDebug());
-      unawaited(_refreshUsbOtg());
-      unawaited(_refreshBt());
       unawaited(_refreshBrightness());
       unawaited(_refreshVolume());
       unawaited(_refreshDateTime());
@@ -93,14 +90,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
       return l10n.offLabel;
     }
     return l10n.notConnected;
-  }
-
-  String _usbOtgLabel(AppLocalizations l10n, UsbOtgMode mode) {
-    return switch (mode) {
-      UsbOtgMode.debug => l10n.usbOtgModeDebug,
-      UsbOtgMode.mtp => l10n.usbOtgModeMtp,
-      UsbOtgMode.host => l10n.usbOtgModeHost,
-    };
   }
 
   String _unitLabel(AppLocalizations l10n, UnitSystem unit) {
@@ -137,34 +126,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             p.enabled && p.host.isNotEmpty ? '${p.host}:${p.port}' : '';
       });
     } catch (_) {}
-  }
-
-  Future<void> _refreshSshDebug() async {
-    try {
-      final on = await services.sshDebug.isEnabled();
-      if (!mounted) return;
-      setState(() => _sshDebugEnabled = on);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _sshDebugEnabled = false);
-      }
-    }
-  }
-
-  Future<void> _refreshUsbOtg() async {
-    try {
-      final mode = await services.usbOtg.getMode();
-      if (!mounted) return;
-      setState(() => _usbOtgMode = mode);
-    } catch (_) {
-      if (mounted) setState(() => _usbOtgMode = null);
-    }
-  }
-
-  Future<void> _refreshBt() async {
-    final powered = services.bluetooth.currentAdapterInfo.powered;
-    if (!mounted) return;
-    setState(() => _btPowered = powered);
   }
 
   Future<void> _refreshBrightness() async {
@@ -209,11 +170,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     final store = CommonSettingsScope.maybeOf(context);
     final wifiValue = _wifiSummary(l10n, services.wifi.currentConnection);
     final proxyValue = _proxyTrailing(l10n);
-    final sshDebugValue =
-        _sshDebugEnabled ? l10n.onLabel : l10n.offLabel;
-    final btValue = _btPowered ? l10n.onLabel : l10n.offLabel;
-    final usbOtgValue =
-        _usbOtgMode == null ? null : _usbOtgLabel(l10n, _usbOtgMode!);
 
     return SettingsScrollView(
       children: [
@@ -245,28 +201,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                   HttpProxySettingsPage(services: services),
                 );
                 await _refreshProxy();
-              },
-            ),
-            SettingsNavRow(
-              title: l10n.sshDebugText,
-              value: sshDebugValue,
-              onTap: () async {
-                await pushSettingsPage(
-                  context,
-                  LanSshDebugSettingsPage(services: services),
-                );
-                await _refreshSshDebug();
-              },
-            ),
-            SettingsNavRow(
-              title: l10n.bluetoothText,
-              value: btValue,
-              onTap: () async {
-                await pushSettingsPage(
-                  context,
-                  BluetoothSettingsPage(services: services),
-                );
-                await _refreshBt();
               },
             ),
             Builder(
@@ -302,7 +236,24 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             ),
           ],
         ),
-        // Display & Sound — lws-ui `top-left-bottom-right`
+        // Date & Time — before Country/Region
+        SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
+          children: [
+            SettingsNavRow(
+              title: l10n.dateTimeSettings,
+              value: _dateTimeSummary(l10n),
+              onTap: () async {
+                await pushSettingsPage(
+                  context,
+                  DateTimeSettingsPage(services: services),
+                );
+                await _refreshDateTime();
+              },
+            ),
+          ],
+        ),
+        // Locale — Country / Language / Unit
         SettingsGroup(
           borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
           children: [
@@ -381,6 +332,12 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                   );
                 },
               ),
+          ],
+        ),
+        // Display + Sound + Camera (+ optional RGB LED, hidden for now)
+        SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.topRightBottomLeft,
+          children: [
             SettingsNavRow(
               title: l10n.screenSettings,
               value: _brightnessValue.isEmpty ? null : _brightnessValue,
@@ -403,56 +360,14 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 await _refreshVolume();
               },
             ),
-          ],
-        ),
-        // Power Mode — own untitled card (after Display & Sound, before RGB LED)
-        SettingsGroup(
-          borderGradientCenter: CyberBorderGradientCenter.leftRight,
-          children: [
-            Builder(
-              builder: (context) {
-                final load = LoadProfileScope.maybeOf(context);
-                if (load == null) {
-                  return SettingsNavRow(
-                    title: l10n.powerModeSettingText,
-                    value: l10n.powerModeOptionPerformance,
-                    onTap: () => pushSettingsPage(
-                      context,
-                      const PowerModeSettingsPage(),
-                    ),
-                  );
-                }
-                return ListenableBuilder(
-                  listenable: load,
-                  builder: (context, _) {
-                    return SettingsNavRow(
-                      title: l10n.powerModeSettingText,
-                      value: PowerModeSettingsPage.modeLabel(l10n, load.mode),
-                      onTap: () async {
-                        await pushSettingsPage(
-                          context,
-                          const PowerModeSettingsPage(),
-                        );
-                        if (mounted) setState(() {});
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-        // RGB LED + Camera — before Date & Time
-        SettingsGroup(
-          borderGradientCenter: CyberBorderGradientCenter.topRightBottomLeft,
-          children: [
-            SettingsNavRow(
-              title: l10n.rgbLedText,
-              onTap: () => pushSettingsPage(
-                context,
-                LedSettingsPage(services: services),
+            if (_showRgbLed)
+              SettingsNavRow(
+                title: l10n.rgbLedText,
+                onTap: () => pushSettingsPage(
+                  context,
+                  LedSettingsPage(services: services),
+                ),
               ),
-            ),
             SettingsNavRow(
               title: l10n.ipCameraText,
               onTap: () => pushSettingsPage(
@@ -462,54 +377,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                   deviceInfoCache: widget.cameraDeviceInfoCache,
                 ),
               ),
-            ),
-          ],
-        ),
-        // Date & Time — lws-ui `bottom-left-top-right`
-        SettingsGroup(
-          borderGradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
-          children: [
-            SettingsNavRow(
-              title: l10n.dateTimeSettings,
-              value: _dateTimeSummary(l10n),
-              onTap: () async {
-                await pushSettingsPage(
-                  context,
-                  DateTimeSettingsPage(services: services),
-                );
-                await _refreshDateTime();
-              },
-            ),
-          ],
-        ),
-        // Input
-        SettingsGroup(
-          borderGradientCenter: CyberBorderGradientCenter.leftRight,
-          children: [
-            SettingsNavRow(
-              title: l10n.mouseText,
-              onTap: () => pushSettingsPage(
-                context,
-                MouseSettingsPage(services: services),
-              ),
-            ),
-            SettingsNavRow(
-              title: l10n.keyboardText,
-              onTap: () => pushSettingsPage(
-                context,
-                KeyboardSettingsPage(services: services),
-              ),
-            ),
-            SettingsNavRow(
-              title: l10n.usbOtgText,
-              value: usbOtgValue,
-              onTap: () async {
-                await pushSettingsPage(
-                  context,
-                  UsbOtgSettingsPage(services: services),
-                );
-                await _refreshUsbOtg();
-              },
             ),
           ],
         ),

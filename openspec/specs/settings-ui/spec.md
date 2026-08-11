@@ -24,33 +24,34 @@ UI chrome MAY use Material widgets where CyberUI counterparts are not yet availa
 - **WHEN** Settings Volume or Sound Effect surfaces introduced by this change are rendered
 - **THEN** they use CyberUI widgets for volume chrome / effect selection rather than inventing a parallel glass kit
 
-### Requirement: Common Settings Network includes Wi-Fi, proxy, Ethernet, and Bluetooth
+### Requirement: Common Settings Network includes Wi-Fi, proxy, and cloud services
 
 Common Settings SHALL include a Network group with operator entry points for:
 
 - Wi‑Fi
-- Ethernet (when the product exposes it)
 - HTTP Proxy
-- **LAN SSH debug** (immediately after HTTP Proxy in the same Network group)
-- Bluetooth
-- **Cloud services** (云服务; immediately after Bluetooth in the same Network group) — opens the Cloud services sub-page defined by `settings-cloud-services`
+- **Cloud services** (云服务; after Proxy in the Network group) — opens the Cloud services sub-page defined by `settings-cloud-services`
 
-LAN SSH debug SHALL control on-demand LAN/WLAN SSH via `SshDebug` (not persisted across reboot as an enabled-at-boot service; default off). USB OTG mode selection lives under Input → USB OTG, not as a Network row. Cloud Worker connectivity and LAN HTTP `:5580`/mDNS MUST NOT appear as always-on implicit behavior; they are controlled from the Cloud services page.
+Ethernet, Bluetooth, and **LAN SSH debug** MUST NOT appear in product HMI Common Settings Network; those surfaces are owned by the **OS Settings** app (`os-settings-app`). USB OTG mode selection is owned by OS Settings Input, not HMI Network. Cloud Worker connectivity and LAN HTTP `:5580`/mDNS MUST NOT appear as always-on implicit behavior; they are controlled from the Cloud services page.
+
+Product HMI MUST NOT expose a visible **OS Settings** row in Common Settings. Entering OS Settings SHALL require **five consecutive taps on Device SN** in Device Information, invoking `switch-to-os-settings` per `os-settings-app-lifecycle`. Role policy: `docs/settings-apps-roles.md`.
 
 #### Scenario: Network entries reachable
 
 - **WHEN** the operator opens Common Settings → Network
-- **THEN** Wi‑Fi, HTTP Proxy, LAN SSH debug (after Proxy), Bluetooth, and Cloud services (after Bluetooth) entries are available under Network
-
-#### Scenario: LAN SSH toggle enable
-
-- **WHEN** the operator turns LAN SSH debug on from Settings
-- **THEN** `SshDebug` is asked to enable LAN SSH debug
+- **THEN** Wi‑Fi, HTTP Proxy, and Cloud services entries are available under Network
+- **AND** Ethernet, Bluetooth, and LAN SSH debug entries are not present
 
 #### Scenario: Cloud services opens sub-page
 
 - **WHEN** the operator taps Cloud services under Network
 - **THEN** the Cloud services settings sub-page is shown
+
+#### Scenario: OS Settings via Device SN
+
+- **WHEN** the operator taps Device SN five times within the secret-tap window in Device Information
+- **THEN** `switch-to-os-settings` is invoked
+- **AND** no OS Settings row is shown under Common Settings
 
 ### Requirement: Language selection applies UI locale and lists supported endonyms
 
@@ -70,14 +71,31 @@ Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `z
 
 ### Requirement: Common Settings exposes display, sound, date-time, and input controls
 
-General Settings (Common Settings; en label **General**) SHALL expose:
+General Settings (Common Settings; en label **General**) SHALL expose untitled cards in this order:
 
-- Display & Sound (untitled card): **Country/Region**, Language, and Unit as persisted controls backed by **`/var/lib/hal/locale.conf`** through HAL locale (`Region` / `region`, `PreferredLanguage` / `language`, `UnitSystem` / `unit`); Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings` / `hal-locale`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: **Country/Region before Language**, then Unit, then Display, then Sound.
-- **Power Mode** (untitled card, **own group**, after Display & Sound and before RGB LED + Camera): a single nav row (same chrome pattern as **Unit**) with trailing summary of the current mode; tapping opens a Power Mode sub-page (see Power Mode requirement). Persistence remains `/var/lib/hal/power.conf` via HAL (not `common-settings.json` / not `locale.conf` for power).
-- RGB LED + Camera (untitled card, after Power Mode, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
-- Date & Time (untitled card): Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController` (lws-ui parity).
-- Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera + RGB LED group requirement).
+1. **Network** — Wi‑Fi, HTTP Proxy, Cloud services (Ethernet / Bluetooth / SSH / Cloud Environment tier live in OS Settings).
+2. **Date & Time** — Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController`; this card SHALL appear **before** Country/Region.
+3. **Locale** — **Country/Region**, Language, and Unit backed by **`/var/lib/hal/locale.conf`** (`region` / `language` / `unit`); Country/Region before Language; Country/Region drives wireless regulatory and region-aware timezone/NTP defaults per `region-country-settings` / `hal-locale`; Language drives Flutter UI locale and CyberIME for three locales.
+4. **Display + Sound + Camera** — **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`) (+ wallpaper / text size as product Display page); **Sound** nav → Volume (`CyberVolumeSlider`) + Sound Effect (`ButtonFeedback`); **Camera** nav → product IP-camera settings. These three SHALL share **one** untitled card. **RGB LED MUST NOT appear** as a Common Settings nav row (implementation MAY retain the LED page behind a hide flag).
+5. **Misc** — boot self-check / status overlay / safety-ground toggles as elsewhere.
+
+Additionally:
+
+- **Input card MUST NOT list mouse, keyboard layout, or USB OTG** — those entries are owned by the OS Settings app (`os-settings-app` Input group).
+- **Power Mode MUST NOT appear in Common Settings** — owned by OS Settings (Display & Sound group); product HMI still reads `/var/lib/hal/power.conf` for continuous-paint policy.
+- **UI Scale MUST NOT appear in HMI Display** — owned by OS Settings (`display.conf` `ui_scale`).
 - Operator-visible labels SHALL come from App localization. Group section titles MUST NOT be shown.
+
+#### Scenario: Date and Time before Country Region
+
+- **WHEN** the operator opens Common Settings
+- **THEN** the Date & Time card appears above the Locale card that contains Country/Region
+
+#### Scenario: Display Sound Camera one card
+
+- **WHEN** the operator opens Common Settings
+- **THEN** Display, Sound, and Camera are in the same untitled card after Locale
+- **AND** RGB LED is not listed
 
 #### Scenario: Brightness and volume invoke controllers
 
@@ -89,21 +107,27 @@ General Settings (Common Settings; en label **General**) SHALL expose:
 - **WHEN** the user selects an Auto Screen Off option on the Display page other than the current policy
 - **THEN** HAL `AutoSleep` is asked to set the corresponding policy and the choice is persisted
 
-#### Scenario: Power Mode group is separate from Display and Sound
+#### Scenario: Power Mode absent from Common Settings
 
 - **WHEN** the operator opens Common Settings
-- **THEN** Power Mode appears as its own untitled card (not a row inside Display & Sound)
-- **AND** that card is after Display & Sound and before RGB LED + Camera
+- **THEN** Power Mode is not listed as a nav row or untitled card
 
 #### Scenario: Sound effect is not a stub
 
-- **WHEN** the user selects a Sound Effect option on the Sound page
+- **WHEN** the user selects a Sound Effect option on the HMI Sound page
 - **THEN** Effect 1 / Effect 2 / Effect 3 are selectable and the choice is persisted via `ButtonFeedback`
+- **AND** product HMI owns installing catalog MP3 bytes next to `sound.conf`
+- **AND** OS Settings Sound page exposes volume only (no effect picker; uses HMI-installed sample path via HAL)
+
+#### Scenario: Migrated input rows absent
+
+- **WHEN** the operator opens Common Settings after Input migration
+- **THEN** mouse, keyboard, and USB OTG entries are not present in product HMI Settings
 
 #### Scenario: Country/Region appears before Language
 
 - **WHEN** the operator opens Common Settings
-- **THEN** the Display & Sound card lists Country/Region above Language
+- **THEN** the Locale card lists Country/Region above Language
 - **AND** Country/Region summary reflects the persisted Region preference
 
 #### Scenario: Language is persisted
@@ -121,15 +145,10 @@ General Settings (Common Settings; en label **General**) SHALL expose:
 - **WHEN** the user enables Automatic or applies a manual date/time/zone change
 - **THEN** the date/time controller is asked to set the corresponding policy or wall clock
 
-#### Scenario: Mouse settings invoke controller
-
-- **WHEN** the user changes a mouse setting from Common Settings
-- **THEN** the mouse settings controller is asked to persist and apply the value
-
 #### Scenario: Camera is not under Input
 
 - **WHEN** the operator opens Common Settings
-- **THEN** Camera is reachable from the RGB LED + Camera card before Date & Time
+- **THEN** Camera is reachable from the Display + Sound + Camera card
 - **AND** Input does not list IP Camera / Camera
 
 #### Scenario: Common Settings chrome follows UI locale
@@ -137,26 +156,24 @@ General Settings (Common Settings; en label **General**) SHALL expose:
 - **WHEN** Language is `zh-CN` and the operator opens Common Settings
 - **THEN** migrated row titles and control labels render in Simplified Chinese via App localization
 
-### Requirement: Common Settings Power Mode nav opens a Unit-style sub-page
+### Requirement: Power Mode Settings lives in OS Settings only
 
-Common Settings SHALL present **Power Mode** (localized; en: Power Mode; zh-CN: 效能模式) as a **SettingsNavRow** in its own untitled card. The row SHALL show a trailing summary of the active profile (Performance / Balanced, localized 性能 / 均衡). Tapping SHALL push a dedicated Power Mode settings sub-page (same navigation chrome pattern as **Unit** → `UnitSettingsPage`). The sub-page SHALL list the two options `performance` and `balanced` for selection. Selecting an option SHALL call the HAL load-profile API (persist + apply) and update the in-App continuous-paint policy; the Common Settings trailing summary SHALL refresh to match. Operator-facing copy MUST NOT present the mode primarily as energy saving / 省电.
+Product HMI Common Settings MUST NOT present a Power Mode nav row or sub-page. **OS Settings** SHALL present **Power Mode** (localized; en: Power Mode; zh-CN: 效能模式) under Display & Sound. The page SHALL list `performance` and `balanced` for selection via the HAL load-profile API (persist + apply `/var/lib/hal/power.conf`). Operator-facing copy MUST NOT present the mode primarily as energy saving / 省电. Product HMI SHALL continue to **read** the persisted mode at seat start for continuous-paint / decorative-motion policy.
 
-#### Scenario: Power Mode opens sub-page like Unit
+#### Scenario: HMI has no Power Mode Settings entry
 
-- **WHEN** the operator taps Power Mode on Common Settings
-- **THEN** a Power Mode sub-page opens (not an inline dropdown on the Common Settings list)
-- **AND** the navigation pattern matches Unit (nav row → push settings page)
+- **WHEN** the operator opens Common Settings
+- **THEN** Power Mode is not reachable from product HMI Settings
 
-#### Scenario: Sub-page lists performance and balanced
+#### Scenario: OS Settings lists performance and balanced
 
-- **WHEN** the operator opens the Power Mode sub-page
+- **WHEN** the operator opens OS Settings → Power Mode
 - **THEN** Performance (性能) and Balanced (均衡) options are available
 - **AND** selecting Balanced invokes HAL setMode(`balanced`) and persists `/var/lib/hal/power.conf`
-- **AND** returning to Common Settings shows the Balanced trailing summary
 
 ### Requirement: Country/Region selection lists all markets and applies region effects
 
-Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory catalog (plus `XK`) with human-readable labels (English / Simplified Chinese by UI locale) and search. Selecting a country SHALL persist via **HAL locale Region** (`region=` in `locale.conf`) and trigger HAL Region apply (wireless regulatory and Region-linked timezone/NTP defaults). General Settings Country/Region summary MUST show the selected country label (or code). Country/Region MUST appear as a nav row before Language on the Display & Sound card. Operator-visible title SHALL be Country/Region (zh: 国家/地区).
+Country/Region Settings SHALL list the full ISO 3166-1 alpha-2 country/territory catalog (plus `XK`) with human-readable labels (English / Simplified Chinese by UI locale) and search. Selecting a country SHALL persist via **HAL locale Region** (`region=` in `locale.conf`) and trigger HAL Region apply (wireless regulatory and Region-linked timezone/NTP defaults). General Settings Country/Region summary MUST show the selected country label (or code). Country/Region MUST appear as a nav row before Language on the **Locale** card (after Date & Time). Operator-visible title SHALL be Country/Region (zh: 国家/地区).
 
 #### Scenario: Country page lists options with US default summary
 
@@ -245,17 +262,17 @@ Once Advanced Settings migration for this change is applied, the Advanced Settin
 
 ### Requirement: Display & Sound includes RGB LED controls
 
-Common Settings SHALL include an RGB LED entry in an **untitled** card **after** the main Display & Sound controls card (the card that contains language / unit / Display / Sound) and **before** Date & Time, sharing that card with Camera (not as a mid-group row among Display & Sound controls). The entry opens controls for Red, Yellow, and Green modes (Steady / Blink / Off), wired to the GPIO RGB LED controller. LED I/O MUST NOT block Home first paint. No visible “Display & Sound” section title is required.
+Common Settings **MAY** retain RGB LED settings page implementation, but the Common Settings list **MUST NOT** show an RGB LED nav row while the product hide flag is active. When the row is re-enabled in a future change, LED controls for Red, Yellow, and Green modes (Steady / Blink / Off) SHALL wire to the GPIO RGB LED controller; LED I/O MUST NOT block Home first paint.
 
-#### Scenario: LED entry after display-sound group
+#### Scenario: RGB LED hidden from Common list
 
-- **WHEN** the user opens Common Settings
-- **THEN** an RGB LED (or equivalent) entry is available in a card after Display & Sound and before Date & Time
-- **AND** that card also contains the Camera navigation row
+- **WHEN** the operator opens Common Settings with RGB LED hidden
+- **THEN** no RGB LED navigation row is shown
+- **AND** Display, Sound, and Camera remain available in their shared card
 
 #### Scenario: LED mode invokes GPIO controller
 
-- **WHEN** the user selects Steady on the Green LED control from Settings
+- **WHEN** RGB LED settings are opened (e.g. via a re-enabled nav row or debug path) and the operator selects Steady on the Green LED control
 - **THEN** the GPIO LED controller is asked to set Green to Steady
 
 ### Requirement: Settings may adopt CyberUI incrementally
@@ -351,26 +368,19 @@ Common Settings → Misc SHALL expose an interactive “Show System Status Overl
 - **THEN** the preference is updated in `/var/lib/hmi/misc-settings.json` immediately
 - **AND** the global system status card appears or disappears accordingly without requiring an app restart
 
-### Requirement: Keyboard page offers four-layout Segment and preview
+### Requirement: Keyboard and USB OTG settings live in OS Settings (removed from HMI)
 
-Common Settings → Keyboard SHALL present a product layout chooser using `CyberSegmentedControl` for the three soft profiles (QWERTY, QWERTZ, AZERTY) and a phone soft-keyboard preview of the selection (same layout factory as live CyberIME). The page MAY retain HID presence / smoke-test affordances as secondary content but MUST NOT rely solely on the Demo `KeyboardDemoSection` as the primary layout UX. Default / typewriter-block / JIS preview chrome MUST NOT be shown.
+Keyboard layout, mouse settings, and USB OTG mode selection **MUST NOT** appear in product HMI Common Settings. Those surfaces are owned by the OS Settings app Input group per `os-settings-app` and `docs/settings-apps-roles.md`.
 
-#### Scenario: Keyboard page shows Segment
+#### Scenario: Keyboard page absent from HMI
 
-- **WHEN** the operator opens Settings → Keyboard
-- **THEN** a segmented control with the four product profiles is visible
-- **AND** a soft keyboard layout preview for the selected profile is visible
+- **WHEN** the operator searches product HMI Settings for Keyboard
+- **THEN** no Keyboard settings page or nav row is present
 
-### Requirement: Restart persists layout and applies XKB
+#### Scenario: USB OTG absent from HMI
 
-The Keyboard settings page SHALL provide a single primary **Restart** action after the operator changes the Segment selection. Restart MUST persist the selected profile for CyberIME and XKB preference, restart HMI so physical XKB takes effect, and restore navigation to the Keyboard settings page after relaunch.
-
-#### Scenario: Restart saves and applies
-
-- **WHEN** the operator selects a different profile and taps Restart
-- **THEN** the layout preference is persisted
-- **AND** HMI restarts and, after relaunch, the App opens the Keyboard settings page
-- **AND** soft CyberIME and physical key events follow the persisted layout
+- **WHEN** the operator opens Common Settings
+- **THEN** no USB OTG entry is present under Input or elsewhere
 
 ### Requirement: IP Camera settings page previews live video via the product session
 
@@ -464,24 +474,9 @@ The Settings shell and Settings sub-pages hosted by the shared Settings scaffold
 - **WHEN** the operator opens Common Settings → Wi‑Fi (or another Settings scaffold sub-page)
 - **THEN** the sub-page top chrome is the CyberUI page status bar showing back, that page’s title, this product’s current status icons, and a compact clock
 
-### Requirement: Settings Input includes USB OTG mode
+### Requirement: USB OTG settings live in OS Settings (removed from HMI)
 
-Common Settings → Input SHALL include a **USB OTG** entry that lets the operator choose among modes allowed by `/etc/usb-otg.ini` (`debug` / `mtp` / `host`, or debug-only). Choosing a mode SHALL call `UsbOtg.setMode` (persist + apply). The page MUST NOT depend on cable attach/detach events.
-
-#### Scenario: Three modes on ynh960
-
-- **WHEN** the operator opens Settings → Input → USB OTG on ynh960 (`debug_only=false`, `auto_host_support=false`)
-- **THEN** Debug, MTP, and Host choices are available
-
-#### Scenario: Selection persists
-
-- **WHEN** the operator selects MTP
-- **THEN** `UsbOtg.setMode(mtp)` persists `mode=mtp` and applies MTP gadget behavior
-
-#### Scenario: debug_only locks Debug
-
-- **WHEN** `debug_only=true`
-- **THEN** Settings offers only Debug and does not allow switching to mtp/host
+USB OTG mode selection **MUST NOT** appear in product HMI Settings. Implementation and scenarios are owned by `os-settings-app` Input → USB OTG.
 
 ### Requirement: Device Information and Common Settings use CyberUI cards without visible group titles
 
@@ -554,16 +549,18 @@ Common Settings SHALL present Date & Time in an untitled CyberUI card. The Commo
 - **WHEN** Automatic is off and the operator opens Set Date
 - **THEN** a CyberUI dialog allows choosing a calendar date and applying it through `DateTimeController`
 
-### Requirement: Camera shares an untitled card with RGB LED (not under Input)
+### Requirement: Camera shares an untitled card with Display and Sound (not under Input)
 
-Common Settings SHALL present **Camera** in the same untitled card as **RGB LED**, placed **after** Power Mode (and Display & Sound) and **before** Date & Time. Camera MUST NOT be nested under Input. The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). Input SHALL retain Mouse, Keyboard, and USB OTG only (no Camera row under Input).
+Common Settings SHALL present **Camera** in the **same** untitled card as **Display** and **Sound**, placed **after** Locale (Country/Region / Language / Unit) and **before** Misc. Camera MUST NOT be nested under Input. The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). HMI **MUST NOT** expose an Input card with Mouse, Keyboard, or USB OTG (those live in OS Settings). HMI **MUST NOT** expose Power Mode (lives in OS Settings). HMI **MUST NOT** list RGB LED on Common Settings (page code MAY remain hidden).
 
-#### Scenario: Camera with RGB LED before Date & Time
+#### Scenario: Camera with Display and Sound
 
 - **WHEN** the operator opens Common Settings
-- **THEN** RGB LED and Camera navigation rows appear in the same card group
-- **AND** that card is after Power Mode and before Date & Time
+- **THEN** Display, Sound, and Camera navigation rows appear in the same card group
+- **AND** that card is after Locale and before Misc
+- **AND** RGB LED is not listed
 - **AND** the Input card group does not list Camera / IP Camera
+- **AND** Power Mode is not present in Common Settings
 
 #### Scenario: Camera label
 

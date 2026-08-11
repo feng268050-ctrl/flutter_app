@@ -2,11 +2,9 @@ import 'dart:convert';
 
 import 'package:cyber_hal/secrets.dart';
 import 'package:cyber_hal/sys_info.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/platform/cloud/cloud_http_client.dart';
 import 'package:lws_hmi/platform/cloud/device_cloud_ed25519.dart';
-import 'package:lws_hmi/platform/http/http_client_controller.dart';
-import 'package:lws_hmi/platform/http/http_proxy_config.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 class _FakeVendorIdentity extends VendorIdentityReader {
   _FakeVendorIdentity(this.sn);
@@ -14,27 +12,6 @@ class _FakeVendorIdentity extends VendorIdentityReader {
 
   @override
   Future<String> readSn() async => sn;
-}
-
-final class _FakeHttp implements HttpClientController {
-  @override
-  Future<void> dispose() async {}
-
-  @override
-  Future<HttpProxyConfig> getProxy() async => HttpProxyConfig.disabled;
-
-  @override
-  Future<HttpProbeResult> request({
-    required String method,
-    required Uri url,
-    int maxBodyBytes = 2048,
-    Duration timeout = const Duration(seconds: 15),
-  }) async {
-    throw UnsupportedError('unused');
-  }
-
-  @override
-  Future<void> setProxy(HttpProxyConfig config) async {}
 }
 
 void main() {
@@ -53,7 +30,7 @@ void main() {
       Future<CloudHttpResponse> Function(Uri url, {Object? jsonBody}) post,
     ) {
       return DeviceCloudEd25519Client(
-        cloudHttp: CloudHttpClient(http: _FakeHttp()),
+        cloudHttp: CloudHttpClient(appVersion: 'test'),
         postJson: post,
       );
     }

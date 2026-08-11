@@ -90,48 +90,98 @@ void main() {
   });
 
   group('CloudSettingsStore', () {
-    test('persists environment tier', () async {
+    test('missing file defaults to production tier', () {
+      final dir = Directory.systemTemp.createTempSync('cloud-settings-');
+      addTearDown(() => dir.delete(recursive: true));
+      final store = CloudSettingsStore(
+        preferencePath: '${dir.path}/cloud-settings.json',
+        environmentTierPath: '${dir.path}/cloud.conf',
+      )..warmRead();
+      expect(store.environmentTier, CloudEnvironmentTier.prod);
+    });
+
+    test('persists environment tier under network cloud.conf', () async {
       final dir = await Directory.systemTemp.createTemp('cloud-settings-');
       addTearDown(() => dir.delete(recursive: true));
-      final path = '${dir.path}/cloud-settings.json';
-      final a = CloudSettingsStore(preferencePath: path)..warmRead();
-      await a.setEnvironmentTier(CloudEnvironmentTier.prod);
-      final b = CloudSettingsStore(preferencePath: path)..warmRead();
-      expect(b.environmentTier, CloudEnvironmentTier.prod);
+      final conf = '${dir.path}/cloud.conf';
+      final json = '${dir.path}/cloud-settings.json';
+      final a = CloudSettingsStore(
+        preferencePath: json,
+        environmentTierPath: conf,
+      )..warmRead();
+      await a.setEnvironmentTier(CloudEnvironmentTier.test);
+      final b = CloudSettingsStore(
+        preferencePath: json,
+        environmentTierPath: conf,
+      )..warmRead();
+      expect(b.environmentTier, CloudEnvironmentTier.test);
+      expect(File(conf).readAsStringSync(), contains('environment_tier=test'));
+      expect(await File(json).exists(), isFalse);
     });
 
     test('cloud and LAN enhancement default off and persist', () async {
       final dir = await Directory.systemTemp.createTemp('cloud-settings-');
       addTearDown(() => dir.delete(recursive: true));
       final path = '${dir.path}/cloud-settings.json';
-      final fresh = CloudSettingsStore(preferencePath: path)..warmRead();
+      final conf = '${dir.path}/cloud.conf';
+      final fresh = CloudSettingsStore(
+        preferencePath: path,
+        environmentTierPath: conf,
+      )..warmRead();
       expect(fresh.cloudServicesEnabled, isFalse);
       expect(fresh.lanEnhancementEnabled, isFalse);
 
       await fresh.setCloudServicesEnabled(true);
       await fresh.setLanEnhancementEnabled(true);
-      final reloaded = CloudSettingsStore(preferencePath: path)..warmRead();
+      final reloaded = CloudSettingsStore(
+        preferencePath: path,
+        environmentTierPath: conf,
+      )..warmRead();
       expect(reloaded.cloudServicesEnabled, isTrue);
       expect(reloaded.lanEnhancementEnabled, isTrue);
       expect(reloaded.environmentTier, CloudSettingsStore.defaultEnvironmentTier);
+      final productJson = jsonDecode(await File(path).readAsString()) as Map;
+      expect(productJson.containsKey('environmentTier'), isFalse);
 
       await reloaded.setCloudServicesEnabled(false);
-      final off = CloudSettingsStore(preferencePath: path)..warmRead();
+      final off = CloudSettingsStore(
+        preferencePath: path,
+        environmentTierPath: conf,
+      )..warmRead();
       expect(off.cloudServicesEnabled, isFalse);
       expect(off.lanEnhancementEnabled, isTrue);
     });
 
-    test('missing keys keep defaults without wiping tier', () async {
+    test('migrates environmentTier from legacy HMI JSON', () async {
       final dir = await Directory.systemTemp.createTemp('cloud-settings-');
       addTearDown(() => dir.delete(recursive: true));
       final path = '${dir.path}/cloud-settings.json';
+      final conf = '${dir.path}/cloud.conf';
       await File(path).writeAsString(
-        '{"environmentTier":"prod"}\n',
+        '{"environmentTier":"test","cloudServicesEnabled":true}\n',
       );
-      final store = CloudSettingsStore(preferencePath: path)..warmRead();
+      final store = CloudSettingsStore(
+        preferencePath: path,
+        environmentTierPath: conf,
+        legacyEnvironmentJsonPath: path,
+      )..warmRead();
+      expect(store.environmentTier, CloudEnvironmentTier.test);
+      expect(store.cloudServicesEnabled, isTrue);
+      expect(File(conf).readAsStringSync(), contains('environment_tier=test'));
+    });
+
+    test('legacy dev tier maps to production', () async {
+      final dir = await Directory.systemTemp.createTemp('cloud-settings-');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = '${dir.path}/cloud-settings.json';
+      final conf = '${dir.path}/cloud.conf';
+      await File(path).writeAsString('{"environmentTier":"dev"}\n');
+      final store = CloudSettingsStore(
+        preferencePath: path,
+        environmentTierPath: conf,
+        legacyEnvironmentJsonPath: path,
+      )..warmRead();
       expect(store.environmentTier, CloudEnvironmentTier.prod);
-      expect(store.cloudServicesEnabled, isFalse);
-      expect(store.lanEnhancementEnabled, isFalse);
     });
   });
 

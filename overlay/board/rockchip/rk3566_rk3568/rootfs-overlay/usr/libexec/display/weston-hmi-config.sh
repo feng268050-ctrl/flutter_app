@@ -3,6 +3,9 @@
 # shellcheck shell=sh
 
 MOUSE_CONF_DEFAULT=/var/lib/hal/mouse.conf
+DISPLAY_CONF_DEFAULT=/var/lib/hal/display.conf
+WALLPAPER_PRESETS_DEFAULT=/usr/share/hal/wallpapers
+BOOT_SPLASH_DEFAULT=/usr/share/hmi/boot-splash.png
 
 mouse_conf_get() {
 	# usage: mouse_conf_get <key> <default> [conf_path]
@@ -19,6 +22,37 @@ mouse_conf_get() {
 		return 0
 	fi
 	printf '%s\n' "$raw"
+}
+
+# Active system wallpaper for desktop-shell background-image.
+# Prefer display.conf wallpaper= → /var/lib/hal/wallpaper.* → packaged
+# home_back preset → boot splash (logo bridge).
+weston_resolve_background_image() {
+	display_conf="${DISPLAY_CONF:-$DISPLAY_CONF_DEFAULT}"
+	presets="${HAL_WALLPAPER_PRESETS:-$WALLPAPER_PRESETS_DEFAULT}"
+	splash="${HMI_BOOT_SPLASH:-$BOOT_SPLASH_DEFAULT}"
+	pref_dir="$(dirname "$display_conf")"
+
+	stored="$(mouse_conf_get wallpaper "" "$display_conf")"
+	if [ -n "$stored" ] && [ -f "$stored" ]; then
+		printf '%s\n' "$stored"
+		return 0
+	fi
+
+	for cand in "$pref_dir"/wallpaper.png "$pref_dir"/wallpaper.jpg \
+		"$pref_dir"/wallpaper.jpeg "$pref_dir"/wallpaper.webp; do
+		if [ -f "$cand" ]; then
+			printf '%s\n' "$cand"
+			return 0
+		fi
+	done
+
+	if [ -f "$presets/home_back.png" ]; then
+		printf '%s\n' "$presets/home_back.png"
+		return 0
+	fi
+
+	printf '%s\n' "$splash"
 }
 
 # Compositor cursors look larger than reference density icons — keep modest.
@@ -62,7 +96,8 @@ weston_write_hmi_ini() {
 	out="$1"
 	transform="${2:-rotate-270}"
 	conf="${MOUSE_CONF:-$MOUSE_CONF_DEFAULT}"
-	splash="${HMI_BOOT_SPLASH:-/usr/share/hmi/boot-splash.png}"
+	# System wallpaper (Flutter + Weston). Falls back to boot-splash.png.
+	splash="$(weston_resolve_background_image)"
 
 	pointer_size="$(mouse_conf_get pointer_size 20 "$conf")"
 	pointer_speed="$(mouse_conf_get pointer_speed 50 "$conf")"

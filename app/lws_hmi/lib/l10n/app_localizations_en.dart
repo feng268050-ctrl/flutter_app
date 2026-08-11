@@ -1821,6 +1821,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onLabel => 'On';
 
   @override
+  String get osSettingsBundleMissing =>
+      'OS Settings is not installed on this device.';
+
+  @override
+  String get osSettingsSwitchFailed => 'Couldn’t open OS Settings.';
+
+  @override
+  String get osSettingsText => 'OS Settings';
+
+  @override
   String get osVersion => 'OS Version';
 
   @override
@@ -2353,23 +2363,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processWheelWideCleaning => 'Wide-Area Cleaning';
 
   @override
-  String get powerModeOptionBalanced => 'Balanced';
-
-  @override
-  String get powerModeOptionPerformance => 'Performance';
-
-  @override
-  String get powerModePersistedFooter =>
-      'Performance keeps full clocks and motion. Balanced lowers SoC load and heat by capping clocks and reducing decorative animation.';
-
-  @override
-  String get powerModePreferenceUnavailable =>
-      'Power Mode settings are temporarily unavailable.';
-
-  @override
-  String get powerModeSettingText => 'Power Mode';
-
-  @override
   String get productDisclaimerContent =>
       'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.';
 
@@ -2556,6 +2549,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get screenSettings => 'Display';
+
+  @override
+  String get wallpaperSettingText => 'Wallpaper';
+
+  @override
+  String get wallpaperOptionDefault => 'Default';
+
+  @override
+  String get wallpaperApplyRestarts =>
+      'Changing wallpaper restarts the application.';
 
   @override
   String get selectProcessPrompt => 'Select a process to view its parameters.';

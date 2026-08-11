@@ -26,7 +26,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
     this.clockStyle,
     this.use24HourFormat = true,
     this.showClockDate = true,
-    this.clockEndPadding = 55,
+    this.clockEndPadding = 12,
     this.centerClock = false,
   });
 
@@ -58,8 +58,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
   /// use [WorkModeStatusBar] with time-only [CyberStatusBarClock].
   final bool showClockDate;
 
-  /// Clock trailing inset vs screen end — matches Home Quick/Engineer mode
-  /// entry top inset (`55` on the 1280×800 design canvas).
+  /// Clock trailing inset vs screen end (matches [WorkModeStatusBar] edge inset).
   final double clockEndPadding;
 
   /// When true, put [CyberStatusBarClock] in the AppBar title (centered) and

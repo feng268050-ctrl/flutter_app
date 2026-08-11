@@ -93,11 +93,11 @@ void main() {
     expect(find.byKey(const ValueKey('s0')), findsOneWidget);
     final appBar = tester.widget<AppBar>(find.byType(AppBar));
     expect(appBar.backgroundColor, const Color(0xFF112233));
-    // Clock end inset matches Home Quick/Engineer mode entry top (55).
+    // Clock end inset matches screen-edge rhythm (12).
     final clockRect = tester.getRect(
       find.byKey(const ValueKey('cyber-status-bar-clock')),
     );
-    expect(tester.getSize(find.byType(MaterialApp)).width - clockRect.right, 55);
+    expect(tester.getSize(find.byType(MaterialApp)).width - clockRect.right, 12);
     // Status icons are to the left of the date/time.
     final iconRect = tester.getRect(find.byKey(const ValueKey('s0')));
     expect(iconRect.right, lessThanOrEqualTo(clockRect.left));

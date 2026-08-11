@@ -521,11 +521,11 @@ final class _WorkModeTrailingState extends State<_WorkModeTrailing> {
           CyberStatusBarClock(
             now: widget.clockNow,
             use24HourFormat: widget.use24HourFormat,
-            style: const TextStyle(
+            style: TextStyle(
               color: WorkModeStatusBarDimens.clock,
-              fontSize: WorkModeStatusBarDimens.chromeLabelFontSize,
+              fontSize: CallBackHomeButton.labelFontSize,
               height: 1,
-              fontFeatures: [FontFeature.tabularFigures()],
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],

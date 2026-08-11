@@ -136,6 +136,106 @@ void main() {
     );
   });
 
+  testWidgets('side ops pin icon with equal edge insets and clear the label',
+      (tester) async {
+    await pumpControls(tester, processType: ProcessType.continuousWelding);
+
+    for (final entry in [
+      (
+        const ValueKey('device-control-manual-gas'),
+        'Manual Gas',
+        Icons.air,
+        ProcessModeOutlineChrome.iconLabelClearance,
+      ),
+      (
+        const ValueKey('device-control-feed'),
+        'Feed',
+        Icons.output,
+        ProcessModeOutlineChrome.iconLabelClearance,
+      ),
+      (
+        const ValueKey('device-control-retract'),
+        'Retract',
+        Icons.output,
+        ProcessModeOutlineChrome.iconLabelClearance,
+      ),
+    ]) {
+      final host = tester.element(find.byKey(entry.$1));
+      final scale = ProcessModeDimens.dashboardScaleFor(
+        MediaQuery.sizeOf(host),
+      );
+      final button = tester.getRect(find.byKey(entry.$1));
+      final label = tester.getRect(find.text(entry.$2));
+      final icon = tester.getRect(find.descendant(
+        of: find.byKey(entry.$1),
+        matching: find.byIcon(entry.$3),
+      ));
+      final clearance = entry.$4;
+      expect(
+        find.descendant(
+          of: find.byKey(entry.$1),
+          matching: find.byKey(const ValueKey('hmi-icon-label-label-centered')),
+        ),
+        findsOneWidget,
+      );
+      // Icon left inset equals vertical inset (stable pin).
+      expect(icon.left - button.left, closeTo(icon.top - button.top, 1));
+      // Label never overlaps the icon (per-button clearance when nudged).
+      expect(
+        label.left - icon.right,
+        greaterThanOrEqualTo(clearance * scale - 0.75),
+      );
+      // Right chrome at least matches the left icon inset.
+      expect(
+        button.right - label.right,
+        greaterThanOrEqualTo(icon.left - button.left - 1),
+      );
+    }
+
+    // Short label still centers on the button when it clears the icon.
+    final feedButton = tester.getRect(
+      find.byKey(const ValueKey('device-control-feed')),
+    );
+    final feedLabel = tester.getRect(find.text('Feed'));
+    expect(feedLabel.center.dx, closeTo(feedButton.center.dx, 1));
+  });
+
+  testWidgets('Auto Wire Feed abuts label to icon with no clearance',
+      (tester) async {
+    await pumpControls(tester, processType: ProcessType.continuousWelding);
+
+    const key = ValueKey('device-control-auto-wire-feed');
+    final host = tester.element(find.byKey(key));
+    final scale = ProcessModeDimens.dashboardScaleFor(
+      MediaQuery.sizeOf(host),
+    );
+    final button = tester.getRect(find.byKey(key));
+    final icon = tester.getRect(find.descendant(
+      of: find.byKey(key),
+      matching: find.byIcon(Icons.sync),
+    ));
+    final labelFinder = find.descendant(
+      of: find.byKey(key),
+      matching: find.textContaining('Auto'),
+    );
+    expect(labelFinder, findsOneWidget);
+    final label = tester.getRect(labelFinder);
+    final text = tester.widget<Text>(labelFinder);
+
+    expect(icon.left - button.left, closeTo(icon.top - button.top, 1));
+    // Nudged path: label starts at icon edge (0 logical px).
+    expect(
+      label.left - icon.right,
+      closeTo(ProcessModeOutlineChrome.noIconLabelClearance * scale, 0.75),
+    );
+    expect(
+      button.right - label.right,
+      greaterThanOrEqualTo(icon.left - button.left - 1),
+    );
+    expect(text.overflow, TextOverflow.ellipsis);
+    expect(label.right, lessThanOrEqualTo(button.right + 0.5));
+  });
+
   testWidgets('greys Auto Wire / Feed / Retract outside continuous welding',
       (tester) async {
     await pumpControls(tester, processType: ProcessType.weldCleaning);

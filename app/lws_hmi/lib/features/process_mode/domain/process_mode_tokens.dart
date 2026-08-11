@@ -241,7 +241,7 @@ abstract final class ProcessModeDimens {
   static const double quickLaserRimShadowBlur = 8;
 
   /// Side ops (Manual Gas / Auto Wire / Feed / Retract) — lws-ui styles.
-  static const double quickSideButtonWidth = 269;
+  static const double quickSideButtonWidth = 275;
   static const double quickSideButtonInset = 30;
   /// Match [quickSideButtonInset] so bottom edge equals left/right screen gap.
   static const double quickSideButtonBottom = 30;

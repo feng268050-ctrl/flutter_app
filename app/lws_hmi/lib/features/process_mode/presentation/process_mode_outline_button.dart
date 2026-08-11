@@ -21,10 +21,14 @@ abstract final class ProcessModeOutlineChrome {
   static const Color idleFill = Color(0xFF2C1923);
   static const Color disabledForeground = Color(0xFF7D3E2B);
 
-  /// Quick side ops / Engineer Feed·Retract — [HmiButtonSize.hero].
+  /// Quick side ops / Engineer Feed·Retract layout slot — [HmiButtonSize.hero].
   static const double labelSize = HmiTypography.buttonHeroFontSize;
   static const double iconSize = HmiButtonMetrics.heroIconSize;
   static const double defaultHeight = HmiButtonMetrics.heroHeight;
+
+  /// Engineer Feed / Retract glyph only; layout slot stays [iconSize] so
+  /// edge insets and row geometry do not shift.
+  static const double engineerWireIconVisualSize = 28.0;
 
   /// Engineer Enable Laser (filled) — [HmiButtonSize.jumbo].
   static const double laserEnableHeight = HmiButtonMetrics.jumboHeight;
@@ -32,6 +36,12 @@ abstract final class ProcessModeOutlineChrome {
   static const double laserEnableIconSize = HmiButtonMetrics.jumboIconSize;
 
   static const double iconLabelGap = HmiIconLabelLayout.iconLabelGap;
+
+  /// Clearance between fixed-left icon and label when label is nudged right
+  /// (Quick Manual Gas / Feed / Retract). Auto Wire Feed uses [noIconLabelClearance].
+  static const double iconLabelClearance = 3.0;
+  static const double noIconLabelClearance = 0.0;
+
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;
 }
@@ -46,6 +56,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
     required this.enabled,
     required this.onPressed,
     this.height = ProcessModeOutlineChrome.defaultHeight,
+    this.iconLabelClearance = ProcessModeOutlineChrome.iconLabelClearance,
   });
 
   final String label;
@@ -54,6 +65,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onPressed;
   final double height;
+  final double iconLabelClearance;
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +92,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
               enabled: enabled,
               leading: leading,
               label: label,
+              iconLabelClearance: iconLabelClearance,
             ),
           ),
         ),
@@ -285,6 +298,7 @@ final class _OutlineFace extends StatelessWidget {
     this.progressForcesReadableLabel = false,
     this.continuousRipple = false,
     this.showLeading = true,
+    this.iconLabelClearance = ProcessModeOutlineChrome.iconLabelClearance,
   });
 
   final double height;
@@ -296,6 +310,7 @@ final class _OutlineFace extends StatelessWidget {
   final bool progressForcesReadableLabel;
   final bool continuousRipple;
   final bool showLeading;
+  final double iconLabelClearance;
 
   @override
   Widget build(BuildContext context) {
@@ -350,9 +365,10 @@ final class _OutlineFace extends StatelessWidget {
                 buttonHeight: height,
                 horizontalPadding: edgeInset,
                 leading: showLeading ? tintedLeading : null,
-                // Icon+label as one group; equal L/R insets (shrink before ellipsis).
-                forceGroupedCentered: true,
-                allowGroupedTrailingInsetCollapse: false,
+                // Label on button center; icon fixed. Long labels nudge right
+                // with [iconLabelClearance] then ellipsis; L/R chrome equal.
+                forceLabelCentered: true,
+                minimumGap: iconLabelClearance,
               ),
             ),
           ],

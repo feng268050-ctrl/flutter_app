@@ -103,6 +103,8 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               selected:
                                   controller.autoWireFeed && _wireCapable,
                               enabled: _wireCapable,
+                              iconLabelClearance:
+                                  ProcessModeOutlineChrome.noIconLabelClearance,
                               onPressed: () =>
                                   unawaited(_toggleAutoWire(context, l10n)),
                             ),

@@ -259,19 +259,7 @@ class CyberImePhysicalKeyRepeat {
   }
 
   void _moveCaret(TextEditingController controller, int delta) {
-    final t = controller.text;
-    final sel = controller.selection;
-    if (sel.isValid && !sel.isCollapsed) {
-      final offset = delta < 0 ? sel.start : sel.end;
-      controller.selection = TextSelection.collapsed(offset: offset);
-      return;
-    }
-    final caret = sel.isValid ? sel.baseOffset : t.length;
-    final next = (caret + delta).clamp(0, t.length);
-    if (next == caret) {
-      return;
-    }
-    controller.selection = TextSelection.collapsed(offset: next);
+    CyberImeControllerCommit(controller).moveCursorBy(delta);
   }
 
   /// Line-aware up/down: previous/next line, preserving column when possible.

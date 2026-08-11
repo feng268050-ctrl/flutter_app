@@ -1,11 +1,14 @@
 import 'package:flutter/widgets.dart';
 
-/// Commit bridge for insert / backspace / clear against a text field.
+/// Commit bridge for insert / backspace / clear / caret move against a text field.
 abstract class CyberImeCommitTarget {
   String get text;
   void insert(String value);
   void backspace();
   void clear();
+
+  /// Move the caret by [delta] characters (negative = left). Clamped to text.
+  void moveCursorBy(int delta);
 }
 
 /// [TextEditingController]-backed commit target.
@@ -82,6 +85,34 @@ class CyberImeControllerCommit implements CyberImeCommitTarget {
     controller.value = const TextEditingValue(
       text: '',
       selection: TextSelection.collapsed(offset: 0),
+      composing: TextRange.empty,
+    );
+  }
+
+  @override
+  void moveCursorBy(int delta) {
+    if (delta == 0) {
+      return;
+    }
+    final t = controller.text;
+    final sel = controller.selection;
+    if (sel.isValid && !sel.isCollapsed) {
+      final offset = delta < 0 ? sel.start : sel.end;
+      controller.value = TextEditingValue(
+        text: t,
+        selection: TextSelection.collapsed(offset: offset),
+        composing: TextRange.empty,
+      );
+      return;
+    }
+    final caret = sel.isValid ? sel.baseOffset : t.length;
+    final next = (caret + delta).clamp(0, t.length);
+    if (next == caret) {
+      return;
+    }
+    controller.value = TextEditingValue(
+      text: t,
+      selection: TextSelection.collapsed(offset: next),
       composing: TextRange.empty,
     );
   }

@@ -39,6 +39,29 @@ void main() {
     });
   });
 
+  group('cyberImeCursorStepsForDx', () {
+    test('accumulates residual into discrete steps', () {
+      var residual = 0.0;
+      var r = cyberImeCursorStepsForDx(dx: 10, residual: residual);
+      expect(r.steps, 0);
+      residual = r.residual;
+
+      r = cyberImeCursorStepsForDx(dx: 5, residual: residual);
+      expect(r.steps, 1);
+      expect(r.residual, closeTo(1.0, 0.001));
+
+      r = cyberImeCursorStepsForDx(dx: -20, residual: 0);
+      expect(r.steps, -1);
+      expect(r.residual, closeTo(-6.0, 0.001));
+    });
+
+    test('large displacement yields multiple steps', () {
+      final r = cyberImeCursorStepsForDx(dx: 45, residual: 0);
+      expect(r.steps, 3);
+      expect(r.residual, closeTo(3.0, 0.001));
+    });
+  });
+
   group('cyberImeClampAlternatePopupLeft', () {
     test('keeps 2px inset at left and right edges', () {
       expect(
@@ -726,5 +749,207 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('q'), findsWidgets);
+  });
+
+  testWidgets('Space short press inserts space', (tester) async {
+    final ctrl = TextEditingController(text: 'ab');
+    ctrl.selection = const TextSelection.collapsed(offset: 2);
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+    addTearDown(kb.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: CyberImeKeyboardPanel(controller: kb)),
+      ),
+    );
+
+    await tester.tap(find.text('space'));
+    await tester.pump();
+    expect(ctrl.text, 'ab ');
+    expect(ctrl.selection.baseOffset, 3);
+  });
+
+  testWidgets('Space long-press without drag does not insert', (tester) async {
+    final ctrl = TextEditingController(text: 'ab');
+    ctrl.selection = const TextSelection.collapsed(offset: 1);
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+    addTearDown(kb.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: CyberImeKeyboardPanel(controller: kb)),
+      ),
+    );
+
+    final spaceFinder = find.byWidgetPredicate(
+      (w) => w is CyberImeKeyCap && w.keyDef.id == CyberImeKeyId.space,
+    );
+    final rect = tester.getRect(spaceFinder);
+    final gesture = await tester.startGesture(rect.center);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    expect(find.text('← · →'), findsOneWidget);
+    await gesture.up();
+    await tester.pump();
+
+    expect(ctrl.text, 'ab');
+    expect(ctrl.selection.baseOffset, 1);
+    expect(find.text('space'), findsOneWidget);
+  });
+
+  testWidgets('Space trackpad emits Start/Move/End lifecycle', (tester) async {
+    final ctrl = TextEditingController(text: 'abcdef');
+    ctrl.selection = const TextSelection.collapsed(offset: 3);
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+    addTearDown(kb.dispose);
+
+    var starts = 0;
+    var ends = 0;
+    final moves = <int>[];
+    kb.onSpaceTrackpadStart = () => starts++;
+    kb.onSpaceTrackpadCursorMove = moves.add;
+    kb.onSpaceTrackpadEnd = () => ends++;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: CyberImeKeyboardPanel(controller: kb)),
+      ),
+    );
+
+    final spaceFinder = find.byWidgetPredicate(
+      (w) => w is CyberImeKeyCap && w.keyDef.id == CyberImeKeyId.space,
+    );
+    final rect = tester.getRect(spaceFinder);
+    final gesture = await tester.startGesture(rect.center);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    expect(starts, 1);
+    expect(ends, 0);
+
+    await gesture.moveBy(const Offset(-cyberImeSpaceCursorStepPx * 2, 0));
+    await tester.pump();
+    expect(moves, isNotEmpty);
+    expect(moves.reduce((a, b) => a + b), -2);
+    expect(ctrl.selection.baseOffset, 1);
+
+    await gesture.up();
+    await tester.pump();
+    expect(ends, 1);
+    expect(starts, 1);
+  });
+
+  testWidgets('Space long-press drag moves caret by steps', (tester) async {
+    final ctrl = TextEditingController(text: 'abcdef');
+    ctrl.selection = const TextSelection.collapsed(offset: 3);
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+    addTearDown(kb.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: CyberImeKeyboardPanel(controller: kb)),
+      ),
+    );
+
+    final spaceFinder = find.byWidgetPredicate(
+      (w) => w is CyberImeKeyCap && w.keyDef.id == CyberImeKeyId.space,
+    );
+    final rect = tester.getRect(spaceFinder);
+    final gesture = await tester.startGesture(rect.center);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+
+    // Two caret steps left (2 * 14px).
+    await gesture.moveBy(const Offset(-cyberImeSpaceCursorStepPx * 2, 0));
+    await tester.pump();
+    expect(ctrl.text, 'abcdef');
+    expect(ctrl.selection.baseOffset, 1);
+
+    await gesture.moveBy(const Offset(cyberImeSpaceCursorStepPx * 3, 0));
+    await tester.pump();
+    expect(ctrl.selection.baseOffset, 4);
+
+    await gesture.up();
+    await tester.pump();
+    expect(ctrl.text, 'abcdef');
+  });
+
+  testWidgets('Space trackpad forces solid caret on CyberImeTextField',
+      (tester) async {
+    CyberImePhysicalKeyboard.register(
+      const CyberImeFixedPhysicalKeyboardDetector(false),
+    );
+    addTearDown(() => CyberImePhysicalKeyboard.register(null));
+
+    final ctrl = TextEditingController(text: 'abcdef');
+    ctrl.selection = const TextSelection.collapsed(offset: 3);
+    addTearDown(ctrl.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.only(bottom: 320),
+            child: CyberImeTextField(
+              fieldType: CyberImeFieldType.text,
+              controller: ctrl,
+              autofocus: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CyberImeKeyboardPanel), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).showCursor, isTrue);
+
+    final spaceFinder = find.byWidgetPredicate(
+      (w) => w is CyberImeKeyCap && w.keyDef.id == CyberImeKeyId.space,
+    );
+    final rect = tester.getRect(spaceFinder);
+    final gesture = await tester.startGesture(rect.center);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    await tester.pump();
+
+    expect(tester.widget<TextField>(find.byType(TextField)).showCursor, isFalse);
+    expect(
+      tester.widget<CyberImeTrackpadCaretHost>(
+        find.byType(CyberImeTrackpadCaretHost),
+      ).active,
+      isTrue,
+    );
+
+    await gesture.moveBy(const Offset(-cyberImeSpaceCursorStepPx * 2, 0));
+    await tester.pump();
+    expect(ctrl.selection.baseOffset, 1);
+    // Caret chrome stays forced-visible for the whole drag, not only on up.
+    expect(tester.widget<TextField>(find.byType(TextField)).showCursor, isFalse);
+    expect(
+      tester.widget<CyberImeTrackpadCaretHost>(
+        find.byType(CyberImeTrackpadCaretHost),
+      ).active,
+      isTrue,
+    );
+
+    await gesture.up();
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).showCursor, isTrue);
+    expect(
+      tester.widget<CyberImeTrackpadCaretHost>(
+        find.byType(CyberImeTrackpadCaretHost),
+      ).active,
+      isFalse,
+    );
   });
 }

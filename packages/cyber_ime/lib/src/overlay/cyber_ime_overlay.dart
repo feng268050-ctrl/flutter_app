@@ -47,6 +47,11 @@ abstract final class CyberImeOverlay {
     /// Called after each successful key commit so the host can keep focus.
     VoidCallback? onKeyActivity,
 
+    /// Soft Space Cursor Trackpad Mode lifecycle for host caret chrome.
+    VoidCallback? onSpaceTrackpadStart,
+    ValueChanged<int>? onSpaceTrackpadCursorMove,
+    VoidCallback? onSpaceTrackpadEnd,
+
     /// Invoked when the keyboard is hidden (scrim tap or [CyberImeOverlayHandle.hide]).
     VoidCallback? onHidden,
   }) {
@@ -60,6 +65,9 @@ abstract final class CyberImeOverlay {
       onAction: onAction,
       onPasswordReveal: onPasswordReveal,
     );
+    kb.onSpaceTrackpadStart = onSpaceTrackpadStart;
+    kb.onSpaceTrackpadCursorMove = onSpaceTrackpadCursorMove;
+    kb.onSpaceTrackpadEnd = onSpaceTrackpadEnd;
     final detach = imeSession.attach(panelHeight: panelHeight);
     final stackKey = GlobalKey(debugLabel: 'CyberImeOverlayStack');
     final popup = ValueNotifier<CyberImeAlternatePopupData?>(null);

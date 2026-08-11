@@ -500,7 +500,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                   heroSize: 280 * sx,
                   labelWidth: 348 * sx,
                   labelHeight: 130 * sy,
-                  onTap: () {
+                  onPressed: () async {
                     if (!hasSignedProcessLibrary) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -509,7 +509,9 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       );
                       return;
                     }
-                    unawaited(_openQuickMode());
+                    // Await like Monitor/Settings/AI Vision so press chrome
+                    // holds until the route pops (HomeQuickAction parity).
+                    await _openQuickMode();
                   },
                 ),
                 _ModeEntry(
@@ -522,7 +524,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                   heroSize: 280 * sx,
                   labelWidth: 440 * sx,
                   labelHeight: 150 * sy,
-                  onTap: () {
+                  onPressed: () async {
                     if (!hasSignedProcessLibrary) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -531,7 +533,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       );
                       return;
                     }
-                    unawaited(_openEngineerMode());
+                    await _openEngineerMode();
                   },
                 ),
                 // Stats row + fixed gap + quick actions (gap must be exact
@@ -678,7 +680,7 @@ class _ModeEntry extends StatelessWidget {
     required this.heroSize,
     required this.labelWidth,
     required this.labelHeight,
-    required this.onTap,
+    required this.onPressed,
   });
 
   final double left;
@@ -690,7 +692,10 @@ class _ModeEntry extends StatelessWidget {
   final double heroSize;
   final double labelWidth;
   final double labelHeight;
-  final VoidCallback onTap;
+
+  /// Same contract as [HomeQuickAction.onPressed]: await navigation so the
+  /// press scale/overlay holds until the route pops.
+  final HomeQuickActionCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -710,9 +715,11 @@ class _ModeEntry extends StatelessWidget {
       top: top,
       width: width,
       height: height,
+      // Original FrostButtonTileRipple color as a flat press fill (no expand).
       child: CyberPressable(
         borderRadius: BorderRadius.circular(18),
-        onPressed: () async => onTap(),
+        overlay: CyberPressFeedback.tileRipple,
+        onPressed: onPressed,
         child: Stack(
           alignment: Alignment.topCenter,
           clipBehavior: Clip.none,

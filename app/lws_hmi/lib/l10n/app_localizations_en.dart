@@ -1271,7 +1271,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeMonitorLabel => 'Monitor';
 
   @override
-  String get homeQuickModeLabel => 'Quick Mode';
+  String get homeQuickModeLabel => 'Fast Mode';
 
   @override
   String get homeSettingsLabel => 'Settings';
@@ -2196,7 +2196,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get processLibraryNotInstalled =>
-      'No compatible quick-mode process library is installed.';
+      'No compatible Fast Mode process library is installed.';
 
   @override
   String get processLibraryUpdateFailed =>
@@ -2276,7 +2276,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get processVideoEmptySubtitle =>
-      'Record Work videos from Quick or Engineer mode will appear here.';
+      'Record Work videos from Fast or Engineer mode will appear here.';
 
   @override
   String get processVideoEmptyTitle => 'No Recordings';

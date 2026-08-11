@@ -2366,7 +2366,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeQuickModeLabel.
   ///
   /// In en, this message translates to:
-  /// **'Quick Mode'**
+  /// **'Fast Mode'**
   String get homeQuickModeLabel;
 
   /// No description provided for @homeSettingsLabel.
@@ -4046,7 +4046,7 @@ abstract class AppLocalizations {
   /// No description provided for @processLibraryNotInstalled.
   ///
   /// In en, this message translates to:
-  /// **'No compatible quick-mode process library is installed.'**
+  /// **'No compatible Fast Mode process library is installed.'**
   String get processLibraryNotInstalled;
 
   /// No description provided for @processLibraryUpdateFailed.
@@ -4196,7 +4196,7 @@ abstract class AppLocalizations {
   /// No description provided for @processVideoEmptySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Record Work videos from Quick or Engineer mode will appear here.'**
+  /// **'Record Work videos from Fast or Engineer mode will appear here.'**
   String get processVideoEmptySubtitle;
 
   /// No description provided for @processVideoEmptyTitle.

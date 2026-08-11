@@ -279,15 +279,20 @@ final class ProcessParameters {
   Map<String, Object?> toJson() => Map<String, Object?>.from(values);
 
   static ProcessParameters fromJson(Object? value) {
-    if (value is! Map<String, dynamic>) {
+    if (value == null) {
+      return const ProcessParameters.empty();
+    }
+    if (value is! Map) {
       throw const FormatException('parameters must be an object');
     }
     final parsed = <String, num?>{};
     for (final entry in value.entries) {
-      if (entry.value != null && entry.value is! num) {
-        throw FormatException('${entry.key} must be numeric or null');
+      final key = entry.key.toString();
+      final v = entry.value;
+      if (v != null && v is! num) {
+        throw FormatException('$key must be numeric or null');
       }
-      parsed[entry.key] = entry.value as num?;
+      parsed[key] = v as num?;
     }
     return ProcessParameters(parsed);
   }

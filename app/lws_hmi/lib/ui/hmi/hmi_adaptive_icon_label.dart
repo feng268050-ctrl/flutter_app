@@ -20,7 +20,10 @@ abstract final class HmiIconLabelLayout {
     TextStyle style,
   ) {
     final painter = TextPainter(
-      text: TextSpan(text: label, style: style),
+      text: TextSpan(
+        text: label,
+        style: DefaultTextStyle.of(context).style.merge(style),
+      ),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
@@ -71,6 +74,91 @@ abstract final class HmiIconLabelLayout {
     return labelFitsContent && clearsLeading
         ? HmiIconLabelLayoutMode.labelCentered
         : HmiIconLabelLayoutMode.groupedCentered;
+  }
+
+  /// Label-centered face with a fixed-left icon: keep equal L/R chrome insets,
+  /// prefer centering the label, and when it would collide with the icon nudge
+  /// the label right so at least [iconLabelClearance] remains (ellipsis if needed).
+  static ({
+    double edgeInset,
+    double labelLeft,
+    double labelMaxWidth,
+    bool overflows,
+  }) resolveLabelCenteredInsets({
+    required double maxWidth,
+    required double labelWidth,
+    required double buttonHeight,
+    required double iconSize,
+    required bool hasLeading,
+    double iconLabelClearance = minimumIconLabelGap,
+  }) {
+    final edgeInset = math.max(0.0, (buttonHeight - iconSize) / 2).toDouble();
+    if (!hasLeading) {
+      final maxLabel = math.max(0.0, maxWidth - edgeInset * 2);
+      final idealLeft = (maxWidth - labelWidth) / 2;
+      final left = idealLeft < edgeInset ? edgeInset : idealLeft;
+      return (
+        edgeInset: edgeInset,
+        labelLeft: left,
+        labelMaxWidth: maxLabel,
+        overflows: labelWidth > maxLabel + 0.5,
+      );
+    }
+
+    final minLabelLeft = edgeInset + iconSize + iconLabelClearance;
+    final idealLabelLeft = (maxWidth - labelWidth) / 2;
+    final maxLabelLeft = maxWidth - edgeInset - labelWidth;
+    final labelLeft = idealLabelLeft < minLabelLeft
+        ? minLabelLeft
+        : (idealLabelLeft > maxLabelLeft ? maxLabelLeft : idealLabelLeft);
+    // Right chrome inset matches left icon inset.
+    final labelMaxWidth = math.max(0.0, maxWidth - edgeInset - labelLeft);
+    return (
+      edgeInset: edgeInset,
+      labelLeft: labelLeft,
+      labelMaxWidth: labelMaxWidth,
+      overflows: labelWidth > labelMaxWidth + 0.5,
+    );
+  }
+
+  /// Label centered on the button; leading icon sits immediately to its left with
+  /// equal spacing on both sides of the icon (Engineer Reset / Save Favorite).
+  static ({
+    double iconLeft,
+    double labelLeft,
+    double labelMaxWidth,
+    bool overflows,
+  }) resolveTextBandCenteredInsets({
+    required double maxWidth,
+    required double labelWidth,
+    required double buttonHeight,
+    required double iconSize,
+    required double gap,
+    double minimumSpacing = minimumIconLabelGap,
+  }) {
+    final idealLabelLeft = (maxWidth - labelWidth) / 2;
+    final minLabelLeft = iconSize + 2 * minimumSpacing;
+
+    if (idealLabelLeft >= minLabelLeft) {
+      final spacing = (idealLabelLeft - iconSize) / 2;
+      return (
+        iconLeft: spacing,
+        labelLeft: idealLabelLeft,
+        labelMaxWidth: math.max(0.0, maxWidth - spacing - idealLabelLeft),
+        overflows: labelWidth > maxWidth - spacing - idealLabelLeft + 0.5,
+      );
+    }
+
+    final spacing = minimumSpacing;
+    final iconLeft = spacing;
+    final labelLeft = iconLeft + iconSize + spacing;
+    final labelMaxWidth = math.max(0.0, maxWidth - spacing - labelLeft);
+    return (
+      iconLeft: iconLeft,
+      labelLeft: labelLeft,
+      labelMaxWidth: labelMaxWidth,
+      overflows: labelWidth > labelMaxWidth + 0.5,
+    );
   }
 
   /// Preserves the design gap when it fits, then reduces only as far as the
@@ -153,6 +241,8 @@ final class HmiAdaptiveIconLabel extends StatelessWidget {
     this.trailing,
     this.allowGroupedTrailingInsetCollapse = false,
     this.forceGroupedCentered = false,
+    this.forceLabelCentered = false,
+    this.forceTextBandCentered = false,
     this.gap = HmiIconLabelLayout.iconLabelGap,
     this.minimumGap = HmiIconLabelLayout.minimumIconLabelGap,
   });
@@ -166,14 +256,31 @@ final class HmiAdaptiveIconLabel extends StatelessWidget {
   final Widget? trailing;
   final bool allowGroupedTrailingInsetCollapse;
 
-  /// When true, always center icon+label as one group with equal side insets
-  /// (Quick Auto Wire Feed / Manual Gas outline chrome).
+  /// When true, always center icon+label as one group with equal side insets.
   final bool forceGroupedCentered;
+
+  /// When true, always center the label on the button; leading icon keeps a
+  /// fixed left inset equal to the vertical icon inset. If the centered label
+  /// would collide with the icon, the label is nudged right (ellipsis if needed)
+  /// while keeping equal L/R chrome insets (Quick side ops).
+  final bool forceLabelCentered;
+
+  /// When true, center the label and place the leading icon immediately to its
+  /// left with equal spacing on both sides of the icon (Engineer Reset / Save).
+  final bool forceTextBandCentered;
   final double gap;
   final double minimumGap;
 
   @override
   Widget build(BuildContext context) {
+    assert(
+      !(forceGroupedCentered && forceLabelCentered),
+      'Use only one of forceGroupedCentered / forceLabelCentered',
+    );
+    assert(
+      !(forceLabelCentered && forceTextBandCentered),
+      'Use only one of forceLabelCentered / forceTextBandCentered',
+    );
     final labelWidth = HmiIconLabelLayout.textWidth(context, label, style);
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -187,32 +294,113 @@ final class HmiAdaptiveIconLabel extends StatelessWidget {
                 hasTrailing: trailing != null,
                 gap: gap,
               );
-        final mode = forceGroupedCentered
-            ? HmiIconLabelLayoutMode.groupedCentered
-            : (leading != null && trailing == null
-                ? HmiIconLabelLayout.modeFor(
-                    maxWidth: maxWidth,
-                    labelWidth: labelWidth,
-                    buttonHeight: buttonHeight,
-                    iconSize: iconSize,
-                    horizontalPadding: horizontalPadding,
-                    gap: gap,
-                    minimumGap: minimumGap,
-                  )
-                : HmiIconLabelLayoutMode.groupedCentered);
+        final mode = forceTextBandCentered
+            ? HmiIconLabelLayoutMode.labelCentered
+            : forceLabelCentered
+                ? HmiIconLabelLayoutMode.labelCentered
+                : forceGroupedCentered
+                    ? HmiIconLabelLayoutMode.groupedCentered
+                    : (leading != null && trailing == null
+                        ? HmiIconLabelLayout.modeFor(
+                            maxWidth: maxWidth,
+                            labelWidth: labelWidth,
+                            buttonHeight: buttonHeight,
+                            iconSize: iconSize,
+                            horizontalPadding: horizontalPadding,
+                            gap: gap,
+                            minimumGap: minimumGap,
+                          )
+                        : HmiIconLabelLayoutMode.groupedCentered);
 
         if (mode == HmiIconLabelLayoutMode.labelCentered) {
-          final edgeInset =
-              math.max(0.0, (buttonHeight - iconSize) / 2).toDouble();
+          if (forceTextBandCentered && leading != null) {
+            final balanced = HmiIconLabelLayout.resolveTextBandCenteredInsets(
+              maxWidth: maxWidth,
+              labelWidth: labelWidth,
+              buttonHeight: buttonHeight,
+              iconSize: iconSize,
+              gap: gap,
+              minimumSpacing: minimumGap,
+            );
+            final iconTop =
+                math.max(0.0, (buttonHeight - iconSize) / 2).toDouble();
+            return SizedBox.expand(
+              key: const ValueKey('hmi-icon-label-label-centered'),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Positioned(
+                    left: balanced.labelLeft,
+                    top: 0,
+                    bottom: 0,
+                    width: balanced.labelMaxWidth,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: _label(
+                        overflow: balanced.overflows
+                            ? TextOverflow.ellipsis
+                            : TextOverflow.visible,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: balanced.iconLeft,
+                    top: iconTop,
+                    width: iconSize,
+                    height: iconSize,
+                    child: _accessory(leading!),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final insets = HmiIconLabelLayout.resolveLabelCenteredInsets(
+            maxWidth: maxWidth,
+            labelWidth: labelWidth,
+            buttonHeight: buttonHeight,
+            iconSize: iconSize,
+            hasLeading: leading != null,
+            iconLabelClearance: minimumGap,
+          );
+
+          if (leading == null) {
+            return SizedBox.expand(
+              key: const ValueKey('hmi-icon-label-label-centered'),
+              child: Center(
+                child: _label(
+                  overflow: insets.overflows
+                      ? TextOverflow.ellipsis
+                      : TextOverflow.visible,
+                ),
+              ),
+            );
+          }
+
+          // Icon pinned at equal edge inset; label centered when it fits, else
+          // nudged to keep icon clearance and matching right chrome.
           return SizedBox.expand(
             key: const ValueKey('hmi-icon-label-label-centered'),
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Center(child: _label(overflow: TextOverflow.visible)),
                 Positioned(
-                  left: edgeInset,
-                  top: edgeInset,
+                  left: insets.labelLeft,
+                  top: 0,
+                  bottom: 0,
+                  width: insets.labelMaxWidth,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _label(
+                      overflow: insets.overflows
+                          ? TextOverflow.ellipsis
+                          : TextOverflow.visible,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: insets.edgeInset,
+                  top: insets.edgeInset,
                   width: iconSize,
                   height: iconSize,
                   child: _accessory(leading!),

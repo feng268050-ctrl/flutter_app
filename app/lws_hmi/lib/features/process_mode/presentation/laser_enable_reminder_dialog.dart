@@ -128,7 +128,7 @@ final class _LaserEnableReminderBodyState
         const SizedBox(height: 16),
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 360, maxWidth: 560),
+            constraints: const BoxConstraints(minWidth: 360, maxWidth: 600),
             child: HmiButton(
               key: const ValueKey('laser-enable-reminder-confirm'),
               label: l10n.laserEnableReminderConfirm,

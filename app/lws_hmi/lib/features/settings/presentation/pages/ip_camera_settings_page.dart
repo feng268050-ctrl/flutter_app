@@ -378,7 +378,10 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
                   child: Text(
                     _recordingHint(l10n),
                     key: const Key('ip-camera-record-hint'),
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: SettingsHelpFooter.styleOf(
+                      context,
+                      color: CyberColors.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -390,7 +393,10 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
               child: Text(
                 l10n.ipCameraRecordingSaved(_lastSavedPath!),
                 key: const Key('ip-camera-saved-path'),
-                style: Theme.of(context).textTheme.bodySmall,
+                style: SettingsHelpFooter.styleOf(
+                  context,
+                  color: CyberColors.textSecondary,
+                ),
               ),
             ),
         ],

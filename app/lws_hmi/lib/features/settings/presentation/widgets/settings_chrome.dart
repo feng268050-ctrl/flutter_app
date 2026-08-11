@@ -5,7 +5,6 @@ import 'dart:ui' as ui;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
@@ -133,8 +132,8 @@ final class SettingsTopTabs extends StatelessWidget
   static const dividerThickness = 1.0;
   static const iconSize = HmiTabMetrics.iconSize;
 
-  /// Alias of primary-tab label size ([AppTypography.navigationSize]).
-  static const labelSize = AppTypography.navigationSize;
+  /// Alias of primary-tab label size ([HmiTypography.navigationSize]).
+  static const labelSize = HmiTypography.navigationSize;
   static const iconTextGap = HmiTabMetrics.iconLabelGap;
   static const indicatorHeight = HmiTabMetrics.indicatorHeight;
   static const unselected = Color(0xFF94A3B8);
@@ -302,8 +301,19 @@ class SettingsHelpFooter extends StatelessWidget {
   /// Space below the footnote (use `0` when a [SettingsSectionHeader] follows).
   final double bottomInset;
 
-  /// Overrides default supporting / white54 help style.
+  /// Overrides default [settingsHelpFooter] / white54 help style.
   final TextStyle? style;
+
+  /// Card footnotes and inline gray explanatory copy on Settings pages.
+  static TextStyle styleOf(
+    BuildContext context, {
+    Color color = Colors.white54,
+    double height = 1.35,
+  }) =>
+      context.hmiTypography.settingsHelpFooter.copyWith(
+        color: color,
+        height: height,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -316,11 +326,7 @@ class SettingsHelpFooter extends StatelessWidget {
       ),
       child: WordBoundaryBody(
         text: text,
-        style: style ??
-            context.hmiTypography.supporting.copyWith(
-              color: Colors.white54,
-              height: 1.35,
-            ),
+        style: style ?? styleOf(context),
       ),
     );
   }
@@ -1131,7 +1137,7 @@ class SettingsValueRow extends StatelessWidget {
 
 /// Switch row title/subtitle typography tone.
 enum SettingsSwitchEmphasis {
-  /// Device / Common / Wi‑Fi: [HmiTypography.settingsRowTitle] + supporting.
+  /// Device / Common / Wi‑Fi: [HmiTypography.settingsRowTitle] + [settingsHelpFooter].
   standard,
 
   /// Advanced AI / danger switches: section title + body subtitle (−2 vs prior).
@@ -1163,7 +1169,7 @@ class SettingsSwitchRow extends StatelessWidget {
         .copyWith(color: CyberColors.textPrimary);
     final subtitleStyle = (emphasis == SettingsSwitchEmphasis.advanced
             ? typography.body
-            : typography.supporting)
+            : typography.settingsHelpFooter)
         .copyWith(
       color: CyberColors.textSecondary,
       height: 1.35,
@@ -1181,9 +1187,8 @@ class SettingsSwitchRow extends StatelessWidget {
                 Text(title, style: titleStyle),
                 if (subtitle != null) ...[
                   const SizedBox(height: 4),
-                  WordBoundaryLabel(
-                    text: subtitle!,
-                    maxLines: 8,
+                  Text(
+                    subtitle!,
                     style: subtitleStyle,
                   ),
                 ],
@@ -1233,7 +1238,7 @@ class SettingsControlRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle!,
-                    style: context.hmiTypography.supporting.copyWith(
+                    style: context.hmiTypography.settingsHelpFooter.copyWith(
                       color: CyberColors.textSecondary,
                     ),
                   ),
@@ -1287,7 +1292,7 @@ class SettingsSliderRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle!,
-                    style: context.hmiTypography.supporting.copyWith(
+                    style: context.hmiTypography.settingsHelpFooter.copyWith(
                       color: CyberColors.textSecondary,
                     ),
                   ),

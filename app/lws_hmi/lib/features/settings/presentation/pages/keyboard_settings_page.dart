@@ -209,10 +209,6 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
           SettingsHelpFooter(
             l10n.keyboardLayoutHelp,
             bottomInset: 0,
-            style: context.hmiTypography.body.copyWith(
-              color: Colors.white54,
-              height: 1.35,
-            ),
           ),
           SettingsSectionHeader(l10n.keyboardPhysicalSection),
           SettingsGroup(
@@ -265,7 +261,7 @@ class _KeyboardLayoutPreviewSection extends StatelessWidget {
           CyberImeLayoutPreviewCard(
             profile: profile,
             previewCaption: previewCaption,
-            captionStyle: context.hmiTypography.supporting.copyWith(
+            captionStyle: context.hmiTypography.settingsPreviewCaption.copyWith(
               color: Colors.white54,
             ),
           ),
@@ -274,10 +270,7 @@ class _KeyboardLayoutPreviewSection extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
               child: Text(
                 footnote,
-                style: context.hmiTypography.body.copyWith(
-                  color: Colors.white54,
-                  height: 1.35,
-                ),
+                style: SettingsHelpFooter.styleOf(context),
               ),
             ),
         ],

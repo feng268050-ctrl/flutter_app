@@ -312,7 +312,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
 
   Widget _buildCheckBody(AppLocalizations l10n) {
     final available = _availableManifest;
-    final style = context.hmiTypography.settingsRowValue.copyWith(
+    final style = context.hmiTypography.upgradeDescription.copyWith(
       color: CyberColors.textSecondary,
       height: 1.4,
     );
@@ -455,7 +455,7 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
               config: UpgradeCompletionConfig.autoReboot(
                 rebootNotice: l10n.otaUpgradeRebootHint,
               ),
-              style: context.hmiTypography.settingsRowValue.copyWith(
+              style: context.hmiTypography.upgradeDescription.copyWith(
                 color: CyberColors.textSecondary,
               ),
             ),

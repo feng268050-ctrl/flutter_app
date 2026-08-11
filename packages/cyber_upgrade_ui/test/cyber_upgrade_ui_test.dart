@@ -35,6 +35,24 @@ void main() {
       expect(find.text('Notes'), findsOneWidget);
     });
 
+    testWidgets('status body defaults to 22 when style omitted', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: 400,
+              child: UpgradeCheckCard(
+                state: UpgradeCheckUiState.idle,
+                idleHint: 'Tap Check for Updates',
+              ),
+            ),
+          ),
+        ),
+      );
+      final text = tester.widget<Text>(find.text('Tap Check for Updates'));
+      expect(text.style?.fontSize, 22);
+    });
+
     testWidgets('checking shows spinner label', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -190,6 +208,26 @@ void main() {
       );
       expect(find.text('Firmware written.'), findsOneWidget);
       expect(find.text('Rebooting…'), findsNothing);
+    });
+
+    testWidgets('body defaults to 22 when style omitted', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: UpgradeCompletionTip(
+              progress: UpgradeProgress(
+                activePhaseId: 'transferring',
+                isTerminalOk: true,
+              ),
+              config: UpgradeCompletionConfig.noReboot(
+                successBody: 'Firmware written.',
+              ),
+            ),
+          ),
+        ),
+      );
+      final text = tester.widget<Text>(find.text('Firmware written.'));
+      expect(text.style?.fontSize, 22);
     });
 
     testWidgets('failure does not claim success', (tester) async {

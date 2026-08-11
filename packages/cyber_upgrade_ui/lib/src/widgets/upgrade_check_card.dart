@@ -56,7 +56,7 @@ class UpgradeCheckCard extends StatelessWidget {
         const TextStyle(
           color: CyberColors.textSecondary,
           height: 1.4,
-          fontSize: 16,
+          fontSize: 22,
         );
 
     final status = switch (state) {

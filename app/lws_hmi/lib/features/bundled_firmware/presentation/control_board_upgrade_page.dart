@@ -338,7 +338,7 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
 
   Widget _buildCheckBody(AppLocalizations l10n) {
     final offer = _availableOffer;
-    final style = context.hmiTypography.settingsRowValue.copyWith(
+    final style = context.hmiTypography.upgradeDescription.copyWith(
       color: CyberColors.textSecondary,
       height: 1.4,
     );
@@ -509,7 +509,7 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
                         : l10n.bundledFirmwareFailedMessage)
                     : null,
               ),
-              style: context.hmiTypography.settingsRowValue.copyWith(
+              style: context.hmiTypography.upgradeDescription.copyWith(
                 color: CyberColors.textSecondary,
               ),
             ),
@@ -520,7 +520,7 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
             child: Text(
               l10n.bundledFirmwareUpgradingMessage,
               textAlign: TextAlign.center,
-              style: context.hmiTypography.settingsRowValue.copyWith(
+              style: context.hmiTypography.upgradeDescription.copyWith(
                 color: CyberColors.textSecondary,
               ),
             ),

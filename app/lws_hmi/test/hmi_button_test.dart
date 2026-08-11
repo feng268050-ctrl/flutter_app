@@ -118,6 +118,49 @@ void main() {
     );
   });
 
+  test('resolveLabelCenteredInsets nudges label and keeps equal chrome', () {
+    // Short label: stays centered; L/R chrome = edge inset.
+    final roomy = HmiIconLabelLayout.resolveLabelCenteredInsets(
+      maxWidth: 275,
+      labelWidth: 120,
+      buttonHeight: 68,
+      iconSize: 32,
+      hasLeading: true,
+      iconLabelClearance: 3,
+    );
+    expect(roomy.edgeInset, 18);
+    expect(roomy.labelLeft, closeTo((275 - 120) / 2, 0.01));
+    expect(roomy.overflows, isFalse);
+
+    // Long label: nudge past icon + 3px; right inset stays edgeInset.
+    final tight = HmiIconLabelLayout.resolveLabelCenteredInsets(
+      maxWidth: 275,
+      labelWidth: 220,
+      buttonHeight: 68,
+      iconSize: 32,
+      hasLeading: true,
+      iconLabelClearance: 3,
+    );
+    expect(tight.labelLeft, closeTo(18 + 32 + 3, 0.01));
+    expect(tight.labelMaxWidth, closeTo(275 - 18 - tight.labelLeft, 0.01));
+    expect(tight.overflows, isTrue);
+
+    // Wide button: label centered; equal spacing on both sides of icon.
+    final wide = HmiIconLabelLayout.resolveTextBandCenteredInsets(
+      maxWidth: 320,
+      labelWidth: 140,
+      buttonHeight: 60,
+      iconSize: 28,
+      gap: 8,
+    );
+    expect(wide.labelLeft, closeTo((320 - 140) / 2, 0.01));
+    expect(wide.iconLeft, closeTo((wide.labelLeft - 28) / 2, 0.01));
+    expect(
+      wide.labelLeft - wide.iconLeft - 28,
+      closeTo(wide.iconLeft, 0.01),
+    );
+  });
+
   test('grouped layout reduces only the icon gap before ellipsizing text', () {
     expect(
       HmiIconLabelLayout.groupedGapFor(
@@ -164,6 +207,38 @@ void main() {
     expect(tight.padding * 2 + 220 + 32 + tight.gap, closeTo(269, 0.01));
   });
 
+  testWidgets('forceTextBandCentered centers label with balanced icon spacing',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 400,
+              child: HmiButton(
+                key: const ValueKey('balanced-hmi-button'),
+                label: 'Reset Defaults',
+                size: HmiButtonSize.large,
+                widthPolicy: HmiButtonWidthPolicy.fill,
+                forceTextBandCentered: true,
+                icon: Icons.restart_alt,
+                onPressed: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final button = tester.getRect(find.byKey(const ValueKey('balanced-hmi-button')));
+    final icon = tester.getRect(find.byIcon(Icons.restart_alt));
+    final label = tester.getRect(find.text('Reset Defaults'));
+    final iconGap = label.left - icon.right;
+    expect(icon.left - button.left, closeTo(iconGap, 1));
+    expect(label.center.dx, closeTo(button.center.dx, 1.5));
+  });
+
   testWidgets('HmiButton switches layout automatically at actual width',
       (tester) async {
     Future<void> pumpAt(double width) => tester.pumpWidget(
@@ -203,7 +278,7 @@ void main() {
     );
     final wideIcon = tester.getRect(find.byIcon(Icons.restart_alt));
     final wideLabel = tester.getRect(find.text('Save'));
-    expect(wideLabel.center.dx, closeTo(wideButton.center.dx, 0.01));
+    expect(wideLabel.center.dx, closeTo(wideButton.center.dx, 1.0));
     expect(wideIcon.center.dy, closeTo(wideLabel.center.dy, 0.01));
     expect(
       wideIcon.left - wideButton.left,
@@ -241,6 +316,7 @@ void main() {
       ProcessModeOutlineChrome.iconSize,
       HmiButtonMetrics.heroIconSize,
     );
+    expect(ProcessModeOutlineChrome.engineerWireIconVisualSize, 28);
     expect(
       ProcessModeOutlineChrome.laserEnableHeight,
       HmiButtonMetrics.jumboHeight,

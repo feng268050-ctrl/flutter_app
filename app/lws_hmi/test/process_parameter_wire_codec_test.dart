@@ -23,6 +23,8 @@ void main() {
     expect(values['process.piercing_power'], 40);
     expect(values['process.piercing_frequency'], 0);
     expect(values['process.piercing_duty_cycle'], 100);
+    expect(values['process.wire_feeding_delay'], 0);
+    expect(values['process.piercing_duration'], 0);
     expect(values['process.swing_width'], 2.0);
   });
 

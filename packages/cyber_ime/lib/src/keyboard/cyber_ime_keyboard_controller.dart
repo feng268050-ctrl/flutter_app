@@ -153,6 +153,29 @@ class CyberImeKeyboardController extends ChangeNotifier {
     }
   }
 
+  /// Soft Space trackpad: move caret by [delta] characters (no text change).
+  ///
+  /// Invokes [onSpaceTrackpadCursorMove] after the selection update so the
+  /// host field can refresh caret chrome.
+  void moveCursorBy(int delta) {
+    if (delta == 0) {
+      return;
+    }
+    commit.moveCursorBy(delta);
+    onSpaceTrackpadCursorMove?.call(delta);
+  }
+
+  /// Soft Space long-press entered Cursor Trackpad Mode.
+  void beginSpaceTrackpad() => onSpaceTrackpadStart?.call();
+
+  /// Soft Space trackpad pointer up / cancel.
+  void endSpaceTrackpad() => onSpaceTrackpadEnd?.call();
+
+  /// Host (typically [CyberImeTextField]) caret chrome hooks.
+  VoidCallback? onSpaceTrackpadStart;
+  ValueChanged<int>? onSpaceTrackpadCursorMove;
+  VoidCallback? onSpaceTrackpadEnd;
+
   /// Long-press Shift → caps lock (lws-ui).
   void onShiftLongPress() {
     _capsLock = !_capsLock;

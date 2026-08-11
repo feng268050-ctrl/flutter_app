@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
@@ -175,13 +176,13 @@ abstract final class WorkModeStatusBarDimens {
   static const double edgeLineHeight = 3;
 
   /// Five equipment status labels → [HmiTypography.statusBarLabel] (20).
-  static const double statusLabelFontSize = 20.0;
+  static const double statusLabelFontSize = HmiTypography.controlSize;
 
   /// Home / Back label → [HmiTypography.statusBarAction] (24).
-  static const double homeLabelFontSize = 24.0;
+  static const double homeLabelFontSize = HmiTypography.navigationSize;
 
   /// Clock size → [HmiTypography.statusBarLabel] (20).
-  static const double chromeLabelFontSize = 20.0;
+  static const double chromeLabelFontSize = HmiTypography.controlSize;
 
   static const Color background = Colors.transparent;
   static const Color label = Color(0xFFFFFFFF);
@@ -520,11 +521,11 @@ final class _WorkModeTrailingState extends State<_WorkModeTrailing> {
           CyberStatusBarClock(
             now: widget.clockNow,
             use24HourFormat: widget.use24HourFormat,
-            style: const TextStyle(
+            style: TextStyle(
               color: WorkModeStatusBarDimens.clock,
-              fontSize: WorkModeStatusBarDimens.chromeLabelFontSize,
+              fontSize: CallBackHomeButton.labelFontSize,
               height: 1,
-              fontFeatures: [FontFeature.tabularFigures()],
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],

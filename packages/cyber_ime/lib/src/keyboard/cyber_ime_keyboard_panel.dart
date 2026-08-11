@@ -65,6 +65,15 @@ class CyberImeKeyboardPanel extends StatelessWidget {
                       ? controller.onShiftLongPress
                       : null,
                   onPopupCommit: controller.commitPopupText,
+                  onSpaceTrackpadStart: key.id == CyberImeKeyId.space
+                      ? controller.beginSpaceTrackpad
+                      : null,
+                  onSpaceCursorMove: key.id == CyberImeKeyId.space
+                      ? controller.moveCursorBy
+                      : null,
+                  onSpaceTrackpadEnd: key.id == CyberImeKeyId.space
+                      ? controller.endSpaceTrackpad
+                      : null,
                 ),
               ),
             ),
@@ -88,6 +97,9 @@ class CyberImeKeyCap extends StatefulWidget {
     required this.onTap,
     this.onShiftLongPress,
     this.onPopupCommit,
+    this.onSpaceTrackpadStart,
+    this.onSpaceCursorMove,
+    this.onSpaceTrackpadEnd,
   });
 
   final CyberImeKeyDef keyDef;
@@ -99,6 +111,11 @@ class CyberImeKeyCap extends StatefulWidget {
   final VoidCallback onTap;
   final VoidCallback? onShiftLongPress;
   final ValueChanged<String>? onPopupCommit;
+
+  /// Soft Space trackpad lifecycle (caret chrome is owned by the text field).
+  final VoidCallback? onSpaceTrackpadStart;
+  final ValueChanged<int>? onSpaceCursorMove;
+  final VoidCallback? onSpaceTrackpadEnd;
 
   @override
   State<CyberImeKeyCap> createState() => _CyberImeKeyCapState();
@@ -117,6 +134,11 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
   double _keyWidth = 0;
   bool _popupActive = false;
 
+  /// Soft Space: Idle → Pressed → (short Up → insert) | (LongPress → Trackpad).
+  bool _spaceTrackpadActive = false;
+  double _spaceDragResidual = 0;
+  double _spaceLastLocalX = 0;
+
   bool get _accentLabel {
     switch (widget.keyDef.id) {
       case CyberImeKeyId.backspace:
@@ -132,13 +154,20 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
 
   bool get _isPrimary => widget.keyDef.id == CyberImeKeyId.enter;
 
+  bool get _usesSpaceTrackpad => widget.keyDef.id == CyberImeKeyId.space;
+
   bool get _usesAlternateGestures =>
+      !_usesSpaceTrackpad &&
       widget.keyDef.id != CyberImeKeyId.shift &&
       widget.keyDef.id != CyberImeKeyId.altGr &&
       widget.keyDef.supportsAlternatePopup;
 
   @override
   void dispose() {
+    if (_spaceTrackpadActive) {
+      widget.onSpaceTrackpadEnd?.call();
+      _spaceTrackpadActive = false;
+    }
     _longPressTimer?.cancel();
     _externalPress.dispose();
     _removePopup();
@@ -303,6 +332,69 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
     }
   }
 
+  void _onSpacePointerDown(PointerDownEvent e) {
+    _activePointer = e.pointer;
+    _externalPress.value = e.position;
+    _spaceTrackpadActive = false;
+    _spaceDragResidual = 0;
+    _spaceLastLocalX = e.localPosition.dx;
+    _longPressTimer?.cancel();
+    _longPressTimer = Timer(kLongPressTimeout, () {
+      if (!mounted || _activePointer != e.pointer) return;
+      CyberClickSoundRegistry.playClick();
+      setState(() => _spaceTrackpadActive = true);
+      widget.onSpaceTrackpadStart?.call();
+    });
+  }
+
+  void _onSpacePointerMove(PointerMoveEvent e) {
+    if (_activePointer != e.pointer || !_spaceTrackpadActive) return;
+    final dx = e.localPosition.dx - _spaceLastLocalX;
+    _spaceLastLocalX = e.localPosition.dx;
+    final result = cyberImeCursorStepsForDx(
+      dx: dx,
+      residual: _spaceDragResidual,
+    );
+    _spaceDragResidual = result.residual;
+    if (result.steps != 0) {
+      widget.onSpaceCursorMove?.call(result.steps);
+    }
+  }
+
+  void _onSpacePointerUp(PointerUpEvent e) {
+    if (_activePointer != e.pointer) return;
+    _finishSpacePointer(commitSpace: true);
+  }
+
+  void _onSpacePointerCancel(PointerCancelEvent e) {
+    if (_activePointer != e.pointer) return;
+    _finishSpacePointer(commitSpace: false);
+  }
+
+  void _finishSpacePointer({required bool commitSpace}) {
+    final wasTrackpad = _spaceTrackpadActive;
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
+    _activePointer = null;
+    _externalPress.value = null;
+    _spaceDragResidual = 0;
+    if (wasTrackpad) {
+      // Trackpad exit: never insert space (even with no drag).
+      if (mounted && _spaceTrackpadActive) {
+        setState(() => _spaceTrackpadActive = false);
+      } else {
+        _spaceTrackpadActive = false;
+      }
+      widget.onSpaceTrackpadEnd?.call();
+      return;
+    }
+    _spaceTrackpadActive = false;
+    if (commitSpace) {
+      CyberClickSoundRegistry.playClick();
+      widget.onTap();
+    }
+  }
+
   void _onShiftLongPress() {
     CyberClickSoundRegistry.playClick();
     widget.onShiftLongPress?.call();
@@ -318,6 +410,7 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
     final variant =
         _isPrimary ? CyberButtonVariant.primary : CyberButtonVariant.light;
     final accent = _accentLabel ||
+        _spaceTrackpadActive ||
         (widget.keyDef.id == CyberImeKeyId.shift && widget.shiftOn) ||
         (widget.keyDef.id == CyberImeKeyId.altGr && widget.altGrOn) ||
         (widget.keyDef.id == CyberImeKeyId.kanaToggle &&
@@ -339,6 +432,7 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
         shiftOn: widget.shiftOn,
         altGrOn: widget.altGrOn,
         jpInputMode: widget.jpInputMode,
+        spaceTrackpadActive: _spaceTrackpadActive,
       ),
     );
   }
@@ -347,7 +441,21 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
   Widget build(BuildContext context) {
     late final Widget keyBody;
 
-    if (_usesAlternateGestures) {
+    if (_usesSpaceTrackpad) {
+      keyBody = Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: _onSpacePointerDown,
+        onPointerMove: _onSpacePointerMove,
+        onPointerUp: _onSpacePointerUp,
+        onPointerCancel: _onSpacePointerCancel,
+        child: _buildButton(
+          onPressed: () {},
+          inkWellGestures: false,
+          externalPress: _externalPress,
+          clickSoundEnabled: false,
+        ),
+      );
+    } else if (_usesAlternateGestures) {
       // Parent owns hit testing (long-press popup); CyberButton still shows
       // Frost LIGHT ripple via [externalPress] (lws-ui PressInteraction).
       keyBody = Listener(
@@ -413,6 +521,7 @@ class CyberImeKeyLabel extends StatelessWidget {
     this.altGrOn = false,
     this.jpInputMode = CyberImeJpInputMode.english,
     this.profile,
+    this.spaceTrackpadActive = false,
   });
 
   final CyberImeKeyDef keyDef;
@@ -423,6 +532,9 @@ class CyberImeKeyLabel extends StatelessWidget {
   /// When set (e.g. Settings preview), KeyMap resolves against this profile
   /// instead of the live [CyberImeRegionalLayoutRegistry] selection.
   final CyberImeRegionalProfile? profile;
+
+  /// Soft Space trackpad mode: show caret arrows instead of "space".
+  final bool spaceTrackpadActive;
 
   CyberImeRegionalProfile get _mapProfile =>
       profile ?? CyberImeRegionalLayoutRegistry.provider.profile;
@@ -501,7 +613,17 @@ class CyberImeKeyLabel extends StatelessWidget {
       case CyberImeKeyId.enter:
         return const Icon(Icons.keyboard_return, size: 30);
       case CyberImeKeyId.space:
-        return const Text('space', style: TextStyle(fontSize: 22));
+        return Text(
+          spaceTrackpadActive ? '← · →' : 'space',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight:
+                spaceTrackpadActive ? FontWeight.w600 : FontWeight.normal,
+            color: spaceTrackpadActive
+                ? CyberColors.buttonPrimaryAccent
+                : null,
+          ),
+        );
       default:
         break;
     }

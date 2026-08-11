@@ -36,6 +36,9 @@ abstract final class ProcessParameterWireCodec {
     values['process.piercing_power'] = laserPower;
     values['process.piercing_frequency'] = forcedPiercingFrequencyHz;
     values['process.piercing_duty_cycle'] = forcedDutyCyclePercent;
+    // lws-ui createProcessParametersData forces these protocol leftovers to 0.
+    values['process.wire_feeding_delay'] = 0;
+    values['process.piercing_duration'] = 0;
 
     if (resolved.processType == ProcessType.wideCleaning) {
       final swing = values['process.swing_width'] ?? 0;

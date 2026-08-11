@@ -57,13 +57,13 @@ abstract final class MonitorDimens {
   static const aiInfoW = 360.0;
 
   /// Alarm / section titles → [HmiTypography.pageTitle] (28).
-  static const sectionTitleSize = 28.0;
+  static const sectionTitleSize = HmiTypography.pageTitleSize;
 
   /// Metric/comm labels → [HmiTypography.metricLabel] (20).
-  static const metricLabelSize = 20.0;
+  static const metricLabelSize = HmiTypography.controlSize;
 
   /// Temperature / metric values → [HmiTypography.metricValue] (28).
-  static const metricValueSize = 28.0;
+  static const metricValueSize = HmiTypography.pageTitleSize;
 
   /// lws-ui `@color/warn_text`.
   static const labelColor = Color(0xFFB0B1C2);

@@ -18,3 +18,20 @@ int cyberImeSelectionIndexForX({
 /// Mirrors lws-ui `defaultPopupIndex`: middle for 3+ options, else 0.
 int cyberImeDefaultPopupIndex(int optionCount) =>
     optionCount >= 3 ? 1 : 0;
+
+/// Horizontal drag distance (logical px) per soft-Space caret step.
+const double cyberImeSpaceCursorStepPx = 14.0;
+
+/// Accumulates horizontal [dx] into discrete caret steps (positive = right).
+({int steps, double residual}) cyberImeCursorStepsForDx({
+  required double dx,
+  required double residual,
+  double stepPx = cyberImeSpaceCursorStepPx,
+}) {
+  if (stepPx <= 0) {
+    return (steps: 0, residual: residual + dx);
+  }
+  final next = residual + dx;
+  final steps = next ~/ stepPx;
+  return (steps: steps, residual: next - steps * stepPx);
+}

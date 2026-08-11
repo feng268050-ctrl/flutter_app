@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/platform/cloud/process_parameters_cloud_codec.dart';
 
 void main() {
@@ -39,6 +40,45 @@ void main() {
       expect(params.values['process.laser_power'], 80);
       expect(params.values['process.wire_feeding_speed'], 12.5);
       expect(params.values['process.piercing_duration'], 1500);
+    });
+
+    test('snapshot to cloud map uses lws-ui camelCase fields', () {
+      final snapshot = ProcessVideoSnapshot(
+        processType: ProcessType.continuousWelding,
+        materialType: MaterialType.stainlessSteel,
+        materialName: 'Stainless Steel',
+        thickness: 0.5,
+        parameters: ProcessParameters(const {
+          'process.laser_power': 70,
+          'process.swing_frequency': 100,
+          'process.blowing_delay': 500,
+          'process.wire_feeding_speed': 12.5,
+          'process.power_ramp_up_duration': 200,
+        }),
+      );
+      final cloud = ProcessParametersCloudCodec.toCloudMap(snapshot);
+      expect(cloud['processType'], ProcessType.continuousWelding.wireValue);
+      expect(cloud['materialType'], MaterialType.stainlessSteel.storageValue);
+      expect(cloud['thickness'], 0.5);
+      expect(cloud['laserPower'], 70);
+      expect(cloud['swingFrequency'], 100);
+      expect(cloud['blowDelay'], 500);
+      expect(cloud['wireFeedSpeed'], 12.5);
+      expect(cloud['powerRampUp'], 200);
+      expect(cloud.containsKey('parameters'), isFalse);
+    });
+
+    test('processParametersJsonFromSnapshot is Gson-flat', () {
+      final snapshot = ProcessVideoSnapshot(
+        processType: ProcessType.continuousWelding,
+        parameters: ProcessParameters(const {'process.laser_power': 55}),
+      );
+      final raw = ProcessParametersCloudCodec.processParametersJsonFromSnapshot(
+        snapshot,
+      );
+      expect(raw, isNotNull);
+      expect(raw!, contains('"laserPower":55'));
+      expect(raw, isNot(contains('process.laser_power')));
     });
 
     test('builds user preset from cloud json', () {

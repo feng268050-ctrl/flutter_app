@@ -11,7 +11,8 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui [FrostStatusDialog] failure / tip mode (`OperationDialogBuilder.openErrorDialog`).
 ///
-/// Singleton-guarded so key-switch + e-stop paths cannot stack dialogs.
+/// Panel chrome matches pass tips ([TipDialogHost.showSuccess]) — LIGHT cream
+/// glass with baked blur; only the error icon and copy differ.
 /// Key-off / E-stop tips auto-dismiss when the safety edge clears (warn-style
 /// falling → dismiss), unless the operator already closed them.
 abstract final class OperationFailedDialogHost {
@@ -138,13 +139,17 @@ final class _OperationFailedBody extends StatelessWidget {
   /// `frost_dialog_prompt_confirm_button_min_width` / entry confirm 500dp.
   static const _confirmMinWidth = 500.0;
 
+  /// Dark ink on cream status tips (`dialog_frost_body_status`).
+  static const _titleInk = Color(0xFF1A1A1A);
+  static const _bodyInk = Color(0xFF1A1A1A);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final screenW = MediaQuery.sizeOf(context).width;
     final cardW = (screenW * 0.62).clamp(320.0, _maxWidth);
     final titleStyle = context.hmiTypography.importantDialogTitle.copyWith(
-      color: CyberColors.textPrimary,
+      color: _titleInk,
       fontWeight: FontWeight.w700,
       height: 1.15,
       letterSpacing:
@@ -152,7 +157,7 @@ final class _OperationFailedBody extends StatelessWidget {
       decoration: TextDecoration.none,
     );
     final bodyStyle = context.hmiTypography.importantDialogBody.copyWith(
-      color: CyberColors.textPrimary,
+      color: _bodyInk,
       fontWeight: FontWeight.w400,
       height: 1.2,
       decoration: TextDecoration.none,
@@ -173,22 +178,11 @@ final class _OperationFailedBody extends StatelessWidget {
             style: titleStyle,
           ),
           const SizedBox(height: CyberDimens.contentPadding),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0x0068686C),
-                  CyberColors.dividerCenter,
-                  Color(0x0068686C),
-                ],
-              ),
-            ),
-            child: SizedBox(height: 1, width: double.infinity),
-          ),
+          const TipFrostDivider(),
           const SizedBox(height: CyberDimens.contentPadding),
-          const Center(
+          Center(
             child: Image(
-              image: AssetImage(ProcessModeAssets.dialogError),
+              image: const AssetImage(ProcessModeAssets.dialogError),
               width: _iconSize,
               height: _iconSize,
               fit: BoxFit.contain,
@@ -205,18 +199,7 @@ final class _OperationFailedBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: CyberDimens.contentPadding),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0x0068686C),
-                  CyberColors.dividerCenter,
-                  Color(0x0068686C),
-                ],
-              ),
-            ),
-            child: SizedBox(height: 1, width: double.infinity),
-          ),
+          const TipFrostDivider(),
           const SizedBox(height: CyberDimens.contentPadding),
           Center(
             child: ConstrainedBox(

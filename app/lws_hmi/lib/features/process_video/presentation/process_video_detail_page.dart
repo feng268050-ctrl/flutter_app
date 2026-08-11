@@ -94,8 +94,8 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
         }
       });
       if (!missing) {
-        // Cover (possibly MPP JPEG helper) then VOD — never overlap, and wait
-        // for Monitor/AI to finish route release first.
+        // Cover (MPP JPEG helper via runExclusive) then decoder lease — never
+        // overlap with background cover drain or a prior route's VOD/RTSP.
         await _loadPoster(row);
         if (!mounted) {
           return;
@@ -308,7 +308,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
                                 child: _ParameterColumn(
                                   record: record,
                                   title: l10n.processVideoParametersTitle,
-                                  backLabel: l10n.details,
+                                  backLabel: l10n.equipmentStatusBack,
                                   uploadLabel: l10n.uploadText,
                                   deleteLabel: l10n.deleteText,
                                   labelWidth: 230 * scale,
@@ -342,7 +342,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
   }
 }
 
-/// Left column: Details chrome + Frost param card + Upload / Delete.
+/// Left column: Back chrome + Frost param card + Upload / Delete.
 final class _ParameterColumn extends StatelessWidget {
   const _ParameterColumn({
     required this.record,
@@ -355,6 +355,9 @@ final class _ParameterColumn extends StatelessWidget {
     required this.onUpload,
     required this.onDelete,
   });
+
+  /// Outer inset and Upload↔Delete gap share one value so side margins match.
+  static const double _parameterActionGap = 16;
 
   final ProcessVideoRecord record;
   final String title;
@@ -419,26 +422,36 @@ final class _ParameterColumn extends StatelessWidget {
                       labelWidth: labelWidth,
                     ),
                   ),
-                  Center(
+                  // Side insets == inter-button gap so Upload/Delete fill
+                  // the frosted panel with equal outer/inner spacing.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: _parameterActionGap,
+                    ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        HmiButton(
-                          label: uploadLabel,
-                          size: HmiButtonSize.small,
-                          variant: CyberButtonVariant.primary,
-                          shape: CyberButtonShape.rounded,
-                          onPressed: onUpload,
+                        Expanded(
+                          child: HmiButton(
+                            label: uploadLabel,
+                            size: HmiButtonSize.medium,
+                            widthPolicy: HmiButtonWidthPolicy.fill,
+                            variant: CyberButtonVariant.primary,
+                            shape: CyberButtonShape.rounded,
+                            onPressed: onUpload,
+                          ),
                         ),
-                        const SizedBox(width: 16),
-                        HmiButton(
-                          label: deleteLabel,
-                          size: HmiButtonSize.small,
-                          variant: CyberButtonVariant.secondary,
-                          shape: CyberButtonShape.rounded,
-                          borderGradientCenter:
-                              CyberBorderGradientCenter.topLeftBottomRight,
-                          onPressed: onDelete,
+                        const SizedBox(width: _parameterActionGap),
+                        Expanded(
+                          child: HmiButton(
+                            label: deleteLabel,
+                            size: HmiButtonSize.medium,
+                            widthPolicy: HmiButtonWidthPolicy.fill,
+                            variant: CyberButtonVariant.secondary,
+                            shape: CyberButtonShape.rounded,
+                            borderGradientCenter:
+                                CyberBorderGradientCenter.topLeftBottomRight,
+                            onPressed: onDelete,
+                          ),
                         ),
                       ],
                     ),

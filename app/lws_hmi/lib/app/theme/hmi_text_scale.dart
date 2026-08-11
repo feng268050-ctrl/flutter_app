@@ -87,3 +87,24 @@ abstract final class HmiTextScale {
   static double tabHeightOf(BuildContext context) =>
       tabHeightForReading(readingFactorOf(context));
 }
+
+/// Explicit opt-out for product chrome whose label size is frozen at Medium.
+///
+/// Keep this scope narrow: ordinary reading UI must continue to follow the
+/// operator's Small / Medium / Large setting.
+final class HmiFixedTextScale extends StatelessWidget {
+  const HmiFixedTextScale({
+    super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: child,
+    );
+  }
+}

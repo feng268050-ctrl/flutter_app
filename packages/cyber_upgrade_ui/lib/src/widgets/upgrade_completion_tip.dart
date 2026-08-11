@@ -31,7 +31,7 @@ class UpgradeCompletionTip extends StatelessWidget {
     final secondary = style ??
         const TextStyle(
           color: CyberColors.textSecondary,
-          fontSize: 16,
+          fontSize: 22,
           height: 1.4,
         );
     final title = titleStyle ??

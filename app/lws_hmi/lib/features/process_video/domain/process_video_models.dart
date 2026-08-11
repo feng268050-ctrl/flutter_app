@@ -41,19 +41,37 @@ final class ProcessVideoSnapshot {
 
   static ProcessVideoSnapshot fromJson(Map<String, Object?> json) {
     final processTypeRaw = json['processType'];
-    if (processTypeRaw is! int) {
+    final processTypeInt = switch (processTypeRaw) {
+      int i => i,
+      num n => n.toInt(),
+      _ => int.tryParse(processTypeRaw?.toString() ?? ''),
+    };
+    if (processTypeInt == null) {
       throw const FormatException('processType must be int');
     }
     final materialRaw = json['materialType'];
+    final materialInt = switch (materialRaw) {
+      int i => i,
+      num n => n.toInt(),
+      _ => int.tryParse(materialRaw?.toString() ?? ''),
+    };
+    final gearRaw = json['gear'];
+    final gear = switch (gearRaw) {
+      int i => i,
+      num n => n.toInt(),
+      _ => int.tryParse(gearRaw?.toString() ?? ''),
+    };
     return ProcessVideoSnapshot(
-      processType: ProcessType.fromWireValue(processTypeRaw),
-      materialType: materialRaw is int
-          ? MaterialType.fromStorageValue(materialRaw)
+      processType: ProcessType.fromWireValue(processTypeInt),
+      materialType: materialInt != null
+          ? MaterialType.fromStorageValue(materialInt)
           : null,
       materialName: json['materialName'] as String?,
       thickness: (json['thickness'] as num?)?.toDouble(),
-      gear: json['gear'] as int?,
-      parameters: ProcessParameters.fromJson(json['parameters']),
+      gear: gear,
+      parameters: json['parameters'] == null
+          ? const ProcessParameters.empty()
+          : ProcessParameters.fromJson(json['parameters']),
       presetUuid: json['presetUuid'] as String?,
       libraryVersion: json['libraryVersion'] as String?,
     );

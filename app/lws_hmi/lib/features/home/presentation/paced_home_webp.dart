@@ -109,7 +109,7 @@ final class PacedHomeWebpController extends ChangeNotifier {
       _notify();
       return;
     }
-    if (_started && !_paused) {
+    if (_started) {
       unawaited(_reloadAndRun());
     }
   }

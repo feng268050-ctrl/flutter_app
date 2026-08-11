@@ -1,3 +1,4 @@
+import 'package:lws_hmi/features/process_video/application/process_video_cloud_metadata.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 
 /// LAN `:5580` video row shape (lws-ui `DeviceWsVideoListPayload.voToRow`).
@@ -14,6 +15,6 @@ abstract final class LocalHttpVideoRow {
         'uploadProgress': r.uploadProgress,
         'coverUrl': r.coverUrl,
         'videoUrl': r.videoUrl,
-        'processParameters': r.snapshot?.toJson(),
+        'processParameters': ProcessVideoCloudMetadata.processParametersObject(r),
       };
 }

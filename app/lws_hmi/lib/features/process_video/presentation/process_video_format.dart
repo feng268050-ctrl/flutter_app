@@ -12,15 +12,15 @@ abstract final class ProcessVideoFormat {
 
   static String material(ProcessVideoRecord record, AppLocalizations l10n) {
     final snap = record.snapshot;
+    final material = record.materialType ?? snap?.materialType;
+    if (material != null) {
+      return material.localizedLabel(l10n);
+    }
     final name = snap?.materialName?.trim();
     if (name != null && name.isNotEmpty) {
-      return name;
+      return MaterialTypeAliases.localizeStored(name, l10n);
     }
-    final material = record.materialType ?? snap?.materialType;
-    if (material == null) {
-      return '—';
-    }
-    return material.localizedLabel(l10n);
+    return '—';
   }
 
   static String recordingTime(ProcessVideoRecord record) {

@@ -35,3 +35,4 @@ export 'src/session/cyber_ime_regional_layout.dart';
 export 'src/session/cyber_ime_romaji.dart';
 export 'src/session/cyber_ime_session.dart';
 export 'src/widgets/cyber_ime_text_field.dart';
+export 'src/widgets/cyber_ime_trackpad_caret.dart';

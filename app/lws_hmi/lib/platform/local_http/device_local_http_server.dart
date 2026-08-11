@@ -7,6 +7,8 @@ import 'package:cyber_hal/network.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_video/application/mp4_media_probe.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_params_ingest.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/platform/local_http/api_result.dart';
@@ -397,20 +399,27 @@ final class DeviceLocalHttpServer {
       return;
     }
 
-    final paramsRaw = parsed.fields['processParameters']?.trim() ?? '';
-    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final processTypeEnum = ProcessType.fromWireValue(processType);
+    final materialTypeEnum = MaterialType.fromStorageValue(materialType);
+    final paramsJson = ProcessVideoParamsIngest.normalizeJson(
+      parsed.fields['processParameters'],
+      processType: processTypeEnum,
+      materialType: materialTypeEnum,
+    );
+    final createTimeMs = _parseOptionalCreateTimeMs(parsed.fields['createTime']) ??
+        DateTime.now().toUtc().millisecondsSinceEpoch;
     await repo.open();
     final saved = await repo.insert(
       ProcessVideoRecord(
         videoId: videoId,
         videoPath: dest.path,
-        processType: ProcessType.fromWireValue(processType),
-        materialType: MaterialType.fromStorageValue(materialType),
-        processParametersJson: paramsRaw,
+        processType: processTypeEnum,
+        materialType: materialTypeEnum,
+        processParametersJson: paramsJson,
         fileSize: dest.lengthSync(),
         durationMs: probe.durationMs,
         resolution: probe.resolution,
-        createTimeMs: now,
+        createTimeMs: createTimeMs,
       ),
     );
     await _writeJson(
@@ -466,7 +475,31 @@ final class DeviceLocalHttpServer {
     await request.response.close();
   }
 
+  /// Prefer in-app ISO BMFF probe; optional `ffprobe` only as a secondary hint.
   Future<({int durationMs, String? resolution})> _probeVideo(File file) async {
+    try {
+      final info = await Mp4MediaProbe.probeFile(file);
+      if (info != null && info.durationMs > 0) {
+        final resolution = info.resolution;
+        if (resolution != null && resolution.isNotEmpty) {
+          return (durationMs: info.durationMs, resolution: resolution);
+        }
+        // Duration known but no visual size — keep duration, try ffprobe for size.
+        final viaFf = await _probeVideoWithFfprobe(file);
+        if (viaFf.resolution != null && viaFf.resolution!.isNotEmpty) {
+          return (durationMs: info.durationMs, resolution: viaFf.resolution);
+        }
+        return (durationMs: info.durationMs, resolution: null);
+      }
+    } catch (e) {
+      debugPrint('local-http: mp4 probe soft-fail: $e');
+    }
+    return _probeVideoWithFfprobe(file);
+  }
+
+  Future<({int durationMs, String? resolution})> _probeVideoWithFfprobe(
+    File file,
+  ) async {
     try {
       final dur = await Process.run('ffprobe', [
         '-v',
@@ -499,11 +532,23 @@ final class DeviceLocalHttpServer {
     } catch (e) {
       debugPrint('local-http: ffprobe soft-fail: $e');
     }
-    // No ffprobe: accept non-empty MP4 with defaults (Linux appliance fallback).
-    if (file.lengthSync() > 0) {
-      return (durationMs: 1000, resolution: '1920x1080');
-    }
     return (durationMs: 0, resolution: null);
+  }
+
+  /// Optional multipart `createTime` (epoch ms). Invalid / absent → null.
+  static int? _parseOptionalCreateTimeMs(String? raw) {
+    if (raw == null) {
+      return null;
+    }
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final ms = int.tryParse(trimmed);
+    if (ms == null || ms <= 0) {
+      return null;
+    }
+    return ms;
   }
 
   String _newVideoId() {

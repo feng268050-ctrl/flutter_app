@@ -334,7 +334,8 @@ final class WarnAlarmController {
   void _syncWarnSound() {
     final showing = _presentation.showingCode;
     if (showing == null) {
-      if (_sound.isActive) {
+      // Also clear orphan HAL loops left by ensurePlaying/stop races.
+      if (_sound.isActive || _sound.hasOrphanPlayback) {
         unawaited(_sound.stop());
       }
       return;
@@ -345,7 +346,7 @@ final class WarnAlarmController {
     );
     if (alertingCodes.contains(showing)) {
       unawaited(_sound.ensurePlaying(showing));
-    } else if (_sound.isActive) {
+    } else if (_sound.isActive || _sound.hasOrphanPlayback) {
       unawaited(_sound.stop());
     }
   }

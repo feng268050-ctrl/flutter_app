@@ -27,7 +27,6 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/process_parameters_snapshot_store.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -388,11 +387,9 @@ class _AiVisionTabState extends State<AiVisionTab> {
     }
     await WidgetsBinding.instance.endOfFrame;
     await WidgetsBinding.instance.endOfFrame;
-    await MppVideoRouteGate.beforeAcquire();
-    if (!mounted || !identical(_selected, record)) {
-      return;
-    }
 
+    // Cover extract before decoder lease — same order as process-video detail
+    // (MPP helper must not overlap VOD/RTSP).
     File? cover;
     try {
       cover = await VideoCoverExtractor().extractFirstFrameJpeg(
@@ -400,6 +397,14 @@ class _AiVisionTabState extends State<AiVisionTab> {
         videoId: record.videoId,
       );
     } catch (_) {}
+    if (!mounted || !identical(_selected, record)) {
+      return;
+    }
+
+    await MppVideoRouteGate.beforeAcquire();
+    if (!mounted || !identical(_selected, record)) {
+      return;
+    }
 
     final source = File(record.videoPath);
     final cacheKey = ProcessVideoAiInferencePaths.cacheKey(record, source);
@@ -646,15 +651,15 @@ class _AiVisionTabState extends State<AiVisionTab> {
       } catch (_) {}
     }
     String material = l10n.aiVisionWorkInfoUnavailable;
-    final name = snap['materialName']?.toString().trim();
-    if (name != null && name.isNotEmpty) {
-      material = name;
+    final mt = snap['materialType'];
+    if (mt is int) {
+      try {
+        material = MaterialType.fromStorageValue(mt).localizedLabel(l10n);
+      } catch (_) {}
     } else {
-      final mt = snap['materialType'];
-      if (mt is int) {
-        try {
-          material = MaterialType.fromStorageValue(mt).localizedLabel(l10n);
-        } catch (_) {}
+      final name = snap['materialName']?.toString().trim();
+      if (name != null && name.isNotEmpty) {
+        material = MaterialTypeAliases.localizeStored(name, l10n);
       }
     }
     return (process, material, l10n.aiVisionWorkInfoUnavailable);
@@ -703,25 +708,24 @@ class _AiVisionTabState extends State<AiVisionTab> {
                           ),
                         ),
                         Expanded(
-                          child: Scrollbar(
-                            thumbVisibility: true,
-                            child: ListView(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              children: [
-                                _InfoBlock(
-                                  label: l10n.aiVisionProcessTypeText,
-                                  value: info.$1,
-                                ),
-                                _InfoBlock(
-                                  label: l10n.aiVisionMaterialTypeText,
-                                  value: info.$2,
-                                ),
-                                _InfoBlock(
-                                  label: l10n.processVideoRecordingTime,
-                                  value: info.$3,
-                                ),
-                              ],
-                            ),
+                          // Fade when idle — same as Alarm Log ListView
+                          // (MaterialScrollBehavior desktop scrollbar).
+                          child: ListView(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            children: [
+                              _InfoBlock(
+                                label: l10n.aiVisionProcessTypeText,
+                                value: info.$1,
+                              ),
+                              _InfoBlock(
+                                label: l10n.aiVisionMaterialTypeText,
+                                value: info.$2,
+                              ),
+                              _InfoBlock(
+                                label: l10n.processVideoRecordingTime,
+                                value: info.$3,
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -1058,7 +1062,10 @@ class _AiBoxesPainter extends CustomPainter {
       }
       labelStyle.text = TextSpan(
         text: label,
-        style: AppTypography.supporting.copyWith(color: Colors.white),
+        style: TextStyle(
+          fontSize: HmiTypography.supportingSize,
+          color: Colors.white,
+        ),
       );
       labelStyle.layout();
       final padH = labelStyle.height * 0.35;

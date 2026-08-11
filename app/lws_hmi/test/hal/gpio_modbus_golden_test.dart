@@ -112,7 +112,8 @@ void main() {
       final process = config.groupById('process')!;
       expect(process.space, 'holding');
       expect(process.start, 0x0060);
-      expect(process.count, 23);
+      // Match lws-ui createProcessParametersData: 0x0060..0x0075.
+      expect(process.count, 22);
 
       final settings = config.groupById('settings')!;
       expect(settings.start, 0x0090);
@@ -132,17 +133,30 @@ void main() {
       // Full product catalog (alarms + machine + telemetry + holdings).
       expect(config.attributes.length, 155);
 
-      final samples = <String, (String space, int address, int count, String type, String? group)>{
+      final samples = <String,
+          (String space, int address, int count, String type, String? group)>{
         'device.control_card_version': ('input', 0x0002, 1, 'u16', 'status'),
         'alarm.gun_comm': ('input', 0x0009, 1, 'bit', 'status'),
         'alarm.gun_motor_over_temp': ('input', 0x000B, 1, 'bit', 'status'),
         'alarm.driver_over_temp': ('input', 0x000B, 1, 'bit', 'status'),
-        'alarm.protective_mirror_over_temp': ('input', 0x000B, 1, 'bit', 'status'),
+        'alarm.protective_mirror_over_temp': (
+          'input',
+          0x000B,
+          1,
+          'bit',
+          'status'
+        ),
         'alarm.collimator_over_temp': ('input', 0x000B, 1, 'bit', 'status'),
         'alarm.laser_comm': ('input', 0x000D, 1, 'bit', 'status'),
         'alarm.env_temperature': ('input', 0x000F, 1, 'bit', 'status'),
         'alarm.wire_feeder_comm': ('input', 0x0011, 1, 'bit', 'status'),
-        'alarm.shielding_gas_blow_pressure': ('input', 0x0013, 1, 'bit', 'status'),
+        'alarm.shielding_gas_blow_pressure': (
+          'input',
+          0x0013,
+          1,
+          'bit',
+          'status'
+        ),
         'machine.laser_on': ('input', 0x0015, 1, 'bit', 'status'),
         'machine.cnc_connected': ('input', 0x0015, 1, 'bit', 'status'),
         'device.laser_hw_version': ('input', 0x0030, 2, 'u16_pair_be', 'info'),
@@ -162,7 +176,13 @@ void main() {
         'machine.wire_feeding_on': ('input', 0x0015, 1, 'bit', 'status'),
         'process.laser_power': ('holding', 0x0060, 1, 'u16', 'process'),
         'process.swing_width': ('holding', 0x0067, 1, 'u16', 'process'),
-        'setting.motor_temp_alarm_threshold': ('holding', 0x009E, 1, 'u16', 'settings'),
+        'setting.motor_temp_alarm_threshold': (
+          'holding',
+          0x009E,
+          1,
+          'u16',
+          'settings'
+        ),
         'upgrade.fw_command': ('holding', 0x0009, 1, 'u16', 'upgrade'),
         'upgrade.data': ('holding', 0x0010, 64, 'u16_array', 'upgrade'),
       };

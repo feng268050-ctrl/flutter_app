@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
@@ -168,22 +169,20 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                           SizedBox(
                             height: _checkboxRowHeight,
                             child: RecordWorkToggle(
-                              key: const ValueKey(
-                                  'engineer-panel-record-work'),
+                              key: const ValueKey('engineer-panel-record-work'),
                               controller: widget.recordWork,
                               processType: widget.processType,
                               expand: true,
                               checkboxSize: _checkboxSize,
                             ),
                           ),
-                          const Divider(
-                              color: Color(0x33FFFFFF), height: 1),
+                          const Divider(color: Color(0x33FFFFFF), height: 1),
                           SizedBox(
                             height: _checkboxRowHeight,
                             child: _CheckRow(
-                              key: const ValueKey(
-                                  'engineer-panel-manual-gas'),
+                              key: const ValueKey('engineer-panel-manual-gas'),
                               label: l10n.manualGas,
+                              fixedTextScale: true,
                               value: widget.controller.manualGas,
                               enabled: true,
                               checkboxSize: _checkboxSize,
@@ -205,8 +204,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   );
                                   return;
                                 }
-                                final err = await widget.controller
-                                    .setManualGas(value);
+                                final err =
+                                    await widget.controller.setManualGas(value);
                                 if (!context.mounted) {
                                   return;
                                 }
@@ -231,13 +230,11 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                               },
                             ),
                           ),
-                          const Divider(
-                              color: Color(0x33FFFFFF), height: 1),
+                          const Divider(color: Color(0x33FFFFFF), height: 1),
                           SizedBox(
                             height: _checkboxRowHeight,
                             child: _CheckRow(
-                              key: const ValueKey(
-                                  'engineer-panel-auto-wire'),
+                              key: const ValueKey('engineer-panel-auto-wire'),
                               label: l10n.autoWireFeed,
                               value: widget.controller.autoWireFeed &&
                                   _wireCapable,
@@ -288,8 +285,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                               },
                             ),
                           ),
-                          const Divider(
-                              color: Color(0x33FFFFFF), height: 1),
+                          const Divider(color: Color(0x33FFFFFF), height: 1),
                           // Equal flex above / below Retract·Feed.
                           const Spacer(),
                           SizedBox(
@@ -298,8 +294,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                               children: [
                                 Expanded(
                                   child: _EngineerWireActionButton(
-                                    key: const ValueKey(
-                                        'engineer-panel-feed'),
+                                    key: const ValueKey('engineer-panel-feed'),
                                     label: DeviceControlFeedbackCopy.feedLabel(
                                       l10n,
                                     ),
@@ -341,9 +336,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                           const Spacer(),
                           _EngineerDeviceActionButton(
                             key: const ValueKey('engineer-panel-laser'),
-                            label: laserActive
-                                ? l10n.endOfWork
-                                : l10n.laserEnable,
+                            label:
+                                laserActive ? l10n.endOfWork : l10n.laserEnable,
                             icon: laserActive
                                 ? Icons.pause_circle_outline
                                 : Icons.play_circle_outline,
@@ -395,8 +389,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                               if (err != null && context.mounted) {
                                 if (err ==
                                     LaserEnableBlockReason.alarmBlocked) {
-                                  final warn =
-                                      WarnAlarmScope.maybeOf(context);
+                                  final warn = WarnAlarmScope.maybeOf(context);
                                   if (warn != null) {
                                     await warn.presentLaserEnableBlock(
                                       policy: policy,
@@ -470,6 +463,7 @@ final class _CheckRow extends StatelessWidget {
     required this.enabled,
     required this.onChanged,
     this.checkboxSize = CyberDimens.checkboxLargeSize,
+    this.fixedTextScale = false,
   });
 
   final String label;
@@ -477,9 +471,18 @@ final class _CheckRow extends StatelessWidget {
   final bool enabled;
   final ValueChanged<bool>? onChanged;
   final double checkboxSize;
+  final bool fixedTextScale;
 
   @override
   Widget build(BuildContext context) {
+    final labelText = Text(
+      label,
+      style: context.hmiTypography.navigation.copyWith(
+        color: enabled ? Colors.white : const Color(0x66FFFFFF),
+        fontWeight: FontWeight.w500,
+        height: 1.0,
+      ),
+    );
     return SizedBox.expand(
       child: InkWell(
         onTap: enabled && onChanged != null
@@ -506,14 +509,10 @@ final class _CheckRow extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  label,
-                  style: context.hmiTypography.navigation.copyWith(
-                    color: enabled ? Colors.white : const Color(0x66FFFFFF),
-                    fontWeight: FontWeight.w500,
-                    height: 1.0,
-                  ),
-                ),
+                // Product rule: Engineer Manual Gas stays at Medium.
+                child: fixedTextScale
+                    ? HmiFixedTextScale(child: labelText)
+                    : labelText,
               ),
             ],
           ),
@@ -646,9 +645,7 @@ final class _EngineerWireActionButtonState
   }
 
   void _pointerUp() {
-    if (widget.controller.busy ||
-        widget.laserBlocked ||
-        widget.modeBlocked) {
+    if (widget.controller.busy || widget.laserBlocked || widget.modeBlocked) {
       return;
     }
     final wasLatched = _gesture.latched;
@@ -678,7 +675,8 @@ final class _EngineerWireActionButtonState
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
     final labelSize = ProcessModeOutlineChrome.labelSize;
-    const iconSize = ProcessModeOutlineChrome.iconSize;
+    const layoutIconSize = ProcessModeOutlineChrome.iconSize;
+    const visualIconSize = ProcessModeOutlineChrome.engineerWireIconVisualSize;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel(l10n)
         : widget.label;
@@ -721,82 +719,85 @@ final class _EngineerWireActionButtonState
                   // Label-only when continuous feed is latched.
                   // Feed: left inset = icon↔label gap = top/bottom; label not
                   // button-centered. Retract: keep prior icon+label group.
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final style = TextStyle(
-                        color: widget.enabled
-                            ? foreground
-                            : disabledForeground,
-                        fontSize: labelSize,
-                        fontWeight: FontWeight.w600,
-                        height: 1.0,
-                      );
-                      final labelText = Text(
-                        label,
-                        maxLines: 1,
-                        softWrap: false,
-                        style: style,
-                      );
-                      if (latched) {
-                        return Center(child: labelText);
-                      }
-                      final edgeInset =
-                          ((constraints.maxHeight - iconSize) / 2)
-                              .clamp(0.0, constraints.maxHeight);
-                      final iconFace = SizedBox(
-                        width: iconSize,
-                        height: iconSize,
-                        child: Transform.flip(
-                          flipX: widget.retract,
-                          child: Icon(
-                            widget.icon,
-                            color: widget.enabled
-                                ? foreground
-                                : disabledForeground,
-                            size: iconSize,
+                  // Product rule: Engineer Feed / Retract stay at Medium.
+                  HmiFixedTextScale(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final style = TextStyle(
+                          color:
+                              widget.enabled ? foreground : disabledForeground,
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w600,
+                          height: 1.0,
+                        );
+                        final labelText = Text(
+                          label,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: style,
+                        );
+                        if (latched) {
+                          return Center(child: labelText);
+                        }
+                        final edgeInset =
+                            ((constraints.maxHeight - layoutIconSize) / 2)
+                                .clamp(0.0, constraints.maxHeight);
+                        final iconFace = SizedBox(
+                          width: layoutIconSize,
+                          height: layoutIconSize,
+                          child: Transform.flip(
+                            flipX: widget.retract,
+                            child: Icon(
+                              widget.icon,
+                              color: widget.enabled
+                                  ? foreground
+                                  : disabledForeground,
+                              size: visualIconSize,
+                            ),
                           ),
-                        ),
-                      );
-                      // Feed only: [edgeInset][icon][edgeInset][label…]
-                      if (!widget.retract) {
+                        );
+                        // Feed only: [edgeInset][icon][edgeInset][label…]
+                        if (!widget.retract) {
+                          return Padding(
+                            padding: EdgeInsets.only(left: edgeInset),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    iconFace,
+                                    SizedBox(width: edgeInset),
+                                    labelText,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
                         return Padding(
-                          padding: EdgeInsets.only(left: edgeInset),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.symmetric(horizontal: edgeInset),
+                          child: Center(
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   iconFace,
-                                  SizedBox(width: edgeInset),
+                                  const SizedBox(
+                                    width:
+                                        ProcessModeOutlineChrome.iconLabelGap,
+                                  ),
                                   labelText,
                                 ],
                               ),
                             ),
                           ),
                         );
-                      }
-                      return Padding(
-                        padding: EdgeInsets.symmetric(horizontal: edgeInset),
-                        child: Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                iconFace,
-                                const SizedBox(
-                                  width: ProcessModeOutlineChrome.iconLabelGap,
-                                ),
-                                labelText,
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                      },
+                    ),
                   ),
                 ],
               ),

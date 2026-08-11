@@ -55,8 +55,8 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('call-back-home-button')), findsOneWidget);
-    expect(find.text('Details'), findsOneWidget);
-    expect(find.text('Back'), findsNothing);
+    expect(find.text('Back'), findsOneWidget);
+    expect(find.text('Details'), findsNothing);
     expect(find.text('Parameter Recording'), findsOneWidget);
     // WordBoundaryLabel paints whitespace-separated tokens as separate Texts.
     expect(find.text('Continuous'), findsOneWidget);

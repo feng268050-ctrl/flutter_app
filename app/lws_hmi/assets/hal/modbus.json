@@ -59,7 +59,7 @@
     "process": {
       "space": "holding",
       "start": "0x0060",
-      "count": 23,
+      "count": 22,
       "mode": "on_demand"
     },
     "settings": {

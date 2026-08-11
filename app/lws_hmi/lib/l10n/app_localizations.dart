@@ -2366,7 +2366,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeQuickModeLabel.
   ///
   /// In en, this message translates to:
-  /// **'Quick Mode'**
+  /// **'Fast Mode'**
   String get homeQuickModeLabel;
 
   /// No description provided for @homeSettingsLabel.
@@ -4064,7 +4064,7 @@ abstract class AppLocalizations {
   /// No description provided for @processLibraryNotInstalled.
   ///
   /// In en, this message translates to:
-  /// **'No compatible quick-mode process library is installed.'**
+  /// **'No compatible Fast Mode process library is installed.'**
   String get processLibraryNotInstalled;
 
   /// No description provided for @processLibraryUpdateFailed.
@@ -4214,7 +4214,7 @@ abstract class AppLocalizations {
   /// No description provided for @processVideoEmptySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Record Work videos from Quick or Engineer mode will appear here.'**
+  /// **'Record Work videos from Fast or Engineer mode will appear here.'**
   String get processVideoEmptySubtitle;
 
   /// No description provided for @processVideoEmptyTitle.
@@ -4358,7 +4358,7 @@ abstract class AppLocalizations {
   /// No description provided for @productDisclaimerContent.
   ///
   /// In en, this message translates to:
-  /// **'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.'**
+  /// **'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n### 1. Safety Warning\n\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (**PPE**), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n### 2. Operating Instructions\n\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n### 3. Improper Operation\n\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n### 4. Maintenance\n\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n### 5. Disclaimer of Liability\n\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n### 6. Governing Law\n\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n### 7. Entire Agreement\n\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.'**
   String get productDisclaimerContent;
 
   /// No description provided for @productDisclaimerInfo.

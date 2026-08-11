@@ -23,6 +23,8 @@ final class HmiButton extends StatelessWidget {
     this.icon,
     this.leading,
     this.trailing,
+    this.forceLabelCentered = false,
+    this.forceTextBandCentered = false,
     this.clickSoundEnabled = true,
     this.borderGradientCenter = CyberBorderGradientCenter.uniform,
     this.borderGradientColors,
@@ -48,6 +50,15 @@ final class HmiButton extends StatelessWidget {
   final IconData? icon;
   final Widget? leading;
   final Widget? trailing;
+
+  /// When true, center the label on the button and pin the leading icon with
+  /// equal left / vertical insets (Quick side ops).
+  final bool forceLabelCentered;
+
+  /// When true, center the label on the button and place the leading icon
+  /// immediately to its left with equal spacing on both sides of the icon
+  /// (Engineer Reset Defaults / Save Favorite).
+  final bool forceTextBandCentered;
 
   final bool clickSoundEnabled;
 
@@ -87,6 +98,8 @@ final class HmiButton extends StatelessWidget {
       horizontalPadding: resolvedPadding,
       leading: resolvedLeading,
       trailing: trailing,
+      forceTextBandCentered: forceTextBandCentered,
+      gap: HmiIconLabelLayout.iconLabelGap,
     );
 
     // Always stretch so CyberButton uses [height] directly (not shrink-wrap

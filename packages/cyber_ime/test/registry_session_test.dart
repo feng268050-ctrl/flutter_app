@@ -79,5 +79,41 @@ void main() {
       expect(ctrl.text, 'aXd');
       expect(ctrl.selection.baseOffset, 2);
     });
+
+    test('moveCursorBy moves mid-field and clamps at bounds', () {
+      final ctrl = TextEditingController(text: 'abcd');
+      ctrl.selection = const TextSelection.collapsed(offset: 2);
+      final commit = CyberImeControllerCommit(ctrl);
+
+      commit.moveCursorBy(-1);
+      expect(ctrl.text, 'abcd');
+      expect(ctrl.selection.baseOffset, 1);
+
+      commit.moveCursorBy(2);
+      expect(ctrl.selection.baseOffset, 3);
+
+      commit.moveCursorBy(10);
+      expect(ctrl.selection.baseOffset, 4);
+
+      commit.moveCursorBy(-100);
+      expect(ctrl.selection.baseOffset, 0);
+      expect(ctrl.value.composing, TextRange.empty);
+    });
+
+    test('moveCursorBy collapses non-collapsed selection', () {
+      final ctrl = TextEditingController(text: 'abcd');
+      ctrl.selection = const TextSelection(baseOffset: 1, extentOffset: 3);
+      final commit = CyberImeControllerCommit(ctrl);
+
+      commit.moveCursorBy(-1);
+      expect(ctrl.text, 'abcd');
+      expect(ctrl.selection.isCollapsed, isTrue);
+      expect(ctrl.selection.baseOffset, 1);
+
+      ctrl.selection = const TextSelection(baseOffset: 1, extentOffset: 3);
+      commit.moveCursorBy(1);
+      expect(ctrl.selection.isCollapsed, isTrue);
+      expect(ctrl.selection.baseOffset, 3);
+    });
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:cyber_hal/stub.dart';
@@ -25,6 +27,13 @@ void main() {
     );
   }
 
+  bool wroteAutoWireOn(List<(String, Object?)> writes) => writes.any(
+        (e) =>
+            e.$1 == DeviceControlIds.controlField1 &&
+            e.$2 is num &&
+            ((e.$2 as num).toInt() & (1 << 4)) != 0,
+      );
+
   test('ensureAutoWireFeedDefault writes ON when currently off', () async {
     final modbus = _RecordingModbus();
     final controller = DeviceControlController(servicesWith(modbus))
@@ -33,12 +42,7 @@ void main() {
 
     await controller.ensureAutoWireFeedDefault();
     expect(controller.autoWireFeed, isTrue);
-    expect(
-      modbus.writes.any(
-        (e) => e.$1 == DeviceControlIds.wireManualMode && e.$2 == true,
-      ),
-      isTrue,
-    );
+    expect(wroteAutoWireOn(modbus.writes), isTrue);
   });
 
   test('ensureAutoWireFeedDefault force-writes ON when already true', () async {
@@ -49,12 +53,7 @@ void main() {
 
     await controller.ensureAutoWireFeedDefault();
     expect(controller.autoWireFeed, isTrue);
-    expect(
-      modbus.writes.any(
-        (e) => e.$1 == DeviceControlIds.wireManualMode && e.$2 == true,
-      ),
-      isTrue,
-    );
+    expect(wroteAutoWireOn(modbus.writes), isTrue);
   });
 
   test('ensureAutoWireFeedDefault skips when e-stop active', () async {
@@ -66,6 +65,15 @@ void main() {
     await controller.ensureAutoWireFeedDefault();
     expect(controller.autoWireFeed, isFalse);
     expect(modbus.writes, isEmpty);
+  });
+
+  test('start applies ensure after stale watch prime so UI stays ON', () async {
+    final modbus = _StaleAutoWirePrimeModbus();
+    final controller = DeviceControlController(servicesWith(modbus))
+      ..keySwitchOn = true;
+
+    await controller.start();
+    expect(controller.autoWireFeed, isTrue);
   });
 
   test('offset arc pads match lws-ui OffsetWheelBuilder', () {
@@ -99,4 +107,28 @@ final class _RecordingModbus extends ModbusRtuClient {
     Iterable<String>? ids,
   }) async =>
       const Stream.empty();
+}
+
+/// Sync-primes auto-wire OFF on listen (HAL watch prime), then allows
+/// [DeviceControlController.start] to force ON afterward.
+final class _StaleAutoWirePrimeModbus extends _RecordingModbus {
+  @override
+  Future<Stream<List<ModbusAttributeChange>>> watchAttributes({
+    Iterable<String>? ids,
+  }) async {
+    late final StreamController<List<ModbusAttributeChange>> controller;
+    controller = StreamController<List<ModbusAttributeChange>>.broadcast(
+      onListen: () {
+        controller.add(const [
+          ModbusAttributeChange(
+            id: DeviceControlIds.wireManualMode,
+            value: false,
+            previous: null,
+            kind: ModbusChangeKind.primed,
+          ),
+        ]);
+      },
+    );
+    return controller.stream;
+  }
 }

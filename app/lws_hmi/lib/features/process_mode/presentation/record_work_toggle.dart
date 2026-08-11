@@ -31,7 +31,7 @@ final class RecordWorkToggle extends StatelessWidget {
   /// Engineer left panel: fill parent row height.
   final bool expand;
 
-  /// Checkbox face size (unified large tier = 28).
+  /// Checkbox face size (unified large tier = 26).
   final double checkboxSize;
 
   @override

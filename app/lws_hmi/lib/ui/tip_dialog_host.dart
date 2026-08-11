@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:cyber_alarm_ui/cyber_alarm_ui.dart';
 import 'package:cyber_ui/cyber_ui.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Product tip / prompt dialogs.
 ///
-/// - [showSuccess] / [showError] / [showDarkPrompt]: Startup Self-Check frost
-///   (transparent barrier, realtime dark wallpaper blur).
-/// - [showLightPrompt]: lws-ui LIGHT cream glass (Engineer tip / Laser Enable
-///   Important Reminder) — full-page baked Gaussian + matrix 透视.
+/// - [showSuccess] / [showError]: lws-ui FrostStatus — LIGHT cream glass with
+///   baked Gaussian + warm wash (pass / fail icons only; shared panel chrome).
+/// - [showDarkPrompt]: Startup Self-Check frost (transparent barrier, realtime
+///   dark wallpaper blur) for Wi‑Fi / register / firmware confirm prompts.
+/// - [showLightPrompt]: same LIGHT cream glass recipe at large prompt sizes
+///   (Engineer tip / Laser Enable Important Reminder).
 ///
 /// **Excluded:** warn/alarm dialogs (`cyber_alarm_ui` WarnFrostShell) stay on
 /// their own path (same LIGHT glass recipe).
@@ -37,14 +39,103 @@ abstract final class TipDialogHost {
     );
   }
 
-  /// Pass / toast tip — Self-Check dark frost.
+  /// LIGHT cream glass — baked Gaussian + matrix 透视 (shared by status + large tips).
+  static Future<T?> _showLightCreamFrost<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+    BoxConstraints? constraints,
+    String barrierLabel = 'Tip',
+    EdgeInsetsGeometry padding =
+        const EdgeInsets.all(CyberDimens.contentPadding),
+    Duration transitionDuration = const Duration(milliseconds: 180),
+    bool useWarnFrostShell = false,
+  }) {
+    final scope = resolveTipBlurScope(context);
+
+    return showGeneralDialog<T>(
+      context: context,
+      barrierDismissible: barrierDismissible,
+      barrierLabel: barrierLabel,
+      barrierColor: Colors.transparent,
+      transitionDuration: transitionDuration,
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        final child = Padding(
+          padding: padding,
+          child: builder(dialogContext),
+        );
+        final frost = useWarnFrostShell
+            ? WarnFrostShell(scope: scope, child: child)
+            : ConstrainedBox(
+                constraints: constraints ??
+                    BoxConstraints(
+                      maxWidth: (MediaQuery.sizeOf(dialogContext).width * 0.62)
+                          .clamp(320, 720),
+                      maxHeight: (MediaQuery.sizeOf(dialogContext).height * 0.85)
+                          .clamp(320, 720),
+                    ),
+                child: _LightCreamFrostCard(
+                  scope: scope,
+                  padding: EdgeInsets.zero,
+                  child: child,
+                ),
+              );
+
+        return Material(
+          type: MaterialType.transparency,
+          child: useWarnFrostShell
+              ? frost
+              : Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: barrierDismissible
+                          ? () => Navigator.of(dialogContext).maybePop()
+                          : null,
+                      child: const ColoredBox(color: CyberColors.scrim),
+                    ),
+                    FadeTransition(
+                      opacity: animation,
+                      child: Center(child: frost),
+                    ),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+
+  /// Pass / fail status tips — shrink-wrap LIGHT cream glass (WarnFrostShell).
+  static Future<T?> _showStatusTipFrost<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+    BoxConstraints? constraints,
+  }) {
+    assert(() {
+      // Status tips shrink-wrap; explicit constraints are ignored.
+      // ignore: unnecessary_statements
+      constraints;
+      return true;
+    }());
+    return _showLightCreamFrost<T>(
+      context: context,
+      builder: builder,
+      barrierDismissible: barrierDismissible,
+      transitionDuration: Duration.zero,
+      useWarnFrostShell: true,
+    );
+  }
+
+  /// Pass / toast tip — LIGHT cream glass (baked blur).
   static Future<T?> showSuccess<T>({
     required BuildContext context,
     required WidgetBuilder builder,
     bool barrierDismissible = true,
     BoxConstraints? constraints,
   }) {
-    return _showSelfCheckFrost<T>(
+    return _showStatusTipFrost<T>(
       context: context,
       builder: builder,
       barrierDismissible: barrierDismissible,
@@ -52,14 +143,14 @@ abstract final class TipDialogHost {
     );
   }
 
-  /// Error tip — Self-Check dark frost.
+  /// Fail / error tip — same cream panel as [showSuccess]; icon/copy differ.
   static Future<T?> showError<T>({
     required BuildContext context,
     required WidgetBuilder builder,
     bool barrierDismissible = true,
     BoxConstraints? constraints,
   }) {
-    return _showSelfCheckFrost<T>(
+    return _showStatusTipFrost<T>(
       context: context,
       builder: builder,
       barrierDismissible: barrierDismissible,
@@ -103,56 +194,28 @@ abstract final class TipDialogHost {
     EdgeInsetsGeometry padding =
         const EdgeInsets.symmetric(vertical: 20),
   }) {
-    final scope =
-        context.findAncestorStateOfType<CyberBlurBackdropScopeState>() ??
-            _findBlurScope(context);
-
-    return showGeneralDialog<T>(
+    return _showLightCreamFrost<T>(
       context: context,
+      builder: builder,
       barrierDismissible: barrierDismissible,
       barrierLabel: barrierLabel,
-      barrierColor: Colors.transparent,
-      transitionDuration: const Duration(milliseconds: 180),
-      pageBuilder: (dialogContext, animation, secondaryAnimation) {
-        return Material(
-          type: MaterialType.transparency,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: barrierDismissible
-                    ? () => Navigator.of(dialogContext).maybePop()
-                    : null,
-                child: const ColoredBox(color: CyberColors.scrim),
-              ),
-              FadeTransition(
-                opacity: animation,
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: constraints ??
-                        BoxConstraints(
-                          minWidth: 700,
-                          maxWidth: 700,
-                          minHeight: 480,
-                          maxHeight:
-                              (MediaQuery.sizeOf(dialogContext).height * 0.85)
-                                  .clamp(480, 720),
-                        ),
-                    child: _LightCreamFrostCard(
-                      scope: scope,
-                      padding: padding,
-                      child: builder(dialogContext),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+      padding: padding,
+      constraints: constraints ??
+          BoxConstraints(
+            minWidth: 700,
+            maxWidth: 700,
+            minHeight: 480,
+            maxHeight: (MediaQuery.sizeOf(context).height * 0.85)
+                .clamp(480, 720),
           ),
-        );
-      },
     );
   }
+}
+
+/// Blur scope for tip / status frost — ancestor (Settings) or descendant (Quick).
+CyberBlurBackdropScopeState? resolveTipBlurScope(BuildContext context) {
+  return context.findAncestorStateOfType<CyberBlurBackdropScopeState>() ??
+      _findBlurScope(context);
 }
 
 /// Prefer the blur scope on the *current* navigator route (top page).
@@ -456,7 +519,7 @@ final class _LightCreamFrostCardState extends State<_LightCreamFrostCard> {
                 borderRadius: radius,
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
-                  fit: StackFit.passthrough,
+                  fit: StackFit.loose,
                   children: [
                     Positioned.fill(child: _backdropLayer()),
                     const Positioned.fill(

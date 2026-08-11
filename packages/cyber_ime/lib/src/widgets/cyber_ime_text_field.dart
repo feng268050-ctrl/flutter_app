@@ -6,6 +6,7 @@ import 'package:cyber_ime/src/input/cyber_ime_physical_keyboard.dart';
 import 'package:cyber_ime/src/overlay/cyber_ime_overlay.dart';
 import 'package:cyber_ime/src/session/cyber_ime_action.dart';
 import 'package:cyber_ime/src/session/cyber_ime_session.dart';
+import 'package:cyber_ime/src/widgets/cyber_ime_trackpad_caret.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -91,6 +92,9 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
   /// Sticky for this focus session after HAL says present or a HW key arrives.
   bool _preferPhysical = false;
   bool _hwHideScheduled = false;
+
+  /// Soft Space Cursor Trackpad Mode: pause blink, force solid caret chrome.
+  bool _spaceTrackpadActive = false;
 
   final _keyRepeat = CyberImePhysicalKeyRepeat();
 
@@ -211,9 +215,35 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
   void _onImeHidden() {
     if (!mounted) {
       _handle = null;
+      _spaceTrackpadActive = false;
       return;
     }
-    setState(() => _handle = null);
+    setState(() {
+      _handle = null;
+      _spaceTrackpadActive = false;
+    });
+  }
+
+  void _onSpaceTrackpadStart() {
+    _onKeyActivity();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _spaceTrackpadActive = true);
+  }
+
+  void _onSpaceTrackpadCursorMove(int _) {
+    _onKeyActivity();
+    // Selection already updated by commit; caret host listens to controller.
+  }
+
+  void _onSpaceTrackpadEnd() {
+    _onKeyActivity();
+    if (!mounted) {
+      _spaceTrackpadActive = false;
+      return;
+    }
+    setState(() => _spaceTrackpadActive = false);
   }
 
   Future<void> _showImeIfNeeded() async {
@@ -249,6 +279,9 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
       session: widget.session,
       action: widget.action,
       onKeyActivity: _onKeyActivity,
+      onSpaceTrackpadStart: _onSpaceTrackpadStart,
+      onSpaceTrackpadCursorMove: _onSpaceTrackpadCursorMove,
+      onSpaceTrackpadEnd: _onSpaceTrackpadEnd,
       onHidden: _onImeHidden,
       onAction: () {
         widget.onAction?.call();
@@ -276,35 +309,41 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
           : base.suffixIcon,
     );
 
-    return TextField(
+    return CyberImeTrackpadCaretHost(
+      active: _spaceTrackpadActive,
       controller: widget.controller,
-      focusNode: _focus,
-      // Must stay editable: readOnly also blocks hardware / XKB hardware keys.
-      readOnly: false,
-      // Avoid connecting a system soft-IME client that can fight CyberIME
-      // commits on flutter-elinux (composing / selection resets).
-      keyboardType: TextInputType.none,
-      showCursor: true,
-      // Soft keys drive the caret via [CyberImeControllerCommit]. Interactive
-      // selection lets obscureText/elinux spuriously select-all between taps.
-      enableInteractiveSelection: false,
-      obscureText: _obscure,
-      autofocus: widget.autofocus,
-      decoration: decoration,
-      style: widget.style,
-      textAlign: widget.textAlign,
-      onTap: () {
-        if (_preferPhysical) {
-          // Physical typing — do not TextInput.hide (keeps client / caret path).
-        } else {
-          SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
-        }
-        if (!_focus.hasFocus) {
-          _focus.requestFocus();
-        } else {
-          unawaited(_showImeIfNeeded());
-        }
-      },
+      child: TextField(
+        controller: widget.controller,
+        focusNode: _focus,
+        // Must stay editable: readOnly also blocks hardware / XKB hardware keys.
+        readOnly: false,
+        // Avoid connecting a system soft-IME client that can fight CyberIME
+        // commits on flutter-elinux (composing / selection resets).
+        keyboardType: TextInputType.none,
+        // During Space trackpad, suppress framework blink; solid caret is
+        // painted by [CyberImeTrackpadCaretHost] and tracks selection live.
+        showCursor: !_spaceTrackpadActive,
+        // Soft keys drive the caret via [CyberImeControllerCommit]. Interactive
+        // selection lets obscureText/elinux spuriously select-all between taps.
+        enableInteractiveSelection: false,
+        obscureText: _obscure,
+        autofocus: widget.autofocus,
+        decoration: decoration,
+        style: widget.style,
+        textAlign: widget.textAlign,
+        onTap: () {
+          if (_preferPhysical) {
+            // Physical typing — do not TextInput.hide (keeps client / caret path).
+          } else {
+            SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+          }
+          if (!_focus.hasFocus) {
+            _focus.requestFocus();
+          } else {
+            unawaited(_showImeIfNeeded());
+          }
+        },
+      ),
     );
   }
 }

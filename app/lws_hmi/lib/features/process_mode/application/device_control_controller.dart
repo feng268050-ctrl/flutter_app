@@ -90,15 +90,19 @@ final class DeviceControlController extends ChangeNotifier {
         await Future<void>.delayed(const Duration(milliseconds: 250));
         await _refreshSnapshot();
       }
+      // Snapshot often leaves auto-wire off after a prior page's
+      // shutdownForExit. Apply watch prime first (cache may still say off),
+      // then force ON — never subscribe after the write or a stale prime can
+      // uncheck the UI while CONTROL_FIELD_1 bit4 stays set on the card.
+      final stream = await services.modbus.watchAttributes(
+        ids: DeviceControlIds.watchIds,
+      );
+      _sub = stream.listen(applyChanges);
       // lws-ui GeneralOperationsFragment.initData: Auto Wire Feed ON unless
       // e-stop halt (device snapshot often leaves the bit off).
       await ensureAutoWireFeedDefault();
       // lws-ui advanced-settings sync: fixed default manual feed speed 80 mm/s.
       await ensureManualWireFeedSpeed();
-      final stream = await services.modbus.watchAttributes(
-        ids: DeviceControlIds.watchIds,
-      );
-      _sub = stream.listen(applyChanges);
     } catch (e) {
       debugPrint('device-control: modbus watch failed: $e');
       lastError = 'Status watch failed';

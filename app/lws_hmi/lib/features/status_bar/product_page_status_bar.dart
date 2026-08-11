@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
+import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 
 /// App binder around [CyberPageStatusBar] with live Wi‑Fi / BT / camera icons.
 class ProductPageStatusBar extends StatelessWidget
@@ -92,13 +93,20 @@ class ProductPageStatusBar extends StatelessWidget
                       accent: backAccent.statusBarAccent,
                       label: backLabel!,
                       enabled: backEnabled,
+                      // Content-sized like Quick/Engineer: press fill must
+                      // match icon+label, not the legacy 160dp rail.
+                      expandWidth: false,
                       // Settings / Monitor: no orange top/bottom edge glow.
                       showEdgeAccent: false,
                       onPressed: onBack!,
                     )
                   : null,
-              leadingWidth:
-                  useCallBackHome ? CallBackHomeButton.railWidth : null,
+              leadingWidth: useCallBackHome
+                  ? CallBackHomeButton.widthForLabel(
+                      backLabel!,
+                      textScaler: MediaQuery.textScalerOf(context),
+                    )
+                  : null,
               statusItems: items,
               actions: actions,
               bottom: bottom,
@@ -107,6 +115,8 @@ class ProductPageStatusBar extends StatelessWidget
               toolbarHeight: toolbarHeight,
               clockNow: nowFn,
               use24HourFormat: services?.wallClock.use24HourFormat ?? true,
+              // Align trailing inset with WorkMode bar / Home rail (not legacy 55).
+              clockEndPadding: WorkModeStatusBarDimens.screenEdgeInset,
               // Match CallBackHomeButton label size.
               clockStyle: TextStyle(
                 color: clockFg,

@@ -390,6 +390,9 @@ final class _LinuxModbusHal implements ModbusHal {
       }
       _attrCache[id] = _AttrCacheEntry(value);
       _patchGroupCache(attr, words);
+      // field_1 / bit RMW writes share one holding word — refresh sibling
+      // bit attrs so watch primes do not resurrect a stale off/on.
+      _refreshOverlappingAttrCache(attr, words);
     } finally {
       _commandBusy = false;
     }
@@ -496,6 +499,7 @@ final class _LinuxModbusHal implements ModbusHal {
         throw const HalIoException('modbus writeGroup failed');
       }
       _groupWords[groupId] = _GroupWordCache(start: group.start, words: base);
+      _syncAttrCacheFromGroupWords(groupId);
     } finally {
       _commandBusy = false;
     }
@@ -1004,6 +1008,47 @@ final class _LinuxModbusHal implements ModbusHal {
     if (offset < 0 || offset + words.length > cached.words.length) return;
     for (var i = 0; i < words.length; i++) {
       cached.words[i + offset] = words[i];
+    }
+  }
+
+  /// Re-decode every attribute fully covered by [words] at [written]'s address.
+  ///
+  /// Writing `control.field_1` (u16) must also refresh `control.wire_manual_mode`
+  /// and other bit siblings; otherwise [watchAttributes] primes from a stale
+  /// bit cache while hardware already has the new word.
+  void _refreshOverlappingAttrCache(
+    ModbusAttributeConfig written,
+    List<int> words,
+  ) {
+    final space = written.register.space.toLowerCase();
+    final start = written.register.address;
+    final end = start + words.length;
+    for (final other in config.attributes) {
+      if (other.register.space.toLowerCase() != space) {
+        continue;
+      }
+      final oStart = other.register.address;
+      final oCount = other.register.count;
+      if (oStart < start || oStart + oCount > end) {
+        continue;
+      }
+      final offset = oStart - start;
+      final slice = words.sublist(offset, offset + oCount);
+      _attrCache[other.id] = _AttrCacheEntry(_decode(other, slice));
+    }
+  }
+
+  void _syncAttrCacheFromGroupWords(String groupId) {
+    final cached = _groupWords[groupId];
+    if (cached == null) {
+      return;
+    }
+    for (final attr in config.attributesForGroup(groupId)) {
+      final slice = _sliceWords(cached.words, cached.start, attr);
+      if (slice == null) {
+        continue;
+      }
+      _attrCache[attr.id] = _AttrCacheEntry(_decode(attr, slice));
     }
   }
 

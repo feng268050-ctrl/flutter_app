@@ -2,8 +2,10 @@ import 'dart:ui' as ui;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
@@ -162,8 +164,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isTips = widget.mode == _SafetyTipsMode.tips;
-    final title =
-        isTips ? l10n.safetyTipsTitle : l10n.productDisclaimerTitle;
+    final title = isTips ? l10n.safetyTipsTitle : l10n.productDisclaimerTitle;
     final content =
         isTips ? l10n.safetyTipsContent : l10n.productDisclaimerContent;
     final checkboxLabel =
@@ -204,15 +205,40 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                 _kCardPadH + 12,
                 0,
               ),
-              // Whole-word wrap (EN); CJK falls back to ordinary soft wrap.
-              child: WordBoundaryBody(
-                text: content,
-                sectionGap: 20,
-                style: context.hmiTypography.safetyTipBody.copyWith(
-                  color: CyberColors.textPrimary,
-                  height: 1.4,
-                  fontWeight: FontWeight.w400,
-                  decoration: TextDecoration.none,
+              // Markdown body from ARB (lists / section headings).
+              child: MarkdownBody(
+                data: content,
+                selectable: false,
+                softLineBreak: true,
+                styleSheet: MarkdownStyleSheet(
+                  p: context.hmiTypography.safetyTipBody.copyWith(
+                    color: CyberColors.textPrimary,
+                    height: 1.4,
+                    fontWeight: FontWeight.w400,
+                    decoration: TextDecoration.none,
+                  ),
+                  pPadding: const EdgeInsets.only(bottom: 12),
+                  h3: context.hmiTypography.safetyTipBody.copyWith(
+                    color: CyberColors.textPrimary,
+                    height: 1.3,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.none,
+                  ),
+                  h3Padding: const EdgeInsets.only(top: 8, bottom: 8),
+                  listBullet: context.hmiTypography.safetyTipBody.copyWith(
+                    color: CyberColors.textPrimary,
+                    height: 1.4,
+                    fontWeight: FontWeight.w400,
+                    decoration: TextDecoration.none,
+                  ),
+                  listIndent: 28,
+                  orderedListAlign: WrapAlignment.start,
+                  strong: context.hmiTypography.safetyTipBody.copyWith(
+                    color: CyberColors.textPrimary,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.none,
+                  ),
                 ),
               ),
             ),
@@ -289,21 +315,25 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                           ),
                         ],
                       )
-                    : CyberCheckbox(
-                        key: const ValueKey('product-disclaimer-agree-cb'),
-                        value: _agreed,
-                        size: CyberDimens.checkboxLargeSize,
-                        expandLabel: true,
-                        onChanged: (v) {
-                          setState(() => _agreed = v ?? false);
-                        },
-                        label: WordBoundaryLabel(
-                          text: checkboxLabel,
-                          maxLines: 3,
-                          style: context.hmiTypography.navigation.copyWith(
-                            color: CyberColors.textPrimary,
-                            height: 1.3,
-                            decoration: TextDecoration.none,
+                    // Product rule: Product Disclaimer checkbox agreement copy
+                    // stays at Medium for every user text-size tier.
+                    : HmiFixedTextScale(
+                        child: CyberCheckbox(
+                          key: const ValueKey('product-disclaimer-agree-cb'),
+                          value: _agreed,
+                          size: CyberDimens.checkboxLargeSize,
+                          expandLabel: true,
+                          onChanged: (v) {
+                            setState(() => _agreed = v ?? false);
+                          },
+                          label: WordBoundaryLabel(
+                            text: checkboxLabel,
+                            maxLines: 3,
+                            style: context.hmiTypography.navigation.copyWith(
+                              color: CyberColors.textPrimary,
+                              height: 1.3,
+                              decoration: TextDecoration.none,
+                            ),
                           ),
                         ),
                       ),

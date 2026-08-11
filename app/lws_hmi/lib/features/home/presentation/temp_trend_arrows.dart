@@ -21,12 +21,13 @@ final class TempTrendArrows extends StatelessWidget {
   final double iconSize;
 
   /// Glyph size (Material drop arrows include internal padding).
-  static const defaultSize = 28.0;
+  static const defaultSize = 36.0;
 
   /// Reserved width after the value — keeps layout stable with/without a trend.
   static const slotWidth = 18.0;
 
   /// Row height for vertical centering with the value.
+  /// Kept below [defaultSize]; [OverflowBox] paints the glyph past this slot.
   static const slotHeight = 28.0;
 
   /// Alias for [defaultSize] (tests / call sites).

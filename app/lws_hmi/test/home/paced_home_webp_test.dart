@@ -92,6 +92,31 @@ void main() {
     c.dispose();
   });
 
+  test('playMotion true after balanced pause reloads codecs', () async {
+    final c = PacedHomeWebpController(layers: layers);
+    c.debugAdvanceLayer = (_) async {};
+    await c.start();
+    final afterStart = c.notifyCount;
+
+    c.pause();
+    c.playMotion = false;
+    final afterOff = c.notifyCount;
+    expect(afterOff, greaterThan(afterStart));
+
+    c.playMotion = true;
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      c.notifyCount,
+      greaterThan(afterOff),
+      reason: 'balanced→performance must reload WebP codecs',
+    );
+
+    c.resume();
+    expect(c.isRunning, isTrue);
+    c.dispose();
+  });
+
   testWidgets('playMotion false hides paced plate (no oversized static frames)',
       (tester) async {
     final c = PacedHomeWebpController(layers: layers, playMotion: false);

@@ -370,13 +370,12 @@ class _CameraProgramUpgradePageState extends State<CameraProgramUpgradePage> {
 
   Widget _buildCheckBody(AppLocalizations l10n) {
     final offer = _availableOffer;
-    final style = context.hmiTypography.settingsRowValue.copyWith(
+    final style = context.hmiTypography.upgradeDescription.copyWith(
       color: CyberColors.textSecondary,
       height: 1.4,
     );
-    final headlineStyle = context.hmiTypography.settingsRowTitle.copyWith(
+    final headlineStyle = context.hmiTypography.sectionTitle.copyWith(
       color: CyberColors.textPrimary,
-      fontSize: 22,
     );
 
     return UpgradeCheckCard(
@@ -523,7 +522,6 @@ class _CameraProgramUpgradePageState extends State<CameraProgramUpgradePage> {
             statusLabel: statusLabel,
             titleStyle: context.hmiTypography.settingsRowTitle.copyWith(
               color: CyberColors.textPrimary,
-              fontSize: 20,
             ),
             percentStyle: context.hmiTypography.settingsRowValue.copyWith(
               color: CyberColors.textSecondary,
@@ -563,7 +561,7 @@ class _CameraProgramUpgradePageState extends State<CameraProgramUpgradePage> {
                         : l10n.cameraProgramFailedMessage)
                     : null,
               ),
-              style: context.hmiTypography.settingsRowValue.copyWith(
+              style: context.hmiTypography.upgradeDescription.copyWith(
                 color: CyberColors.textSecondary,
               ),
             ),
@@ -574,7 +572,7 @@ class _CameraProgramUpgradePageState extends State<CameraProgramUpgradePage> {
             child: Text(
               l10n.cameraProgramUpgradingMessage,
               textAlign: TextAlign.center,
-              style: context.hmiTypography.settingsRowValue.copyWith(
+              style: context.hmiTypography.upgradeDescription.copyWith(
                 color: CyberColors.textSecondary,
               ),
             ),

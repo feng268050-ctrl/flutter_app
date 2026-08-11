@@ -7,17 +7,17 @@ Product HMI control chrome: CyberCheckbox / CyberSwitch / HmiButton / TipDialogH
 
 ### Requirement: Product checkbox face is CyberCheckbox at large size
 
-On product HMI surfaces (boot self-check footer, Engineer Mode entry tip, Laser Enable reminder, Settings rows, Engineer device panel, Record Work, Safety Tips, and any other production “don’t show again” / boolean checkbox), the App SHALL use `CyberCheckbox` with face size `CyberDimens.checkboxLargeSize` (28 logical px). The App MUST NOT use Material `Checkbox` for those roles and MUST NOT pass ad-hoc face sizes (including 38) on product call sites.
+On product HMI surfaces (boot self-check footer, Engineer Mode entry tip, Laser Enable reminder, Settings rows, Engineer device panel, Record Work, Safety Tips, and any other production “don’t show again” / boolean checkbox), the App SHALL use `CyberCheckbox` with face size `CyberDimens.checkboxLargeSize` (26 logical px). The App MUST NOT use Material `Checkbox` for those roles and MUST NOT pass ad-hoc face sizes (including 38) on product call sites.
 
 #### Scenario: Boot self-check footer checkbox
 
 - **WHEN** the boot self-check dialog shows its footer “don’t show again” control
-- **THEN** the control is a `CyberCheckbox` at size 28
+- **THEN** the control is a `CyberCheckbox` at size 26
 
 #### Scenario: Cream tip dialogs use CyberCheckbox
 
 - **WHEN** Engineer Mode entry tip or Laser Enable reminder shows “don’t show again this session”
-- **THEN** the control is a `CyberCheckbox` at size 28 (light prompt host MAY remain cream frost)
+- **THEN** the control is a `CyberCheckbox` at size 26 (light prompt host MAY remain cream frost)
 
 ### Requirement: Product process switch uses CyberSwitch
 

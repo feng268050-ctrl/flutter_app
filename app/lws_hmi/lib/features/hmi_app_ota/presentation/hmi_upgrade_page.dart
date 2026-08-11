@@ -330,13 +330,12 @@ class _HmiUpgradePageState extends State<HmiUpgradePage> {
 
   Widget _buildCheckBody(AppLocalizations l10n) {
     final available = _availableManifest;
-    final style = context.hmiTypography.settingsRowValue.copyWith(
+    final style = context.hmiTypography.upgradeDescription.copyWith(
       color: CyberColors.textSecondary,
       height: 1.4,
     );
-    final headlineStyle = context.hmiTypography.settingsRowTitle.copyWith(
+    final headlineStyle = context.hmiTypography.sectionTitle.copyWith(
       color: CyberColors.textPrimary,
-      fontSize: 22,
     );
 
     return UpgradeCheckCard(
@@ -443,7 +442,6 @@ class _HmiUpgradePageState extends State<HmiUpgradePage> {
                 HmiAppUpgradeMapping.statusLabel(l10n, _progress),
             titleStyle: context.hmiTypography.settingsRowTitle.copyWith(
               color: CyberColors.textPrimary,
-              fontSize: 20,
             ),
             percentStyle: context.hmiTypography.settingsRowValue.copyWith(
               color: CyberColors.textSecondary,
@@ -476,7 +474,7 @@ class _HmiUpgradePageState extends State<HmiUpgradePage> {
                         : l10n.otaUpgradeStatusFailed)
                     : null,
               ),
-              style: context.hmiTypography.settingsRowValue.copyWith(
+              style: context.hmiTypography.upgradeDescription.copyWith(
                 color: CyberColors.textSecondary,
               ),
             ),

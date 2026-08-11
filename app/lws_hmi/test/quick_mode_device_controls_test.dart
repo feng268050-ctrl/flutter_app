@@ -36,26 +36,32 @@ void main() {
     WidgetTester tester, {
     required ProcessType processType,
     DeviceControlController? controller,
+    TextScaler textScaler = TextScaler.noScaling,
   }) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
     final services = controller?.services ?? servicesWith(_IdleModbus());
-    final c = controller ??
-        (DeviceControlController(services)..keySwitchOn = true);
+    final c =
+        controller ?? (DeviceControlController(services)..keySwitchOn = true);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: ProcessModeToastLayer(
-          child: Scaffold(
-            body: QuickModeDeviceControls(
-              controller: c,
-              processType: processType,
-              laserPreflight: () => null,
-              onEnableConfirmed: () async {},
-              onDisable: () async {},
+        home: Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+            child: ProcessModeToastLayer(
+              child: Scaffold(
+                body: QuickModeDeviceControls(
+                  controller: c,
+                  processType: processType,
+                  laserPreflight: () => null,
+                  onEnableConfirmed: () async {},
+                  onDisable: () async {},
+                ),
+              ),
             ),
           ),
         ),
@@ -79,6 +85,20 @@ void main() {
       find.byKey(const ValueKey('device-control-feed-hold-hint')),
     );
     expect(hint.style?.color, ProcessModeOutlineChrome.actionOrange);
+  });
+
+  testWidgets('four side-action labels stay at Medium under Large',
+      (tester) async {
+    await pumpControls(
+      tester,
+      processType: ProcessType.continuousWelding,
+      textScaler: const TextScaler.linear(1.12),
+    );
+
+    for (final label in ['Manual Gas', 'Auto Wire Feed', 'Feed', 'Retract']) {
+      final context = tester.element(find.text(label));
+      expect(MediaQuery.textScalerOf(context).scale(100), 100);
+    }
   });
 
   testWidgets('left and right zone dividers share the same Y', (tester) async {

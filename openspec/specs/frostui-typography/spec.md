@@ -69,7 +69,7 @@ Layout-affecting `TextPainter` measurements for UI that follows user text size S
 
 ### Requirement: Text size modes Small Medium Large
 
-The product SHALL support three text size modes with scales **0.90 / 1.00 / 1.12** for reading UI (titles, tabs, body, settings, buttons, dialogs, tips). Display / geometry-bound text (clock, gauges, process wheel, CustomPainter glyphs) SHALL use a documented clamped scale (default **0.95 / 1.00 / 1.05**) or fixed 1.00 where product rules require it. Home Quick Action label fitting MUST NOT apply a fit-at-100% algorithm and then paint under a larger MediaQuery scaler without compensation (clamp max 1.05 and/or include TextScaler in the fit measure).
+The product SHALL support three text size modes with scales **0.90 / 1.00 / 1.12** for reading UI (titles, tabs, body, settings, buttons, dialogs, tips). Display / geometry-bound text (clock, gauges, process wheel, CustomPainter glyphs) SHALL use a documented clamped scale (default **0.95 / 1.00 / 1.05**) or fixed 1.00 where product rules require it. The following safety / operation chrome SHALL remain fixed at Medium 1.00 for all three modes: Quick Mode **Manual Gas**, **Auto Wire Feed**, **Feed**, and **Retract**; Engineer Mode **Manual Gas**, **Feed**, **Retract**, **Reset Defaults**, and **Save Favorite**; and the Product Safety / Product Disclaimer agreement checkbox copy. Home Quick Action label fitting MUST NOT apply a fit-at-100% algorithm and then paint under a larger MediaQuery scaler without compensation (clamp max 1.05 and/or include TextScaler in the fit measure).
 
 #### Scenario: Reading UI follows the selected scale
 
@@ -81,6 +81,12 @@ The product SHALL support three text size modes with scales **0.90 / 1.00 / 1.12
 - **WHEN** the operator selects Large text size
 - **THEN** Home clock / dashboard display glyphs do not scale by the full 1.12 reading factor
 - **AND** they follow the documented display clamp (or fixed) policy
+
+#### Scenario: Frozen operation and safety labels ignore text-size mode
+
+- **WHEN** the operator changes text size between Small, Medium, and Large
+- **THEN** the listed Quick Mode and Engineer Mode operation labels remain at the Medium 1.00 size
+- **AND** the Product Safety / Product Disclaimer agreement checkbox copy remains at the Medium 1.00 size
 
 #### Scenario: Root MediaQuery preserves textScaler through density matching
 

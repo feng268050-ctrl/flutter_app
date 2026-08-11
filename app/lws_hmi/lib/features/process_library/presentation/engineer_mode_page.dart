@@ -100,7 +100,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         style: context.hmiTypography.buttonLarge,
       ),
       textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
+      // Reset / Save Favorite are fixed Medium chrome.
+      textScaler: TextScaler.noScaling,
       maxLines: 1,
     )..layout();
     return painter.width;
@@ -1127,15 +1128,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                       final useVertical =
                                                           EngineerActionLayout
                                                               .useVertical(
-                                                        isLargeText: HmiTextScale
-                                                                .factorOf(
-                                                              MediaQuery
-                                                                  .textScalerOf(
-                                                                context,
-                                                              ),
-                                                            ) >=
-                                                            HmiTextScale
-                                                                .readingLarge,
+                                                        // These two action
+                                                        // labels intentionally
+                                                        // ignore user text size.
+                                                        isLargeText: false,
                                                         maxWidth: constraints
                                                             .maxWidth,
                                                         resetLabelWidth:
@@ -1149,46 +1145,55 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                           saveLabel,
                                                         ),
                                                       );
-                                                      final reset = HmiButton(
-                                                        key: const ValueKey(
-                                                          'engineer-action-reset-default',
+                                                      final reset =
+                                                          HmiFixedTextScale(
+                                                        child: HmiButton(
+                                                          key: const ValueKey(
+                                                            'engineer-action-reset-default',
+                                                          ),
+                                                          label: resetLabel,
+                                                          size: HmiButtonSize
+                                                              .large,
+                                                          widthPolicy:
+                                                              HmiButtonWidthPolicy
+                                                                  .fill,
+                                                          horizontalPadding:
+                                                              EngineerActionLayout
+                                                                  .horizontalPadding,
+                                                          shape:
+                                                              CyberButtonShape
+                                                                  .rounded,
+                                                          icon:
+                                                              Icons.restart_alt,
+                                                          onPressed:
+                                                              _resetToDefault,
                                                         ),
-                                                        label: resetLabel,
-                                                        size:
-                                                            HmiButtonSize.large,
-                                                        widthPolicy:
-                                                            HmiButtonWidthPolicy
-                                                                .fill,
-                                                        horizontalPadding:
-                                                            EngineerActionLayout
-                                                                .horizontalPadding,
-                                                        shape: CyberButtonShape
-                                                            .rounded,
-                                                        icon: Icons.restart_alt,
-                                                        onPressed:
-                                                            _resetToDefault,
                                                       );
-                                                      final save = HmiButton(
-                                                        key: const ValueKey(
-                                                          'engineer-action-save-favorite',
+                                                      final save =
+                                                          HmiFixedTextScale(
+                                                        child: HmiButton(
+                                                          key: const ValueKey(
+                                                            'engineer-action-save-favorite',
+                                                          ),
+                                                          label: saveLabel,
+                                                          size: HmiButtonSize
+                                                              .large,
+                                                          widthPolicy:
+                                                              HmiButtonWidthPolicy
+                                                                  .fill,
+                                                          horizontalPadding:
+                                                              EngineerActionLayout
+                                                                  .horizontalPadding,
+                                                          shape:
+                                                              CyberButtonShape
+                                                                  .rounded,
+                                                          icon: Icons
+                                                              .bookmark_add,
+                                                          onPressed: controller
+                                                                  .applying
+                                                              ? null
+                                                              : _saveAsFavorite,
                                                         ),
-                                                        label: saveLabel,
-                                                        size:
-                                                            HmiButtonSize.large,
-                                                        widthPolicy:
-                                                            HmiButtonWidthPolicy
-                                                                .fill,
-                                                        horizontalPadding:
-                                                            EngineerActionLayout
-                                                                .horizontalPadding,
-                                                        shape: CyberButtonShape
-                                                            .rounded,
-                                                        icon:
-                                                            Icons.bookmark_add,
-                                                        onPressed: controller
-                                                                .applying
-                                                            ? null
-                                                            : _saveAsFavorite,
                                                       );
                                                       if (useVertical) {
                                                         return Column(

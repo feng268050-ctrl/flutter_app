@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
@@ -339,16 +340,20 @@ final class _OutlineFace extends StatelessWidget {
                 color: ProcessModeOutlineChrome.actionOrange,
               ),
             if (continuousRipple) const FeedContinuousRipple(),
-            HmiAdaptiveIconLabel(
-              label: label,
-              style: style,
-              iconSize: iconSize,
-              buttonHeight: height,
-              horizontalPadding: edgeInset,
-              leading: showLeading ? tintedLeading : null,
-              // Icon+label as one group; equal L/R insets (shrink before ellipsis).
-              forceGroupedCentered: true,
-              allowGroupedTrailingInsetCollapse: false,
+            // Product rule: Quick Manual Gas / Auto Wire Feed / Feed / Retract
+            // stay at the Medium label size for every user text-size tier.
+            HmiFixedTextScale(
+              child: HmiAdaptiveIconLabel(
+                label: label,
+                style: style,
+                iconSize: iconSize,
+                buttonHeight: height,
+                horizontalPadding: edgeInset,
+                leading: showLeading ? tintedLeading : null,
+                // Icon+label as one group; equal L/R insets (shrink before ellipsis).
+                forceGroupedCentered: true,
+                allowGroupedTrailingInsetCollapse: false,
+              ),
             ),
           ],
         ),

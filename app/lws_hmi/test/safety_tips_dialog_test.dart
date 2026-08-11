@@ -10,7 +10,10 @@ import 'package:lws_hmi/features/safety_tips/presentation/safety_tips_dialog.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
-Widget _safetyTipsTestApp({String initialRoute = AppRoutes.safetyTips}) {
+Widget _safetyTipsTestApp({
+  String initialRoute = AppRoutes.safetyTips,
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
   Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.safetyTips:
@@ -43,6 +46,10 @@ Widget _safetyTipsTestApp({String initialRoute = AppRoutes.safetyTips}) {
     onGenerateInitialRoutes: (name) =>
         generateAppInitialRoutes(name, onGenerateRoute),
     onGenerateRoute: onGenerateRoute,
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+      child: child!,
+    ),
   );
 }
 
@@ -69,7 +76,8 @@ void main() {
     expect(find.textContaining('Safety Warning'), findsOneWidget);
     expect(find.byType(ProductDisclaimerPage), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('product-disclaimer-agree-btn')));
+    await tester
+        .tap(find.byKey(const ValueKey('product-disclaimer-agree-btn')));
     await tester.pumpAndSettle();
     expect(find.text('Product Disclaimer'), findsNothing);
     expect(find.byType(ProductDisclaimerPage), findsNothing);
@@ -103,7 +111,26 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
   });
 
-  testWidgets('EN Safety Tips Agree uses HmiButton large; no overflow at panel size',
+  testWidgets('Product Disclaimer agreement stays at Medium under Large',
+      (tester) async {
+    await tester.pumpWidget(
+      _safetyTipsTestApp(textScaler: const TextScaler.linear(1.12)),
+    );
+    await tester.pumpAndSettle();
+
+    var checkbox =
+        tester.element(find.byKey(const ValueKey('safety-tips-agree-cb')));
+    expect(MediaQuery.textScalerOf(checkbox).scale(100), closeTo(112, 0.001));
+
+    await tester.tap(find.byKey(const ValueKey('safety-tips-disclaimer-link')));
+    await tester.pumpAndSettle();
+    checkbox = tester
+        .element(find.byKey(const ValueKey('product-disclaimer-agree-cb')));
+    expect(MediaQuery.textScalerOf(checkbox).scale(100), 100);
+  });
+
+  testWidgets(
+      'EN Safety Tips Agree uses HmiButton large; no overflow at panel size',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -131,7 +158,8 @@ void main() {
     expect(SafetyTipsGate.hasAcceptedThisProcess, isFalse);
   });
 
-  testWidgets('production initialRoute is Safety Tips before accept', (tester) async {
+  testWidgets('production initialRoute is Safety Tips before accept',
+      (tester) async {
     SafetyTipsCoordinator.resetForTest();
     expect(SafetyTipsGate.initialRoute, AppRoutes.safetyTips);
     expect(find.byType(SafetyTipsPage), findsNothing);

@@ -100,7 +100,8 @@ void main() {
       applier: applier ??
           ProcessParameterApplier(
             modbus: _UnusedModbus(),
-            interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
+            interlockFailure: () async =>
+                ProcessApplyFailure.unsafeMachineState,
           ),
     );
     addTearDown(controller.close);
@@ -113,6 +114,7 @@ void main() {
     ProcessType? initialProcessType,
     String? initialPresetUuid,
     AppServices? services,
+    TextScaler textScaler = TextScaler.noScaling,
   }) {
     return _AppServicesHost(
       services: services ?? testServices(),
@@ -127,6 +129,10 @@ void main() {
             initialProcessType: initialProcessType,
             initialPresetUuid: initialPresetUuid,
           ),
+        ),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+          child: child!,
         ),
       ),
     );
@@ -178,7 +184,8 @@ void main() {
 
     expect(find.byKey(const ValueKey('engineer-param-process.laser_power')),
         findsOneWidget);
-    expect(find.byKey(const ValueKey('engineer-ramp-accordion')), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('engineer-ramp-accordion')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('engineer-ramp-accordion')));
     await tester.pump();
@@ -203,6 +210,41 @@ void main() {
       continuousTab.style?.fontSize,
       HmiTabMetrics.labelFontSize,
     );
+  });
+
+  testWidgets('five fixed engineer actions stay at Medium under Large',
+      (tester) async {
+    await setDesignSurface(tester);
+    final controller = await seedController();
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        textScaler: const TextScaler.linear(1.12),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    final fixedTargets = [
+      find.text('Manual Gas'),
+      find.descendant(
+        of: find.byKey(const ValueKey('engineer-panel-feed')),
+        matching: find.text('Feed'),
+      ),
+      find.descendant(
+        of: find.byKey(const ValueKey('engineer-panel-retract')),
+        matching: find.text('Retract'),
+      ),
+      find.byKey(const ValueKey('engineer-action-reset-default')),
+      find.byKey(const ValueKey('engineer-action-save-favorite')),
+    ];
+    for (final target in fixedTargets) {
+      expect(target, findsOneWidget);
+      expect(
+        MediaQuery.textScalerOf(tester.element(target)).scale(100),
+        100,
+      );
+    }
   });
 
   testWidgets('Quick handoff opens unsaved draft', (tester) async {
@@ -265,7 +307,8 @@ void main() {
     );
   });
 
-  testWidgets('Reset to Default shows toast, not success dialog', (tester) async {
+  testWidgets('Reset to Default shows toast, not success dialog',
+      (tester) async {
     await setDesignSurface(tester);
     final controller = await seedController();
     await tester.pumpWidget(engineerHarness(controller: controller));
@@ -448,8 +491,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
   });
 
-  testWidgets(
-      'CW session cache restore does not auto-apply (lws-ui isInit)',
+  testWidgets('CW session cache restore does not auto-apply (lws-ui isInit)',
       (tester) async {
     await setDesignSurface(tester);
     final modbus = _RecordingModbus();

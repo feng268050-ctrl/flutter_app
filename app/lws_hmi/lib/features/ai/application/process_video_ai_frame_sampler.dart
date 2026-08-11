@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/process_video/application/video_cover_extractor.dart';
+import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
 /// Extracts a JPEG frame at a media timestamp via rootfs GStreamer helper.
@@ -30,24 +31,29 @@ final class ProcessVideoAiFrameSampler {
     final out = File('${dir.path}/sample_${sampleMs.clamp(0, 1 << 30)}.jpg');
 
     final bin = VideoCoverExtractor.resolveHelperPath(override: helperPath);
-    try {
-      final result = await Process.run(bin, [
-        videoPath,
-        out.path,
-        '$sampleMs',
-      ]).timeout(const Duration(seconds: 45));
-      if (result.exitCode != 0 || !await out.exists() || await out.length() <= 0) {
-        debugPrint(
-          'process-video-ai: extract-video-frame failed ms=$sampleMs '
-          'code=${result.exitCode} stderr=${result.stderr}',
-        );
+    // Detect samples while VOD plays — do not wait for the decoder lease.
+    return MppVideoRouteGate.runExclusive(() async {
+      try {
+        final result = await Process.run(bin, [
+          videoPath,
+          out.path,
+          '$sampleMs',
+        ]).timeout(const Duration(seconds: 45));
+        if (result.exitCode != 0 ||
+            !await out.exists() ||
+            await out.length() <= 0) {
+          debugPrint(
+            'process-video-ai: extract-video-frame failed ms=$sampleMs '
+            'code=${result.exitCode} stderr=${result.stderr}',
+          );
+          return null;
+        }
+        return out;
+      } catch (e) {
+        debugPrint('process-video-ai: extract failed ms=$sampleMs: $e');
         return null;
       }
-      return out;
-    } catch (e) {
-      debugPrint('process-video-ai: extract failed ms=$sampleMs: $e');
-      return null;
-    }
+    }, waitForDecoder: false);
   }
 }
 

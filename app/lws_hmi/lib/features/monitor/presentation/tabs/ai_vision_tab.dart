@@ -387,11 +387,9 @@ class _AiVisionTabState extends State<AiVisionTab> {
     }
     await WidgetsBinding.instance.endOfFrame;
     await WidgetsBinding.instance.endOfFrame;
-    await MppVideoRouteGate.beforeAcquire();
-    if (!mounted || !identical(_selected, record)) {
-      return;
-    }
 
+    // Cover extract before decoder lease — same order as process-video detail
+    // (MPP helper must not overlap VOD/RTSP).
     File? cover;
     try {
       cover = await VideoCoverExtractor().extractFirstFrameJpeg(
@@ -399,6 +397,14 @@ class _AiVisionTabState extends State<AiVisionTab> {
         videoId: record.videoId,
       );
     } catch (_) {}
+    if (!mounted || !identical(_selected, record)) {
+      return;
+    }
+
+    await MppVideoRouteGate.beforeAcquire();
+    if (!mounted || !identical(_selected, record)) {
+      return;
+    }
 
     final source = File(record.videoPath);
     final cacheKey = ProcessVideoAiInferencePaths.cacheKey(record, source);

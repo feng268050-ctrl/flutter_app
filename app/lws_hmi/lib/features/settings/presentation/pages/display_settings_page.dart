@@ -201,6 +201,11 @@ class _TextSizeSliderCardState extends State<_TextSizeSliderCard> {
     final l10n = AppLocalizations.of(context)!;
     final store = TextSizeSettingsScope.maybeOf(context);
     final selected = _selectedSize;
+    final storeSize = store?.textSize ?? TextSizeSettingsStore.defaultTextSize;
+    final labelStyle = context.hmiTypography.settingsRowTitle;
+    // Preview the slider selection without double-scaling after commit: MediaQuery
+    // already tracks [storeSize]; bump labels only by the delta to [selected].
+    final labelScaler = TextScaler.linear(selected.scale / storeSize.scale);
     final labels = <String>[
       l10n.textSizeOptionSmall,
       l10n.defaultLabel,
@@ -216,7 +221,7 @@ class _TextSizeSliderCardState extends State<_TextSizeSliderCard> {
         children: [
           Text(
             l10n.textSizeSettingText,
-            style: context.hmiTypography.sectionTitle.copyWith(
+            style: labelStyle.copyWith(
               color: CyberColors.textPrimary,
             ),
           ),
@@ -261,11 +266,8 @@ class _TextSizeSliderCardState extends State<_TextSizeSliderCard> {
                             },
                             child: Text(
                               labels[i],
-                              textScaler: TextScaler.linear(
-                                TextSizeSettingsStore
-                                    .supportedTextSizes[i].scale,
-                              ),
-                              style: context.hmiTypography.supporting.copyWith(
+                              textScaler: labelScaler,
+                              style: labelStyle.copyWith(
                                 color: _sliderValue(selected) == i
                                     ? CyberColors.textPrimary
                                     : CyberColors.textSecondary,

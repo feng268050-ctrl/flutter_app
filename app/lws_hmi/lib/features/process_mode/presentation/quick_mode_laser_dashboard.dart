@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/live_machine_status_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
@@ -117,7 +118,11 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
     final palette = _LaserDashboardPalette.forType(widget.processType);
     final metrics =
         _LaserDashboardMetrics.fromViewport(MediaQuery.sizeOf(context));
-    final ringAlpha = widget.laserEnable ? 1.0 : 0.5;
+    final welding = widget.processType == ProcessType.continuousWelding ||
+        widget.processType == ProcessType.spotWelding;
+    // Welding uses the same always-bright orange as an enabled Quick side
+    // button. The legacy 50% laser-disabled dim made this outer rail muddy.
+    final ringAlpha = welding || widget.laserEnable ? 1.0 : 0.5;
     final pressureText = widget.gasPressureKpa.round().toString();
 
     return SizedBox(
@@ -308,8 +313,8 @@ final class _LaserDashboardPalette {
     required this.pressureBg,
   });
 
-  final Color outerTrack;
-  final Color innerTrack;
+  final List<Color> outerTrack;
+  final List<Color> innerTrack;
   final Color lineProgress;
   final List<Color> outerProgress;
   final List<Color> innerProgress;
@@ -318,8 +323,8 @@ final class _LaserDashboardPalette {
   static _LaserDashboardPalette forType(ProcessType type) {
     if (type.isCleaning) {
       return const _LaserDashboardPalette(
-        outerTrack: Color(0xFF37F3D2),
-        innerTrack: Color(0xFF19C0A4),
+        outerTrack: [Color(0xFF37F3D2)],
+        innerTrack: [Color(0xFF19C0A4)],
         lineProgress: Color(0xFF19C7AA),
         outerProgress: [
           Color(0xFF37EFD3),
@@ -338,8 +343,8 @@ final class _LaserDashboardPalette {
     }
     if (type == ProcessType.handCutting || type == ProcessType.cncCutting) {
       return const _LaserDashboardPalette(
-        outerTrack: Color(0xFF0151F4),
-        innerTrack: Color(0xFF1C35BD),
+        outerTrack: [Color(0xFF0151F4)],
+        innerTrack: [Color(0xFF1C35BD)],
         lineProgress: Color(0xFF1E38C9),
         outerProgress: [
           Color(0xFF5552FF),
@@ -357,20 +362,21 @@ final class _LaserDashboardPalette {
       );
     }
     return const _LaserDashboardPalette(
-      outerTrack: Color(0xFFF46E01),
-      innerTrack: Color(0xFFB35517),
-      lineProgress: Color(0xFFB65718),
+      // The outer rail starts with a brighter orange at the center-facing
+      // edge, then returns to the enabled Quick side-button orange outside.
+      outerTrack: [
+        Color(0xFFFFA23A),
+        ProcessModeOutlineChrome.actionOrange,
+      ],
+      innerTrack: [Color(0xFF20100A), Color(0xFFA0310F)],
+      lineProgress: ProcessModeOutlineChrome.actionOrange,
       outerProgress: [
-        Color(0xFFB75717),
-        Color(0xFFFFB016),
-        Color(0xFFFFB016),
-        Color(0xFFFFBD18),
+        Color(0xFFFFA23A),
+        ProcessModeOutlineChrome.actionOrange,
       ],
       innerProgress: [
-        Color(0xFF42260D),
-        Color(0xFFDD7315),
-        Color(0xFFDD7315),
-        Color(0xFFFFBD16),
+        Color(0xFF20100A),
+        Color(0xFFA0310F),
       ],
       pressureBg: ProcessModeAssets.pressureMonitoringOrange,
     );
@@ -470,7 +476,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       viewSize: metrics.outerViewSize,
       circleStrokeWidth: metrics.outerCircleStroke,
       progressStrokeWidth: metrics.outerProgressStroke,
-      trackColor: palette.outerTrack,
+      trackColors: palette.outerTrack,
       progressColors: palette.outerProgress,
       start: start,
       fullSweep: fullSweep,
@@ -485,7 +491,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       viewSize: metrics.innerViewSize,
       circleStrokeWidth: metrics.innerCircleStroke,
       progressStrokeWidth: metrics.innerProgressStroke,
-      trackColor: palette.innerTrack,
+      trackColors: palette.innerTrack,
       progressColors: palette.innerProgress,
       start: start,
       fullSweep: fullSweep,
@@ -504,7 +510,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       // `laser_circular_seek_line` declares `circle_color=transparent` in
       // lws-ui: this layer is only the 6dp progress highlight, never a dark
       // inactive rail outside the static white trim.
-      trackColor: Colors.transparent,
+      trackColors: const [Colors.transparent],
       // Product: thin bright edge at 75% opacity.
       progressColors: [
         palette.lineProgress.withOpacity(0.75),
@@ -524,7 +530,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     required double viewSize,
     required double circleStrokeWidth,
     required double progressStrokeWidth,
-    required Color trackColor,
+    required List<Color> trackColors,
     required List<Color> progressColors,
     required double start,
     required double fullSweep,
@@ -535,12 +541,23 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     final pathRadius = radius ?? viewSize / 2 - circleStrokeWidth;
     final rect = Rect.fromCircle(center: center, radius: pathRadius);
 
-    if (trackColor.alpha > 0) {
+    if (trackColors.any((color) => color.alpha > 0)) {
       final track = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = circleStrokeWidth
-        ..strokeCap = StrokeCap.butt
-        ..color = trackColor;
+        ..strokeCap = StrokeCap.butt;
+      if (trackColors.length == 1) {
+        track.color = trackColors.first;
+      } else {
+        track.shader = RadialGradient(
+          colors: trackColors,
+          stops: _ringGradientStops(
+            viewSize: viewSize,
+            pathRadius: pathRadius,
+            strokeWidth: circleStrokeWidth,
+          ),
+        ).createShader(Rect.fromCircle(center: center, radius: viewSize / 2));
+      }
       canvas.drawArc(rect, start, fullSweep, false, track);
     }
 
@@ -564,7 +581,11 @@ final class _LaserProgressRingsPainter extends CustomPainter {
               0.9,
               1.0,
             ]
-          : null;
+          : _ringGradientStops(
+              viewSize: viewSize,
+              pathRadius: pathRadius,
+              strokeWidth: progressStrokeWidth,
+            );
       progressPaint.shader = RadialGradient(
         colors: progressColors,
         stops: stops,
@@ -572,6 +593,18 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     }
 
     canvas.drawArc(rect, start, progressSweep, false, progressPaint);
+  }
+
+  List<double> _ringGradientStops({
+    required double viewSize,
+    required double pathRadius,
+    required double strokeWidth,
+  }) {
+    final shaderRadius = viewSize / 2;
+    return [
+      ((pathRadius - strokeWidth / 2) / shaderRadius).clamp(0.0, 1.0),
+      ((pathRadius + strokeWidth / 2) / shaderRadius).clamp(0.0, 1.0),
+    ];
   }
 
   @override

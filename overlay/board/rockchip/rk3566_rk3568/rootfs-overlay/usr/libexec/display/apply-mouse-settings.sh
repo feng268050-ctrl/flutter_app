@@ -35,6 +35,13 @@ if [ -f "$WESTON_INI" ]; then
 fi
 
 export MOUSE_CONF="$PREF"
+BOARD_ID=""
+if [ -f "${RUN_HMI:-/run/hmi}/oem.env" ]; then
+	# shellcheck disable=SC1090
+	. "${RUN_HMI:-/run/hmi}/oem.env" 2>/dev/null || true
+	BOARD_ID="${BOARD_ID:-}"
+fi
+export BOARD_ID
 # shellcheck source=/dev/null
 . "$WESTON_CFG"
 

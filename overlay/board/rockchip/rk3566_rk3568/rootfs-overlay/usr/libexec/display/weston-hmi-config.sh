@@ -139,26 +139,12 @@ weston_write_hmi_ini() {
 			esac
 			[ "$(cat "$card/status" 2>/dev/null || true)" = "connected" ] || continue
 			output_name="$(basename "$card" | sed 's/^card[0-9]*-//')"
-			# If OEM/requested mode is missing from EDID, prefer QEMU 1080p then common modes.
+			# virtio-gpu modes sysfs can be empty/stale on first boot after cold
+			# start. Falling back to 1920x1080 widens the host QEMU window until
+			# the next restart — trust OEM/QEMU xres/yres instead.
 			modes_file="$card/modes"
-			if [ -f "$modes_file" ]; then
-				# Exact line match (modes are "WxH" per line).
-				if ! grep -qx "${output_mode}" "$modes_file" 2>/dev/null; then
-					for try in 1536x960 1280x800 1920x1080 1280x720 1280x768 1024x768 800x600; do
-						if grep -qx "$try" "$modes_file" 2>/dev/null; then
-							echo "weston-hmi-config: mode $output_mode not in EDID — using $try" >&2
-							output_mode="$try"
-							break
-						fi
-					done
-					if ! grep -qx "${output_mode}" "$modes_file" 2>/dev/null; then
-						try="$(head -1 "$modes_file" | tr -d '\r')"
-						if [ -n "$try" ]; then
-							echo "weston-hmi-config: mode fallback — using EDID first $try" >&2
-							output_mode="$try"
-						fi
-					fi
-				fi
+			if [ -f "$modes_file" ] && ! grep -qx "${output_mode}" "$modes_file" 2>/dev/null; then
+				echo "weston-hmi-config: emulator — keeping mode $output_mode (EDID/sysfs not ready: $(tr '\n' ' ' <"$modes_file" 2>/dev/null | sed 's/ $//'))" >&2
 			fi
 			break
 		done

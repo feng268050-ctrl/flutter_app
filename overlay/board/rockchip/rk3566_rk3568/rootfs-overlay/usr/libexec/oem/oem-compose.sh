@@ -47,15 +47,28 @@ ensure_oem_mount() {
 
 write_screen_env() {
 	local screen_json="$1"
-	local orient width height
+	local orient width height ui_scale ui_scale_valid
 	orient="$(sed -n 's/.*"default_orientation"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$screen_json" | head -1)"
 	width="$(sed -n 's/.*"width"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$screen_json" | head -1)"
 	height="$(sed -n 's/.*"height"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$screen_json" | head -1)"
+	ui_scale="$(sed -n 's/.*"default_ui_scale"[[:space:]]*:[[:space:]]*\([0-9.][0-9.]*\).*/\1/p' "$screen_json" | head -1)"
 	[ -n "$orient" ] || die "screen.json missing default_orientation ($screen_json)"
+	if [ -n "$ui_scale" ]; then
+		ui_scale_valid="$(printf '%s' "$ui_scale" | awk '{
+			if ($1+0 != $1 || $1 == "") { exit 1 }
+			v=$1+0; if (v < 0.5) v=0.5; if (v > 2.0) v=2.0; printf "%.3f", v; exit 0
+		}' 2>/dev/null || true)"
+		if [ -z "$ui_scale_valid" ]; then
+			warn "screen.json invalid default_ui_scale ($ui_scale) — omitted"
+		fi
+	else
+		ui_scale_valid=""
+	fi
 	{
 		echo "SCREEN_DEFAULT_ORIENTATION=$orient"
 		echo "SCREEN_WIDTH=${width:-}"
 		echo "SCREEN_HEIGHT=${height:-}"
+		[ -n "$ui_scale_valid" ] && echo "SCREEN_DEFAULT_UI_SCALE=$ui_scale_valid"
 	} >"$RUN_HMI/screen.env"
 }
 

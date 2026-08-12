@@ -380,6 +380,24 @@ run_check() {
 	fi
 
 	echo ""
+	echo "--- oem screen pack default_ui_scale ---"
+	check_screen_default_ui_scale() {
+		local json="$1" expected="$2" label="$3"
+		local got
+		got="$(sed -n 's/.*"default_ui_scale"[[:space:]]*:[[:space:]]*\([0-9.][0-9.]*\).*/\1/p' "$json" | head -1)"
+		if [[ "$got" == "$expected" ]]; then
+			echo "OK:  $label default_ui_scale=$got"
+		else
+			echo "FAIL: $label default_ui_scale=$got (expected $expected) in $json" >&2
+			missing=1
+		fi
+	}
+	check_screen_default_ui_scale \
+		"$ROOT/oem/screens/panel-ynh960-800x1280/screen.json" "1.13" "ynh960 panel"
+	check_screen_default_ui_scale \
+		"$ROOT/oem/screens/virt/screen.json" "1.28" "virt"
+
+	echo ""
 	echo "--- usr/libexec/display ---"
 	for f in ynh960-display-init.sh weston-hmi-config.sh change-orientation.sh apply-wallpaper.sh \
 		apply-mouse-settings.sh; do

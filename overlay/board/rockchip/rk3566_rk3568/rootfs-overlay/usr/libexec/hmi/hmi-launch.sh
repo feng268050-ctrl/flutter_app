@@ -125,6 +125,26 @@ portrait_down)
 esac
 echo "hmi-launch: orientation=$HMI_ORIENTATION (from $orient_src)" >&2
 
+# Seed ui_scale from OEM screen pack when operator has not set display.conf key.
+ui_scale_token="$(conf_get "$DISPLAY_CONF" ui_scale)"
+if [ -z "$ui_scale_token" ]; then
+	if [ -f "$SCREEN_ENV" ]; then
+		# shellcheck source=/dev/null
+		. "$SCREEN_ENV"
+	fi
+	oem_ui_scale="$(printf '%s' "${SCREEN_DEFAULT_UI_SCALE:-}" | tr -d '[:space:]')"
+	if [ -n "$oem_ui_scale" ]; then
+		clamped="$(printf '%s' "$oem_ui_scale" | awk '{
+			if ($1+0 != $1 || $1 == "") { exit 1 }
+			v=$1+0; if (v < 0.5) v=0.5; if (v > 2.0) v=2.0; printf "%.3f", v; exit 0
+		}' 2>/dev/null || true)"
+		if [ -n "$clamped" ]; then
+			upsert_conf_key "$DISPLAY_CONF" ui_scale "$clamped"
+			echo "hmi-launch: seeded ui_scale=$clamped (from ${SCREEN_ENV:-SCREEN_DEFAULT_UI_SCALE})" >&2
+		fi
+	fi
+fi
+
 if [ -f "$MODE_FILE" ]; then
 	MODE="$(read_json_field "$MODE_FILE" mode)"
 	MODE="${MODE:-release}"
@@ -236,6 +256,7 @@ if [ -f "${RUN_HMI:-/run/hmi}/oem.env" ]; then
 	. "${RUN_HMI:-/run/hmi}/oem.env" 2>/dev/null || true
 	BOARD_ID="${BOARD_ID:-}"
 fi
+export BOARD_ID
 case "$HMI_ORIENTATION" in
 portrait_up)
 	WESTON_TRANSFORM=normal

@@ -113,6 +113,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `prebuilt/btop/**`, `scripts/fetch-btop.sh`, or overlay `usr/bin/btop` | `make fetch-btop` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `prebuilt/umtprd/**`, `scripts/build-umtprd.sh`, or overlay `usr/bin/umtprd` / `usb-mtp-*.sh` | `make build-umtprd` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `native/reboot_loader/**`, `scripts/build-reboot-loader.sh`, `prebuilt/reboot_loader/**`, or overlay `usr/libexec/board/reboot-loader` | `make build-reboot-loader` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `native/extract_video_frame/**`, `scripts/build-extract-video-frame.sh`, `prebuilt/extract_video_frame/**`, or overlay `usr/libexec/hmi/extract-video-frame` | `make build-extract-video-frame` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `native/secrets_seal/**`, `scripts/build-secrets-seal.sh`, `prebuilt/secrets_seal/**`, overlay `usr/lib/optee_armtz/*.ta` / `usr/libexec/board/secrets-seal*` | `make build-secrets-seal`, `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make upgrade` |

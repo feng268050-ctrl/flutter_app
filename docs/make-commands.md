@@ -658,7 +658,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
 | `build-uboot` | **ynh960 勿用**（无 Innohi 指示） | 有砖机风险 | — |
 | `fetch-uboot` | 内部/少用 | 拉 uboot | — |
-| `build-reboot-rockusb-loader` | 内部工具构建 | — | `LWS_HMI_SKIP_OVERLAY=1` |
+| `build-reboot-loader` | 交叉编译 `reboot-loader` → prebuilt + overlay | — | macOS 自动进 Docker |
 | `test-debug-app` | `make test-debug-app` | debug-app 脚本自测 | — |
 
 ---

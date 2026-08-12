@@ -3,6 +3,15 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_w
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
+/// How a process preset is pushed to Modbus (lws-ui parity).
+enum ProcessApplyMode {
+  /// Same-mode param tweak (`sendProcessConfigData` / `sendData`): process group only.
+  liveTune,
+
+  /// Tab / mode switch / laser-enable prep (`selectModel`): type when changed + process.
+  modeSwitch,
+}
+
 enum ProcessApplyFailure {
   busy,
   baselineReadFailed,
@@ -16,8 +25,10 @@ enum ProcessApplyFailure {
   /// Wire feeding feedback is on.
   wireFeedingActive,
   processWriteFailed,
+  processReadFailed,
   processReadbackFailed,
   processTypeWriteFailed,
+  processTypeReadFailed,
   processTypeReadbackFailed,
   partialApply,
 }
@@ -43,14 +54,16 @@ final class ProcessParameterApplier {
 
   /// Applies [preset] to Modbus.
   ///
-  /// When [allowLiveTune] is true (default, field-edit / `sendData` parity),
-  /// laser/wire interlocks still write the process group but skip
-  /// `control.process_type`. Laser-enable paths pass `false` so a stuck enable
-  /// bit cannot skip the type write and still report success.
+  /// [mode] defaults to [ProcessApplyMode.liveTune] (field-edit / `sendData`).
+  /// [allowLiveTune] `false` forces [ProcessApplyMode.modeSwitch] for legacy callers.
   Future<ProcessApplyResult> apply(
     ProcessPreset preset, {
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
     bool allowLiveTune = true,
   }) async {
+    if (!allowLiveTune) {
+      mode = ProcessApplyMode.modeSwitch;
+    }
     ProcessParameterValidator.validate(preset);
     var last = const ProcessApplyResult.failure(
       ProcessApplyFailure.baselineReadFailed,
@@ -59,7 +72,7 @@ final class ProcessParameterApplier {
     for (var attempt = 0; attempt < 3; attempt++) {
       try {
         last = await modbus.exclusiveSession(
-          () => _applyExclusive(preset, allowLiveTune: allowLiveTune),
+          () => _applyExclusive(preset, mode: mode),
         );
       } catch (_) {
         last = const ProcessApplyResult.failure(
@@ -81,7 +94,7 @@ final class ProcessParameterApplier {
 
   Future<ProcessApplyResult> _applyExclusive(
     ProcessPreset preset, {
-    required bool allowLiveTune,
+    required ProcessApplyMode mode,
   }) async {
     final baseline = await _readProcessGroup();
     if (baseline == null) {
@@ -98,22 +111,51 @@ final class ProcessParameterApplier {
     final duration = expected['process.spot_welding_duration'];
     final modbusType = preset.processType.modbusProcessType;
     debugPrint(
-      'ProcessApply: start type=$modbusType '
+      'ProcessApply: start mode=${mode.name} type=$modbusType '
       'interval=$interval duration=$duration',
     );
 
-    final blocked = await interlockFailure();
-    // lws-ui `sendData` still writes process regs while laser/wire is active;
-    // only `control.process_type` must stay idle. Live-tune path: process group
-    // only (no type write / no type rollback).
-    if (allowLiveTune &&
-        (blocked == ProcessApplyFailure.unsafeMachineState ||
-            blocked == ProcessApplyFailure.wireFeedingActive)) {
-      debugPrint(
-        'ProcessApply: liveTune process-only (interlock=$blocked)',
-      );
-      return _writeProcessGroupOnly(expected);
+    if (mode == ProcessApplyMode.liveTune) {
+      return _liveTuneWrite(expected);
     }
+    return _modeSwitchWrite(
+      preset: preset,
+      baseline: baseline,
+      expected: expected,
+      modbusType: modbusType,
+      interval: interval,
+      duration: duration,
+    );
+  }
+
+  /// lws-ui `sendProcessConfigData`: write process group only, no readback.
+  Future<ProcessApplyResult> _liveTuneWrite(Map<String, double> expected) async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (await modbus.writeGroup('process', expected)) {
+        debugPrint('ProcessApply: liveTune ok');
+        return const ProcessApplyResult.success();
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(
+          Duration(milliseconds: 40 * (attempt + 1)),
+        );
+      }
+    }
+    debugPrint('ProcessApply: liveTune processWriteFailed');
+    return const ProcessApplyResult.failure(
+      ProcessApplyFailure.processWriteFailed,
+    );
+  }
+
+  Future<ProcessApplyResult> _modeSwitchWrite({
+    required ProcessPreset preset,
+    required Map<String, double> baseline,
+    required Map<String, double> expected,
+    required int modbusType,
+    required double? interval,
+    required double? duration,
+  }) async {
+    final blocked = await interlockFailure();
     if (blocked != null) {
       debugPrint('ProcessApply: blocked=$blocked');
       return ProcessApplyResult.failure(blocked);
@@ -127,89 +169,162 @@ final class ProcessParameterApplier {
         ProcessApplyFailure.baselineReadFailed,
       );
     }
+    final prevTypeInt = previousType.toInt();
+    final typeChanged = prevTypeInt != modbusType;
 
-    // lws-ui selectModel writes createDeviceControlData as one FC16 frame:
-    // 0x0050..0x0054 (accessories, gun drive/range, process_type), then sends
-    // the process frame. A single 0x0054 write updates the register mirror on
-    // some controllers but does not latch the internal work mode.
-    debugPrint(
-      'ProcessApply: write process_type $previousType -> $modbusType',
-    );
-    if (!await _writeProcessModeFrame(control!, modbusType)) {
-      return const ProcessApplyResult.failure(
-        ProcessApplyFailure.processTypeWriteFailed,
-      );
-    }
-    final typeReadback = (await _readGroup('control'))?['control.process_type'];
-    final actualType = typeReadback is num ? typeReadback.toInt() : null;
-    if (actualType != modbusType) {
+    if (typeChanged) {
       debugPrint(
-        'ProcessApply: processTypeReadbackFailed actual=$actualType',
+        'ProcessApply: write process_type $prevTypeInt -> $modbusType',
       );
-      final typeRestored =
-          await _writeProcessModeFrame(control, previousType.toInt());
-      return ProcessApplyResult.failure(
-        typeRestored
-            ? ProcessApplyFailure.processTypeReadbackFailed
-            : ProcessApplyFailure.partialApply,
+      if (!await _writeProcessModeFrame(control!, modbusType)) {
+        return const ProcessApplyResult.failure(
+          ProcessApplyFailure.processTypeWriteFailed,
+        );
+      }
+      final typeResult = await _verifyTypeReadback(
+        control: control,
+        modbusType: modbusType,
+        previousType: prevTypeInt,
       );
+      if (typeResult != null) {
+        return typeResult;
+      }
+    } else {
+      debugPrint('ProcessApply: skip process_type (already $modbusType)');
     }
 
     debugPrint(
       'ProcessApply: write process group '
       '(interval=$interval duration=$duration)',
     );
-    if (!await modbus.writeGroup('process', expected)) {
+    final writeOk = await _writeProcessWithRetry(expected);
+    if (!writeOk) {
       debugPrint('ProcessApply: processWriteFailed');
       return ProcessApplyResult.failure(
-        await _rollback(baseline, previousType.toInt())
+        await _rollback(baseline, prevTypeInt)
             ? ProcessApplyFailure.processWriteFailed
             : ProcessApplyFailure.partialApply,
       );
     }
-    final processReadback = await _readProcessGroup();
-    if (processReadback == null || !_matches(expected, processReadback)) {
-      debugPrint(
-        'ProcessApply: processReadbackFailed '
-        'interval=${processReadback?['process.spot_welding_interval']}',
-      );
-      return ProcessApplyResult.failure(
-        await _rollback(baseline, previousType.toInt())
-            ? ProcessApplyFailure.processReadbackFailed
-            : ProcessApplyFailure.partialApply,
-      );
+
+    final readbackResult = await _verifyProcessReadback(
+      expected: expected,
+      baseline: baseline,
+      previousType: prevTypeInt,
+    );
+    if (readbackResult != null) {
+      return readbackResult;
     }
+
     debugPrint(
-      'ProcessApply: ok type=$modbusType '
-      'interval=${processReadback['process.spot_welding_interval']}',
+      'ProcessApply: ok type=$modbusType interval=$interval',
     );
     return const ProcessApplyResult.success();
   }
 
-  Future<ProcessApplyResult> _writeProcessGroupOnly(
-    Map<String, double> expected,
-  ) async {
-    if (!await modbus.writeGroup('process', expected)) {
-      debugPrint('ProcessApply: liveTune processWriteFailed');
-      return const ProcessApplyResult.failure(
-        ProcessApplyFailure.processWriteFailed,
-      );
+  Future<bool> _writeProcessWithRetry(Map<String, double> expected) async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (await modbus.writeGroup('process', expected)) {
+        return true;
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(
+          Duration(milliseconds: 40 * (attempt + 1)),
+        );
+      }
     }
-    final processReadback = await _readProcessGroup();
-    if (processReadback == null || !_matches(expected, processReadback)) {
+    return false;
+  }
+
+  Future<ProcessApplyResult?> _verifyTypeReadback({
+    required Map<String, Object?> control,
+    required int modbusType,
+    required int previousType,
+  }) async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      final typeReadback =
+          (await _readGroup('control'))?['control.process_type'];
+      if (typeReadback == null) {
+        if (attempt < 2) {
+          await Future<void>.delayed(
+            Duration(milliseconds: 40 * (attempt + 1)),
+          );
+          continue;
+        }
+        debugPrint('ProcessApply: processTypeReadFailed');
+        final typeRestored =
+            await _writeProcessModeFrame(control, previousType);
+        return ProcessApplyResult.failure(
+          typeRestored
+              ? ProcessApplyFailure.processTypeReadFailed
+              : ProcessApplyFailure.partialApply,
+        );
+      }
+      final actualType = typeReadback is num ? typeReadback.toInt() : null;
+      if (actualType == modbusType) {
+        return null;
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(
+          Duration(milliseconds: 40 * (attempt + 1)),
+        );
+        continue;
+      }
       debugPrint(
-        'ProcessApply: liveTune processReadbackFailed '
-        'interval=${processReadback?['process.spot_welding_interval']}',
+        'ProcessApply: processTypeReadbackFailed actual=$actualType',
       );
-      return const ProcessApplyResult.failure(
-        ProcessApplyFailure.processReadbackFailed,
+      final typeRestored =
+          await _writeProcessModeFrame(control, previousType);
+      return ProcessApplyResult.failure(
+        typeRestored
+            ? ProcessApplyFailure.processTypeReadbackFailed
+            : ProcessApplyFailure.partialApply,
       );
     }
-    debugPrint(
-      'ProcessApply: liveTune ok '
-      'interval=${processReadback['process.spot_welding_interval']}',
-    );
-    return const ProcessApplyResult.success();
+    return null;
+  }
+
+  Future<ProcessApplyResult?> _verifyProcessReadback({
+    required Map<String, double> expected,
+    required Map<String, double> baseline,
+    required int previousType,
+  }) async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      final processReadback = await _readProcessGroup();
+      if (processReadback == null) {
+        if (attempt < 2) {
+          await Future<void>.delayed(
+            Duration(milliseconds: 40 * (attempt + 1)),
+          );
+          continue;
+        }
+        debugPrint('ProcessApply: processReadFailed');
+        return ProcessApplyResult.failure(
+          await _rollback(baseline, previousType)
+              ? ProcessApplyFailure.processReadFailed
+              : ProcessApplyFailure.partialApply,
+        );
+      }
+      if (_matches(expected, processReadback)) {
+        return null;
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(
+          Duration(milliseconds: 40 * (attempt + 1)),
+        );
+        continue;
+      }
+      debugPrint(
+        'ProcessApply: processReadbackFailed '
+        'interval=${processReadback['process.spot_welding_interval']}',
+      );
+      return ProcessApplyResult.failure(
+        await _rollback(baseline, previousType)
+            ? ProcessApplyFailure.processReadbackFailed
+            : ProcessApplyFailure.partialApply,
+      );
+    }
+    return null;
   }
 
   /// lws-ui `createDeviceControlData`: FC16 start 0x0050, count 5.

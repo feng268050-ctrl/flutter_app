@@ -36,7 +36,7 @@ abstract final class CyberSliderLogic {
     if ((max - min) >= 10) {
       return v.roundToDouble().clamp(min, max);
     }
-    // Fine-grained sliders (ui_scale ~0.85–1.25): keep fractional precision.
+    // Fine-grained sliders (ui_scale ~0.5–2.0): keep fractional precision.
     return (v * 1000).roundToDouble() / 1000;
   }
 

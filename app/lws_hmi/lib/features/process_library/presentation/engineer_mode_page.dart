@@ -33,6 +33,7 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.
 import 'package:lws_hmi/features/process_mode/presentation/engineer_parameter_form.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_bar.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/key_switch_off_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_host.dart';
@@ -200,25 +201,33 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     }
     switch (event) {
       case DeviceControlSafetyEvent.emergencyStopCleared:
-      case DeviceControlSafetyEvent.keySwitchRestored:
-        // Warn-style auto-dismiss when the safety condition clears.
         OperationFailedDialogHost.dismissForSafetyClear(event);
         return;
-      case DeviceControlSafetyEvent.emergencyStop:
+      case DeviceControlSafetyEvent.keySwitchRestored:
+        KeySwitchOffPrompt.reset();
+        OperationFailedDialogHost.dismissForSafetyClear(event);
+        return;
       case DeviceControlSafetyEvent.keySwitchOff:
+        WorkStatusDialogHost.closeDialog();
+        final control = _deviceControl;
+        if (control != null &&
+            !control.suppressKeySwitchOffSafetyPrompt &&
+            (MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ?? false)) {
+          unawaited(
+            KeySwitchOffPrompt.maybeShow(
+              context,
+              alarmEnabled: true,
+              services: AppScope.of(context),
+            ),
+          );
+        }
+        return;
+      case DeviceControlSafetyEvent.emergencyStop:
         break;
     }
     WorkStatusDialogHost.closeDialog();
     final l10n = AppLocalizations.of(context)!;
-    final message = switch (event) {
-      DeviceControlSafetyEvent.emergencyStop =>
-        DeviceControlFeedbackCopy.emergencyStopError(l10n),
-      DeviceControlSafetyEvent.keySwitchOff =>
-        DeviceControlFeedbackCopy.keySwitchOffError(l10n),
-      DeviceControlSafetyEvent.emergencyStopCleared ||
-      DeviceControlSafetyEvent.keySwitchRestored =>
-        '', // unreachable — handled above
-    };
+    final message = DeviceControlFeedbackCopy.emergencyStopError(l10n);
     unawaited(
       OperationFailedDialogHost.show(
         context,

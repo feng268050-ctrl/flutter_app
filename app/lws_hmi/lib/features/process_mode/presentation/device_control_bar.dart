@@ -2,13 +2,16 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/key_switch_off_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -146,6 +149,15 @@ final class DeviceControlBar extends StatelessWidget {
         await warn.presentLaserEnableBlock(policy: policy);
         return;
       }
+    }
+    if (err == LaserEnableBlockReason.keySwitchOff) {
+      await KeySwitchOffPrompt.presentLaserEnableKeyOffBlock(
+        context,
+        miscAlarmEnabled:
+            MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ?? false,
+        services: AppScope.maybeOf(context),
+      );
+      return;
     }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(err)) {
       await OperationFailedDialogHost.show(

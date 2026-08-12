@@ -377,6 +377,8 @@ class _CameraProgramUpgradePageState extends State<CameraProgramUpgradePage> {
     final headlineStyle = context.hmiTypography.sectionTitle.copyWith(
       color: CyberColors.textPrimary,
     );
+    final offerTitle = offer?.title?.trim();
+    final offerContent = offer?.content?.trim();
 
     return UpgradeCheckCard(
       state: _checkUi,
@@ -388,13 +390,17 @@ class _CameraProgramUpgradePageState extends State<CameraProgramUpgradePage> {
       failedMessage: l10n.cameraProgramCheckFailed,
       availableHeadline: offer == null
           ? null
-          : l10n.cameraProgramNewVersionHeadline(offer.bundledVersionLabel),
+          : ((offerTitle != null && offerTitle.isNotEmpty)
+              ? offerTitle
+              : l10n.cameraProgramNewVersionHeadline(offer.bundledVersionLabel)),
       availableBody: offer == null
           ? null
-          : l10n.cameraProgramDialogMessage(
-              offer.deviceVersionLabel,
-              offer.bundledVersionLabel,
-            ),
+          : ((offerContent != null && offerContent.isNotEmpty)
+              ? offerContent
+              : l10n.cameraProgramUpdateAvailableMessage(
+                  offer.deviceVersionLabel,
+                  offer.bundledVersionLabel,
+                )),
       statusStyle: style,
       headlineStyle: headlineStyle,
       actions: _buildCheckFooter(l10n),

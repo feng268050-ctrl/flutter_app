@@ -11,6 +11,9 @@ typedef PlatformVersionsFileReader = Future<String?> Function(String path);
 
 /// Immutable OS / stack version inventory for OS Settings (read-only probes).
 ///
+/// Lives in the `sys_info` HAL module beside [SysInfo], not inside
+/// [SysInfoSnapshot] — static pins are probed once, not on the live watch loop.
+///
 /// Each field soft-fails independently: missing or unparseable → null.
 /// Never throws out of [LinuxPlatformVersions.snapshot].
 final class PlatformVersionsSnapshot {
@@ -117,6 +120,38 @@ String? formatOperatingSystemLabel({
     return ver;
   }
   return null;
+}
+
+/// Product OS name for upgrade copy (e.g. `Cyber OS`).
+///
+/// Prefers `/etc/os-release` `NAME=`; else strips a trailing [version] from
+/// [prettyName] (`Cyber OS 1.0.0` + `1.0.0` → `Cyber OS`).
+String? formatOperatingSystemName({
+  String? prettyName,
+  String? name,
+  String? version,
+}) {
+  final n = name?.trim();
+  if (n != null && n.isNotEmpty) {
+    return n;
+  }
+  final pretty = prettyName?.trim();
+  if (pretty == null || pretty.isEmpty) {
+    return null;
+  }
+  final ver = version?.trim();
+  if (ver != null && ver.isNotEmpty) {
+    for (final suffix in <String>[' $ver', ' v$ver', ' V$ver']) {
+      if (pretty.endsWith(suffix)) {
+        final stripped =
+            pretty.substring(0, pretty.length - suffix.length).trim();
+        if (stripped.isNotEmpty) {
+          return stripped;
+        }
+      }
+    }
+  }
+  return pretty;
 }
 
 /// Map `/sys/fs/selinux/enforce` (`0`/`1`) → mode label.

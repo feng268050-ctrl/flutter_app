@@ -1,15 +1,24 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cyber_hal/src/sys_info/platform_versions.dart';
 import 'package:cyber_hal/src/sys_info/product_info.dart';
+import 'package:cyber_hal/src/sys_info/storage_info.dart';
 import 'package:cyber_hal/src/sys_info/storage_part_labels.dart';
 import 'package:flutter/foundation.dart';
 
 export 'package:cyber_hal/src/sys_info/platform_versions.dart';
 export 'package:cyber_hal/src/sys_info/product_info.dart';
+export 'package:cyber_hal/src/sys_info/storage_capacity.dart';
+export 'package:cyber_hal/src/sys_info/storage_info.dart';
 export 'package:cyber_hal/src/sys_info/storage_part_labels.dart';
 
-/// Host/board inventory snapshot (D17).
+/// Live host inventory + telemetry (D17).
+///
+/// Related types in this module (separate classes, same `sys_info` surface):
+/// - [PlatformVersionsSnapshot] / [LinuxPlatformVersions] — static OS/stack pins
+/// - [StorageInfo] / [StorageCapacitySummary] — mounts + appliance bar accounting
+/// - [ProductInfo] — factory identity
 abstract class SysInfo {
   Future<SysInfoSnapshot> snapshot();
 
@@ -65,6 +74,7 @@ final class SysInfoSnapshot {
     this.model,
     this.boardModel,
     this.kernelRelease,
+    this.osName,
     this.osReleaseId,
     this.osVersion,
     this.appVersion,
@@ -95,6 +105,13 @@ final class SysInfoSnapshot {
 
   final String? boardModel;
   final String? kernelRelease;
+
+  /// `/etc/os-release` `NAME=` (e.g. `Cyber OS`); null if missing.
+  final String? osName;
+
+  /// `/etc/os-release` `PRETTY_NAME=` (e.g. `Cyber OS 1.0.0`); null if missing.
+  ///
+  /// Historical field name; value is PRETTY_NAME, not `ID=`.
   final String? osReleaseId;
 
   /// Product OS Version from `/etc/os-release` `VERSION=`; null if missing.
@@ -152,67 +169,6 @@ final class SysInfoSnapshot {
     final rast = rasterFps?.toStringAsFixed(1) ?? '';
     return '$zones|${cpuFreqMhz ?? ''}|${memoryAvailableBytes ?? ''}|$load|$ui|$rast';
   }
-}
-
-final class StorageInfo {
-  const StorageInfo({
-    required this.mountPoint,
-    this.totalBytes,
-    this.freeBytes,
-  });
-
-  final String mountPoint;
-  final int? totalBytes;
-  final int? freeBytes;
-}
-
-/// Parse `df -P` / `df -Pk` / `df -B1` stdout for [mountPoint].
-///
-/// Uses the last data line (handles wrapped filesystem names). Columns:
-/// `Filesystem blocks Used Available …`. Multiplies block counts by
-/// [blockSizeBytes] (1 for GNU `-B1`, 1024 for BusyBox/POSIX `-k`/`-P`).
-StorageInfo? parseDfStorageLine({
-  required String stdout,
-  required String mountPoint,
-  int blockSizeBytes = 1024,
-}) {
-  final lines = stdout.trim().split('\n');
-  if (lines.length < 2) {
-    return null;
-  }
-  // Prefer a line that ends with the mount point; else last non-header line.
-  String? dataLine;
-  for (var i = lines.length - 1; i >= 1; i--) {
-    final line = lines[i].trim();
-    if (line.isEmpty) {
-      continue;
-    }
-    if (line == mountPoint ||
-        line.endsWith(' $mountPoint') ||
-        line.endsWith('\t$mountPoint')) {
-      dataLine = line;
-      break;
-    }
-    dataLine ??= line;
-  }
-  if (dataLine == null) {
-    return null;
-  }
-  final cols = dataLine.split(RegExp(r'\s+'));
-  if (cols.length < 4) {
-    return null;
-  }
-  final totalBlocks = int.tryParse(cols[1]);
-  final freeBlocks = int.tryParse(cols[3]);
-  if (totalBlocks == null || freeBlocks == null || totalBlocks <= 0) {
-    return null;
-  }
-  final scale = blockSizeBytes <= 0 ? 1 : blockSizeBytes;
-  return StorageInfo(
-    mountPoint: mountPoint,
-    totalBytes: totalBlocks * scale,
-    freeBytes: freeBlocks * scale,
-  );
 }
 
 final class ThermalZone {
@@ -335,6 +291,7 @@ class LinuxSysInfo implements SysInfo {
   Future<SysInfoSnapshot> snapshot() async {
     final product = await ensureProductInfo();
     final sampler = frameTimingSampler;
+    final osRelease = await _readOsReleaseFields();
     return SysInfoSnapshot(
       serialNumber: product.sn.isEmpty ? null : product.sn,
       chipId: product.chipId.isEmpty ? null : product.chipId,
@@ -342,8 +299,9 @@ class LinuxSysInfo implements SysInfo {
       model: product.model.isEmpty ? null : product.model,
       boardModel: await _readBoardModel(),
       kernelRelease: await _readKernelRelease(),
-      osReleaseId: await _readOsReleaseId(),
-      osVersion: await _readOsVersion(),
+      osName: osRelease.name,
+      osReleaseId: osRelease.prettyName,
+      osVersion: osRelease.version,
       appVersion: appVersion,
       cpuCoreCount: await _readCpuCoreCount(),
       cpuFreqMhz: await _readCpuFreqMhz(),
@@ -484,38 +442,24 @@ class LinuxSysInfo implements SysInfo {
     }
   }
 
-  Future<String?> _readOsReleaseId() async {
+  Future<({String? name, String? prettyName, String? version})>
+      _readOsReleaseFields() async {
     try {
-      final lines = await File('/etc/os-release').readAsLines();
-      for (final line in lines) {
-        if (line.startsWith('PRETTY_NAME=')) {
-          var v = line.substring('PRETTY_NAME='.length).trim();
-          if (v.startsWith('"') && v.endsWith('"')) {
-            v = v.substring(1, v.length - 1);
-          }
-          return v;
-        }
+      final raw = await File('/etc/os-release').readAsString();
+      final map = parseOsReleaseMap(raw);
+      String? nonEmpty(String? value) {
+        final t = value?.trim();
+        return (t == null || t.isEmpty) ? null : t;
       }
-    } catch (_) {}
-    return null;
-  }
 
-  /// Product OS Version from `/etc/os-release` `VERSION=` (Cyber OS SemVer).
-  Future<String?> _readOsVersion() async {
-    try {
-      final lines = await File('/etc/os-release').readAsLines();
-      for (final line in lines) {
-        if (line.startsWith('VERSION=') && !line.startsWith('VERSION_ID=')) {
-          var v = line.substring('VERSION='.length).trim();
-          if (v.startsWith('"') && v.endsWith('"')) {
-            v = v.substring(1, v.length - 1);
-          }
-          v = v.trim();
-          return v.isEmpty ? null : v;
-        }
-      }
-    } catch (_) {}
-    return null;
+      return (
+        name: nonEmpty(map['NAME']),
+        prettyName: nonEmpty(map['PRETTY_NAME']),
+        version: nonEmpty(map['VERSION']),
+      );
+    } catch (_) {
+      return (name: null, prettyName: null, version: null);
+    }
   }
 
   Future<int?> _readCpuCoreCount() async {

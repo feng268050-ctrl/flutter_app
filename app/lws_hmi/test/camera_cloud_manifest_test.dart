@@ -16,6 +16,8 @@ void main() {
           'version': 'v1.0.7',
           'filename': name,
           'url': url,
+          'title': 'Camera 1.0.7',
+          'content': 'Improves overlay sync.',
         },
         deviceAppVersionRaw: 'v1.0.5 build20251127',
       );
@@ -23,6 +25,8 @@ void main() {
       expect(c!.version.displaySemVer, '1.0.7');
       expect(c.version.build, 20260513);
       expect(c.version.label, 'v1.0.7 build20260513');
+      expect(c.title, 'Camera 1.0.7');
+      expect(c.content, 'Improves overlay sync.');
     });
 
     test('channel version matches SemVer-only publish shape', () {

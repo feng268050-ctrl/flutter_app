@@ -50,6 +50,8 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
   UpgradeCheckUiState _checkUi = UpgradeCheckUiState.idle;
   bool _applyUi = false;
   String _osVersion = kUnavailableDisplay;
+  String _osSemVer = '';
+  String _osName = '';
   String _kernelVersion = kUnavailableDisplay;
 
   /// Effective policy for this page entry.
@@ -133,9 +135,22 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
           return;
         }
         setState(() {
-          _osVersion = update.snapshot.osVersion ?? kUnavailableDisplay;
-          _kernelVersion =
-              update.snapshot.kernelRelease ?? kUnavailableDisplay;
+          final snap = update.snapshot;
+          final semVer = (snap.osVersion ?? '').trim();
+          _osVersion = formatOperatingSystemLabel(
+                prettyName: snap.osReleaseId,
+                name: snap.osName,
+                version: snap.osVersion,
+              ) ??
+              kUnavailableDisplay;
+          _osSemVer = semVer;
+          _osName = formatOperatingSystemName(
+                name: snap.osName,
+                prettyName: snap.osReleaseId,
+                version: snap.osVersion,
+              ) ??
+              '';
+          _kernelVersion = snap.kernelRelease ?? kUnavailableDisplay;
         });
       }, onError: (_) {});
     } catch (_) {}
@@ -321,24 +336,34 @@ class _SystemUpgradePageState extends State<SystemUpgradePage> {
     );
     final currentLabel =
         _osVersion == kUnavailableDisplay ? '' : _osVersion;
+    final currentSemVer = _osSemVer.isNotEmpty ? _osSemVer : currentLabel;
+    final osName = _osName.isNotEmpty ? _osName : l10n.osVersion;
+    final availableTitle = available?.title?.trim();
+    final availableContent = available?.content?.trim();
+    final availableVersion = available == null
+        ? ''
+        : (OtaManifest.coreVersion(available.version) ?? available.version);
 
     return UpgradeCheckCard(
       state: _checkUi,
-      idleHint: l10n.otaUpgradeIdleHint,
+      idleHint: l10n.otaUpgradeIdleHint(osName),
       checkingLabel: l10n.checkingStatus,
-      upToDateMessage: l10n.otaAlreadyUpToDate(currentLabel),
+      upToDateMessage: l10n.otaAlreadyUpToDate(osName, currentSemVer),
       unavailableMessage: l10n.otaCheckUnavailable,
       failedMessage: l10n.otaCheckFailed,
       availableHeadline: available == null
           ? null
-          : l10n.otaNewVersionHeadline(available.displayTitle),
+          : ((availableTitle != null && availableTitle.isNotEmpty)
+              ? availableTitle
+              : l10n.otaNewVersionHeadline(osName, availableVersion)),
       availableBody: available == null
           ? null
-          : ((available.content?.trim().isNotEmpty ?? false)
-              ? available.content!.trim()
+          : ((availableContent != null && availableContent.isNotEmpty)
+              ? availableContent
               : l10n.otaUpdateAvailableMessage(
-                  currentLabel,
-                  available.version,
+                  osName,
+                  currentSemVer,
+                  availableVersion,
                 )),
       statusStyle: style,
       headlineStyle: headlineStyle,

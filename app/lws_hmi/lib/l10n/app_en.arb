@@ -319,11 +319,22 @@
       }
     }
   },
+  "cameraProgramUpdateAvailableMessage": "Camera firmware {current} → {available}. Install now?",
+  "@cameraProgramUpdateAvailableMessage": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
   "cameraProgramRebootTitle": "Rebooting Camera",
   "cameraProgramSuccessMessage": "Camera firmware has been updated.",
   "cameraProgramSuccessTitle": "Camera Updated",
   "cameraProgramTransferTitle": "Transferring Camera Firmware",
-  "cameraProgramUpgradeIdleHint": "Check for newer camera firmware bundled with this App.",
+  "cameraProgramUpgradeIdleHint": "Check for newer camera firmware.",
   "cameraProgramUpgradeTitle": "Camera Upgrade",
   "cameraProgramUpgradingMessage": "Keep power connected and don’t operate the device during the upgrade.",
   "cameraProgramWaitOnlineTitle": "Waiting for Camera",
@@ -340,7 +351,7 @@
   },
   "controlBoardCheckFailed": "Could not check control board firmware. Verify Modbus connection.",
   "controlBoardCheckUnavailable": "Control board firmware check is not available right now.",
-  "controlBoardNewVersionHeadline": "New firmware {version}",
+  "controlBoardNewVersionHeadline": "New control board firmware {version}",
   "@controlBoardNewVersionHeadline": {
     "placeholders": {
       "version": {
@@ -348,7 +359,18 @@
       }
     }
   },
-  "controlBoardUpgradeIdleHint": "Check for newer control board firmware bundled with this App.",
+  "controlBoardUpdateAvailableMessage": "Control board firmware {current} → {available}. Install now?",
+  "@controlBoardUpdateAvailableMessage": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
+  "controlBoardUpgradeIdleHint": "Check for newer control board firmware.",
   "controlBoardUpgradeTitle": "Control Board Upgrade",
   "checkUpdate": "Check for Updates",
   "checkingStatus": "Checking…",
@@ -541,6 +563,34 @@
   "hardwareBusErrorAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
   "hardwareBusErrorAlarmTitle": "Hardware Bus Error",
   "holdToEnableLaser": "Hold To Enable Laser",
+  "hmiAlreadyUpToDate": "HMI version {version} is up to date.",
+  "@hmiAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "hmiNewVersionHeadline": "New HMI version {version}",
+  "@hmiNewVersionHeadline": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "hmiUpdateAvailableMessage": "HMI version {current} → {available}. Install now?",
+  "@hmiUpdateAvailableMessage": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
+  "hmiUpgradeIdleHint": "Check for a newer HMI package from the cloud.",
   "hmiUpgradeTitle": "HMI Upgrade",
   "hmiVersion": "HMI Version",
   "homeAiVisionLabel": "AI Vision",
@@ -617,7 +667,7 @@
   },
   "ipCameraText": "Camera",
   "jobRuntime": "Last Op-Time",
-  "kernelVersion": "Kernel Version",
+  "kernelVersion": "Linux Kernel",
   "keySwitchLabel": "Key Switch",
   "keyboardApplyConfirmBody": "Saves the selected layout and restarts HMI so soft CyberIME and physical keyboard both take effect. This page will reopen after relaunch.",
   "keyboardApplyConfirmTitle": "Apply Keyboard Layout?",
@@ -675,7 +725,7 @@
   "laserReflectedEnergyUpperLimitClearedTitle": "Reflected Energy High Cleared",
   "laserText": "Laser",
   "laserTimeVsLastWeek": "vs. last week",
-  "laserVersion": "Laser Version",
+  "laserVersion": "Laser Board Version",
   "ledColorGreen": "Green",
   "ledColorRed": "Red",
   "ledColorYellow": "Yellow",
@@ -749,22 +799,28 @@
   "osSettingsBundleMissing": "OS Settings is not installed on this device.",
   "osSettingsSwitchFailed": "Couldn’t open OS Settings.",
   "osSettingsText": "OS Settings",
-  "osVersion": "OS Version",
+  "osVersion": "Operating System",
   "otaCheckUnavailable": "Software update check is not available on this build.",
   "otaCheckFailed": "Could not check for updates. Verify network connectivity.",
   "otaSessionActive": "A system upgrade is already in progress.",
-  "otaAlreadyUpToDate": "System version {version} is up to date.",
+  "otaAlreadyUpToDate": "{name} version {version} is up to date.",
   "@otaAlreadyUpToDate": {
     "placeholders": {
+      "name": {
+        "type": "String"
+      },
       "version": {
         "type": "String"
       }
     }
   },
   "otaUpdateAvailableTitle": "Update Available",
-  "otaUpdateAvailableMessage": "Version {current} → {available}. Install now?",
+  "otaUpdateAvailableMessage": "{name} version {current} → {available}. Install now?",
   "@otaUpdateAvailableMessage": {
     "placeholders": {
+      "name": {
+        "type": "String"
+      },
       "current": {
         "type": "String"
       },
@@ -775,15 +831,25 @@
   },
   "otaUpdateNow": "Update Now",
   "otaUpdateLater": "Later",
-  "otaNewVersionHeadline": "New version upgrade {version}",
+  "otaNewVersionHeadline": "New {name} version {version}",
   "@otaNewVersionHeadline": {
     "placeholders": {
+      "name": {
+        "type": "String"
+      },
       "version": {
         "type": "String"
       }
     }
   },
-  "otaUpgradeIdleHint": "Check for a newer system package from the cloud.",
+  "otaUpgradeIdleHint": "Check for a newer {name} package from the cloud.",
+  "@otaUpgradeIdleHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "systemUpgradeTitle": "System Upgrade",
   "otaUpgradeStatusVerifying": "Verifying package…",
   "otaUpgradeStatusExtracting": "Extracting package…",

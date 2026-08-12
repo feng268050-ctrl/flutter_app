@@ -9,10 +9,12 @@ import 'package:os_settings/util/platform_versions.dart';
 
 /// Operating System — grouped version inventory (soft-fail → —).
 ///
-/// Uses the root-shell-warmed [OsSettingsServices.cachedPlatformVersions]
-/// when present (pins do not change at runtime); cold path probes once.
+/// Values from HAL [PlatformVersionsSnapshot] (sys_info module). Uses the
+/// root-shell-warmed [OsSettingsServices.cachedPlatformVersions] when present
+/// (pins do not change at runtime); cold path probes once.
 ///
-/// First group (Platform) has no section title. Secrets Seal lives under Security.
+/// First group (Platform) has no section title. Secrets Seal lives under Security
+/// (secrets HAL, not PlatformVersions).
 class OperatingSystemPage extends StatefulWidget {
   const OperatingSystemPage({super.key});
 

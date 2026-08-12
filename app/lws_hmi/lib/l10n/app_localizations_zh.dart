@@ -593,6 +593,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String cameraProgramUpdateAvailableMessage(String current, String available) {
+    return '摄像头固件 $current → $available，是否立即安装？';
+  }
+
+  @override
   String get cameraProgramRebootTitle => '正在重启摄像头';
 
   @override
@@ -605,7 +610,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cameraProgramTransferTitle => '正在传输摄像头固件';
 
   @override
-  String get cameraProgramUpgradeIdleHint => '检查本机 App 内是否有更新的摄像头固件。';
+  String get cameraProgramUpgradeIdleHint => '检查是否有更新的摄像头固件。';
 
   @override
   String get cameraProgramUpgradeTitle => '摄像头升级';
@@ -638,11 +643,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String controlBoardNewVersionHeadline(String version) {
-    return '新固件版本 $version';
+    return '新控制板固件 $version';
   }
 
   @override
-  String get controlBoardUpgradeIdleHint => '检查本机 App 内是否有更新的控制板固件。';
+  String controlBoardUpdateAvailableMessage(String current, String available) {
+    return '控制板固件 $current → $available，是否立即安装？';
+  }
+
+  @override
+  String get controlBoardUpgradeIdleHint => '检查是否有更新的控制板固件。';
 
   @override
   String get controlBoardUpgradeTitle => '控制板升级';
@@ -1201,6 +1211,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get holdToEnableLaser => '长按开启激光';
 
   @override
+  String hmiAlreadyUpToDate(String version) {
+    return 'HMI 版本 $version 已是最新。';
+  }
+
+  @override
+  String hmiNewVersionHeadline(String version) {
+    return '新 HMI 版本 $version';
+  }
+
+  @override
+  String hmiUpdateAvailableMessage(String current, String available) {
+    return 'HMI 版本 $current → $available，是否立即安装？';
+  }
+
+  @override
+  String get hmiUpgradeIdleHint => '从云端检查是否有新的 HMI 升级包。';
+
+  @override
   String get hmiUpgradeTitle => 'HMI 升级';
 
   @override
@@ -1346,7 +1374,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get jobRuntime => '上次作业时长';
 
   @override
-  String get kernelVersion => '内核版本';
+  String get kernelVersion => 'Linux Kernel';
 
   @override
   String get keySwitchLabel => '钥匙开关';
@@ -1526,7 +1554,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserTimeVsLastWeek => '较上周';
 
   @override
-  String get laserVersion => '激光器版本';
+  String get laserVersion => '激光板版本';
 
   @override
   String get ledColorGreen => '绿色';
@@ -1752,7 +1780,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get osSettingsText => 'OS 设置';
 
   @override
-  String get osVersion => '操作系统版本';
+  String get osVersion => 'Operating System';
 
   @override
   String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
@@ -1764,16 +1792,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get otaSessionActive => '系统升级正在进行中。';
 
   @override
-  String otaAlreadyUpToDate(String version) {
-    return '系统版本 $version 已是最新。';
+  String otaAlreadyUpToDate(String name, String version) {
+    return '$name 版本 $version 已是最新。';
   }
 
   @override
   String get otaUpdateAvailableTitle => '发现新版本';
 
   @override
-  String otaUpdateAvailableMessage(String current, String available) {
-    return '版本 $current → $available，是否立即安装？';
+  String otaUpdateAvailableMessage(
+      String name, String current, String available) {
+    return '$name 版本 $current → $available，是否立即安装？';
   }
 
   @override
@@ -1783,12 +1812,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get otaUpdateLater => '稍后';
 
   @override
-  String otaNewVersionHeadline(String version) {
-    return '新版本升级 $version';
+  String otaNewVersionHeadline(String name, String version) {
+    return '新 $name 版本 $version';
   }
 
   @override
-  String get otaUpgradeIdleHint => '从云端检查是否有新的系统升级包。';
+  String otaUpgradeIdleHint(String name) {
+    return '从云端检查是否有新的 $name 升级包。';
+  }
 
   @override
   String get systemUpgradeTitle => '系统升级';
@@ -3690,6 +3721,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String cameraProgramUpdateAvailableMessage(String current, String available) {
+    return '攝像頭固件 $current → $available，是否立即安裝？';
+  }
+
+  @override
   String get cameraProgramRebootTitle => '正在重啓攝像頭';
 
   @override
@@ -3721,6 +3757,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get controlBoardCheckUnavailable => '當前無法檢查控制板固件。';
+
+  @override
+  String controlBoardUpdateAvailableMessage(String current, String available) {
+    return '控制板固件 $current → $available，是否立即安裝？';
+  }
 
   @override
   String get controlBoardUpgradeIdleHint => '檢查本機 App 內是否有更新的控制板固件。';
@@ -4225,6 +4266,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get holdToEnableLaser => '長按開啓激光';
 
   @override
+  String hmiUpdateAvailableMessage(String current, String available) {
+    return 'HMI 版本 $current → $available，是否立即安裝？';
+  }
+
+  @override
+  String get hmiUpgradeIdleHint => '從雲端檢查是否有新的 HMI 升級包。';
+
+  @override
   String get hmiUpgradeTitle => 'HMI 升級';
 
   @override
@@ -4325,9 +4374,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get jobRuntime => '作業時長';
-
-  @override
-  String get kernelVersion => '內核版本';
 
   @override
   String get keySwitchLabel => '鑰匙開關';
@@ -4670,9 +4716,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get osSettingsText => 'OS 設置';
 
   @override
-  String get osVersion => '操作系統版本';
-
-  @override
   String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
 
   @override
@@ -4682,16 +4725,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get otaSessionActive => '系統升級正在進行中。';
 
   @override
-  String otaAlreadyUpToDate(String version) {
-    return '系統版本 $version 已是最新。';
-  }
-
-  @override
   String get otaUpdateAvailableTitle => '發現新版本';
 
   @override
-  String otaUpdateAvailableMessage(String current, String available) {
-    return '版本 $current → $available，是否立即安裝？';
+  String otaUpdateAvailableMessage(
+      String name, String current, String available) {
+    return '$name 版本 $current → $available，是否立即安裝？';
   }
 
   @override
@@ -4701,12 +4740,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get otaUpdateLater => '稍後';
 
   @override
-  String otaNewVersionHeadline(String version) {
-    return '新版本升級 $version';
+  String otaUpgradeIdleHint(String name) {
+    return '從雲端檢查是否有新的 $name 升級包。';
   }
-
-  @override
-  String get otaUpgradeIdleHint => '從雲端檢查是否有新的系統升級包。';
 
   @override
   String get systemUpgradeTitle => '系統升級';

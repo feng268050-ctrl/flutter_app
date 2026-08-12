@@ -29,6 +29,8 @@ final class CameraProgramFirmwareOffer {
     this.assetKey,
     this.hostFile,
     this.packageUrl,
+    this.title,
+    this.content,
   });
 
   final String fileName;
@@ -44,6 +46,12 @@ final class CameraProgramFirmwareOffer {
 
   /// Cloud / host-HTTP package URL (download + verify before apply).
   final String? packageUrl;
+
+  /// Optional release title from cloud `release.json`.
+  final String? title;
+
+  /// Optional release notes body from cloud `release.json`.
+  final String? content;
 
   bool get isHostPush => hostFile != null;
   bool get isCloud => packageUrl != null && hostFile == null && assetKey == null;
@@ -279,6 +287,8 @@ final class CameraProgramUpgradeCoordinator {
           bundledVersionLabel: candidate.version.label,
           cameraHost: host,
           packageUrl: candidate.packageUrl,
+          title: candidate.title,
+          content: candidate.content,
         ),
         failed: false,
       );

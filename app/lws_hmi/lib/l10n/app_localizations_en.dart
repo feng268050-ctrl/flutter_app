@@ -623,6 +623,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String cameraProgramUpdateAvailableMessage(String current, String available) {
+    return 'Camera firmware $current → $available. Install now?';
+  }
+
+  @override
   String get cameraProgramRebootTitle => 'Rebooting Camera';
 
   @override
@@ -635,8 +640,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cameraProgramTransferTitle => 'Transferring Camera Firmware';
 
   @override
-  String get cameraProgramUpgradeIdleHint =>
-      'Check for newer camera firmware bundled with this App.';
+  String get cameraProgramUpgradeIdleHint => 'Check for newer camera firmware.';
 
   @override
   String get cameraProgramUpgradeTitle => 'Camera Upgrade';
@@ -672,12 +676,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String controlBoardNewVersionHeadline(String version) {
-    return 'New firmware $version';
+    return 'New control board firmware $version';
+  }
+
+  @override
+  String controlBoardUpdateAvailableMessage(String current, String available) {
+    return 'Control board firmware $current → $available. Install now?';
   }
 
   @override
   String get controlBoardUpgradeIdleHint =>
-      'Check for newer control board firmware bundled with this App.';
+      'Check for newer control board firmware.';
 
   @override
   String get controlBoardUpgradeTitle => 'Control Board Upgrade';
@@ -1256,6 +1265,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get holdToEnableLaser => 'Hold To Enable Laser';
 
   @override
+  String hmiAlreadyUpToDate(String version) {
+    return 'HMI version $version is up to date.';
+  }
+
+  @override
+  String hmiNewVersionHeadline(String version) {
+    return 'New HMI version $version';
+  }
+
+  @override
+  String hmiUpdateAvailableMessage(String current, String available) {
+    return 'HMI version $current → $available. Install now?';
+  }
+
+  @override
+  String get hmiUpgradeIdleHint =>
+      'Check for a newer HMI package from the cloud.';
+
+  @override
   String get hmiUpgradeTitle => 'HMI Upgrade';
 
   @override
@@ -1404,7 +1432,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jobRuntime => 'Last Op-Time';
 
   @override
-  String get kernelVersion => 'Kernel Version';
+  String get kernelVersion => 'Linux Kernel';
 
   @override
   String get keySwitchLabel => 'Key Switch';
@@ -1602,7 +1630,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laserTimeVsLastWeek => 'vs. last week';
 
   @override
-  String get laserVersion => 'Laser Version';
+  String get laserVersion => 'Laser Board Version';
 
   @override
   String get ledColorGreen => 'Green';
@@ -1831,7 +1859,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get osSettingsText => 'OS Settings';
 
   @override
-  String get osVersion => 'OS Version';
+  String get osVersion => 'Operating System';
 
   @override
   String get otaCheckUnavailable =>
@@ -1845,16 +1873,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otaSessionActive => 'A system upgrade is already in progress.';
 
   @override
-  String otaAlreadyUpToDate(String version) {
-    return 'System version $version is up to date.';
+  String otaAlreadyUpToDate(String name, String version) {
+    return '$name version $version is up to date.';
   }
 
   @override
   String get otaUpdateAvailableTitle => 'Update Available';
 
   @override
-  String otaUpdateAvailableMessage(String current, String available) {
-    return 'Version $current → $available. Install now?';
+  String otaUpdateAvailableMessage(
+      String name, String current, String available) {
+    return '$name version $current → $available. Install now?';
   }
 
   @override
@@ -1864,13 +1893,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otaUpdateLater => 'Later';
 
   @override
-  String otaNewVersionHeadline(String version) {
-    return 'New version upgrade $version';
+  String otaNewVersionHeadline(String name, String version) {
+    return 'New $name version $version';
   }
 
   @override
-  String get otaUpgradeIdleHint =>
-      'Check for a newer system package from the cloud.';
+  String otaUpgradeIdleHint(String name) {
+    return 'Check for a newer $name package from the cloud.';
+  }
 
   @override
   String get systemUpgradeTitle => 'System Upgrade';

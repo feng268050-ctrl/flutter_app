@@ -37,6 +37,29 @@ BUILDROOT_VERSION="2025.02.16"
       );
       expect(formatOperatingSystemLabel(), isNull);
     });
+
+    test('formatOperatingSystemName prefers NAME then strips PRETTY', () {
+      expect(
+        formatOperatingSystemName(
+          prettyName: 'Cyber OS 1.0.0',
+          name: 'Cyber OS',
+          version: '1.0.0',
+        ),
+        'Cyber OS',
+      );
+      expect(
+        formatOperatingSystemName(
+          prettyName: 'Cyber OS 1.0.0',
+          version: '1.0.0',
+        ),
+        'Cyber OS',
+      );
+      expect(
+        formatOperatingSystemName(prettyName: 'Cyber OS'),
+        'Cyber OS',
+      );
+      expect(formatOperatingSystemName(), isNull);
+    });
   });
 
   group('SELinux parsers', () {

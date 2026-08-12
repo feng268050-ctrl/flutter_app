@@ -337,24 +337,31 @@ class _HmiUpgradePageState extends State<HmiUpgradePage> {
     final headlineStyle = context.hmiTypography.sectionTitle.copyWith(
       color: CyberColors.textPrimary,
     );
+    final availableTitle = available?.title?.trim();
+    final availableContent = available?.content?.trim();
+    final availableVersion = available == null
+        ? ''
+        : (OtaManifest.coreVersion(available.version) ?? available.version);
 
     return UpgradeCheckCard(
       state: _checkUi,
-      idleHint: l10n.otaUpgradeIdleHint,
+      idleHint: l10n.hmiUpgradeIdleHint,
       checkingLabel: l10n.checkingStatus,
-      upToDateMessage: l10n.otaAlreadyUpToDate(kHmiVersion),
+      upToDateMessage: l10n.hmiAlreadyUpToDate(kHmiVersion),
       unavailableMessage: l10n.otaCheckUnavailable,
       failedMessage: l10n.otaCheckFailed,
       availableHeadline: available == null
           ? null
-          : l10n.otaNewVersionHeadline(available.displayTitle),
+          : ((availableTitle != null && availableTitle.isNotEmpty)
+              ? availableTitle
+              : l10n.hmiNewVersionHeadline(availableVersion)),
       availableBody: available == null
           ? null
-          : ((available.content?.trim().isNotEmpty ?? false)
-              ? available.content!.trim()
-              : l10n.otaUpdateAvailableMessage(
+          : ((availableContent != null && availableContent.isNotEmpty)
+              ? availableContent
+              : l10n.hmiUpdateAvailableMessage(
                   kHmiVersion,
-                  available.version,
+                  availableVersion,
                 )),
       statusStyle: style,
       headlineStyle: headlineStyle,

@@ -218,7 +218,7 @@ help:
 	@echo "Emulator (P3.2 — same Image+rootfs + sim_virt OEM; docs/p32-emulator.md):"
 	@echo "  make setup-emulator-qemu   # once (macOS): install qemu-virgl (host VirGL / ANGLE→Metal)"
 	@echo "  make fetch-emulator-swgl   # once: guest Mesa virtio_gpu → prebuilt/ (9p; FORCE=1 to refetch)"
-	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (grows emulator rootfs copy; EMULATOR_ROOTFS_SIZE=1536M)"
+	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (keeps provision.img; FORCE=1 recreates it)"
 	@echo "  make emulator              # start QEMU (host VirGL; SSH :2222 + HTTP :5580 hostfwd)"
 	@echo "  make emulator-stop         # stop lws-hmi QEMU guest (not Android Studio)"
 	@echo ""
@@ -360,7 +360,7 @@ fetch-emulator-swgl:
 	@bash scripts/fetch-emulator-swgl.sh
 
 build-emulator:
-	@APP='$(APP)' bash scripts/build-emulator.sh
+	@APP='$(APP)' FORCE='$(FORCE)' bash scripts/build-emulator.sh
 
 emulator:
 	@bash scripts/run-emulator.sh start

@@ -28,3 +28,4 @@ enable tee-supplicant.service
 enable lws-hostname.service
 enable emulator-sshd.service
 enable emulator-wlan0-dhcp.service
+enable emulator-storage-init.service

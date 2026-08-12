@@ -88,12 +88,14 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 | `output/firmware/emulator/Image` | Same build as FIT (`make build-kernel`); includes `emulator-virtio.config` (virtio for QEMU — not a ynh960 board feature) |
 | `output/firmware/emulator/rootfs.img` | Grown **copy** of device `rootfs.img` to **1536M** (fixed; not an env override) — device OTA stays 600M; emulator needs headroom for `debug-app` (no userdata partition) |
 | `output/firmware/emulator/oem.img` | `oem/out/sim_virt/oem.img` |
+| `output/firmware/emulator/provision.img` | Per-developer virtio disk (4 MiB ext4) — identity + tunables; **not** in OEM. **`make build-emulator` keeps an existing file; `FORCE=1` recreates it** |
 | `output/firmware/boot.img` | Device FIT (unchanged) |
 
 ## QEMU layout
 
 - virtio disk 0 (`/dev/vda`): rootfs.img  
 - virtio disk 1 (`/dev/vdb`): oem.img → mounted at `/oem`  
+- virtio disk 2 (`/dev/vdc`): provision.img → `/mnt/provision` (`properties.ini`, `identity.env`)  
 - cmdline: `root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 earlycon lws.emulator=1 systemd.ssh_auto=no systemd.getty_auto=no systemd.gpt_auto=no random.trust_cpu=on`  
 - Default **`EMULATOR_CPU=1`** (override with `EMULATOR_CPU=4`): systemd 256 `(sd-gens)` under Apple HVF can hang after Welcome with smp≥2; same OS image, virt form-factor quirk  
 - Three virtio-net NICs with fixed MACs (above); vmnet adds `ethssh` for SSH hostfwd  
@@ -178,6 +180,17 @@ SSH: `ssh -p 2222 root@127.0.0.1` (password `rockchip`) → `journalctl -u hmi.s
 Acceptance is **QEMU + same OS artifacts** with the hardware map above.
 
 ## Troubleshooting
+
+### Guest OOM (`Out of memory: Killed process … flutter-wayland`)
+
+Steady-state guest RAM is usually **~400 MiB** — 2 GiB is enough. This OOM often means **stacked Weston** instances: on the emulator, `hmi-launch.sh` intentionally leaves Weston running when Flutter fails, while `hmi.service` has `Restart=on-failure`; each restart starts another compositor until memory is exhausted.
+
+Check: `pgrep -a weston | wc -l` (expect 1). After reproduction, collect `journalctl -u hmi.service -b` and `journalctl -k -b | grep -i oom` for root-cause triage.
+
+```bash
+journalctl -u hmi.service -b --no-pager | tail -40
+journalctl -k -b | grep -i oom
+```
 
 ### `Kernel panic … Attempted to kill init! exitcode=0x0000000b`
 

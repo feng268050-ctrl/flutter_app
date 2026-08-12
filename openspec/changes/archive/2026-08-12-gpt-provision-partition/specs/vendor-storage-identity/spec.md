@@ -41,6 +41,12 @@ The appliance rootfs SHALL include Vendor Storage tooling and board helpers for 
 - **THEN** the command SHALL succeed by writing `provision/identity.env`
 - **AND** SHALL NOT write identity keys into userdata `properties.ini`
 
+#### Scenario: Cloud Ed25519 helpers without VS
+
+- **WHEN** `/dev/vendor_storage` is absent and provision is mounted
+- **THEN** `read-cloud-ed25519-sealed` / `write-cloud-ed25519-sealed` SHALL use `/mnt/provision/cloud-ed25519.sealed`
+- **AND** SHALL NOT fail solely because Vendor Storage is missing (unlike pre-provision emulator behavior)
+
 #### Scenario: Emulator OEM stub removed
 
 - **WHEN** inspecting OEM source for `boards/sim`
@@ -54,11 +60,3 @@ The appliance rootfs SHALL include Vendor Storage tooling and board helpers for 
 
 - **WHEN** `properties.ini` on provision holds `camera_ip=10.0.0.50` before a second compliant `make flash`
 - **THEN** after reboot `camera_ip` SHALL still be `10.0.0.50`
-
-## REMOVED Requirements
-
-### Requirement: Emulator stub via OEM identity.env
-
-**Reason**: Per-unit identity must not live in shared OEM packs; emulator uses virtio `provision.img`.
-
-**Migration**: Remove `oem/boards/sim/identity.env`; use `provision/identity.env` or `make write-identity` on the guest.

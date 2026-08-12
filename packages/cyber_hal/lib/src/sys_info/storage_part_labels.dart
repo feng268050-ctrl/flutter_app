@@ -20,6 +20,7 @@ const kDefaultSystemStoragePartLabels = <String>[
   'vendor1',
   'vendor2',
   'vendor3',
+  'provision',
 ];
 
 /// Bytes for [partLabel] via `/dev/disk/by-partlabel/…` → sysfs `size`

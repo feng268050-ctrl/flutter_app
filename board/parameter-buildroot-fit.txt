@@ -17,7 +17,8 @@ GROW_ALIGN: 0
 # push-app touches /opt/hmi only.
 # vendor0–vendor3: 64 KiB each (0x80 sectors). Geometry ABI — do not move/shrink after adoption
 # (see docs/storage-layout.md, board/vendor-storage-ids.txt). Inserted before userdata grow.
-# Start LBAs: vendor0@0x4BE000, vendor1@0x4BE080, vendor2@0x4BE100, vendor3@0x4BE180; userdata@0x4BE200.
-CMDLINE: mtdparts=:0x00003000@0x00004000(uboot),0x00002000@0x00007000(misc),0x00020000@0x00009000(boot),0x00020000@0x00029000(boot_b),0x00020000@0x00049000(recovery),0x00010000@0x00069000(backup),0x00200000@0x00079000(rootfs_a),0x00200000@0x00279000(rootfs_b),0x00040000@0x00479000(oem),0x00002800@0x004B9000(private),0x00002800@0x004BB800(private1),0x00000080@0x004BE000(vendor0),0x00000080@0x004BE080(vendor1),0x00000080@0x004BE100(vendor2),0x00000080@0x004BE180(vendor3),-@0x004BE200(userdata:grow)
+# Start LBAs: vendor0@0x4BE000 … vendor3@0x4BE180; provision@0x4BE200 (4 MiB); userdata grow@0x4C0200.
+# provision: flash-surviving factory tunables (properties.ini); never in factory.img — see docs/storage-layout.md.
+CMDLINE: mtdparts=:0x00003000@0x00004000(uboot),0x00002000@0x00007000(misc),0x00020000@0x00009000(boot),0x00020000@0x00029000(boot_b),0x00020000@0x00049000(recovery),0x00010000@0x00069000(backup),0x00200000@0x00079000(rootfs_a),0x00200000@0x00279000(rootfs_b),0x00040000@0x00479000(oem),0x00002800@0x004B9000(private),0x00002800@0x004BB800(private1),0x00000080@0x004BE000(vendor0),0x00000080@0x004BE080(vendor1),0x00000080@0x004BE100(vendor2),0x00000080@0x004BE180(vendor3),0x00002000@0x004BE200(provision),-@0x004C0200(userdata:grow)
 uuid:rootfs_a=614e0000-0000-4b53-8000-1d28000054a9
 uuid:rootfs_b=614e0000-0000-4b53-8000-1d28000054aa

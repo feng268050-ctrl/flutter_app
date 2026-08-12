@@ -539,6 +539,7 @@ emulator: hardware map (sim OEM contract)
   memory  : ${MEM} MiB   smp=${SMP}
   disk0   : /dev/vda ← rootfs.img (same as device)
   disk1   : /dev/vdb ← sim_virt oem.img → /oem
+  disk2   : /dev/vdc ← provision.img → /mnt/provision (per-developer identity + tunables)
   display : ${DISPLAY_DESC}
   nic eth0  MAC $MAC_ETH0  ← IP camera link (host Ethernet/USB-LAN → vmnet-bridged)
   nic wlan0 MAC $MAC_WLAN0 ← wifi.station (virtio; USB Wi-Fi dongle overrides when passed)
@@ -579,7 +580,7 @@ start) ;;
 	;;
 esac
 
-MEM="${EMULATOR_MEM:-2048}"
+MEM="${EMULATOR_MEM:-1024}"
 # cortex-a55 ≈ RK356x; avoid -cpu max feature surprises on Apple HVF
 # Default SMP=1: systemd 256 (sd-gens)/HVF races with smp>=2 hang after Welcome
 # on this virt motherboard; override with EMULATOR_CPU=4 when debugging perf.
@@ -611,7 +612,7 @@ if [[ -n "$(lws_emulator_pids || true)" ]]; then
 	stop_lws_emulator
 fi
 
-if [[ ! -f "$OUT/manifest.txt" || ! -r "$OUT/Image" || ! -r "$OUT/rootfs.img" || ! -r "$OUT/oem.img" ]]; then
+if [[ ! -f "$OUT/manifest.txt" || ! -r "$OUT/Image" || ! -r "$OUT/rootfs.img" || ! -r "$OUT/oem.img" || ! -r "$OUT/provision.img" ]]; then
 	log "emulator bundle incomplete — running build-emulator"
 	bash "$ROOT/scripts/build-emulator.sh"
 fi
@@ -619,6 +620,7 @@ fi
 [[ -r "$OUT/Image" ]] || die "missing $OUT/Image — make build-kernel"
 [[ -r "$OUT/rootfs.img" ]] || die "missing $OUT/rootfs.img — make build-rootfs"
 [[ -r "$OUT/oem.img" ]] || die "missing $OUT/oem.img"
+[[ -r "$OUT/provision.img" ]] || die "missing $OUT/provision.img — run: make build-emulator"
 
 # Stock Homebrew qemu lacks cortex-a55; fall back so EMULATOR_CPU_MODEL default still boots.
 if [[ -z "${EMULATOR_CPU_MODEL:-}" ]] && ! "$QEMU_BIN" -cpu help 2>&1 | grep -qE '(^|[[:space:]])cortex-a55([[:space:]]|$)'; then
@@ -691,6 +693,8 @@ trap cleanup_ssh_endpoint_on_exit EXIT
 	-device virtio-blk-pci,drive=rootdisk,bootindex=1 \
 	-drive if=none,file="$OUT/oem.img",format=raw,id=oemdisk \
 	-device virtio-blk-pci,drive=oemdisk \
+	-drive if=none,file="$OUT/provision.img",format=raw,id=provisiondisk \
+	-device virtio-blk-pci,drive=provisiondisk \
 	"${GPU_ARGS[@]}" \
 	-device virtio-keyboard-pci \
 	-device virtio-tablet-pci \

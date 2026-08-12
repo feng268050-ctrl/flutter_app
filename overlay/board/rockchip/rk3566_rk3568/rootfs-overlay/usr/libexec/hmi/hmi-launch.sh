@@ -220,6 +220,11 @@ export HOME="${HOME:-/root}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$XDG_CACHE_HOME"
 
+# libc localtime before reading prefs / launching Flutter (idempotent).
+if [ -x /usr/libexec/board/apply-datetime-prefs.sh ]; then
+	/usr/libexec/board/apply-datetime-prefs.sh || true
+fi
+
 # Dart/Flutter DateTime.now() follows TZ / libc localtime. Prefer product prefs,
 # then /etc/localtime, then Asia/Shanghai (ynh960 default). Without this, ICU may
 # stay on UTC and Settings/status clocks read eight hours behind CST.
@@ -326,12 +331,13 @@ if [ "$is_emulator" -eq 1 ]; then
 	WESTON_RENDERER_ARGS="--renderer=gl"
 fi
 
-# Cache 9p Mesa → tmpfs; bind-mount Mesa over Mali stubs; LD_PRELOAD GBM shims.
+# Cache 9p Mesa on rootfs (not /run tmpfs — ~120 MiB there OOMs a 2 GiB guest).
+# Bind /run/lws-gl-cache for flutter-wayland-client RPATH from fetch-emulator-swgl.
 EMU_MESA_DRI=""
 EMU_EGL_VENDOR=""
 EMU_LD_PRELOAD=""
 if [ "$is_emulator" -eq 1 ]; then
-	EMU_MESA_CACHE=/run/lws-gl-cache
+	EMU_MESA_CACHE=/var/cache/lws-gl
 	if [ ! -f "$EMU_MESA_CACHE/lib/dri/virtio_gpu_dri.so" ]; then
 		echo "hmi-launch: emulator — caching Mesa $EMU_MESA_SRC → $EMU_MESA_CACHE" >&2
 		rm -rf "$EMU_MESA_CACHE"
@@ -343,6 +349,9 @@ if [ "$is_emulator" -eq 1 ]; then
 			cp -a "$EMU_MESA_SRC/share/glvnd" "$EMU_MESA_CACHE/share/"
 		fi
 	fi
+	mkdir -p /run/lws-gl-cache
+	umount /run/lws-gl-cache 2>/dev/null || true
+	mount --bind "$EMU_MESA_CACHE" /run/lws-gl-cache
 	GL_ROOT="$EMU_MESA_CACHE"
 	EMU_MESA_LIB="$GL_ROOT/lib"
 	EMU_MESA_DRI="$GL_ROOT/lib/dri"

@@ -27,7 +27,7 @@ Identity value: PRODUCT_SN= — [A-Za-z0-9]; "-" allowed in input but stripped
   (L1P-S-001 → L1PS001) so Rockchip U-Boot serial# / DT serial-number stay intact.
 FORCE=1 required to overwrite a non-empty stored SN.
 
-Emulator / boards without /dev/vendor_storage fail clearly (no properties.ini identity fallback).
+Emulator / boards without /dev/vendor_storage write provision/identity.env instead.
 
 Optional RockUSB SN-only (macOS upgrade_tool SN / RSN) is documented in README;
 brand/model still require this SSH path after Linux boots.
@@ -87,12 +87,19 @@ else
 	echo "USB-SSH write-identity: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
 fi
 
-# Fail early on emulator (no Vendor Storage GPT / device node).
+# Fail early when target has neither Vendor Storage nor mounted provision.
+has_vs=0
+has_provision=0
 if usb_ssh_session_run_ssh "$ROOT" "$IFACE" \
 	"test -e /dev/vendor_storage" >/dev/null 2>&1; then
-	:
-else
-	die "/dev/vendor_storage missing on target — write-identity requires real hardware with vendor0–vendor3 GPT (emulator is unsupported)"
+	has_vs=1
+fi
+if usb_ssh_session_run_ssh "$ROOT" "$IFACE" \
+	"test -d /mnt/provision" >/dev/null 2>&1; then
+	has_provision=1
+fi
+if [[ "$has_vs" -eq 0 && "$has_provision" -eq 0 ]]; then
+	die "target has no /dev/vendor_storage and no /mnt/provision — flash GPT with vendor0–vendor3 + provision, or use emulator with provision.img"
 fi
 
 # Pass identity via env; values are shell-quoted for the remote command line.

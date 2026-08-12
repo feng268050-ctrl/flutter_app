@@ -6,7 +6,6 @@ Rockchip Vendor Storage GPT layout, frozen ID map for product identity (SN /
 brand / model), sealed cloud Ed25519 (ID 22), and HUK-wrapped OP-TEE seal KEK
 (ID 23). Factory images MUST NOT overwrite vendor partitions so provisioned
 identity and secrets survive flash.
-
 ## Requirements
 ### Requirement: Vendor Storage GPT partitions exist and are frozen
 
@@ -24,22 +23,12 @@ The product GPT in `board/parameter-buildroot-fit.txt` (and packaged `parameter.
 
 ### Requirement: make flash MUST NOT package vendor payloads
 
-`make build-img` / factory packaging SHALL include Vendor Storage partitions in GPT via `parameter` but MUST NOT add `vendor0`–`vendor3` entries to `package-file` and MUST NOT embed `vendor*.img` (or equivalent) in `factory.img` / `update.img`. Build or verify tooling SHALL fail closed if `package-file` lists a vendor partition or if a vendor image is present in the factory staging inputs. `make flash` (`upgrade_tool uf`) therefore SHALL NOT overwrite Vendor Storage contents when flashing a compliant factory image with unchanged vendor geometry.
+`make build-img` / factory packaging SHALL include Vendor Storage partitions in GPT via `parameter` but MUST NOT add `vendor0`–`vendor3` or **`provision`** entries to `package-file` and MUST NOT embed `vendor*.img` or `provision.img` in `factory.img` / `update.img`. Build or verify tooling SHALL fail closed if package-file lists those partitions or if such images appear in factory staging. Compliant `make flash` with unchanged geometry SHALL preserve Vendor Storage and provision contents.
 
-#### Scenario: package-file has no vendor rows
+#### Scenario: Repeat flash preserves provision tunables
 
-- **WHEN** inspecting the ynh960 Linux A/B `package-file` used by `build-img`
-- **THEN** it SHALL NOT contain `vendor0`, `vendor1`, `vendor2`, or `vendor3` payload rows
-
-#### Scenario: Accidental vendor image fails the build
-
-- **WHEN** a `vendor0.img` (or other `vendor*.img`) is present in factory staging or package-file references a vendor partition
-- **THEN** `make build-img` (or its verify step) SHALL exit non-zero before producing a releasable `factory.img`
-
-#### Scenario: Reflash preserves provisioned SN
-
-- **WHEN** a board has a non-empty product SN in Vendor Storage, vendor GPT geometry is unchanged, and the operator runs a compliant `make flash`
-- **THEN** after reboot the product SN read path SHALL still return that same SN
+- **WHEN** `properties.ini` on provision holds `camera_ip=10.0.0.50` before a second compliant `make flash`
+- **THEN** after reboot `camera_ip` SHALL still be `10.0.0.50`
 
 ### Requirement: Vendor Storage ID map for brand, model, and sn
 
@@ -86,36 +75,38 @@ The host build system SHALL provide `make write-identity` that writes `BRAND`, `
 
 ### Requirement: HAL and board serial helpers read identity from Vendor Storage
 
-HAL `ProductInfo.brand`, `ProductInfo.model`, and `ProductInfo.sn` SHALL be loaded from Vendor Storage (IDs above), not from `product.ini` keys `brand` / `model` / `sn`. `ProductInfo.chipId` SHALL remain chip/board serial for Apps, diagnostics, and secrets and MUST NEVER equal the product SN key from `product.ini`. Board helpers used for USB gadget iSerial and host `make devices` SN enrichment SHALL use the same product SN rule as `ProductInfo.sn`. Host `make devices` MUST list **SN** only (no ChipID column). Stale `brand`/`model`/`sn` lines in `/var/lib/hal/product.ini` MUST be ignored for these properties.
+HAL `ProductInfo.brand`, `ProductInfo.model`, and `ProductInfo.sn` on **Rockchip boards** SHALL be loaded from Vendor Storage (IDs above), not from `properties.ini` or OEM identity files. On boards **without** Vendor Storage, identity SHALL be loaded from `provision/identity.env` per `gpt-provision-partition`. `ProductInfo.chipId` SHALL remain chip/board serial. Board helpers for USB gadget iSerial and host `make devices` SHALL use the same product SN rule. Host `make devices` MUST list **SN** only. Stale identity keys in userdata `properties.ini` MUST be ignored.
 
 #### Scenario: Ini stale keys ignored
 
-- **WHEN** `product.ini` contains `sn=OLD` but Vendor Storage SN is `NEW`
+- **WHEN** userdata or provision `properties.ini` contains `sn=OLD` but Vendor Storage SN is `NEW`
 - **THEN** `ProductInfo.sn` and `make devices` SN SHALL be `NEW`
 
-#### Scenario: SysInfo still exposes both
+#### Scenario: Emulator without VS uses provision identity
 
-- **WHEN** Vendor Storage SN is `FACTORY-001` and chip serial is `ABC123`
-- **THEN** `SysInfoSnapshot.serialNumber` SHALL be `FACTORY-001` and `chipId` SHALL be `ABC123`
+- **WHEN** the QEMU guest has no `/dev/vendor_storage` and `provision/identity.env` has `sn=SIM-A1B2`
+- **THEN** `ProductInfo.sn` SHALL be `SIM-A1B2` (not OEM seed)
 
 ### Requirement: On-board vendor_storage tooling
 
-The appliance rootfs SHALL include a working Vendor Storage userspace tool (Rockchip `vendor_storage` or equivalent) and thin board helpers under **`/usr/libexec/board/`** that read and write the product identity ID map. After GPT adoption, `/dev/vendor_storage` SHALL be usable for these helpers on real hardware. Emulator or environments without Vendor Storage SHALL fail clearly on write and SHALL apply the documented empty-SN → chip-ID fallback on read. Operator commands `/usr/bin/read-identity` and `/usr/bin/write-identity` SHALL target those helpers.
+The appliance rootfs SHALL include Vendor Storage tooling and board helpers for Rockchip boards. Emulator or environments without Vendor Storage SHALL read identity from **provision** (not OEM stub) and SHALL apply empty-SN → chip-ID fallback on read. `make write-identity` on non-Rockchip or emulator SHALL write provision `identity.env` when VS is unavailable instead of exiting solely for missing `/dev/vendor_storage`.
 
-#### Scenario: Device node present on hardware
+#### Scenario: Emulator write uses provision
 
-- **WHEN** a ynh960-class board has adopted the vendor GPT and booted the new rootfs
-- **THEN** identity write helpers under `/usr/libexec/board/` SHALL be able to open Vendor Storage successfully
+- **WHEN** `make write-identity` targets the QEMU guest without Vendor Storage
+- **THEN** the command SHALL succeed by writing `provision/identity.env`
+- **AND** SHALL NOT write identity keys into userdata `properties.ini`
 
-#### Scenario: Emulator write fails clearly
+#### Scenario: Cloud Ed25519 helpers without VS
 
-- **WHEN** `make write-identity` targets the QEMU emulator without Vendor Storage
-- **THEN** the command SHALL exit non-zero with a clear message rather than silently writing `product.ini` identity keys
+- **WHEN** `/dev/vendor_storage` is absent and provision is mounted
+- **THEN** `read-cloud-ed25519-sealed` / `write-cloud-ed25519-sealed` SHALL use `/mnt/provision/cloud-ed25519.sealed`
+- **AND** SHALL NOT fail solely because Vendor Storage is missing (unlike pre-provision emulator behavior)
 
-#### Scenario: Helpers not canonical under hmi
+#### Scenario: Emulator OEM stub removed
 
-- **WHEN** inspecting the shipped rootfs
-- **THEN** the canonical `read-product-identity` / `write-product-identity` implementations SHALL live under `/usr/libexec/board/`
+- **WHEN** inspecting OEM source for `boards/sim`
+- **THEN** `identity.env` SHALL not be shipped in the pack
 
 ### Requirement: Optional RockUSB SN-only path documented
 
@@ -162,4 +153,19 @@ The appliance rootfs SHALL provide thin board helpers under `/usr/libexec/board/
 
 - **WHEN** a product image with this change is inspected
 - **THEN** read/write helpers for the wrapped seal KEK ID SHALL exist under `/usr/libexec/board/`
+
+### Requirement: Rockchip boards retain Vendor Storage alongside provision
+
+On Rockchip product boards, Vendor Storage SHALL remain the authority for per-unit **brand**, **model**, **sn**, sealed cloud Ed25519 (ID **22**), and HUK-wrapped seal KEK (ID **23**). The GPT **`provision`** partition SHALL hold factory tunables (`properties.ini`) per `gpt-provision-partition`. Identity helpers MUST NOT read OEM `identity.env` or userdata for brand/model/sn on Rockchip boards when `/dev/vendor_storage` exists.
+
+#### Scenario: VS authority on Rockchip
+
+- **WHEN** `/dev/vendor_storage` is present and VS SN is `LC001`
+- **THEN** `read-identity sn` SHALL return `LC001` regardless of provision or OEM files
+
+#### Scenario: Loader SN path unchanged
+
+- **WHEN** documentation describes factory identity provisioning after this change
+- **THEN** it SHALL state that Rockchip Loader/Maskrom `SN`/`RSN` use Vendor Storage SN ID
+- **AND** full brand/model still use `make write-identity` over SSH
 

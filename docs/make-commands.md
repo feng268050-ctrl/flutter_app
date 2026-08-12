@@ -312,8 +312,8 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make write-identity`
 
 - **怎么用：** `make write-identity BRAND=Innohi MODEL='L1 Pro' PRODUCT_SN=SN123`；覆盖已有 SN 加 `FORCE=1`
-- **何时用：** 产测/出厂写入 brand/model/产品 SN（Vendor Storage）。
-- **注意：** 选板用 `SN=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。
+- **何时用：** 产测/出厂写入 brand/model/产品 SN（Rockchip Vendor Storage；emulator / 无 VS 板写入 `provision/identity.env`）。
+- **注意：** 选板用 `SN=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。QEMU 需 `provision.img`（`make build-emulator`）。
 
 ### `make reset-process-library`
 
@@ -586,7 +586,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make flash`
 
 - **怎么用：** `make flash`；覆盖镜像 `IMAGE=/path/to.img make flash`；指定 SKU `FACTORY_SKU=… APP=… make flash`
-- **何时用：** USB 烧 `factory.img`（或 Maskrom `ul` 路径）。
+- **何时用：** USB 烧 `factory.img`（或 Maskrom `ul` 路径）。**返厂 flash** 擦除 **userdata**；**Vendor Storage + provision** 因未打入 `package-file` 而保留（见 `docs/storage-layout.md`）。
 - **默认镜像：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img`（或 `update.img` symlink）。
 - **参数：** `IMAGE`/`UPDATE_IMG`、`APP`、`FACTORY_SKU`、`SN`、`UPGRADE_NORESET=1`。
 
@@ -620,10 +620,10 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 ### `make build-emulator`
 
-- **怎么用：** `make build-emulator`
+- **怎么用：** `make build-emulator`；重置模拟器身份盘：`FORCE=1 make build-emulator`
 - **何时用：** 已有 `Image` + `rootfs.img` 后组装模拟器目录。
-- **参数：** `APP`（模拟器 rootfs 固定扩到 1536M，设备 OTA 仍为 ~600M）。
-- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim_virt` oem）。
+- **参数：** `APP`（模拟器 rootfs 固定扩到 1536M，设备 OTA 仍为 ~600M）；`FORCE=1` 仅重建 `provision.img`（清空 identity/tunables，下次启动 autogen 新 SN）。
+- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim_virt` oem；**默认保留**已有 `provision.img`）。
 
 ### `make emulator` / `make emulator-stop`
 
@@ -634,7 +634,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | 变量 | 默认 | 说明 |
 |------|------|------|
 | `EMULATOR_ETH0_BRIDGE` | `auto` | `off` = 无网桥（无 IP 相机时） |
-| `EMULATOR_MEM` / `EMULATOR_CPU` | `2048` / `4` | 内存 MiB / vCPU 核数 |
+| `EMULATOR_MEM` / `EMULATOR_CPU` | `1024` / `1` | 内存 MiB / vCPU 核数 |
 | `EMULATOR_CPU_MODEL` | `cortex-a55` | QEMU `-cpu` 型号 |
 | `EMULATOR_SSH_PORT` | `2222` | 主机 SSH 转发 |
 | `EMULATOR_XRES` / `EMULATOR_YRES` | `1536` / `960` | 显示 |

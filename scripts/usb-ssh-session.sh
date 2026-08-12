@@ -3,6 +3,12 @@
 # After usb_ssh_session_select: TRANSPORT (usb-ssh|ssh), IFACE, TARGET_ADDR, LOCATION_ID.
 set -euo pipefail
 
+_USB_SSH_SESSION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Host SSH helpers (require_ssh_identity, parse_ssh_endpoint, usb_ssh_bind_pair, …).
+# Loaded here so callers may use them before usb_ssh_session_load_env / prepare.
+# shellcheck source=scripts/usb-ssh-common.sh
+source "$_USB_SSH_SESSION_DIR/usb-ssh-common.sh"
+
 usb_ssh_session_root() {
 	local self="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
 	cd "$(dirname "$self")/.." && pwd

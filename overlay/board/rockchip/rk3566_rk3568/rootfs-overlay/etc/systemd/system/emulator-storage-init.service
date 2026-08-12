@@ -1,0 +1,16 @@
+[Unit]
+Description=Emulator provision mount and userdata prefs bind
+DefaultDependencies=no
+After=systemd-remount-fs.service local-fs.target
+Before=oem-compose.service hmi.service
+ConditionKernelCommandLine=lws.emulator=1
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/board/emulator-storage-init.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target

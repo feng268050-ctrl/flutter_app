@@ -1,19 +1,14 @@
 #!/bin/sh
-# Read product identity from Rockchip Vendor Storage.
+# Read product identity from Rockchip Vendor Storage or provision/identity.env.
 # Usage:
 #   read-product-identity.sh              # print brand / model / sn (one per line, labeled)
 #   read-product-identity.sh brand|model|sn
-# Empty / missing Vendor Storage field → empty string (caller applies chip-ID fallback for sn).
-#
-# Emulator stub: when /dev/vendor_storage is absent, optionally read OEM
-# identity.env (see oem/boards/sim/identity.env). Never used when the VS
-# device node exists — empty VS fields stay empty until write-identity.
+# Empty field → empty string (caller applies chip-ID fallback for sn).
 set -eu
 
 IDS_FILE="${VENDOR_STORAGE_IDS:-/usr/libexec/board/vendor-storage-ids.txt}"
 VENDOR_STORAGE_BIN="${VENDOR_STORAGE_BIN:-/usr/bin/vendor_storage}"
-# Override path for tests; default search: /oem/identity.env then /oem/boards/*/identity.env
-IDENTITY_STUB="${IDENTITY_STUB:-}"
+PROVISION_IDENTITY="${PROVISION_IDENTITY:-/mnt/provision/identity.env}"
 
 die() { echo "read-product-identity: ERROR: $*" >&2; exit 1; }
 
@@ -26,25 +21,21 @@ die() { echo "read-product-identity: ERROR: $*" >&2; exit 1; }
 : "${VENDOR_BRAND_NAME:=VENDOR_CUSTOM_ID_14}"
 : "${VENDOR_MODEL_NAME:=VENDOR_CUSTOM_ID_15}"
 
-# Read one ID into stdout (trimmed ASCII, no trailing NULs). Fail → empty (exit 0).
 read_id() {
 	local name="$1"
 	local tmp out
 	[ -x "$VENDOR_STORAGE_BIN" ] || return 0
 	[ -e /dev/vendor_storage ] || return 0
 	tmp="$(mktemp)"
-	# stderr discarded: missing ID / open fail → empty field
 	if ! "$VENDOR_STORAGE_BIN" -r "$name" -t file -i "$tmp" >/dev/null 2>&1; then
 		rm -f "$tmp"
 		return 0
 	fi
-	# Strip NULs and trailing whitespace/newlines; keep printable content.
 	out="$(tr -d '\000' <"$tmp" | tr -d '\r' | sed -e 's/[[:space:]]*$//' -e 's/^[[:space:]]*//')"
 	rm -f "$tmp"
 	printf '%s' "$out"
 }
 
-# Parse brand|model|sn from a flat key=value identity.env (comments/blanks ignored).
 read_stub_field() {
 	local field="$1"
 	local file="$2"
@@ -66,25 +57,49 @@ read_stub_field() {
 	done <"$file"
 }
 
-resolve_stub_file() {
-	local f
-	if [ -n "$IDENTITY_STUB" ] && [ -r "$IDENTITY_STUB" ]; then
-		printf '%s' "$IDENTITY_STUB"
-		return 0
+is_emulator_board() {
+	grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null && return 0
+	[ -d /sys/firmware/qemu_fw_cfg ] && return 0
+	if [ -f /oem/manifest.json ]; then
+		case "$(sed -n 's/.*"board_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /oem/manifest.json | head -1)" in
+		sim) return 0 ;;
+		esac
 	fi
-	if [ -r /oem/identity.env ]; then
-		printf '%s' /oem/identity.env
-		return 0
-	fi
-	for f in /oem/boards/*/identity.env; do
-		[ -r "$f" ] || continue
-		printf '%s' "$f"
-		return 0
-	done
 	return 1
 }
 
-# Prefer Vendor Storage when the device node exists; else OEM emulator stub.
+# Dev-only: autogen per provision.img when sim/emulator has no identity file yet.
+maybe_autogen_provision_identity() {
+	local chip hash sn
+	[ -e /dev/vendor_storage ] && return 0
+	is_emulator_board || return 0
+	[ -d /mnt/provision ] || return 0
+	if [ -f "$PROVISION_IDENTITY" ] && [ -n "$(read_stub_field sn "$PROVISION_IDENTITY")" ]; then
+		return 0
+	fi
+	chip="$(/usr/libexec/board/read-device-serial.sh --chip-id 2>/dev/null || true)"
+	hash="$(printf '%s' "${chip:-sim}" | cksum | awk '{print $1}')"
+	sn="SIM$(printf '%06d' $((hash % 1000000)))"
+	mkdir -p "$(dirname "$PROVISION_IDENTITY")"
+	{
+		echo "brand=LaserCyber"
+		echo "model=L1 Pro"
+		echo "sn=$sn"
+	} >"$PROVISION_IDENTITY"
+	chmod 0644 "$PROVISION_IDENTITY" 2>/dev/null || true
+	log_autogen() { echo "read-product-identity: autogen $PROVISION_IDENTITY sn=$sn" >&2; }
+	log_autogen
+}
+
+resolve_provision_identity_file() {
+	if [ -r "$PROVISION_IDENTITY" ]; then
+		printf '%s' "$PROVISION_IDENTITY"
+		return 0
+	fi
+	maybe_autogen_provision_identity
+	[ -r "$PROVISION_IDENTITY" ] && printf '%s' "$PROVISION_IDENTITY"
+}
+
 read_field() {
 	local field="$1"
 	local vs_name="$2"
@@ -93,7 +108,7 @@ read_field() {
 		read_id "$vs_name"
 		return 0
 	fi
-	stub="$(resolve_stub_file 2>/dev/null || true)"
+	stub="$(resolve_provision_identity_file 2>/dev/null || true)"
 	[ -n "$stub" ] || return 0
 	out="$(read_stub_field "$field" "$stub")"
 	printf '%s' "$out"

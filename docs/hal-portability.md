@@ -214,5 +214,7 @@ OEM/compose profile **fails hard** (no App asset fallback). Host/desktop may
 still `loadAsset` `assets/hal/board_profile.json` for UI work without `/oem`.
 
 OEM owns board×screen SKU only (no properties.ini seed); tunables via
-`/var/lib/hal/properties.ini` + `make set-prop`. See
+`/var/lib/hal/properties.ini` (bind to `/mnt/provision/properties.ini` on device)
++ `make set-prop`. Identity: Rockchip Vendor Storage; non-Rockchip / emulator
+`provision/identity.env`. See
 [`docs/platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §3.5.

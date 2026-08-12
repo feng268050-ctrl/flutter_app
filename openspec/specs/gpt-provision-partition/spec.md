@@ -1,7 +1,8 @@
-# gpt-provision-partition — delta
+# gpt-provision-partition Specification
 
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change gpt-provision-partition. Update Purpose after archive.
+## Requirements
 ### Requirement: GPT provision partition exists and geometry is frozen
 
 The product GPT in `board/parameter-buildroot-fit.txt` (and packaged `parameter.txt`) SHALL include a partition named **`provision`** with `PARTLABEL=provision`, placed **before** the grow `userdata` entry. Default size for the ynh960 product line SHALL be **4 MiB** (`0x2000` 512-byte sectors). After first production adoption, start LBA and size of `provision` SHALL be treated as a **frozen ABI** (same policy as `vendor0`–`vendor3`). Subsequent parameter revisions MUST NOT move or shrink `provision` without an explicit documented migration that accepts provision data loss.
@@ -39,13 +40,29 @@ Rockchip boards MUST retain `vendor0`–`vendor3` in GPT and MUST NOT move produ
 
 ### Requirement: Non-Rockchip boards use provision only
 
-For boards without Rockchip Vendor Storage, all provision data SHALL live on the `provision` partition: `identity.env` (`brand` / `model` / `sn`), `properties.ini`, sealed cloud Ed25519 blob, and seal KEK wrap file. `make write-identity` SHALL write `identity.env` on provision (not fail solely because `/dev/vendor_storage` is absent).
+For boards without Rockchip Vendor Storage, all provision data SHALL live on the `provision` partition: `identity.env` (`brand` / `model` / `sn`), `properties.ini`, sealed cloud Ed25519 blob at **`/mnt/provision/cloud-ed25519.sealed`**, and seal KEK wrap file at **`/mnt/provision/seal-kek.wrap`**. `make write-identity` SHALL write `identity.env` on provision (not fail solely because `/dev/vendor_storage` is absent).
+
+Board helpers `read-cloud-ed25519-sealed` / `write-cloud-ed25519-sealed` SHALL route storage by availability: when `/dev/vendor_storage` is present, read/write Vendor Storage ID **22**; otherwise read/write the provision file above. Helpers MUST store **opaque Secrets-sealed ciphertext only** (never plaintext private keys). HAL `CloudEd25519SealedStore` continues to shell these helpers — no duplicate VS/provision routing in Dart.
 
 #### Scenario: write-identity on non-Rockchip
 
 - **WHEN** the operator runs `make write-identity` on a board without `/dev/vendor_storage` but with mounted provision
 - **THEN** `provision/identity.env` SHALL hold the written brand, model, and SN
 - **AND** readback via `read-identity` SHALL match
+
+#### Scenario: Cloud Ed25519 sealed blob on provision when VS absent
+
+- **WHEN** the guest or board has no `/dev/vendor_storage`, mounted provision, non-empty product SN, and 云服务 enabled
+- **AND** `CloudEd25519Identity.ensureLocalKey` seals a new identity
+- **THEN** `write-cloud-ed25519-sealed` SHALL persist to `/mnt/provision/cloud-ed25519.sealed`
+- **AND** `read-cloud-ed25519-sealed --present` SHALL exit 0
+- **AND** subsequent reboots SHALL load the same blob from provision (not regenerate)
+
+#### Scenario: Rockchip cloud key stays on Vendor Storage
+
+- **WHEN** `/dev/vendor_storage` is present on a Rockchip board
+- **THEN** `read-cloud-ed25519-sealed` / `write-cloud-ed25519-sealed` SHALL use Vendor Storage ID **22**
+- **AND** SHALL NOT treat `provision/cloud-ed25519.sealed` as authoritative over VS
 
 ### Requirement: make flash MUST NOT package provision payloads
 
@@ -84,6 +101,12 @@ The appliance SHALL mount `PARTLABEL=provision` early in boot (before `bind-pref
 - **WHEN** first boot after upgrade finds `properties.ini` only under `/userdata/hal/` and provision has no file
 - **THEN** the platform SHALL copy tunables to `/mnt/provision/properties.ini` before Apps read tunables
 
+#### Scenario: GPT adoption with stale superblock
+
+- **WHEN** `PARTLABEL=provision` exists but the partition carries a stale or wrong ext4 superblock (e.g. old `LABEL=userdata` after repartition)
+- **THEN** `provision-mount` SHALL `mkfs.ext4 -L provision` once and mount successfully
+- **AND** SHALL bind `/var/lib/hal/properties.ini` to `/mnt/provision/properties.ini`
+
 ### Requirement: Factory-reset and userdata wipe MUST NOT erase provision
 
 User factory-reset and full userdata wipe (flash hygiene or `/usr/bin/factory-reset`) SHALL erase **all** operator content on the **userdata** partition. They MUST NOT `mkfs`, `dd`, or delete files on `PARTLABEL=provision`. They MUST NOT clear Rockchip Vendor Storage IDs **1** / **20** / **21** / **22** / **23** on Rockchip boards.
@@ -109,3 +132,4 @@ The P3.2 QEMU guest (`sim_virt`) SHALL use a host-side **`provision.img`** virti
 
 - **WHEN** inspecting `oem/boards/sim/` after this change
 - **THEN** `identity.env` SHALL NOT be present in the OEM source tree
+

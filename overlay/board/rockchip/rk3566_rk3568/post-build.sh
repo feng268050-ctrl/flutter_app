@@ -68,6 +68,7 @@ ln -sf /usr/libexec/usb/usb-plug-ssh-diag.sh "$TARGET_DIR/usr/bin/diagnose-usb-s
 ln -sf /usr/libexec/board/read-device-serial.sh "$TARGET_DIR/usr/bin/read-serial"
 ln -sf /usr/libexec/board/read-product-identity.sh "$TARGET_DIR/usr/bin/read-identity"
 ln -sf /usr/libexec/board/write-product-identity.sh "$TARGET_DIR/usr/bin/write-identity"
+ln -sf /usr/libexec/board/factory-reset.sh "$TARGET_DIR/usr/bin/factory-reset"
 ln -sf /usr/libexec/board/read-cloud-ed25519-sealed.sh "$TARGET_DIR/usr/bin/read-cloud-ed25519-sealed"
 ln -sf /usr/libexec/board/write-cloud-ed25519-sealed.sh "$TARGET_DIR/usr/bin/write-cloud-ed25519-sealed"
 ln -sf /usr/libexec/board/read-seal-kek-wrapped.sh "$TARGET_DIR/usr/bin/read-seal-kek-wrapped"

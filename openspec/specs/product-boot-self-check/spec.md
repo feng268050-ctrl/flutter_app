@@ -99,7 +99,7 @@ Item labels SHOULD align with Monitor → Alarm Information wording where applic
 
 #### Scenario: Modbus not-yet-ready is retried before failing
 
-- **WHEN** the first Modbus snapshot is not usable (port not open, empty groups, or `device.type` not ready)
+- **WHEN** the first Modbus snapshot is not usable (port not open, empty groups, `device.type` not ready, or `data` group missing any of the four boot self-check temperature values)
 - **THEN** the pipeline SHALL retry Modbus group reads within a bounded readiness budget while rows may remain in checking
 - **AND** evaluation SHALL use the first usable snapshot if one arrives before the budget elapses
 - **AND** real alarm / over-temp bits on a usable snapshot SHALL still mark the corresponding items **fail**

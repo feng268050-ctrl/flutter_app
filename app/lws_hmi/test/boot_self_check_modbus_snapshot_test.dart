@@ -24,11 +24,18 @@ class _GroupModbus extends ModbusRtuClient {
   bool openResult;
   final List<String> readGroups = <String>[];
   int openCalls = 0;
+  int exclusiveSessionCalls = 0;
 
   @override
   Future<bool> open() async {
     openCalls++;
     return openResult;
+  }
+
+  @override
+  Future<T> exclusiveSession<T>(Future<T> Function() body) async {
+    exclusiveSessionCalls++;
+    return body();
   }
 
   @override
@@ -83,6 +90,7 @@ void main() {
     );
 
     final snap = await BootSelfCheckModbusSnapshotReader.read(modbus);
+    expect(modbus.exclusiveSessionCalls, 1);
     expect(modbus.readGroups, ['status', 'data']);
     expect(snap.modbusAvailable, isTrue);
     expect(snap.controllerReady, isTrue);
@@ -103,10 +111,47 @@ void main() {
   test('group failure soft-fails without seed', () async {
     final modbus = _GroupModbus(failStatus: true, failData: true);
     final snap = await BootSelfCheckModbusSnapshotReader.read(modbus);
+    expect(modbus.readGroups, ['status']);
     expect(snap.modbusAvailable, isFalse);
     expect(snap.isUsable, isFalse);
     expect(BootSelfCheckLiveCacheSeed.takeStatus(), isNull);
     expect(BootSelfCheckLiveCacheSeed.takeData(), isNull);
+  });
+
+  test('status ok without data is not usable', () async {
+    final modbus = _GroupModbus(
+      status: _readyStatus(),
+      data: const {},
+    );
+
+    final snap = await BootSelfCheckModbusSnapshotReader.read(modbus);
+    expect(snap.modbusAvailable, isTrue);
+    expect(snap.controllerReady, isTrue);
+    expect(snap.dataReady, isFalse);
+    expect(snap.isUsable, isFalse);
+  });
+
+  test('readUntilReady retries when data arrives late', () async {
+    final modbus = _GroupModbus(
+      status: _readyStatus(),
+      data: const {},
+    );
+
+    unawaited(
+      Future<void>.delayed(const Duration(milliseconds: 40), () {
+        modbus.data = _readyData;
+      }),
+    );
+
+    final snap = await BootSelfCheckModbusSnapshotReader.readUntilReady(
+      modbus,
+      readyBudget: const Duration(seconds: 2),
+      retryInterval: const Duration(milliseconds: 20),
+    );
+
+    expect(snap.isUsable, isTrue);
+    expect(snap.dataReady, isTrue);
+    expect(modbus.readGroups.length, greaterThan(2));
   });
 
   test('readUntilReady retries until controller is usable', () async {

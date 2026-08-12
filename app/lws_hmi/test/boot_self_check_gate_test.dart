@@ -245,13 +245,42 @@ void main() {
       BootSelfCheckGate.setActive(true);
       var released = false;
       final waiter = BootSelfCheckGate.waitForModbusAccess(
-        armGrace: Duration.zero,
         pollInterval: const Duration(milliseconds: 10),
       ).then((_) => released = true);
 
       await Future<void>.delayed(const Duration(milliseconds: 30));
       expect(released, isFalse);
       BootSelfCheckGate.markCompletedInProcess();
+      await waiter;
+      expect(released, isTrue);
+    });
+
+    test('waitForModbusAccess blocks until self-check starts or completes',
+        () async {
+      var released = false;
+      final waiter = BootSelfCheckGate.waitForModbusAccess(
+        pollInterval: const Duration(milliseconds: 10),
+      ).then((_) => released = true);
+
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(released, isFalse);
+
+      BootSelfCheckGate.setActive(true);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(released, isFalse);
+
+      BootSelfCheckGate.markCompletedInProcess();
+      await waiter;
+      expect(released, isTrue);
+    });
+
+    test('waitForModbusAccess proceeds after startup deadline', () async {
+      var released = false;
+      final waiter = BootSelfCheckGate.waitForModbusAccess(
+        pollInterval: const Duration(milliseconds: 10),
+        startupDeadline: const Duration(milliseconds: 50),
+      ).then((_) => released = true);
+
       await waiter;
       expect(released, isTrue);
     });

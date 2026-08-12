@@ -4,13 +4,14 @@
 /// post–Wi‑Fi retries before any WebSocket handshake starts.
 library;
 
-enum CloudLinkUiPhase { connecting, connected, failed }
+enum CloudLinkUiPhase { disabled, connecting, connected, failed }
 
 final class CloudLinkUiStatus {
   const CloudLinkUiStatus({required this.phase});
 
   final CloudLinkUiPhase phase;
 
+  static const disabled = CloudLinkUiStatus(phase: CloudLinkUiPhase.disabled);
   static const connecting =
       CloudLinkUiStatus(phase: CloudLinkUiPhase.connecting);
   static const connected = CloudLinkUiStatus(phase: CloudLinkUiPhase.connected);

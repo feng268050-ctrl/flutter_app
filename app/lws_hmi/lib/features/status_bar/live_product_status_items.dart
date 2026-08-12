@@ -41,7 +41,7 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
   List<BluetoothRemoteDevice> _btDevices = const [];
   BluetoothPairingChallenge? _btChallenge;
   IpCameraUiStatus _camera = IpCameraUiStatus.connecting;
-  CloudLinkUiStatus _cloudLink = CloudLinkUiStatus.connecting;
+  CloudLinkUiStatus _cloudLink = CloudLinkUiStatus.disabled;
 
   StreamSubscription<WifiRadioState>? _wifiRadioSub;
   StreamSubscription<WifiConnectionState>? _wifiConnSub;
@@ -147,7 +147,7 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
   void _bindCloudLink() {
     final runtime = CloudLocalRuntimeScope.maybeOf(context);
     if (runtime == null) {
-      _cloudLink = CloudLinkUiStatus.connecting;
+      _cloudLink = CloudLinkUiStatus.disabled;
       return;
     }
     _cloudLink = runtime.currentLinkStatus;
@@ -260,7 +260,7 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
       wifiSignalDbm: _wifiConn.signalDbm,
       iconSize: widget.iconSize,
       remoteLocked: remoteLocked,
-      cloudStatus: mapCloudLinkStatus(_cloudLink.phase),
+      cloudPhase: _cloudLink.phase,
     );
     return widget.builder(context, items);
   }

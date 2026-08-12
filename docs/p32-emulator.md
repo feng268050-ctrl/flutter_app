@@ -4,7 +4,7 @@ Goal: prove **one OS** (`Image` from `make build-kernel` + `rootfs.img` from `ma
 
 **UI scale:** `display.conf` `ui_scale=1.0` is physical 1:1 (no App hard-coded rematch). The **sim_virt** OEM screen pack (`oem/screens/virt/screen.json`) carries **`default_ui_scale=1.28`** (~128%) for the 1536×960 virtio display — seeded into `display.conf` on first boot when the key is absent. Override in OS Settings → Display if needed (or write `ui_scale=1.28` under `/var/lib/hal/display.conf`). Physical **ynh960** panels use a separate OEM default (`1.13` / ~113%).
 
-**Host:** Apple Silicon **QEMU** (`make emulator` / qemu-virgl). An earlier plan used UTM; that path is deprecated — see [`p32-utm-guest.md`](p32-utm-guest.md) (redirect only).
+**Host:** Apple Silicon **QEMU** (`make emulator` / qemu-virgl). OpenSpec capability: **`p32-qemu-guest`**.
 
 OpenSpec: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`. Plan contract: platform plan §6.3 (three NICs + USB; no OTG).
 

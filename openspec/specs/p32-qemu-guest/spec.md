@@ -1,8 +1,9 @@
-# p32-utm-guest Specification
+# p32-qemu-guest Specification
 
 ## Purpose
 
-P3.2 same-OS **QEMU** guest (capability id `p32-utm-guest` is historical): shared device `Image` + rootfs content + `sim_virt` OEM, host VirGL, product-shaped NICs/USB, no OTG. Formal launcher is `make emulator` (`qemu-system-aarch64`), not UTM.
+P3.2 same-OS **QEMU** guest: shared device `Image` + rootfs content + `sim_virt` OEM, host VirGL, product-shaped NICs/USB, no OTG. Formal launcher is `make emulator` (`qemu-system-aarch64`).
+
 ## Requirements
 ### Requirement: Same OS artifacts in emulator
 
@@ -40,7 +41,7 @@ After OEM compose succeeds in the guest, `hmi.service` SHALL start the HMI via `
 
 ### Requirement: QEMU host launcher with VirGL
 
-`make emulator` SHALL launch `qemu-system-aarch64` with the published Image, emulator rootfs.img, sim_virt oem.img, and **`provision.img`**, using host VirGL (`virtio-gpu-gl`) on the documented host QEMU build (macOS: qemu-virgl via `make setup-emulator-qemu`). It MUST NOT treat “start an empty UTM VM” as success. Guest Mesa for VirGL MAY be provided via a host 9p share (not baked into the device rootfs). The guest SHALL mount `PARTLABEL=provision` from the virtio disk. Per-developer identity when Vendor Storage is absent SHALL come from `provision/identity.env` on that disk, not from shared OEM seeds.
+`make emulator` SHALL launch `qemu-system-aarch64` with the published Image, emulator rootfs.img, sim_virt oem.img, and **`provision.img`**, using host VirGL (`virtio-gpu-gl`) on the documented host QEMU build (macOS: qemu-virgl via `make setup-emulator-qemu`). It MUST NOT treat starting an empty/non-appliance VM as success. Guest Mesa for VirGL MAY be provided via a host 9p share (not baked into the device rootfs). The guest SHALL mount `PARTLABEL=provision` from the virtio disk. Per-developer identity when Vendor Storage is absent SHALL come from `provision/identity.env` on that disk, not from shared OEM seeds.
 
 #### Scenario: make emulator invokes QEMU
 
@@ -103,4 +104,3 @@ The P3.2 emulator SHALL continue to boot the bare kernel `Image` with QEMU `-mac
 - **WHEN** an operator runs `make build-emulator` / `make emulator` after multi-configuration product FITs exist
 - **THEN** the guest SHALL still start from the published bare `Image` + QEMU virt DT
 - **AND** MUST NOT depend on extracting a board FDT from `boot.img` for the virt machine
-

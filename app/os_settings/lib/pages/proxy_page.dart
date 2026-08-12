@@ -22,12 +22,28 @@ class _ProxyPageState extends State<ProxyPage> {
   String _user = '';
   String _pass = '';
   bool _busy = false;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
     unawaited(_load());
+  }
+
+  void _toast(String message) {
+    if (!mounted || message.isEmpty) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  String _friendlyError(Object error) {
+    final raw = '$error';
+    if (raw.contains('proxy host is empty')) {
+      return 'Enter a host address';
+    }
+    return raw;
   }
 
   ProxyUri? get _httpUri {
@@ -54,7 +70,7 @@ class _ProxyPageState extends State<ProxyPage> {
         _pass = http?.password ?? '';
       });
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      _toast(_friendlyError(e));
     }
   }
 
@@ -65,9 +81,14 @@ class _ProxyPageState extends State<ProxyPage> {
     String? user,
     String? password,
   }) async {
+    final nextEnabled = enabled ?? _enabled;
+    final nextHost = host ?? _host;
+    if (nextEnabled && nextHost.trim().isEmpty) {
+      _toast('Enter a host address');
+      return;
+    }
     setState(() {
       _busy = true;
-      _error = null;
       if (enabled != null) _enabled = enabled;
       if (host != null) _host = host;
       if (port != null) _port = port;
@@ -85,7 +106,9 @@ class _ProxyPageState extends State<ProxyPage> {
           );
       await _load();
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (!mounted) return;
+      await _load();
+      _toast(_friendlyError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -164,7 +187,8 @@ class _ProxyPageState extends State<ProxyPage> {
                               initial: _pass,
                               obscure: true,
                               fieldType: CyberImeFieldType.password,
-                              onSave: (pw) => _save(user: u.trim(), password: pw),
+                              onSave: (pw) =>
+                                  _save(user: u.trim(), password: pw),
                             );
                           },
                         );
@@ -172,14 +196,6 @@ class _ProxyPageState extends State<ProxyPage> {
               ),
             ],
           ),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Colors.redAccent),
-              ),
-            ),
         ],
       ),
     );

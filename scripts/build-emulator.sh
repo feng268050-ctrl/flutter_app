@@ -18,6 +18,7 @@ EMU_ROOTFS_SIZE="1536M"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 log() { echo "build-emulator: $*"; }
+warn() { echo "build-emulator: WARNING: $*" >&2; }
 
 mkdir -p "$OUT"
 
@@ -55,6 +56,26 @@ cp -Lf "$OEM_IMG" "$OUT/oem.img"
 
 log "growing emulator rootfs → $EMU_ROOTFS_SIZE (device artifact stays $(wc -c <"$ROOTFS" | tr -d '[:space:]') bytes)"
 bash "$ROOT/scripts/expand-ext4-image.sh" "$OUT/rootfs.img" "$EMU_ROOTFS_SIZE"
+
+# Same OS image ships an empty /etc/machine-id (first boot on device). On the
+# sim/virt motherboard, systemd's random machine-id path can stall without a
+# platform RNG; seed a stable id into the *emulator copy only*.
+if command -v docker >/dev/null 2>&1; then
+	log "seeding emulator machine-id (emulator rootfs copy only)"
+	docker run --rm --privileged --entrypoint /bin/sh \
+		-v "$OUT/rootfs.img:/img" \
+		alpine:3.20 -c '
+			set -e
+			apk add --no-cache e2fsprogs >/dev/null
+			mkdir -p /mnt && mount -o loop /img /mnt
+			if [ ! -s /mnt/etc/machine-id ]; then
+				dd if=/dev/urandom bs=16 count=1 2>/dev/null | od -An -tx1 | tr -d " \n" > /mnt/etc/machine-id
+				echo >> /mnt/etc/machine-id
+				chmod 444 /mnt/etc/machine-id
+			fi
+			umount /mnt
+		' || warn "machine-id seed skipped (docker mount failed)"
+fi
 
 {
 	echo "sku=emulator-sim-virt"

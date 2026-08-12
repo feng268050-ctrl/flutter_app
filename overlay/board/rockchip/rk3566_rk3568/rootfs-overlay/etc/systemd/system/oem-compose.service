@@ -11,8 +11,9 @@ Wants=param-update.service
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/libexec/oem/oem-compose.sh
-StandardOutput=journal
-StandardError=journal
+# Do not use journal alone — early boot can stall if journald is not ready yet.
+StandardOutput=journal+console
+StandardError=journal+console
 
 [Install]
 WantedBy=multi-user.target

@@ -1,7 +1,8 @@
 [Unit]
 Description=Serial console geometry (ttyFIQ0)
 DefaultDependencies=yes
-After=dev-ttyFIQ0.device serial-getty@ttyFIQ0.service
+# Multi-board: only motherboards with Rockchip FIQ console (ynh960+).
+ConditionPathExists=/dev/ttyFIQ0
 Before=mainserver.service hmi.service
 
 [Service]

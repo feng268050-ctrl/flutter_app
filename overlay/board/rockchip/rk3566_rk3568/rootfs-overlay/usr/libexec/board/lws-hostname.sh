@@ -1,19 +1,18 @@
 #!/bin/sh
 # Assert product hostname early (Rockchip post-hostname uses $RK_CHIP-buildroot).
 set -eu
-
 NAME=buildroot
-if grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null; then
-	NAME=buildroot
-elif [ -f /etc/hostname ]; then
-	cur="$(tr -d '[:space:]' </etc/hostname || true)"
-	[ -n "$cur" ] && NAME="$cur"
+if [ -f /etc/hostname ]; then
+	cur=$(cat /etc/hostname)
+	cur=$(echo "$cur" | tr -d ' \t\r\n')
+	[ -n "$cur" ] && NAME=$cur
 fi
-
 echo "$NAME" >/etc/hostname
+hostname "$NAME" 2>/dev/null || true
+# Avoid sed -i here (can stall under some executor/SELinux setups).
 if [ -f /etc/hosts ]; then
-	sed -i '/^127\.0\.1\.1/d' /etc/hosts
+	grep -v '^127\.0\.1\.1' /etc/hosts > /etc/hosts.tmp 2>/dev/null || cp /etc/hosts /etc/hosts.tmp
+	mv /etc/hosts.tmp /etc/hosts
 fi
 echo "127.0.1.1	$NAME" >>/etc/hosts
-hostname "$NAME" 2>/dev/null || true
 echo "lws-hostname: $NAME"

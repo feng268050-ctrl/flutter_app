@@ -40,8 +40,9 @@ restore() {
 }
 trap restore EXIT
 
-grep -q 'PARTLABEL=rootfs_a' "$ROOT_DTSI" \
-	|| die "$ROOT_DTSI does not select rootfs_a"
+# Prefer bootargs assignment — comments also mention rootfs_b.
+grep -E 'bootargs[[:space:]]*=[[:space:]]*".*root=PARTLABEL=rootfs_a' "$ROOT_DTSI" >/dev/null \
+	|| die "$ROOT_DTSI does not select rootfs_a (bootargs)"
 
 # Ensure multi-conf ITS is generated and installed before kernel pack.
 bash "$ROOT/scripts/generate-boot-fit-its.sh" \
@@ -54,45 +55,66 @@ for dest_dir in \
 	fi
 done
 
-build_inventory_dtbs() {
-	# Primary board DTB is built by ./build.sh kernel; build any extras.
-	local boards=()
-	local line b dtb_dir kdir
-	while IFS= read -r line || [[ -n "$line" ]]; do
-		line="${line%%#*}"
-		line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-		[[ -z "$line" ]] && continue
-		boards+=("$line")
-	done <"$INVENTORY"
-
-	dtb_dir=""
-	kdir=""
+resolve_dtb_dirs() {
+	DTB_DIR=""
+	KDIR=""
 	for candidate in \
 		"$SDK/kernel-6.1" \
 		"$SDK/kernel"; do
 		if [[ -d "$candidate/arch/arm64/boot/dts/rockchip" ]]; then
-			kdir="$candidate"
-			dtb_dir="$candidate/arch/arm64/boot/dts/rockchip"
-			break
+			KDIR="$candidate"
+			DTB_DIR="$candidate/arch/arm64/boot/dts/rockchip"
+			return 0
 		fi
 	done
-	[[ -n "$dtb_dir" ]] || die "kernel DTB dir missing"
+	die "kernel DTB dir missing"
+}
 
-	local default="${FIT_DEFAULT_BOARD:-${boards[0]}}"
-	for b in "${boards[@]}"; do
-		[[ "$b" == "$default" ]] && continue
-		if [[ ! -r "$dtb_dir/${b}.dtb" ]]; then
-			echo "=== build extra DTB: ${b}.dtb ==="
-			(
-				cd "$kdir"
-				# Rockchip out-of-tree style: reuse existing .config via make
-				make ARCH=arm64 "${b}.dtb" || \
-					make ARCH=arm64 "rockchip/${b}.dtb" || \
-					die "failed to build ${b}.dtb — is DTS installed?"
-			)
-		fi
-		[[ -r "$dtb_dir/${b}.dtb" ]] || die "missing ${dtb_dir}/${b}.dtb"
+read_inventory_boards() {
+	local line
+	BOARDS=()
+	while IFS= read -r line || [[ -n "$line" ]]; do
+		line="${line%%#*}"
+		line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+		[[ -z "$line" ]] && continue
+		BOARDS+=("$line")
+	done <"$INVENTORY"
+	[[ ${#BOARDS[@]} -gt 0 ]] || die "empty FIT board inventory: $INVENTORY"
+}
+
+# Rockchip Make often misses .dtsi → .dtb deps. After switching
+# root=PARTLABEL=rootfs_{a|b} we must force-rebuild every inventory DTB or the
+# multi-conf FIT keeps the previous letter's bootargs (B FIT verify fails).
+# $1 = expected letter: rootfs_a | rootfs_b (do not grep the DTSI — comments
+# mention both letters).
+force_rebuild_inventory_dtbs() {
+	local expect="${1:?usage: force_rebuild_inventory_dtbs rootfs_a|rootfs_b}"
+	local b
+	case "$expect" in
+	rootfs_a | rootfs_b) ;;
+	*) die "force_rebuild_inventory_dtbs: bad letter '$expect'" ;;
+	esac
+	resolve_dtb_dirs
+	read_inventory_boards
+	# Nudge Make even when timestamp granularity is coarse (Docker volumes).
+	touch "$ROOT_DTSI"
+	for b in "${BOARDS[@]}"; do
+		rm -f "$DTB_DIR/${b}.dtb"
+		echo "=== force rebuild DTB: ${b}.dtb (expect PARTLABEL=${expect}) ==="
+		(
+			cd "$KDIR"
+			make ARCH=arm64 "${b}.dtb" || \
+				make ARCH=arm64 "rockchip/${b}.dtb" || \
+				die "failed to build ${b}.dtb — is DTS installed?"
+		)
+		[[ -r "$DTB_DIR/${b}.dtb" ]] || die "missing ${DTB_DIR}/${b}.dtb"
+		grep -aFq "PARTLABEL=${expect}" "$DTB_DIR/${b}.dtb" \
+			|| die "${b}.dtb missing PARTLABEL=${expect} after rebuild"
 	done
+}
+
+build_inventory_dtbs() {
+	die "internal: call force_rebuild_inventory_dtbs with rootfs_a|rootfs_b"
 }
 
 repack_multi_fit() {
@@ -107,7 +129,7 @@ echo "=== A/B kernel FIT: build A (rootfs_a) ==="
 	./build.sh kernel
 )
 [[ -r "$FIRMWARE/boot.img" ]] || die "A FIT missing: $FIRMWARE/boot.img"
-build_inventory_dtbs
+force_rebuild_inventory_dtbs rootfs_a
 repack_multi_fit "$FIRMWARE/boot.img"
 cp -Lf "$FIRMWARE/boot.img" "$boot_a_tmp"
 grep -aFq 'PARTLABEL=rootfs_a' "$boot_a_tmp" \
@@ -120,7 +142,7 @@ sed -i 's/PARTLABEL=rootfs_a/PARTLABEL=rootfs_b/g' "$ROOT_DTSI"
 	./build.sh kernel
 )
 [[ -r "$FIRMWARE/boot.img" ]] || die "B FIT missing: $FIRMWARE/boot.img"
-build_inventory_dtbs
+force_rebuild_inventory_dtbs rootfs_b
 repack_multi_fit "$FIRMWARE/boot.img"
 rm -f "$FIRMWARE/boot_b.img"
 cp -Lf "$FIRMWARE/boot.img" "$FIRMWARE/boot_b.img"

@@ -94,7 +94,8 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 
 - virtio disk 0 (`/dev/vda`): rootfs.img  
 - virtio disk 1 (`/dev/vdb`): oem.img → mounted at `/oem`  
-- cmdline: `root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 earlycon lws.emulator=1`  
+- cmdline: `root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 earlycon lws.emulator=1 systemd.ssh_auto=no systemd.getty_auto=no systemd.gpt_auto=no random.trust_cpu=on`  
+- Default **`EMULATOR_CPU=1`** (override with `EMULATOR_CPU=4`): systemd 256 `(sd-gens)` under Apple HVF can hang after Welcome with smp≥2; same OS image, virt form-factor quirk  
 - Three virtio-net NICs with fixed MACs (above); vmnet adds `ethssh` for SSH hostfwd  
 - virtio-sound (host CoreAudio / Pulse / ALSA; playback-only `streams=1`; guest `CONFIG_SND_VIRTIO`)  
 - virtio-gpu-gl 1536×960 + virtio keyboard + **virtio-tablet** (absolute pointer, no host mouse grab — Android Emulator–like) for Weston (`Virtual-1`, not board `DSI-1`); OEM `screens/virt` matches QEMU `xres/yres` defaults (~1.2× panel 1280×800 for MacBook HiDPI; panel remains 800×1280)
@@ -103,13 +104,23 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 
 ## Boot noise that should be gone on emulator
 
+Same OS image as device; sim/virt is another motherboard (`lws.emulator=1` / `board_id=sim`). Gates are **capability / form-factor** Conditions in the shared overlay — not a separate emulator rootfs.
+
 - `usb-otg-role-boot.service` — skipped (`ConditionKernelCommandLine=!lws.emulator=1`; sim has no OTG)  
 - `ab-boot-confirm.service` — skipped (no GPT A/B on virtio rootfs)  
 - `mainserver.service` / `param-update.service` — skipped (ynh960 MIPI/ParamUpdate)  
-- `async-commit` / `pwrkey-poweroff` / `serial-stty` (ttyFIQ0) / `cpu-performance` — skipped via drop-ins  
-- `emulator-sshd.service` — **enabled** only when `lws.emulator=1`  
+- `async-commit` / `pwrkey-poweroff` / `cpu-performance` — skipped via drop-ins (`!lws.emulator=1`)  
+- `serial-stty.service` — skipped (`ConditionPathExists=/dev/ttyFIQ0`; Rockchip FIQ console)  
+- `tee-supplicant.service` — skipped (`ConditionPathExists=/dev/tee0`); must **not** use `RequiresMountsFor=/userdata` (that waits for the mount *before* Conditions, stalling boards without userdata)  
+- `resize-all` / `auditd` / `systemd-modules-load` / `systemd-tmpfiles-setup-dev*` — skipped on sim cmdline (GPT userdata / empty module tree / early-boot stalls on this form-factor)  
+- `modprobe@*.service` — skipped when `/lib/modules` is empty (`ConditionDirectoryNotEmpty`)  
+- systemd generators — overlay masks stock generators with `/etc/systemd/system-generators/* → /dev/null` (systemd 256 stock gens stall under `systemd-executor` on QEMU virt; appliance uses static units on all boards)  
+- `serial-getty@ttyAMA0` / `serial-getty@ttyFIQ0` — static `getty.target.wants` (getty-generator masked); per-instance unit overrides drop stock `BindsTo=dev-%i.device` and gate on `ConditionPathExists=/dev/…` (missing FIQ console used to block `serial-stty` → `hmi.service`)  
+- `tmp.mount` — always wanted (fstab-generator masked)  
+- `emulator-sshd.service` — **enabled** only when `lws.emulator=1` (SSH: project key `keys/ssh/id_ed25519`, password auth disabled)  
 - `emulator-wlan0-dhcp.service` — DHCP on virtio **wlan0** (general LAN; product Wi‑Fi role)  
 - `25-emulator-ethssh.network` — DHCP on SSH hostfwd NIC (`ethssh`)  
+- `build-emulator` seeds `/etc/machine-id` into the **emulator rootfs copy only** (device OTA image stays empty for first-boot)  
 
 ### Networking / IP Camera on the guest (same topology as product)
 

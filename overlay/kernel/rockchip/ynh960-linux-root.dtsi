@@ -1,7 +1,7 @@
 // ynh960: rootfs on Buildroot GPT (parameter-buildroot-fit.txt) — P2.4 A/B.
 // Prefer PARTLABEL over raw mmcblk0pN (partition indices shift with dual boot/rootfs).
-// Factory / letter A default. Letter B FITs must use root=PARTLABEL=rootfs_b (apply patches).
-// See docs/ab-slot-misc.md and docs/storage-layout.md.
+// Factory / letter A default. Letter B FITs patch bootargs to the B root PARTLABEL
+// (see scripts/build-kernel-ab.sh). Docs: ab-slot-misc.md, storage-layout.md.
 &chosen {
 	/* stmmac.flow_ctrl=0 watchdog=0: default flow_ctrl=3 + RIWT 5ms caps IPC
 	 * RTSP inbound ~2.5 Mbps on ynh960 RMII; see eth0-tune.sh + bitrate doc. */

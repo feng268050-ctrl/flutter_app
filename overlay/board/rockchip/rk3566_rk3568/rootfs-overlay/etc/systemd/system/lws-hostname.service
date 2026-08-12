@@ -4,6 +4,9 @@ DefaultDependencies=no
 After=systemd-remount-fs.service
 Before=sysinit.target network-pre.target systemd-hostnamed.service
 Conflicts=shutdown.target
+# Multi-board: on QEMU virt, PID1 already applied /etc/hostname; this oneshot
+# can stall under systemd-executor (busybox sed/tr). RK356x still runs it.
+ConditionVirtualization=!qemu
 
 [Service]
 Type=oneshot

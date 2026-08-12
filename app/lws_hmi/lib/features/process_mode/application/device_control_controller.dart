@@ -77,6 +77,14 @@ final class DeviceControlController extends ChangeNotifier {
   /// Latch: tip already shown for the current e-stop press.
   bool _eStopTipShownThisPress = false;
 
+  /// Suppress Misc key-switch warn frost while Laser Enable preflight surfaces
+  /// the same condition as a toast (avoids dialog on hold-to-enable).
+  bool _suppressKeySwitchOffSafetyPrompt = false;
+  Timer? _suppressKeySwitchOffSafetyPromptTimer;
+
+  bool get suppressKeySwitchOffSafetyPrompt =>
+      _suppressKeySwitchOffSafetyPrompt;
+
   /// Process `0x0068` saved across a manual Feed/Retract so we can restore it.
   int? _savedProcessWireSpeedMmPerS;
   bool _processWireSpeedBoosted = false;
@@ -415,6 +423,7 @@ final class DeviceControlController extends ChangeNotifier {
       onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchOff);
     }
     if (keyRose) {
+      _clearSuppressKeySwitchOffSafetyPrompt();
       onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchRestored);
     }
 
@@ -741,6 +750,9 @@ final class DeviceControlController extends ChangeNotifier {
       keySwitchOn: keySwitchOn,
     );
     if (machineBlock != null) {
+      if (machineBlock == LaserEnableBlockReason.keySwitchOff) {
+        _armSuppressKeySwitchOffSafetyPrompt();
+      }
       lastError = machineBlock.message;
       notifyListeners();
       return machineBlock;
@@ -781,6 +793,9 @@ final class DeviceControlController extends ChangeNotifier {
         policy: policy,
       );
       if (block != null) {
+        if (block == LaserEnableBlockReason.keySwitchOff) {
+          _armSuppressKeySwitchOffSafetyPrompt();
+        }
         return block;
       }
 
@@ -953,9 +968,25 @@ final class DeviceControlController extends ChangeNotifier {
     super.notifyListeners();
   }
 
+  void _armSuppressKeySwitchOffSafetyPrompt() {
+    _suppressKeySwitchOffSafetyPrompt = true;
+    _suppressKeySwitchOffSafetyPromptTimer?.cancel();
+    _suppressKeySwitchOffSafetyPromptTimer = Timer(
+      const Duration(milliseconds: 800),
+      () => _suppressKeySwitchOffSafetyPrompt = false,
+    );
+  }
+
+  void _clearSuppressKeySwitchOffSafetyPrompt() {
+    _suppressKeySwitchOffSafetyPromptTimer?.cancel();
+    _suppressKeySwitchOffSafetyPromptTimer = null;
+    _suppressKeySwitchOffSafetyPrompt = false;
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    _clearSuppressKeySwitchOffSafetyPrompt();
     LaserEnableLedHolder.instance.clearLaserEnable();
     // Fire-and-forget: page/route teardown must still request laser off even
     // when dispose cannot await (abnormal leave / Navigator pop).

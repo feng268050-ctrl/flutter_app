@@ -4,7 +4,35 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 void main() {
-  test('live-tunes process group while laser interlock is active', () async {
+  test('liveTune writes process only without interlock', () async {
+    final modbus = _FakeModbus();
+    final applier = ProcessParameterApplier(
+      modbus: modbus,
+      interlockFailure: () async => null,
+    );
+
+    final result = await applier.apply(
+      _preset(
+        processType: ProcessType.spotWelding,
+        parameters: const {
+          'process.laser_power': 50,
+          'process.spot_welding_interval': 1500,
+          'process.spot_welding_duration': 200,
+        },
+      ),
+      mode: ProcessApplyMode.liveTune,
+    );
+
+    expect(result.isSuccess, isTrue);
+    expect(modbus.groupWrites, 1);
+    expect(modbus.modeFrameWrites, 0);
+    expect(modbus.processGroupReads, 1);
+    expect(modbus.attributes['control.process_type'], 0);
+    expect(modbus.attributes['process.spot_welding_interval'], 1500);
+    expect(modbus.attributes['process.spot_welding_duration'], 200);
+  });
+
+  test('liveTune writes process while laser interlock is active', () async {
     final modbus = _FakeModbus();
     final applier = ProcessParameterApplier(
       modbus: modbus,
@@ -20,18 +48,33 @@ void main() {
           'process.spot_welding_duration': 200,
         },
       ),
+      mode: ProcessApplyMode.liveTune,
     );
 
     expect(result.isSuccess, isTrue);
     expect(modbus.groupWrites, 1);
     expect(modbus.modeFrameWrites, 0);
-    // process_type stays at baseline — only idle path may switch type.
     expect(modbus.attributes['control.process_type'], 0);
     expect(modbus.attributes['process.spot_welding_interval'], 1500);
-    expect(modbus.attributes['process.spot_welding_duration'], 200);
   });
 
-  test('laser-enable path still refuses when interlock is unsafe', () async {
+  test('liveTune retries transient process write failure', () async {
+    final modbus = _FakeModbus(failProcessWrites: 1);
+    final applier = ProcessParameterApplier(
+      modbus: modbus,
+      interlockFailure: () async => null,
+    );
+
+    final result = await applier.apply(
+      _preset(parameters: const {'process.laser_power': 50}),
+      mode: ProcessApplyMode.liveTune,
+    );
+
+    expect(result.isSuccess, isTrue);
+    expect(modbus.groupWrites, 1);
+  });
+
+  test('modeSwitch refuses when interlock is unsafe', () async {
     final modbus = _FakeModbus();
     final applier = ProcessParameterApplier(
       modbus: modbus,
@@ -40,7 +83,7 @@ void main() {
 
     final result = await applier.apply(
       _preset(processType: ProcessType.spotWelding),
-      allowLiveTune: false,
+      mode: ProcessApplyMode.modeSwitch,
     );
 
     expect(result.failure, ProcessApplyFailure.unsafeMachineState);
@@ -54,24 +97,30 @@ void main() {
       interlockFailure: () async => ProcessApplyFailure.statusUnavailable,
     );
 
-    final result = await applier.apply(_preset());
+    final result = await applier.apply(
+      _preset(),
+      mode: ProcessApplyMode.modeSwitch,
+    );
 
     expect(result.failure, ProcessApplyFailure.statusUnavailable);
     expect(modbus.groupWrites, 0);
   });
 
-  test('batch writes process values and verifies readback', () async {
+  test('modeSwitch batch writes process values and verifies readback', () async {
     final modbus = _FakeModbus();
     final applier = ProcessParameterApplier(
       modbus: modbus,
       interlockFailure: () async => null,
     );
 
-    final result = await applier.apply(_preset());
+    final result = await applier.apply(
+      _preset(),
+      mode: ProcessApplyMode.modeSwitch,
+    );
 
     expect(result.isSuccess, isTrue);
     expect(modbus.groupWrites, 1);
-    expect(modbus.modeFrameWrites, 1);
+    expect(modbus.modeFrameWrites, 0);
     expect(modbus.attributes['control.process_type'], 0);
     expect(modbus.attributes['process.laser_power'], 50);
     expect(modbus.attributes['process.laser_duty_cycle'], 100);
@@ -79,6 +128,24 @@ void main() {
     expect(modbus.attributes['process.piercing_power'], 50);
     expect(modbus.attributes['process.wire_feeding_delay'], 0);
     expect(modbus.attributes['process.piercing_duration'], 0);
+  });
+
+  test('modeSwitch skips type frame when type unchanged', () async {
+    final modbus = _FakeModbus();
+    modbus.attributes['control.process_type'] = 0;
+    final applier = ProcessParameterApplier(
+      modbus: modbus,
+      interlockFailure: () async => null,
+    );
+
+    final result = await applier.apply(
+      _preset(processType: ProcessType.continuousWelding),
+      mode: ProcessApplyMode.modeSwitch,
+    );
+
+    expect(result.isSuccess, isTrue);
+    expect(modbus.modeFrameWrites, 0);
+    expect(modbus.groupWrites, 1);
   });
 
   test('writes modbus process type for wide cleaning (2, not wire 3)',
@@ -91,6 +158,7 @@ void main() {
 
     final result = await applier.apply(
       _preset(processType: ProcessType.wideCleaning),
+      mode: ProcessApplyMode.modeSwitch,
     );
 
     expect(result.isSuccess, isTrue);
@@ -106,7 +174,10 @@ void main() {
       interlockFailure: () async => null,
     );
 
-    final result = await applier.apply(_preset());
+    final result = await applier.apply(
+      _preset(),
+      mode: ProcessApplyMode.modeSwitch,
+    );
 
     expect(result.isSuccess, isTrue);
     expect(modbus.processGroupReads, greaterThanOrEqualTo(3));
@@ -121,9 +192,9 @@ void main() {
 
     final result = await applier.apply(
       _preset(processType: ProcessType.spotWelding),
+      mode: ProcessApplyMode.modeSwitch,
     );
 
-    // Type is written first (lws-ui selectModel order); params stay baseline.
     expect(result.failure, ProcessApplyFailure.processTypeWriteFailed);
     expect(modbus.groupWrites, 0);
     expect(modbus.modeFrameWrites, 1);
@@ -140,13 +211,45 @@ void main() {
 
     final result = await applier.apply(
       _preset(processType: ProcessType.spotWelding),
+      mode: ProcessApplyMode.modeSwitch,
     );
 
     expect(result.failure, ProcessApplyFailure.processReadbackFailed);
-    // process write + rollback write
     expect(modbus.groupWrites, 2);
     expect(modbus.attributes['control.process_type'], 0);
     expect(modbus.attributes['process.laser_power'], 10);
+  });
+
+  test('modeSwitch reports processReadFailed when readback is null', () async {
+    final modbus = _FakeModbus(failProcessReadbackReads: 3);
+    final applier = ProcessParameterApplier(
+      modbus: modbus,
+      interlockFailure: () async => null,
+    );
+
+    final result = await applier.apply(
+      _preset(processType: ProcessType.spotWelding),
+      mode: ProcessApplyMode.modeSwitch,
+    );
+
+    expect(result.failure, ProcessApplyFailure.processReadFailed);
+    expect(modbus.groupWrites, 2);
+  });
+
+  test('allowLiveTune false maps to modeSwitch', () async {
+    final modbus = _FakeModbus();
+    final applier = ProcessParameterApplier(
+      modbus: modbus,
+      interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
+    );
+
+    final result = await applier.apply(
+      _preset(processType: ProcessType.spotWelding),
+      allowLiveTune: false,
+    );
+
+    expect(result.failure, ProcessApplyFailure.unsafeMachineState);
+    expect(modbus.groupWrites, 0);
   });
 }
 
@@ -179,6 +282,8 @@ final class _FakeModbus extends ModbusRtuClient {
     this.mismatchReadbackOnce = false,
     this.failNewTypeWrite = false,
     this.failBaselineReads = 0,
+    this.failProcessWrites = 0,
+    this.failProcessReadbackReads = 0,
   }) {
     for (final spec in ProcessParameterCatalog.specs) {
       attributes[spec.key] = 10.0;
@@ -188,26 +293,42 @@ final class _FakeModbus extends ModbusRtuClient {
     attributes['control.gun_drive_type'] = 1;
     attributes['control.gun_swing_range_mode'] = 7;
     attributes['control.process_type'] = 0;
+    _processWritesLeft = failProcessWrites;
+    _processReadbackFailsLeft = failProcessReadbackReads;
+    if (mismatchReadbackOnce) {
+      _mismatchReadsLeft = 5;
+    }
   }
 
   final bool mismatchReadbackOnce;
   final bool failNewTypeWrite;
   final int failBaselineReads;
+  final int failProcessWrites;
+  final int failProcessReadbackReads;
   final Map<String, Object?> attributes = {};
   int groupWrites = 0;
   int modeFrameWrites = 0;
   int processGroupReads = 0;
   int _mismatchReadsLeft = 1;
+  int _processWritesLeft = 0;
+  int _processReadbackFailsLeft = 0;
   List<int>? lastModeFrame;
 
   @override
   Future<T> exclusiveSession<T>(Future<T> Function() body) => body();
 
   @override
+  Future<T> runCommandQueued<T>(Future<T> Function() body) => body();
+
+  @override
   Future<bool> writeGroup(
     String groupId,
     Map<String, Object?> values,
   ) async {
+    if (_processWritesLeft > 0) {
+      _processWritesLeft -= 1;
+      return false;
+    }
     groupWrites += 1;
     attributes.addAll(values);
     return true;
@@ -240,9 +361,14 @@ final class _FakeModbus extends ModbusRtuClient {
       if (processGroupReads <= failBaselineReads) {
         throw StateError('transient process read');
       }
+      if (_processReadbackFailsLeft > 0 &&
+          processGroupReads > failBaselineReads + 1) {
+        _processReadbackFailsLeft -= 1;
+        throw StateError('transient process readback');
+      }
       if (mismatchReadbackOnce && _mismatchReadsLeft > 0) {
-        // Corrupt only the post-write verify read; allow rollback verify.
-        if (processGroupReads > failBaselineReads + 1) {
+        final writtenPower = attributes['process.laser_power'];
+        if (writtenPower is num && writtenPower.toDouble() == 50.0) {
           _mismatchReadsLeft -= 1;
           return {
             ...attributes,

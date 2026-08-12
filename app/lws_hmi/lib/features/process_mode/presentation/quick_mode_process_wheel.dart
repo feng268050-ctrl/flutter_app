@@ -95,7 +95,8 @@ final class QuickModeProcessWheel extends StatelessWidget {
         perspective: ProcessModeDimens.wheelPerspective,
         offAxisFraction: 0,
         onChanged: (index) => onChanged(QuickProcessWheelItems.types[index]),
-        itemBuilder: (context, index, distance) {
+        itemBuilder: (context, index, signedDistance) {
+          final distance = signedDistance.abs();
           final type = QuickProcessWheelItems.types[index];
           final selected = distance < 0.5;
           final alpha =

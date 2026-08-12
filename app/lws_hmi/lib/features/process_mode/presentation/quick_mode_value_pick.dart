@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
@@ -76,16 +78,35 @@ abstract final class QuickModePickerDimens {
   static const double wheelDiameterRatio = 100;
   static const double wheelPerspective = 0.001;
 
-  /// Gear/thickness unselected-row inset toward the dashboard.
+  /// Horizontal inset on a circle centered on the Dashboard.
   ///
-  /// This is intentionally a Flutter paint transform, rather than layout
-  /// padding: the selected row, accent, scale, and title retain their shared
-  /// centerline. The base inset corrects the near rows' visual drift; the
-  /// quadratic term preserves the outward arc for farther rows.
-  static const double unselectedBaseInset = 8;
+  /// The selected item is at the left/right tangent (`y = 0`, inset `0`).
+  /// Every live fractional scroll position follows
+  /// `inset = R - sqrt(R² - y²)`, where `y = distance × itemHeight`.
+  static double circularArcInset({
+    required double signedDistanceFromCenter,
+    required double radius,
+  }) {
+    if (radius <= 0) {
+      return 0;
+    }
+    final y = (signedDistanceFromCenter.abs() * itemHeight).clamp(0.0, radius);
+    return radius - math.sqrt(math.max(0.0, radius * radius - y * y));
+  }
 
-  static double unselectedOffset(double distance) =>
-      unselectedBaseInset + distance * distance * 8;
+  /// Gear is left of the Dashboard and moves right/inward; thickness is right
+  /// of it and moves left/inward. Both therefore share one mirrored circle.
+  static double circularArcHorizontalOffset({
+    required double signedDistanceFromCenter,
+    required double radius,
+    required bool scaleOnLeft,
+  }) {
+    final inset = circularArcInset(
+      signedDistanceFromCenter: signedDistanceFromCenter,
+      radius: radius,
+    );
+    return scaleOnLeft ? inset : -inset;
+  }
 
   /// Mode/material linear arc: `|d| × 10 + 24`.
   static double linearArcPad(double distance) => distance * 10 + 24;
@@ -148,6 +169,9 @@ final class QuickModeValuePick extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = ProcessModeTokens.accentFor(processType);
+    final pageSize = MediaQuery.sizeOf(context);
+    final arcRadius = ProcessModeDimens.outerHighlightRadiusFor(pageSize) +
+        QuickModePickerDimens.accentWidth / 2;
     return SizedBox(
       width: QuickModePickerDimens.pickWidth,
       child: Column(
@@ -264,7 +288,8 @@ final class QuickModeValuePick extends StatelessWidget {
                       itemBuilder: (context, index, distance) {
                         return _ValuePickItem(
                           label: labelOf(values[index]),
-                          distance: distance,
+                          signedDistance: distance,
+                          arcRadius: arcRadius,
                           scaleOnLeft: scaleOnLeft,
                           dimUnselected: !interactionEnabled,
                         );
@@ -315,13 +340,15 @@ final class _ValueAccentChip extends StatelessWidget {
 final class _ValuePickItem extends StatelessWidget {
   const _ValuePickItem({
     required this.label,
-    required this.distance,
+    required this.signedDistance,
+    required this.arcRadius,
     required this.scaleOnLeft,
     this.dimUnselected = false,
   });
 
   final String label;
-  final double distance;
+  final double signedDistance;
+  final double arcRadius;
   final bool scaleOnLeft;
 
   /// Laser Enable lock: keep selected white, grey the rest.
@@ -332,6 +359,7 @@ final class _ValuePickItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final distance = signedDistance.abs();
     final atCenter = distance < 0.5;
     final Color color;
     if (atCenter) {
@@ -353,23 +381,20 @@ final class _ValuePickItem extends StatelessWidget {
       ),
     );
 
-    // Selected stays on the accent midline.
-    if (atCenter) {
-      return SizedBox(
-        height: QuickModePickerDimens.itemHeight,
-        child: Center(child: text),
-      );
-    }
-
-    // Arc from the selection midline (not from the left/right edge). A small
-    // base inset keeps the nearest rows from appearing to drift outward.
-    final shift = QuickModePickerDimens.unselectedOffset(distance);
+    // Position never depends on [atCenter]. It is evaluated from the live,
+    // fractional scroll index on every frame, so drag, ballistic motion and
+    // snap all travel along the same Dashboard-centered circle.
+    final shift = QuickModePickerDimens.circularArcHorizontalOffset(
+      signedDistanceFromCenter: signedDistance,
+      radius: arcRadius,
+      scaleOnLeft: scaleOnLeft,
+    );
     return SizedBox(
       height: QuickModePickerDimens.itemHeight,
       child: Center(
         child: Transform.translate(
           // Gear (scale left): +X toward dashboard; thickness: −X.
-          offset: Offset(scaleOnLeft ? shift : -shift, 0),
+          offset: Offset(shift, 0),
           child: text,
         ),
       ),

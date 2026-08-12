@@ -36,7 +36,8 @@ final class QuickModeMaterialWheel extends StatelessWidget {
         perspective: QuickModePickerDimens.wheelPerspective,
         offAxisFraction: 0,
         onChanged: onChanged,
-        itemBuilder: (context, index, distance) {
+        itemBuilder: (context, index, signedDistance) {
+          final distance = signedDistance.abs();
           final selected = distance < 0.5;
           final alpha =
               selected ? 1.0 : (1.0 - distance * 0.2).clamp(0.4, 1.0);

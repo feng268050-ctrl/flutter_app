@@ -4056,6 +4056,18 @@ abstract class AppLocalizations {
   /// **'Readback Mismatch'**
   String get processApplyFailureProcessReadbackFailed;
 
+  /// No description provided for @processApplyFailureProcessReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Read Failed'**
+  String get processApplyFailureProcessReadFailed;
+
+  /// No description provided for @processApplyFailureProcessTypeReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Type Read Failed'**
+  String get processApplyFailureProcessTypeReadFailed;
+
   /// No description provided for @processApplyFailureProcessTypeReadbackMismatch.
   ///
   /// In en, this message translates to:

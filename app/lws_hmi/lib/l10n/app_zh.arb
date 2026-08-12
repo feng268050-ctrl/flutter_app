@@ -779,6 +779,8 @@
   "processApplyFailureGeneric": "应用失败",
   "processApplyFailurePartialApply": "部分应用成功",
   "processApplyFailureProcessReadbackFailed": "回读不匹配",
+  "processApplyFailureProcessReadFailed": "回读失败",
+  "processApplyFailureProcessTypeReadFailed": "工艺类型回读失败",
   "processApplyFailureProcessTypeReadbackMismatch": "工艺类型回读不匹配",
   "processApplyFailureProcessTypeWriteFailed": "工艺类型写入失败",
   "processApplyFailureProcessWriteFailed": "写入失败",

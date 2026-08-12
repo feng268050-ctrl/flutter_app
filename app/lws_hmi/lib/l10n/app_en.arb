@@ -1055,6 +1055,8 @@
   "processApplyFailureGeneric": "Apply Failed",
   "processApplyFailurePartialApply": "Partial Apply",
   "processApplyFailureProcessReadbackFailed": "Readback Mismatch",
+  "processApplyFailureProcessReadFailed": "Read Failed",
+  "processApplyFailureProcessTypeReadFailed": "Process Type Read Failed",
   "processApplyFailureProcessTypeReadbackMismatch": "Process Type Readback Mismatch",
   "processApplyFailureProcessTypeWriteFailed": "Process Type Write Failed",
   "processApplyFailureProcessWriteFailed": "Write Failed",

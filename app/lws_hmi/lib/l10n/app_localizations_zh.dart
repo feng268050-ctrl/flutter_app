@@ -2122,6 +2122,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processApplyFailureProcessReadbackFailed => '回读不匹配';
 
   @override
+  String get processApplyFailureProcessReadFailed => '回读失败';
+
+  @override
+  String get processApplyFailureProcessTypeReadFailed => '工艺类型回读失败';
+
+  @override
   String get processApplyFailureProcessTypeReadbackMismatch => '工艺类型回读不匹配';
 
   @override
@@ -5022,6 +5028,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get processApplyFailureProcessReadbackFailed => '回讀不匹配';
+
+  @override
+  String get processApplyFailureProcessReadFailed => '回讀失敗';
+
+  @override
+  String get processApplyFailureProcessTypeReadFailed => '工藝類型回讀失敗';
 
   @override
   String get processApplyFailureProcessTypeReadbackMismatch => '工藝類型回讀不匹配';

@@ -2212,6 +2212,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processApplyFailureProcessReadbackFailed => 'Readback Mismatch';
 
   @override
+  String get processApplyFailureProcessReadFailed => 'Read Failed';
+
+  @override
+  String get processApplyFailureProcessTypeReadFailed =>
+      'Process Type Read Failed';
+
+  @override
   String get processApplyFailureProcessTypeReadbackMismatch =>
       'Process Type Readback Mismatch';
 

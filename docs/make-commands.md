@@ -434,7 +434,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | `build-mediamtx` | MediaMTX 二进制 | → prebuilt；随 `build-app` 进 `/opt/hmi` |
 | `build-opencv` / `fetch-opencv` / `fetch-opencv-ximgproc` | AI 依赖 | OpenCV 源码/产物 |
 | `build-umtprd` | USB MTP | → prebuilt + overlay |
-| `build-extract-video-frame` | MP4→JPEG helper | → prebuilt + libexec |
+| `build-libexec-binaries` | `/usr/libexec/` 小型 C 二进制（`reboot-loader`、`extract-video-frame`、模拟器触摸桥） | `TOOL=<name>` 单项；`rebuild-libexec-binaries`；macOS 自动进 Docker |
 | `build-secrets-seal` | OP-TEE seal TA + CA | → prebuilt + overlay |
 | `fetch-btop` | btop 二进制 | → prebuilt + overlay |
 | `fetch-rknn-rt` | `librknnrt` | → `prebuilt/rknn-rt/` |
@@ -658,7 +658,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
 | `build-uboot` | **ynh960 勿用**（无 Innohi 指示） | 有砖机风险 | — |
 | `fetch-uboot` | 内部/少用 | 拉 uboot | — |
-| `build-reboot-loader` | 交叉编译 `reboot-loader` → prebuilt + overlay | — | macOS 自动进 Docker |
+| `build-libexec-binaries` | 交叉编译 libexec C 二进制 → prebuilt + overlay | `TOOL=`、`rebuild-libexec-binaries` | macOS 自动进 Docker |
 | `test-debug-app` | `make test-debug-app` | debug-app 脚本自测 | — |
 
 ---

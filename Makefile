@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-loader rebuild-reboot-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh ssh-keys test-debug-app alarm alarm-clean smoke-ai audit audit-cve fetch-cve-db l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-libexec-binaries rebuild-libexec-binaries check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-libexec-binaries rebuild-libexec-binaries build-umtprd rebuild-umtprd build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh ssh-keys test-debug-app alarm alarm-clean smoke-ai audit audit-cve fetch-cve-db l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -176,8 +176,7 @@ help:
 	@echo "  make build-mediamtx        # runtime: mediamtx arm64 → prebuilt/ (App /opt/hmi)"
 	@echo "  make build-opencv          # runtime: OpenCV aarch64 → prebuilt/opencv (for lws_ai)"
 	@echo "  make build-umtprd          # runtime: umtprd aarch64 → prebuilt/ + fs-overlay (MTP)"
-	@echo "  make build-extract-video-frame  # runtime: MP4→JPEG helper → prebuilt/ + libexec (GStreamer)"
-	@echo "  make build-reboot-loader        # board: RockUSB Loader entry → prebuilt/ + libexec/board"
+	@echo "  make build-libexec-binaries     # libexec C binaries → prebuilt/ (reboot-loader, extract-video-frame, emulator touch bridge)"
 	@echo "  make build-secrets-seal    # OP-TEE seal TA + CA (signs with keys/oem/vendor_ta.pem; TA_SIGN_KEY= overrides)"
 	@echo "  make fetch-btop            # runtime: btop aarch64 musl → prebuilt/ + fs-overlay"
 	@echo "  make fetch-opencv          # runtime: OpenCV sources → .cache/opencv/"
@@ -410,11 +409,11 @@ debug-app:
 test-debug-app:
 	@bash scripts/tests/debug-app.test.sh
 
-build-reboot-loader:
-	@bash scripts/build-reboot-loader.sh
+build-libexec-binaries:
+	@TOOL='$(TOOL)' FORCE='$(FORCE)' bash scripts/build-libexec-binaries.sh
 
-rebuild-reboot-loader:
-	@FORCE=1 bash scripts/build-reboot-loader.sh
+rebuild-libexec-binaries:
+	@TOOL='$(TOOL)' FORCE=1 bash scripts/build-libexec-binaries.sh
 
 fetch-uboot:
 	@bash scripts/docker-run.sh bash /work/lws-hmi/scripts/fetch-uboot.sh
@@ -525,12 +524,6 @@ build-umtprd:
 
 rebuild-umtprd:
 	@FORCE=1 bash scripts/build-umtprd.sh
-
-build-extract-video-frame:
-	@bash scripts/build-extract-video-frame.sh
-
-rebuild-extract-video-frame:
-	@FORCE=1 bash scripts/build-extract-video-frame.sh
 
 build-secrets-seal:
 	@bash scripts/build-secrets-seal.sh

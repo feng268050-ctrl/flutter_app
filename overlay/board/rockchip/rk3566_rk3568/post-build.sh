@@ -52,7 +52,7 @@ fi
 # Install operator-facing device commands before rootfs image copies are made.
 REBOOT_LOADER="$TARGET_DIR/usr/libexec/board/reboot-loader"
 if [ ! -x "$REBOOT_LOADER" ]; then
-	echo "post-build: missing $REBOOT_LOADER — run: make build-reboot-loader && make apply-overlay" >&2
+	echo "post-build: missing $REBOOT_LOADER — run: make build-libexec-binaries && make apply-overlay" >&2
 	exit 1
 fi
 

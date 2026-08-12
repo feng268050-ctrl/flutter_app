@@ -118,7 +118,7 @@ make build-platform-packages
 make build-mediamtx
 make build-opencv
 make build-umtprd
-make build-extract-video-frame
+make build-libexec-binaries
 make fetch-btop
 ```
 
@@ -550,7 +550,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | flutter-engine / eLinux | `prebuilt/flutter-*` | HMI 显示栈 |
 | mediamtx | `prebuilt/mediamtx/` → **`/opt/hmi/bin/mediamtx`** (`make build-app`) | RTSP 中继（产品 App 子进程；**相机就绪后**由 HMI 拉起） |
 | umtprd | `prebuilt/umtprd/` + fs-overlay `usr/bin/` | USB MTP gadget（`mode=mtp`；`make build-umtprd`） |
-| extract-video-frame | `prebuilt/extract_video_frame/` + fs-overlay `usr/libexec/hmi/` | MP4→JPEG cover/AI sample（GStreamer；`make build-extract-video-frame`） |
+| extract-video-frame | `prebuilt/extract_video_frame/` + fs-overlay `usr/libexec/hmi/` | MP4→JPEG cover/AI sample（GStreamer；`make build-libexec-binaries TOOL=extract-video-frame`） |
 | btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
 | OpenCV + ximgproc | `.cache/opencv/` sources → `make build-opencv` → `prebuilt/opencv/linux-arm64/` | 链进 `lws_ai_daemon` |
@@ -571,7 +571,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
 | `make fetch-btop` | aarch64 musl `btop` → prebuilt + fs-overlay |
 | `make build-umtprd` | aarch64 static `umtprd` → prebuilt + fs-overlay（MTP） |
-| `make build-extract-video-frame` | aarch64 `extract-video-frame` → prebuilt + `/usr/libexec/hmi/`（GStreamer JPEG） |
+| `make build-libexec-binaries` | aarch64 libexec C 二进制 → prebuilt + overlay（`TOOL=` 可选单项；含 reboot-loader、extract-video-frame、模拟器触摸桥） |
 | `make build-flutter-engine` / `build-eLinux` / `build-mediamtx` | 单项 |
 | `make check-prebuilt` | 校验 runtime（`build-rootfs` 自动） |
 | `make build-rootfs` | 装已接入 defconfig 的 prebuilt（Flutter 等） |

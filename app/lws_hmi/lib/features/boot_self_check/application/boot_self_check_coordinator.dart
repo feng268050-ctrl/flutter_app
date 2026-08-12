@@ -176,11 +176,16 @@ abstract final class BootSelfCheckCoordinator {
       final sw = Stopwatch()..start();
 
       snapshot ??= await snapshotFuture;
+      if (item == BootSelfCheckItem.motorDriverTemp && !snapshot.dataReady) {
+        debugPrint('boot-self-check: data incomplete before temps; re-read');
+        snapshot = await BootSelfCheckModbusSnapshotReader.read(services.modbus);
+      }
       if (!snapshot.isUsable) {
         debugPrint(
           'boot-self-check: modbus not ready '
           '(available=${snapshot.modbusAvailable} '
-          'controller=${snapshot.controllerReady})',
+          'controller=${snapshot.controllerReady} '
+          'data=${snapshot.dataReady})',
         );
       }
 
@@ -188,6 +193,7 @@ abstract final class BootSelfCheckCoordinator {
         item: item,
         snapshot: snapshot,
       );
+      debugPrint('boot-self-check: item ${item.name} → ${status.name}');
 
       final remaining = minStepDuration - sw.elapsed;
       if (remaining > Duration.zero) {

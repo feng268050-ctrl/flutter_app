@@ -147,7 +147,10 @@ class _BluetoothPageState extends State<BluetoothPage> {
                 title: 'Bluetooth',
                 value: on,
                 onChanged: (v) => unawaited(
-                  _run(() => _bt.setAdapterEnabled(v)),
+                  _run(() async {
+                    await _bt.setAdapterEnabled(v);
+                    if (v) await _bt.startScan();
+                  }),
                 ),
               ),
               if (on && _info.name.isNotEmpty)
@@ -195,7 +198,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     child: Text(
                       'No paired devices',
-                      style: TextStyle(color: CyberColors.textPrimary),
+                      style: SettingsTextStyles.title,
                     ),
                   )
                 else
@@ -219,34 +222,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
                     ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                SettingsDimens.inset,
-                0,
-                SettingsDimens.inset,
-                8,
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'OTHER DEVICES',
-                      style: TextStyle(
-                        color: CyberColors.textSecondary,
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _scanning
-                        ? () => unawaited(_run(() => _bt.stopScan()))
-                        : () => unawaited(_run(() => _bt.startScan())),
-                    child: Text(_scanning ? 'Stop Scan' : 'Scan'),
-                  ),
-                ],
-              ),
-            ),
+            SettingsSectionHeader('Other Devices'),
             SettingsGroup(
               borderGradientCenter: CyberBorderGradientCenter.topBottom,
               children: [
@@ -258,7 +234,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
                     ),
                     child: Text(
                       _scanning ? 'Scanning…' : 'No devices found',
-                      style: const TextStyle(color: CyberColors.textPrimary),
+                      style: SettingsTextStyles.title,
                     ),
                   )
                 else

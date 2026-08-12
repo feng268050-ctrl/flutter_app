@@ -108,7 +108,7 @@ Review against the role decision above.
 
 | Check | Status |
 |-------|--------|
-| Flat platform IA (About, OS, Storage, Network, Locale, Display, Input, …) | ✅ |
+| Flat platform IA (About, OS, Storage, Network, Access, Locale, Display, Input, …) | ✅ |
 | No product gpio/modbus / Modbus thresholds / cloud / camera / OTA | ✅ |
 | Migrated pages present (Ethernet, BT, SSH, Keyboard, Mouse, USB OTG, Power Mode) | ✅ |
 | Copy pages share HAL with HMI | ✅ |

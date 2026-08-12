@@ -394,7 +394,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewLabel => 'Preview';
 
   @override
-  String get wlanLabel => 'WLAN';
+  String get wlanLabel => 'Wi-Fi';
 
   @override
   String get connectingLabel => 'Connecting…';
@@ -798,7 +798,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get previewLabel => 'Preview';
 
   @override
-  String get wlanLabel => 'WLAN';
+  String get wlanLabel => 'Wi-Fi';
 
   @override
   String get connectingLabel => 'Connecting…';

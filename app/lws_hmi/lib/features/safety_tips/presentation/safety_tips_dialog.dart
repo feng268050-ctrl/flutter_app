@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -66,7 +64,10 @@ class ProductDisclaimerPage extends StatelessWidget {
   }
 }
 
-/// Full-bleed shell: home wallpaper → σ30 page blur → Settings/Monitor card.
+/// Full-bleed shell: shared baked σ plate → Settings/Monitor frost card.
+///
+/// Same [SettingsBlurredPageShell] path as Settings / Monitor — blit the
+/// app-level [SettingsBlurHost] RawImage (no per-route live [ImageFiltered]).
 class _SafetyTipsShell extends StatelessWidget {
   const _SafetyTipsShell({required this.mode});
 
@@ -75,55 +76,37 @@ class _SafetyTipsShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final corner = CyberGlassTheme.of(context).cornerRadius;
-    const sigma = SettingsPerspectiveChrome.blurSigma;
 
-    return Material(
-      type: MaterialType.transparency,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const Positioned.fill(child: SettingsHomeBackdrop()),
-          // Sole Gaussian between home wallpaper and the frost container.
-          Positioned.fill(
-            child: IgnorePointer(
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(
-                  sigmaX: sigma,
-                  sigmaY: sigma,
-                  tileMode: ui.TileMode.clamp,
+    return SettingsBlurredPageShell(
+      child: Material(
+        type: MaterialType.transparency,
+        child: Padding(
+          padding: const EdgeInsets.all(_kScreenPad),
+          child: Stack(
+            // Allow [SettingsPerspectiveChrome.cardShadow] outside the face.
+            clipBehavior: Clip.none,
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: SettingsPerspectiveChrome.face(
+                  cornerRadius: corner,
                 ),
-                child: const SettingsHomeBackdrop(),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  0,
+                  _kCardPadTop,
+                  0,
+                  _kCardPadBottom,
+                ),
+                child: _SafetyTipsBody(mode: mode),
+              ),
+              Positioned.fill(
+                child: SettingsPerspectiveChrome.rim(cornerRadius: corner),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(_kScreenPad),
-            child: Stack(
-              // Allow [SettingsPerspectiveChrome.cardShadow] outside the face.
-              clipBehavior: Clip.none,
-              fit: StackFit.expand,
-              children: [
-                Positioned.fill(
-                  child: SettingsPerspectiveChrome.face(
-                    cornerRadius: corner,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    0,
-                    _kCardPadTop,
-                    0,
-                    _kCardPadBottom,
-                  ),
-                  child: _SafetyTipsBody(mode: mode),
-                ),
-                Positioned.fill(
-                  child: SettingsPerspectiveChrome.rim(cornerRadius: corner),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:cyber_settings_ui/cyber_settings_ui.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_tab_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
@@ -920,9 +921,19 @@ class SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(
+      CyberGlassTheme.of(context).cornerRadius,
+    );
     final items = <Widget>[];
     for (var i = 0; i < children.length; i++) {
-      items.add(children[i]);
+      items.add(
+        SettingsCardInk(
+          borderRadius: radius,
+          isFirst: i == 0,
+          isLast: i == children.length - 1,
+          child: children[i],
+        ),
+      );
       if (i < children.length - 1) {
         items.add(
           const Divider(
@@ -974,6 +985,7 @@ class SettingsRowFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final splashRadius = SettingsCardInk.maybeOf(context)?.splashBorderRadius;
     final content = ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: SettingsDimens.rowMinHeightOf(context),
@@ -995,6 +1007,7 @@ class SettingsRowFrame extends StatelessWidget {
     }
 
     final ink = InkWell(
+      borderRadius: splashRadius,
       onTap: () {
         if (clickSoundEnabled) {
           CyberClickSoundRegistry.playClick();
@@ -1004,7 +1017,12 @@ class SettingsRowFrame extends StatelessWidget {
       child: content,
     );
     if (clickSoundEnabled) {
-      return Material(color: Colors.transparent, child: ink);
+      return Material(
+        color: Colors.transparent,
+        borderRadius: splashRadius,
+        clipBehavior: Clip.none,
+        child: ink,
+      );
     }
     return Theme(
       data: Theme.of(context).copyWith(
@@ -1013,7 +1031,12 @@ class SettingsRowFrame extends StatelessWidget {
         splashColor: Colors.transparent,
         hoverColor: Colors.transparent,
       ),
-      child: Material(color: Colors.transparent, child: ink),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: splashRadius,
+        clipBehavior: Clip.none,
+        child: ink,
+      ),
     );
   }
 }

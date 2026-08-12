@@ -1028,7 +1028,7 @@
   "wifiToastRequiresSystemPrivilege": "需要系统级无线网络权限，请以特权系统应用安装。",
   "wifiToastSsidRequired": "网络名称不能为空。",
   "wifiToastWifiDisabled": "无线网络未开启",
-  "wifiWlanLabel": "无线局域网",
+  "wifiWlanLabel": "Wi-Fi",
   "wireFeederCommunicationAlarmContent": "请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。",
   "wireFeederCommunicationAlarmTitle": "送丝机通讯告警",
   "wireFeederCurrentAlarmContent": "请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。",

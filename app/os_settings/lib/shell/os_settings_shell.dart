@@ -421,7 +421,7 @@ class _OsSettingsShellState extends State<OsSettingsShell> {
               _nav(OsSettingsDestination.storage, l10n),
             ],
           ),
-          // Network — Wi-Fi / Ethernet / Bluetooth / Proxy / SSH / Cloud Env
+          // Network — Wi-Fi / Ethernet / Bluetooth / Proxy
           SettingsGroup(
             borderGradientCenter: CyberBorderGradientCenter.topBottom,
             children: [
@@ -429,20 +429,26 @@ class _OsSettingsShellState extends State<OsSettingsShell> {
               _nav(OsSettingsDestination.ethernet, l10n),
               _nav(OsSettingsDestination.bluetooth, l10n),
               _nav(OsSettingsDestination.proxy, l10n),
+            ],
+          ),
+          // Access — SSH / Cloud Environment
+          SettingsGroup(
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
+            children: [
               _nav(OsSettingsDestination.ssh, l10n),
               _nav(OsSettingsDestination.cloudEnvironment, l10n),
             ],
           ),
           // Date & Time
           SettingsGroup(
-            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
+            borderGradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
               _nav(OsSettingsDestination.dateTime, l10n),
             ],
           ),
           // Locale — Country/Region / Language / Unit
           SettingsGroup(
-            borderGradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
+            borderGradientCenter: CyberBorderGradientCenter.leftRight,
             children: [
               _nav(OsSettingsDestination.countryRegion, l10n),
               _nav(OsSettingsDestination.language, l10n),
@@ -460,7 +466,7 @@ class _OsSettingsShellState extends State<OsSettingsShell> {
           ),
           // Input — Keyboard / Mouse / USB OTG
           SettingsGroup(
-            borderGradientCenter: CyberBorderGradientCenter.leftRight,
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             bottomInset: 0,
             children: [
               _nav(OsSettingsDestination.keyboard, l10n),

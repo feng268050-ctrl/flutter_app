@@ -14,6 +14,7 @@ export 'package:cyber_settings_ui/cyber_settings_ui.dart'
     show
         SettingsBlurHost,
         SettingsBlurredPageShell,
+        SettingsCardInk,
         SettingsNavRow,
         SettingsPageBackdropBlur,
         SettingsRowFrame,
@@ -466,9 +467,19 @@ class SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(
+      CyberGlassTheme.of(context).cornerRadius,
+    );
     final items = <Widget>[];
     for (var i = 0; i < children.length; i++) {
-      items.add(children[i]);
+      items.add(
+        SettingsCardInk(
+          borderRadius: radius,
+          isFirst: i == 0,
+          isLast: i == children.length - 1,
+          child: children[i],
+        ),
+      );
       if (i < children.length - 1) {
         items.add(
           const Divider(

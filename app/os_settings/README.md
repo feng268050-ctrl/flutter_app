@@ -9,7 +9,8 @@ HMI Settings (`app/lws_hmi`) is a **simplified, product-customized** subset. Rol
 | Group | Destinations |
 |-------|----------------|
 | Basic Info | About, Operating System, Storage |
-| Network | Wi‑Fi, Ethernet, Bluetooth, Proxy, SSH |
+| Network | Wi‑Fi, Ethernet, Bluetooth, Proxy |
+| Access | SSH, Cloud Environment |
 | Date & Time | Date & Time |
 | Locale | Country/Region, Language, Unit |
 | Display & Sound | Display (brightness, auto-sleep, **ui_scale** for factory/field, wallpaper), Sound (volume only), Power Mode |

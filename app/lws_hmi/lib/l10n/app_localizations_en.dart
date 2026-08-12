@@ -3154,7 +3154,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiToastWifiDisabled => 'Wi‑Fi is off';
 
   @override
-  String get wifiWlanLabel => 'Wi‑Fi';
+  String get wifiWlanLabel => 'Wi-Fi';
 
   @override
   String get wireFeederCommunicationAlarmContent =>

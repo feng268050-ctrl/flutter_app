@@ -132,7 +132,7 @@
   "regionSettingHelp": "Sets the Wi‑Fi regulatory region and the default time zone and network time server. Language is set separately.",
   "unitSettingHelp": "Choose Metric (°C, mm) or Imperial (°F, in) for values shown on this device.",
   "previewLabel": "Preview",
-  "wlanLabel": "WLAN",
+  "wlanLabel": "Wi-Fi",
   "connectingLabel": "Connecting…",
   "secretsSealHelp": "Secrets Seal shows how this device protects saved secrets such as Wi‑Fi passwords and cloud keys. software means software encryption; op-tee means the secure hardware chip.",
   "selinuxHelp": "SELinux is the Linux security policy layer. Disabled means it is off. Permissive means policy violations are logged but not blocked. Enforcing means the policy is enforced.",

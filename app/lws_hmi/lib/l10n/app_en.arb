@@ -1384,7 +1384,7 @@
   "wifiToastRequiresSystemPrivilege": "System Wi‑Fi permission required. Install this app as a privileged system app.",
   "wifiToastSsidRequired": "Network name is required",
   "wifiToastWifiDisabled": "Wi‑Fi is off",
-  "wifiWlanLabel": "Wi‑Fi",
+  "wifiWlanLabel": "Wi-Fi",
   "wireFeederCommunicationAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
   "wireFeederCommunicationAlarmTitle": "Wire Feeder Communication Alarm",
   "wireFeederCurrentAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",

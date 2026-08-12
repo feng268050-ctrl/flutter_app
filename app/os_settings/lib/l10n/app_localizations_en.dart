@@ -402,7 +402,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewLabel => 'Preview';
 
   @override
-  String get wlanLabel => 'WLAN';
+  String get wlanLabel => 'Wi-Fi';
 
   @override
   String get connectingLabel => 'Connecting…';

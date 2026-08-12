@@ -858,7 +858,7 @@ abstract class AppLocalizations {
   /// No description provided for @wlanLabel.
   ///
   /// In en, this message translates to:
-  /// **'WLAN'**
+  /// **'Wi-Fi'**
   String get wlanLabel;
 
   /// No description provided for @connectingLabel.

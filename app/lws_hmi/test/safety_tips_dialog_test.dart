@@ -7,6 +7,7 @@ import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
 import 'package:lws_hmi/features/safety_tips/presentation/safety_tips_dialog.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
@@ -62,6 +63,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SafetyTipsPage), findsOneWidget);
+    expect(find.byType(SettingsBlurredPageShell), findsOneWidget);
     expect(find.text('Safety Tips'), findsOneWidget);
     // Body is Markdown (structured lists / headings from ARB).
     expect(find.byType(MarkdownBody), findsOneWidget);

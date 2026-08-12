@@ -5810,7 +5810,7 @@ abstract class AppLocalizations {
   /// No description provided for @wifiWlanLabel.
   ///
   /// In en, this message translates to:
-  /// **'Wi‑Fi'**
+  /// **'Wi-Fi'**
   String get wifiWlanLabel;
 
   /// No description provided for @wireFeederCommunicationAlarmContent.

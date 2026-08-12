@@ -3026,7 +3026,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wifiToastWifiDisabled => '无线网络未开启';
 
   @override
-  String get wifiWlanLabel => '无线局域网';
+  String get wifiWlanLabel => 'Wi-Fi';
 
   @override
   String get wireFeederCommunicationAlarmContent =>
@@ -5722,9 +5722,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get wifiToastWifiDisabled => '無線網絡未開啓';
-
-  @override
-  String get wifiWlanLabel => '無線局域網';
 
   @override
   String get wireFeederCommunicationAlarmContent =>

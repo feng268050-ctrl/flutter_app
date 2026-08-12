@@ -113,7 +113,7 @@
   "regionSettingHelp": "用於無線法規區域，以及預設時區與網路時間伺服器。介面語言仍單獨設定。",
   "unitSettingHelp": "選擇公制（℃、毫米）或英制（℉、英寸），用於本機顯示的數值。",
   "previewLabel": "Preview",
-  "wlanLabel": "WLAN",
+  "wlanLabel": "Wi-Fi",
   "connectingLabel": "Connecting…",
   "secretsSealHelp": "Secrets Seal 顯示本機如何保護已儲存的機密資訊（如 Wi‑Fi 密碼與雲金鑰）。software 表示軟體加密；op-tee 表示安全晶片。",
   "selinuxHelp": "SELinux 是 Linux 的安全策略層。Disabled 表示關閉；Permissive 表示違規只記錄不攔截；Enforcing 表示依策略強制執行。",

@@ -826,7 +826,6 @@
   "wifiToastRequiresSystemPrivilege": "需要系統級無線網絡權限，請以特權系統應用安裝。",
   "wifiToastSsidRequired": "網絡名稱不能爲空。",
   "wifiToastWifiDisabled": "無線網絡未開啓",
-  "wifiWlanLabel": "無線局域網",
   "wireFeederCommunicationAlarmContent": "請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。",
   "wireFeederCommunicationAlarmTitle": "送絲機通訊告警",
   "wireFeederCurrentAlarmContent": "請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。",

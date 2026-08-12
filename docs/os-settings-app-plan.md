@@ -94,7 +94,7 @@ flowchart TB
 
 ### 4.1 分组约定
 
-下列 **分组名仅用于计划 / 实现分模块**，**不得**作为操作员可见的 section header 文案。顶层 MUST 渲染为与产品 HMI **General Settings** 相同的 **多张无标题 frosted `SettingsGroup` 卡片** 纵向堆叠（计划分组 = 卡片边界）：Basic Info → Network → Date & Time → Locale → Display & Sound → Input。组内行顺序仍按 §4.2；**不**把全部条目塞进一张 mega card，也 **不**显示 “Basic Info / Network / …” 标题文字。
+下列 **分组名仅用于计划 / 实现分模块**，**不得**作为操作员可见的 section header 文案。顶层 MUST 渲染为与产品 HMI **General Settings** 相同的 **多张无标题 frosted `SettingsGroup` 卡片** 纵向堆叠（计划分组 = 卡片边界）：Basic Info → Network → Access → Date & Time → Locale → Display & Sound → Input。组内行顺序仍按 §4.2；**不**把全部条目塞进一张 mega card，也 **不**显示 “Basic Info / Network / …” 标题文字。
 
 ### 4.2 顶层条目与子页
 
@@ -134,8 +134,13 @@ flowchart TB
 | 2 | **Ethernet** | **迁移** | 与 Wi‑Fi Details 同交互：开关下 cable link；共享 IPv4 Address / DNS 组；**禁止** Configure IP 导航式 DHCP/Manual；HMI **移除** |
 | 3 | **Bluetooth** | **迁移** | 自 HMI 迁入；本机名称改为 **Brand + `" "` + Model`**；HMI **移除** |
 | 4 | **Proxy** | **拷贝** | HTTP Proxy；HMI **保留** |
-| 5 | **SSH** | **迁移** | LAN SSH debug；HMI **移除** |
-| 6 | **Cloud Environment** | **OS-only** | Production / Test；`/var/lib/network/cloud.conf`；HMI **不**暴露环境档位（产品云开关仍在 HMI） |
+
+#### Access（逻辑分组）
+
+| # | 顶层行 | 与 HMI | 说明 |
+| ---- | ---- | ---- | ---- |
+| 1 | **SSH** | **迁移** | LAN SSH debug；HMI **移除** |
+| 2 | **Cloud Environment** | **OS-only** | Production / Test；`/var/lib/network/cloud.conf`；HMI **不**暴露环境档位（产品云开关仍在 HMI） |
 
 #### 日期和时间
 

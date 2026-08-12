@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/settings_dimens.dart';
 import '../theme/settings_typography.dart';
+import 'settings_card_ink.dart';
 
 /// Single layout authority for a Settings list item.
 class SettingsRowFrame extends StatelessWidget {
@@ -24,6 +25,7 @@ class SettingsRowFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final typography = SettingsTypography.of(context);
+    final splashRadius = SettingsCardInk.maybeOf(context)?.splashBorderRadius;
     final content = ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: minHeight ?? typography.rowMinHeight,
@@ -45,6 +47,7 @@ class SettingsRowFrame extends StatelessWidget {
     }
 
     final ink = InkWell(
+      borderRadius: splashRadius,
       onTap: () {
         if (clickSoundEnabled) {
           CyberClickSoundRegistry.playClick();
@@ -53,6 +56,11 @@ class SettingsRowFrame extends StatelessWidget {
       },
       child: content,
     );
-    return Material(color: Colors.transparent, child: ink);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: splashRadius,
+      clipBehavior: Clip.none,
+      child: ink,
+    );
   }
 }

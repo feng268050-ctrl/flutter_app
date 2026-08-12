@@ -421,11 +421,7 @@ class _WifiPageState extends State<WifiPage> {
                     CyberBorderGradientCenter.bottomLeftTopRight,
                 children: [
                   if (my.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
+                    SettingsRowFrame(
                       child: Text(
                         l10n.wifiNoSavedNetworks,
                         style: SettingsTextStyles.title,
@@ -451,22 +447,14 @@ class _WifiPageState extends State<WifiPage> {
                 borderGradientCenter: CyberBorderGradientCenter.topBottom,
                 children: [
                   if (_busy != null && other.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
+                    SettingsRowFrame(
                       child: Text(
                         l10n.wifiScanning,
                         style: SettingsTextStyles.title,
                       ),
                     )
                   else if (other.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
+                    SettingsRowFrame(
                       child: Text(
                         l10n.wifiNoNetworks,
                         style: SettingsTextStyles.title,
@@ -530,48 +518,35 @@ class _WifiNetworkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap == null
-          ? null
-          : () {
-              CyberClickSoundRegistry.playClick();
-              onTap!();
-            },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                ssid,
-                overflow: TextOverflow.ellipsis,
-                style: SettingsTextStyles.title,
-              ),
-            ),
-            if (showConnectedBadge) ...[
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.check_circle,
-                size: 22,
-                color: CyberColors.buttonPrimaryAccent,
-              ),
-            ],
-            const SizedBox(width: 12),
-            if (secured) ...[
-              const Icon(
-                Icons.lock,
-                size: 20,
-                color: CyberColors.textSecondary,
-              ),
-              const SizedBox(width: 8),
-            ],
-            Icon(
-              signalIcon,
+    return SettingsNavRow(
+      title: ssid,
+      showChevron: false,
+      onTap: onTap,
+      trailingExtra: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showConnectedBadge) ...[
+            const Icon(
+              Icons.check_circle,
               size: 22,
-              color: CyberColors.textPrimary,
+              color: CyberColors.buttonPrimaryAccent,
             ),
+            const SizedBox(width: 12),
           ],
-        ),
+          if (secured) ...[
+            const Icon(
+              Icons.lock,
+              size: 20,
+              color: CyberColors.textSecondary,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Icon(
+            signalIcon,
+            size: 22,
+            color: CyberColors.textPrimary,
+          ),
+        ],
       ),
     );
   }

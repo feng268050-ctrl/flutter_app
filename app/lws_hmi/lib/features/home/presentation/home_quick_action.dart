@@ -25,8 +25,11 @@ const Color _kLabelPressed = Color(0xB3FFFFFF);
 /// navigating so the tile stays at press scale until the route pops.
 typedef HomeQuickActionCallback = FutureOr<void> Function();
 
-/// Font size so [kHomeQuickActionLabelSizeRef] fits [cardWidth] with equal
-/// side inset (~11% each side) so the caption is not clipped.
+/// Font size so [kHomeQuickActionLabelSizeRef] spans the full [cardWidth].
+///
+/// Settings is the reference caption for Monitor and AI Vision as well, so
+/// those labels retain exactly the same font size instead of being resized to
+/// their own (wider or narrower) label boxes.
 ///
 /// Pass the same [textScaler] that will paint the caption (use
 /// [HmiTextScale.quickActionTextScalerOf]) so fit is not undone by a second
@@ -36,7 +39,7 @@ double homeQuickActionLabelFontSize(
   TextScaler textScaler = TextScaler.noScaling,
 }) {
   const weight = FontWeight.w500;
-  final targetWidth = cardWidth * 0.78;
+  final targetWidth = cardWidth;
   var lo = 12.0;
   var hi = 64.0;
   for (var i = 0; i < 14; i++) {
@@ -269,7 +272,10 @@ class _HomeQuickActionState extends State<HomeQuickAction>
                     widget.label,
                     textAlign: TextAlign.center,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    // Settings is measured to the full button width. Let the
+                    // final fractional glyph edge paint instead of turning a
+                    // rounding difference into an ellipsis.
+                    overflow: TextOverflow.visible,
                     style: TextStyle(
                       color: labelColor,
                       fontSize: fontSize,

@@ -95,4 +95,20 @@ void main() {
     expect(at1, greaterThan(12));
     expect(atLarge, lessThan(at1));
   });
+
+  test('homeQuickActionLabelFontSize fits Settings to the full card width', () {
+    const card = 108.0;
+    final fontSize = homeQuickActionLabelFontSize(card);
+    final width = (TextPainter(
+      text: TextSpan(
+        text: kHomeQuickActionLabelSizeRef,
+        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w500),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout())
+        .width;
+
+    expect(width, closeTo(card, 0.1));
+  });
 }

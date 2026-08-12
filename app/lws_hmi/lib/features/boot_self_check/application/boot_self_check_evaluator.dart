@@ -36,11 +36,21 @@ final class BootSelfCheckModbusSnapshot {
   final bool modbusAvailable;
   final bool controllerReady;
 
-  /// True when Modbus yielded values and the lower controller reports a valid
-  /// device type — safe to evaluate pass/fail (vs "not ready yet").
-  bool get isUsable => modbusAvailable && controllerReady;
+  /// True when boot self-check `data` group yields all four temperature values.
+  bool get dataReady => hasBootSelfCheckDataReady(values);
+
+  /// True when Modbus yielded values, the controller is ready, and all four
+  /// temperature telemetry values are present — safe to evaluate pass/fail.
+  bool get isUsable => modbusAvailable && controllerReady && dataReady;
 
   Object? operator [](String id) => values[id];
+
+  static bool hasBootSelfCheckDataReady(Map<String, Object?> values) {
+    return hasTempValue(values[MonitorModbusIds.motorDriverTemp]) &&
+        hasTempValue(values[MonitorModbusIds.motorTemp]) &&
+        hasTempValue(values[MonitorModbusIds.protectiveMirrorTemp]) &&
+        hasTempValue(values[MonitorModbusIds.collimatorTemp]);
+  }
 
   static bool isControllerReady(Object? deviceType) {
     if (deviceType is int) {

@@ -187,11 +187,12 @@
   "cameraProgramFailedMessage": "摄像头固件升级失败，请稍后重试。",
   "cameraProgramFailedTitle": "摄像头升级失败",
   "cameraProgramNewVersionHeadline": "新摄像头固件 {version}",
+  "cameraProgramUpdateAvailableMessage": "摄像头固件 {current} → {available}，是否立即安装？",
   "cameraProgramRebootTitle": "正在重启摄像头",
   "cameraProgramSuccessMessage": "摄像头固件已更新完成。",
   "cameraProgramSuccessTitle": "摄像头升级成功",
   "cameraProgramTransferTitle": "正在传输摄像头固件",
-  "cameraProgramUpgradeIdleHint": "检查本机 App 内是否有更新的摄像头固件。",
+  "cameraProgramUpgradeIdleHint": "检查是否有更新的摄像头固件。",
   "cameraProgramUpgradeTitle": "摄像头升级",
   "cameraProgramUpgradingMessage": "请保持设备通电，升级过程中请勿操作。",
   "cameraProgramWaitOnlineTitle": "等待摄像头恢复",
@@ -210,7 +211,7 @@
   },
   "controlBoardCheckFailed": "无法检查控制板固件，请确认通信正常。",
   "controlBoardCheckUnavailable": "当前无法检查控制板固件。",
-  "controlBoardNewVersionHeadline": "新固件版本 {version}",
+  "controlBoardNewVersionHeadline": "新控制板固件 {version}",
   "@controlBoardNewVersionHeadline": {
     "placeholders": {
       "version": {
@@ -218,7 +219,18 @@
       }
     }
   },
-  "controlBoardUpgradeIdleHint": "检查本机 App 内是否有更新的控制板固件。",
+  "controlBoardUpdateAvailableMessage": "控制板固件 {current} → {available}，是否立即安装？",
+  "@controlBoardUpdateAvailableMessage": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
+  "controlBoardUpgradeIdleHint": "检查是否有更新的控制板固件。",
   "controlBoardUpgradeTitle": "控制板升级",
   "clearAlarmLogs": "清除",
   "closeText": "关闭",
@@ -409,6 +421,34 @@
   "hardwareBusErrorAlarmContent": "请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。",
   "hardwareBusErrorAlarmTitle": "硬件总线错误告警",
   "holdToEnableLaser": "长按开启激光",
+  "hmiAlreadyUpToDate": "HMI 版本 {version} 已是最新。",
+  "@hmiAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "hmiNewVersionHeadline": "新 HMI 版本 {version}",
+  "@hmiNewVersionHeadline": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "hmiUpdateAvailableMessage": "HMI 版本 {current} → {available}，是否立即安装？",
+  "@hmiUpdateAvailableMessage": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
+  "hmiUpgradeIdleHint": "从云端检查是否有新的 HMI 升级包。",
   "hmiUpgradeTitle": "HMI 升级",
   "hmiVersion": "HMI 版本",
   "homeAiVisionLabel": "AI 视觉",
@@ -459,7 +499,7 @@
   "ipCameraText": "相机",
   "ipCameraWaitingForRtsp": "正在等待 RTSP 流…",
   "jobRuntime": "上次作业时长",
-  "kernelVersion": "内核版本",
+  "kernelVersion": "Linux Kernel",
   "keySwitchLabel": "钥匙开关",
   "keyboardApplyConfirmBody": "将保存所选布局并重启 HMI，使软键盘 CyberIME 与实体键盘同时生效。重启后会重新打开本页。",
   "keyboardApplyConfirmTitle": "应用键盘布局？",
@@ -516,7 +556,7 @@
   "laserReflectedEnergyUpperLimitClearedTitle": "激光反射能量超上限解除",
   "laserText": "激光",
   "laserTimeVsLastWeek": "较上周",
-  "laserVersion": "激光器版本",
+  "laserVersion": "激光板版本",
   "ledColorGreen": "绿色",
   "ledColorRed": "红色",
   "ledColorYellow": "黄色",
@@ -595,22 +635,28 @@
   "osSettingsBundleMissing": "本机未安装 OS 设置。",
   "osSettingsSwitchFailed": "无法打开 OS 设置。",
   "osSettingsText": "OS 设置",
-  "osVersion": "操作系统版本",
+  "osVersion": "Operating System",
   "otaCheckUnavailable": "当前版本暂不支持软件更新检查。",
   "otaCheckFailed": "无法检查更新，请确认网络连接。",
   "otaSessionActive": "系统升级正在进行中。",
-  "otaAlreadyUpToDate": "系统版本 {version} 已是最新。",
+  "otaAlreadyUpToDate": "{name} 版本 {version} 已是最新。",
   "@otaAlreadyUpToDate": {
     "placeholders": {
+      "name": {
+        "type": "String"
+      },
       "version": {
         "type": "String"
       }
     }
   },
   "otaUpdateAvailableTitle": "发现新版本",
-  "otaUpdateAvailableMessage": "版本 {current} → {available}，是否立即安装？",
+  "otaUpdateAvailableMessage": "{name} 版本 {current} → {available}，是否立即安装？",
   "@otaUpdateAvailableMessage": {
     "placeholders": {
+      "name": {
+        "type": "String"
+      },
       "current": {
         "type": "String"
       },
@@ -621,15 +667,25 @@
   },
   "otaUpdateNow": "立即升级",
   "otaUpdateLater": "稍后",
-  "otaNewVersionHeadline": "新版本升级 {version}",
+  "otaNewVersionHeadline": "新 {name} 版本 {version}",
   "@otaNewVersionHeadline": {
     "placeholders": {
+      "name": {
+        "type": "String"
+      },
       "version": {
         "type": "String"
       }
     }
   },
-  "otaUpgradeIdleHint": "从云端检查是否有新的系统升级包。",
+  "otaUpgradeIdleHint": "从云端检查是否有新的 {name} 升级包。",
+  "@otaUpgradeIdleHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "systemUpgradeTitle": "系统升级",
   "otaUpgradeStatusVerifying": "正在验证升级包…",
   "otaUpgradeStatusExtracting": "正在解压升级包…",

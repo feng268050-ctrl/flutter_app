@@ -1,8 +1,8 @@
+import 'package:cyber_hal/sys_info.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/device/display_value.dart';
-import 'package:lws_hmi/features/settings/application/storage_capacity.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// iOS-style segmented capacity bar for Device Information storage group.

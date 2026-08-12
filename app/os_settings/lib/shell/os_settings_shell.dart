@@ -12,12 +12,11 @@ import 'package:os_settings/app/os_settings_app.dart';
 import 'package:os_settings/app/services.dart';
 import 'package:os_settings/chrome/exit_to_hmi.dart';
 import 'package:os_settings/chrome/settings_chrome.dart';
-import 'package:os_settings/cloud/cloud_environment_tier.dart';
 import 'package:os_settings/l10n/app_localizations.dart';
 import 'package:os_settings/shell/os_settings_nav.dart';
+import 'package:cyber_hal/sys_info.dart';
 import 'package:os_settings/util/keyboard_profile.dart';
 import 'package:os_settings/util/product_display.dart';
-import 'package:os_settings/util/storage_capacity.dart';
 
 /// OS Settings root — same layout in landscape and portrait.
 ///

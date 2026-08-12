@@ -26,6 +26,8 @@ final class ControlBoardFirmwareOffer {
     this.assetKey,
     this.hostFile,
     this.packageUrl,
+    this.title,
+    this.content,
   });
 
   final String fileName;
@@ -42,6 +44,12 @@ final class ControlBoardFirmwareOffer {
 
   /// Cloud / host-HTTP package URL (download + verify before apply).
   final String? packageUrl;
+
+  /// Optional release title from cloud `release.json`.
+  final String? title;
+
+  /// Optional release notes body from cloud `release.json`.
+  final String? content;
 
   bool get isHostPush => hostFile != null;
   bool get isCloud => packageUrl != null && hostFile == null && assetKey == null;
@@ -243,6 +251,8 @@ final class ControlBoardUpgradeCoordinator {
           deviceSw: deviceSw,
           bundledSw: candidate.softwareVersion,
           packageUrl: candidate.packageUrl,
+          title: candidate.title,
+          content: candidate.content,
         ),
         failed: false,
       );

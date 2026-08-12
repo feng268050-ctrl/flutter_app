@@ -2,10 +2,13 @@
 Description=OP-TEE Client Supplicant
 Documentation=https://github.com/OP-TEE/optee_client
 DefaultDependencies=yes
-# After userdata is mounted — interim REE FS KEK lives under /userdata/tee
-# (survives A/B). Target end-state is RPMB (see docs/hal-secrets-kek.md).
-After=local-fs.target userdata.mount
-RequiresMountsFor=/userdata
+# Multi-board: only motherboards with OP-TEE (ynh960+); sim/virt has no /dev/tee0.
+ConditionPathExists=/dev/tee0
+# Interim REE FS KEK under /userdata/tee (survives A/B). Do NOT use
+# RequiresMountsFor=/userdata — systemd waits for that mount *before*
+# Condition* is evaluated, stalling boards without a userdata partition.
+ConditionPathIsDirectory=/userdata
+After=local-fs.target
 # Outside HMI cgroup — available before / with Secrets consumers.
 Before=hmi.service
 

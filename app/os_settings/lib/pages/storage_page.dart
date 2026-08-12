@@ -1,12 +1,14 @@
 import 'dart:async';
 
+import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/material.dart';
 import 'package:os_settings/app/os_settings_app.dart';
 import 'package:os_settings/chrome/settings_chrome.dart';
 import 'package:os_settings/l10n/app_localizations.dart';
-import 'package:os_settings/util/storage_capacity.dart';
 
 /// Storage — capacity bar only (Secrets Seal lives on Operating System → Security).
+///
+/// Accounting comes from HAL [summarizeStorage] / [SysInfo.storage].
 class StoragePage extends StatefulWidget {
   const StoragePage({super.key});
 
@@ -82,7 +84,7 @@ class _StoragePageState extends State<StoragePage> {
                       const SizedBox(height: 8),
                       if (!_summary.hasData)
                         Text(
-                          kUnavailableDash,
+                          kStorageUnavailableDash,
                           style: SettingsTextStyles.value,
                         )
                       else ...[

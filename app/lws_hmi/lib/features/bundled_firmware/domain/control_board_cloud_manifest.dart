@@ -7,12 +7,20 @@ final class ControlBoardCloudCandidate {
     required this.packageUrl,
     required this.hardwareVersion,
     required this.softwareVersion,
+    this.title,
+    this.content,
   });
 
   final String fileName;
   final String packageUrl;
   final int hardwareVersion;
   final int softwareVersion;
+
+  /// Optional release title from `release.json` (preferred UI headline).
+  final String? title;
+
+  /// Optional release notes body from `release.json` (preferred UI body).
+  final String? content;
 }
 
 /// Parse + gate a control-board `release.json` object against live device HW/SW.
@@ -64,7 +72,18 @@ abstract final class ControlBoardCloudManifest {
       packageUrl: packageUrl,
       hardwareVersion: hw,
       softwareVersion: sw,
+      title: _optionalNote(json, 'title'),
+      content: _optionalNote(json, 'content'),
     );
+  }
+
+  static String? _optionalNote(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value is! String) {
+      return null;
+    }
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   /// Prefer `filename`; else last path segment of package URL when it looks like a bin.

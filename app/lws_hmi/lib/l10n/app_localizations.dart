@@ -1163,6 +1163,12 @@ abstract class AppLocalizations {
   /// **'New camera firmware {version}'**
   String cameraProgramNewVersionHeadline(String version);
 
+  /// No description provided for @cameraProgramUpdateAvailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera firmware {current} → {available}. Install now?'**
+  String cameraProgramUpdateAvailableMessage(String current, String available);
+
   /// No description provided for @cameraProgramRebootTitle.
   ///
   /// In en, this message translates to:
@@ -1190,7 +1196,7 @@ abstract class AppLocalizations {
   /// No description provided for @cameraProgramUpgradeIdleHint.
   ///
   /// In en, this message translates to:
-  /// **'Check for newer camera firmware bundled with this App.'**
+  /// **'Check for newer camera firmware.'**
   String get cameraProgramUpgradeIdleHint;
 
   /// No description provided for @cameraProgramUpgradeTitle.
@@ -1250,13 +1256,19 @@ abstract class AppLocalizations {
   /// No description provided for @controlBoardNewVersionHeadline.
   ///
   /// In en, this message translates to:
-  /// **'New firmware {version}'**
+  /// **'New control board firmware {version}'**
   String controlBoardNewVersionHeadline(String version);
+
+  /// No description provided for @controlBoardUpdateAvailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Control board firmware {current} → {available}. Install now?'**
+  String controlBoardUpdateAvailableMessage(String current, String available);
 
   /// No description provided for @controlBoardUpgradeIdleHint.
   ///
   /// In en, this message translates to:
-  /// **'Check for newer control board firmware bundled with this App.'**
+  /// **'Check for newer control board firmware.'**
   String get controlBoardUpgradeIdleHint;
 
   /// No description provided for @controlBoardUpgradeTitle.
@@ -2333,6 +2345,30 @@ abstract class AppLocalizations {
   /// **'Hold To Enable Laser'**
   String get holdToEnableLaser;
 
+  /// No description provided for @hmiAlreadyUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'HMI version {version} is up to date.'**
+  String hmiAlreadyUpToDate(String version);
+
+  /// No description provided for @hmiNewVersionHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'New HMI version {version}'**
+  String hmiNewVersionHeadline(String version);
+
+  /// No description provided for @hmiUpdateAvailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'HMI version {current} → {available}. Install now?'**
+  String hmiUpdateAvailableMessage(String current, String available);
+
+  /// No description provided for @hmiUpgradeIdleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for a newer HMI package from the cloud.'**
+  String get hmiUpgradeIdleHint;
+
   /// No description provided for @hmiUpgradeTitle.
   ///
   /// In en, this message translates to:
@@ -2606,7 +2642,7 @@ abstract class AppLocalizations {
   /// No description provided for @kernelVersion.
   ///
   /// In en, this message translates to:
-  /// **'Kernel Version'**
+  /// **'Linux Kernel'**
   String get kernelVersion;
 
   /// No description provided for @keySwitchLabel.
@@ -2954,7 +2990,7 @@ abstract class AppLocalizations {
   /// No description provided for @laserVersion.
   ///
   /// In en, this message translates to:
-  /// **'Laser Version'**
+  /// **'Laser Board Version'**
   String get laserVersion;
 
   /// No description provided for @ledColorGreen.
@@ -3398,7 +3434,7 @@ abstract class AppLocalizations {
   /// No description provided for @osVersion.
   ///
   /// In en, this message translates to:
-  /// **'OS Version'**
+  /// **'Operating System'**
   String get osVersion;
 
   /// No description provided for @otaCheckUnavailable.
@@ -3422,8 +3458,8 @@ abstract class AppLocalizations {
   /// No description provided for @otaAlreadyUpToDate.
   ///
   /// In en, this message translates to:
-  /// **'System version {version} is up to date.'**
-  String otaAlreadyUpToDate(String version);
+  /// **'{name} version {version} is up to date.'**
+  String otaAlreadyUpToDate(String name, String version);
 
   /// No description provided for @otaUpdateAvailableTitle.
   ///
@@ -3434,8 +3470,9 @@ abstract class AppLocalizations {
   /// No description provided for @otaUpdateAvailableMessage.
   ///
   /// In en, this message translates to:
-  /// **'Version {current} → {available}. Install now?'**
-  String otaUpdateAvailableMessage(String current, String available);
+  /// **'{name} version {current} → {available}. Install now?'**
+  String otaUpdateAvailableMessage(
+      String name, String current, String available);
 
   /// No description provided for @otaUpdateNow.
   ///
@@ -3452,14 +3489,14 @@ abstract class AppLocalizations {
   /// No description provided for @otaNewVersionHeadline.
   ///
   /// In en, this message translates to:
-  /// **'New version upgrade {version}'**
-  String otaNewVersionHeadline(String version);
+  /// **'New {name} version {version}'**
+  String otaNewVersionHeadline(String name, String version);
 
   /// No description provided for @otaUpgradeIdleHint.
   ///
   /// In en, this message translates to:
-  /// **'Check for a newer system package from the cloud.'**
-  String get otaUpgradeIdleHint;
+  /// **'Check for a newer {name} package from the cloud.'**
+  String otaUpgradeIdleHint(String name);
 
   /// No description provided for @systemUpgradeTitle.
   ///

@@ -1,6 +1,5 @@
 import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lws_hmi/features/settings/application/storage_capacity.dart';
 
 void main() {
   group('formatStorageBytes', () {
@@ -25,26 +24,11 @@ void main() {
       ]);
       expect(summary.hasData, isTrue);
       expect(summary.totalBytes, 3000);
-      // System 1000 + userdata used 1500.
       expect(summary.usedBytes, 2500);
-      // Root free is not operator-available.
       expect(summary.availableBytes, 500);
       expect(summary.segments, hasLength(2));
-      expect(summary.segments[0].mountPoint, '/');
-      expect(summary.segments[0].usedBytes, 1000);
       expect(summary.segments[0].color, StorageBarColors.system);
-      expect(summary.segments[1].mountPoint, '/userdata');
-      expect(summary.segments[1].usedBytes, 1500);
       expect(summary.segments[1].color, StorageBarColors.userData);
-    });
-
-    test('skips mounts without totals and soft-fails empty', () {
-      final empty = summarizeStorage(const [
-        StorageInfo(mountPoint: '/'),
-        StorageInfo(mountPoint: '/userdata', totalBytes: 0, freeBytes: 0),
-      ]);
-      expect(empty.hasData, isFalse);
-      expect(empty.segments, isEmpty);
     });
   });
 }

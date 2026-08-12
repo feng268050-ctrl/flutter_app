@@ -13,7 +13,6 @@ import 'package:lws_hmi/features/hmi_app_ota/presentation/hmi_upgrade_page.dart'
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/storage_capacity.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_storage_bar.dart';
 import 'package:lws_hmi/features/system_ota/presentation/system_upgrade_page.dart';
@@ -48,8 +47,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   String _osVersion = kUnavailableDisplay;
   String _hmiVersion = kUnavailableDisplay;
   String _controlCardVersion = kUnavailableDisplay;
-  String _laserVersion = kUnavailableDisplay;
-  String _wireFeederVersion = kUnavailableDisplay;
   String _focusScaleRef = kUnavailableDisplay;
   String _cameraVersion = kUnavailableDisplay;
   StorageCapacitySummary _storage =
@@ -146,7 +143,12 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
       _modelRaw = snap.model;
       _deviceModel = productDeviceModelDisplay(snap.brand, snap.model);
       _deviceSn = _dash(snap.serialNumber);
-      _osVersion = snap.osVersion ?? kUnavailableDisplay;
+      _osVersion = formatOperatingSystemLabel(
+            prettyName: snap.osReleaseId,
+            name: snap.osName,
+            version: snap.osVersion,
+          ) ??
+          kUnavailableDisplay;
       _hmiVersion = snap.appVersion ?? kHmiVersion;
       _storage = summarizeStorage(snap.storage);
     });
@@ -192,12 +194,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
         switch (c.id) {
           case 'device.control_card_version':
             _controlCardVersion =
-                modbusDisplayOrDash(modbusControlCardDisplay(c.value));
-          case 'device.laser_sw_version':
-            _laserVersion =
-                modbusDisplayOrDash(modbusVersionStringDisplay(c.value));
-          case 'device.wire_feeder_sw_version':
-            _wireFeederVersion =
                 modbusDisplayOrDash(modbusControlCardDisplay(c.value));
           case 'device.gun_head_sn':
             _gunheadSn =
@@ -297,7 +293,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             ),
           ],
         ),
-        // Versions: OS, HMI, Camera, Control Board, Laser, Wire Feeder + auto-check
+        // Versions: OS, HMI, Camera, Control Board (+ peripherals in detail) + auto-check
         SettingsGroup(
           borderGradientCenter:
               CyberBorderGradientCenter.bottomLeftTopRight,
@@ -321,14 +317,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               title: l10n.firmwareVersion,
               value: _controlCardVersion,
               onTap: () => unawaited(_openControlBoardUpgrade()),
-            ),
-            SettingsValueRow(
-              title: l10n.laserVersion,
-              value: _laserVersion,
-            ),
-            SettingsValueRow(
-              title: l10n.wireFeederVersion,
-              value: _wireFeederVersion,
             ),
             Builder(
               builder: (context) {

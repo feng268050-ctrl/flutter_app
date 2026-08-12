@@ -40,8 +40,6 @@ const kDemoModbusWatchIds = <String>[
 /// Device Information Modbus-backed rows (continuous + on-demand info).
 const kDeviceInfoModbusWatchIds = <String>[
   'device.control_card_version',
-  'device.laser_sw_version',
-  'device.wire_feeder_sw_version',
   'device.gun_head_sn',
 ];
 

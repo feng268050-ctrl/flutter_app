@@ -6,11 +6,19 @@ final class CameraCloudCandidate {
     required this.fileName,
     required this.packageUrl,
     required this.version,
+    this.title,
+    this.content,
   });
 
   final String fileName;
   final String packageUrl;
   final CameraFirmwareVersion version;
+
+  /// Optional release title from `release.json` (preferred UI headline).
+  final String? title;
+
+  /// Optional release notes body from `release.json` (preferred UI body).
+  final String? content;
 }
 
 /// Parse + gate a camera `release.json` object against live device `appVersion`.
@@ -47,7 +55,18 @@ abstract final class CameraCloudManifest {
       fileName: fileName,
       packageUrl: packageUrl,
       version: parsed,
+      title: _optionalNote(json, 'title'),
+      content: _optionalNote(json, 'content'),
     );
+  }
+
+  static String? _optionalNote(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value is! String) {
+      return null;
+    }
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   /// True when [channelVersion] is SemVer-only matching [expected] (e.g. `v1.0.7`).

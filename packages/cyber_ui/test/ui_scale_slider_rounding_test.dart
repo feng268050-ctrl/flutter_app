@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('valueFromFraction preserves fractional ui_scale range', () {
-    const min = 0.85;
-    const max = 1.25;
+    const min = 0.5;
+    const max = 2.0;
     final values = <double>[];
     for (var i = 0; i <= 10; i++) {
       values.add(

@@ -8,6 +8,7 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/control_board_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
 import 'package:lws_hmi/features/bundled_firmware/domain/bundled_firmware_version_gate.dart';
@@ -15,14 +16,17 @@ import 'package:lws_hmi/features/bundled_firmware/domain/firmware_upgrade_consta
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/modbus/register_address.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Control-board firmware upgrade — Settings chrome like System Upgrade.
 ///
-/// - Device Information (Control Board Version): check + Update Now
-///   (auto-check master switch lives on Device Info → Version).
-/// - Home auto-detect: [initialOffer] available state.
-/// - Host `make upgrade-control-board`: [progressOnly] + [UpgradePolicy.hostForce].
+/// Device Information → Control Board Version opens this page with control /
+/// laser / wire-feeder version rows plus check + Update Now (auto-check master
+/// switch lives on Device Info → Version).
+/// Home auto-detect: [initialOffer] available state.
+/// Host `make upgrade-control-board`: [progressOnly] + [UpgradePolicy.hostForce].
 class ControlBoardUpgradePage extends StatefulWidget {
   const ControlBoardUpgradePage({
     super.key,
@@ -49,6 +53,8 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
   UpgradeCheckUiState _checkUi = UpgradeCheckUiState.idle;
   bool _applyUi = false;
   String _currentSwLabel = '—';
+  String _laserVersion = kUnavailableDisplay;
+  String _wireFeederVersion = kUnavailableDisplay;
 
   UpgradePolicy get _policy => widget.progressOnly
       ? UpgradePolicy.hostForce
@@ -135,18 +141,27 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
     }
     try {
       await services.ensureModbusLive();
-      final v = await services.modbus.readAttribute(
-        FirmwareUpgradeConstants.deviceSw,
-      );
+      final info = await services.modbus.readGroup('info');
       if (!mounted) {
         return;
       }
-      final label = switch (v) {
+      final sw = info[FirmwareUpgradeConstants.deviceSw];
+      final label = switch (sw) {
         int i => '$i',
         num n => '${n.toInt()}',
-        _ => _currentSwLabel,
+        _ => modbusDisplayOrDash(modbusControlCardDisplay(sw)),
       };
-      setState(() => _currentSwLabel = label);
+      setState(() {
+        _currentSwLabel = label == kUnavailableDisplay ? '—' : label;
+        _laserVersion = modbusDisplayOrDash(
+          modbusVersionStringDisplay(info[ModbusAttributeId.deviceLaserSwVersion]),
+        );
+        _wireFeederVersion = modbusDisplayOrDash(
+          modbusControlCardDisplay(
+            info[ModbusAttributeId.deviceWireFeederSwVersion],
+          ),
+        );
+      });
     } catch (_) {}
   }
 
@@ -316,6 +331,28 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
                           endIndent: 20,
                           color: SettingsDimens.sectionDividerColor,
                         ),
+                        SettingsValueRow(
+                          title: l10n.laserVersion,
+                          value: _laserVersion,
+                        ),
+                        const Divider(
+                          height: SettingsDimens.sectionDividerHeight,
+                          thickness: SettingsDimens.sectionDividerHeight,
+                          indent: 20,
+                          endIndent: 20,
+                          color: SettingsDimens.sectionDividerColor,
+                        ),
+                        SettingsValueRow(
+                          title: l10n.wireFeederVersion,
+                          value: _wireFeederVersion,
+                        ),
+                        const Divider(
+                          height: SettingsDimens.sectionDividerHeight,
+                          thickness: SettingsDimens.sectionDividerHeight,
+                          indent: 20,
+                          endIndent: 20,
+                          color: SettingsDimens.sectionDividerColor,
+                        ),
                       ],
                       Expanded(
                         child: Padding(
@@ -345,6 +382,8 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
     final headlineStyle = context.hmiTypography.sectionTitle.copyWith(
       color: CyberColors.textPrimary,
     );
+    final offerTitle = offer?.title?.trim();
+    final offerContent = offer?.content?.trim();
 
     return UpgradeCheckCard(
       state: _checkUi,
@@ -356,13 +395,17 @@ class _ControlBoardUpgradePageState extends State<ControlBoardUpgradePage> {
       failedMessage: l10n.controlBoardCheckFailed,
       availableHeadline: offer == null
           ? null
-          : l10n.controlBoardNewVersionHeadline('${offer.bundledSw}'),
+          : ((offerTitle != null && offerTitle.isNotEmpty)
+              ? offerTitle
+              : l10n.controlBoardNewVersionHeadline('${offer.bundledSw}')),
       availableBody: offer == null
           ? null
-          : l10n.bundledFirmwareDialogMessage(
-              '${offer.deviceSw}',
-              '${offer.bundledSw}',
-            ),
+          : ((offerContent != null && offerContent.isNotEmpty)
+              ? offerContent
+              : l10n.controlBoardUpdateAvailableMessage(
+                  '${offer.deviceSw}',
+                  '${offer.bundledSw}',
+                )),
       statusStyle: style,
       headlineStyle: headlineStyle,
       actions: _buildCheckFooter(l10n),

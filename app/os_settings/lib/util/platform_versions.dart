@@ -3,7 +3,10 @@ import 'package:cyber_hal/sys_info.dart';
 export 'package:cyber_hal/sys_info.dart'
     show PlatformVersionsSnapshot, LinuxPlatformVersions;
 
-/// Logical section for the Operating System inventory page.
+/// Logical section for the Operating System inventory page (UI layout only).
+///
+/// Row values come from HAL [PlatformVersionsSnapshot] — Apps must not probe
+/// `/etc/os-release` / package binaries themselves.
 final class PlatformVersionSection {
   const PlatformVersionSection({
     required this.titleKey,

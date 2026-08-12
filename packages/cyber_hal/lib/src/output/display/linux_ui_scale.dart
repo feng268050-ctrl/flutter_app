@@ -12,8 +12,8 @@ final class LinuxUiScale implements UiScale {
   double _scale = 1.0;
   bool _warmed = false;
 
-  static const double minScale = 0.85;
-  static const double maxScale = 1.25;
+  static const double minScale = 0.5;
+  static const double maxScale = 2.0;
 
   @override
   double get scale => _scale;

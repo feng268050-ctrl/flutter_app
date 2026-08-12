@@ -12,6 +12,8 @@ void main() {
           'version': '1017',
           'filename': 'LSW01H1000S1017.bin',
           'url': url,
+          'title': 'Control board 1017',
+          'content': 'Fixes Modbus timeouts.',
         },
         deviceHw: 1000,
         deviceSw: 1010,
@@ -20,6 +22,8 @@ void main() {
       expect(c!.softwareVersion, 1017);
       expect(c.hardwareVersion, 1000);
       expect(c.fileName, 'LSW01H1000S1017.bin');
+      expect(c.title, 'Control board 1017');
+      expect(c.content, 'Fixes Modbus timeouts.');
     });
 
     test('ignores wrong channel version string; filename SW wins', () {

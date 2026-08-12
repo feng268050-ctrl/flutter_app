@@ -581,10 +581,15 @@ esac
 
 MEM="${EMULATOR_MEM:-2048}"
 # cortex-a55 ≈ RK356x; avoid -cpu max feature surprises on Apple HVF
-SMP="${EMULATOR_CPU:-4}"
+# Default SMP=1: systemd 256 (sd-gens)/HVF races with smp>=2 hang after Welcome
+# on this virt motherboard; override with EMULATOR_CPU=4 when debugging perf.
+SMP="${EMULATOR_CPU:-1}"
 CPU="${EMULATOR_CPU_MODEL:-cortex-a55}"
-CMDLINE="${EMULATOR_CMDLINE:-root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 earlycon=pl011,0x9000000 lws.emulator=1}"
-
+# Multi-board cmdline: lws.emulator=1 marks the sim/virt motherboard (same OS image).
+# systemd.*_auto=no: sim lacks vsock/GPT-auto; overlay masks stock generators.
+# random.trust_cpu=on: help first-boot getrandom; build-emulator also seeds machine-id
+# into the emulator rootfs *copy* only.
+CMDLINE="${EMULATOR_CMDLINE:-root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 earlycon=pl011,0x9000000 lws.emulator=1 systemd.ssh_auto=no systemd.getty_auto=no systemd.gpt_auto=no random.trust_cpu=on}"
 GL_MODE="${EMULATOR_GL:-host}"
 case "$GL_MODE" in
 host | auto) ;;

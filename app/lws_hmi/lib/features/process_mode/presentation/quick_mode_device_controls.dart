@@ -90,7 +90,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               label: l10n.manualGas,
                               leading: _materialIcon(Icons.air),
                               selected: controller.manualGas,
-                              enabled: true,
+                              enabled: !controller.busy,
                               onPressed: () =>
                                   unawaited(_toggleManualGas(context, l10n)),
                             ),
@@ -102,7 +102,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               leading: _materialIcon(Icons.sync),
                               selected:
                                   controller.autoWireFeed && _wireCapable,
-                              enabled: _wireCapable,
+                              enabled: _wireCapable && !controller.busy,
                               iconLabelClearance:
                                   ProcessModeOutlineChrome.noIconLabelClearance,
                               onPressed: () =>
@@ -149,7 +149,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                                 l10n,
                               ),
                               leading: _wireIcon(retract: false),
-                              enabled: _wireCapable,
+                              enabled: _wireCapable && !controller.busy,
                               laserBlocked: laserOpen,
                               retract: false,
                               active: controller.wireWork &&
@@ -163,7 +163,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               key: const ValueKey('device-control-retract'),
                               label: l10n.retract,
                               leading: _wireIcon(retract: true),
-                              enabled: _wireCapable,
+                              enabled: _wireCapable && !controller.busy,
                               laserBlocked: laserOpen,
                               retract: true,
                               active: controller.wireWork &&
@@ -244,7 +244,6 @@ final class QuickModeDeviceControls extends StatelessWidget {
     AppLocalizations l10n,
   ) async {
     if (controller.busy) {
-      _toast(context, LaserEnableBlockReason.busy.localizedMessage(l10n));
       return;
     }
     if (_laserOpen) {
@@ -279,7 +278,6 @@ final class QuickModeDeviceControls extends StatelessWidget {
       return;
     }
     if (controller.busy) {
-      _toast(context, LaserEnableBlockReason.busy.localizedMessage(l10n));
       return;
     }
     if (_laserOpen) {

@@ -353,7 +353,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       // Kick apply without waiting for wire/laser Modbus (those can be slow on
       // a busy RTU). Interlock still blocks when laser is actually on — then
       // [_syncDeviceForProcessType] re-applies after disable.
-      _scheduleApply(preset);
+      _scheduleApply(preset, mode: ProcessApplyMode.modeSwitch);
     }
     _enqueueDeviceSyncForProcessType(type, gen);
   }
@@ -553,17 +553,23 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   /// Quick handoff / tab switch (`selectModel` sendData). Unlike Quick Mode,
   /// the same draft uuid may change field values, so every edit schedules an
   /// apply — do not skip on uuid equality.
-  void _scheduleApply(ProcessPreset preset) {
+  void _scheduleApply(
+    ProcessPreset preset, {
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
+  }) {
     _applyDebounce?.cancel();
     _applyDebounce = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) {
         return;
       }
-      unawaited(_applyDraft(preset));
+      unawaited(_applyDraft(preset, mode: mode));
     });
   }
 
-  Future<bool> _applyDraft(ProcessPreset preset) async {
+  Future<bool> _applyDraft(
+    ProcessPreset preset, {
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
+  }) async {
     final gen = ++_applyGen;
     final library = ProcessLibraryScope.of(context);
     // Tab-switch apply can land while continuous first-entry apply still holds
@@ -573,7 +579,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       if (!mounted || gen != _applyGen) {
         return false;
       }
-      result = await library.apply(preset);
+      result = await library.apply(preset, mode: mode);
       if (result.isSuccess || result.failure != ProcessApplyFailure.busy) {
         break;
       }
@@ -692,7 +698,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     // fall through to live-tune if the enable bit is still stuck on.
     final result = await library.apply(
       draft.preset,
-      allowLiveTune: false,
+      mode: ProcessApplyMode.modeSwitch,
     );
     if (!mounted) {
       return false;
@@ -745,10 +751,14 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         l10n.processApplyFailureBaselineReadFailed,
       ProcessApplyFailure.processWriteFailed =>
         l10n.processApplyFailureProcessWriteFailed,
+      ProcessApplyFailure.processReadFailed =>
+        l10n.processApplyFailureProcessReadFailed,
       ProcessApplyFailure.processReadbackFailed =>
         l10n.processApplyFailureProcessReadbackFailed,
       ProcessApplyFailure.processTypeWriteFailed =>
         l10n.processApplyFailureProcessTypeWriteFailed,
+      ProcessApplyFailure.processTypeReadFailed =>
+        l10n.processApplyFailureProcessTypeReadFailed,
       ProcessApplyFailure.processTypeReadbackFailed =>
         l10n.processApplyFailureProcessTypeReadbackMismatch,
       ProcessApplyFailure.partialApply => l10n.processApplyFailurePartialApply,

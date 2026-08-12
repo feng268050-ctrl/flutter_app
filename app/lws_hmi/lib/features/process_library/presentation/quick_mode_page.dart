@@ -208,7 +208,10 @@ final class _QuickModePageState extends State<QuickModePage> {
   List<ProcessPreset> _rowsFor(ProcessLibraryController controller) =>
       controller.quickPresets(processType: _processType).toList();
 
-  void _rebuildSelection(ProcessLibraryController controller) {
+  void _rebuildSelection(
+    ProcessLibraryController controller, {
+    ProcessApplyMode applyMode = ProcessApplyMode.liveTune,
+  }) {
     if (_processType == ProcessType.cncCutting) {
       setState(() {
         _selection = null;
@@ -229,7 +232,7 @@ final class _QuickModePageState extends State<QuickModePage> {
       _selection = next;
       _statusMessage = null;
     });
-    _scheduleApply(next.matched);
+    _scheduleApply(next.matched, mode: applyMode);
   }
 
   Future<void> _onProcessTypeChanged(ProcessType type) async {
@@ -259,7 +262,10 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     setState(() => _processType = type);
     LaserEnableLedHolder.instance.setWorkModel(type);
-    _rebuildSelection(ProcessLibraryScope.of(context));
+    _rebuildSelection(
+      ProcessLibraryScope.of(context),
+      applyMode: ProcessApplyMode.modeSwitch,
+    );
     if (type == ProcessType.cncCutting) {
       unawaited(session?.enter() ?? _enterCncWhenReady());
     }
@@ -412,30 +418,33 @@ final class _QuickModePageState extends State<QuickModePage> {
     _scheduleApply(next.matched);
   }
 
-  void _scheduleApply(ProcessPreset? preset) {
+  void _scheduleApply(
+    ProcessPreset? preset, {
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
+  }) {
     _applyDebounce?.cancel();
     if (preset == null) {
       return;
     }
-    if (preset.uuid == _lastAppliedUuid) {
+    if (preset.uuid == _lastAppliedUuid && mode == ProcessApplyMode.liveTune) {
       return;
     }
     _applyDebounce = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) {
         return;
       }
-      unawaited(_applyPreset(preset));
+      unawaited(_applyPreset(preset, mode: mode));
     });
   }
 
   Future<bool> _applyPreset(
     ProcessPreset preset, {
-    bool allowLiveTune = true,
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
   }) async {
     final controller = ProcessLibraryScope.of(context);
     final result = await controller.apply(
       preset,
-      allowLiveTune: allowLiveTune,
+      mode: mode,
     );
     if (!mounted) {
       return false;
@@ -449,6 +458,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     setState(() => _statusMessage = message);
     // Prefer toast/snackbar — do not paint a persistent red corner banner.
     final silent = switch (result.failure) {
+      ProcessApplyFailure.busy ||
       ProcessApplyFailure.baselineReadFailed ||
       ProcessApplyFailure.unsafeMachineState ||
       ProcessApplyFailure.statusUnavailable ||
@@ -476,10 +486,14 @@ final class _QuickModePageState extends State<QuickModePage> {
         l10n.processApplyFailureBaselineReadFailed,
       ProcessApplyFailure.processWriteFailed =>
         l10n.processApplyFailureProcessWriteFailed,
+      ProcessApplyFailure.processReadFailed =>
+        l10n.processApplyFailureProcessReadFailed,
       ProcessApplyFailure.processReadbackFailed =>
         l10n.processApplyFailureProcessReadbackFailed,
       ProcessApplyFailure.processTypeWriteFailed =>
         l10n.processApplyFailureProcessTypeWriteFailed,
+      ProcessApplyFailure.processTypeReadFailed =>
+        l10n.processApplyFailureProcessTypeReadFailed,
       ProcessApplyFailure.processTypeReadbackFailed =>
         l10n.processApplyFailureProcessTypeReadbackMismatch,
       ProcessApplyFailure.partialApply => l10n.processApplyFailurePartialApply,
@@ -631,7 +645,10 @@ final class _QuickModePageState extends State<QuickModePage> {
 
     // Match lws-ui ordering: current process + advanced settings, then control.
     // Require idle so a stuck laser_enable cannot skip process_type.
-    final applied = await _applyPreset(preset, allowLiveTune: false);
+    final applied = await _applyPreset(
+      preset,
+      mode: ProcessApplyMode.modeSwitch,
+    );
     if (!mounted) {
       return;
     }

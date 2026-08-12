@@ -1240,6 +1240,7 @@ final class CloudLocalRuntime {
         'soundEffect': sound?.index ?? SoundEffectStore.defaultIndex,
         'showBootSelfCheck': misc?.showStartupSelfCheck ?? true,
         'showSafetyGroundLockAlarm': misc?.showGroundLockAlarm ?? true,
+        'showKeySwitchAlarm': misc?.showKeySwitchAlarm ?? false,
       },
       deviceStatus: deviceStatus,
       deviceData: deviceData,

@@ -768,6 +768,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Show Safety Clamp Alarm';
 
   @override
+  String get commonSettingsShowKeySwitchAlarm => 'Show Key Switch Alarm';
+
+  @override
+  String get keySwitchOffAlarmTitle => 'Key Switch Off';
+
+  @override
   String get completeSelectionToPreview =>
       'Complete the selection to preview parameters.';
 
@@ -969,7 +975,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceControlFeedStopped => 'Feed Stopped';
 
   @override
-  String get deviceControlKeySwitchOffError => 'Key switch is off';
+  String get deviceControlKeySwitchOffError =>
+      'Insert the key and turn the key switch to the right, then try again.';
 
   @override
   String get deviceControlManualGasOff => 'Manual Gas Turned Off';

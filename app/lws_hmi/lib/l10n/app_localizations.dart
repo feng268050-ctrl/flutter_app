@@ -1421,6 +1421,18 @@ abstract class AppLocalizations {
   /// **'Show Safety Clamp Alarm'**
   String get commonSettingsShowSafetyGroundLockAlarm;
 
+  /// No description provided for @commonSettingsShowKeySwitchAlarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Key Switch Alarm'**
+  String get commonSettingsShowKeySwitchAlarm;
+
+  /// No description provided for @keySwitchOffAlarmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Switch Off'**
+  String get keySwitchOffAlarmTitle;
+
   /// No description provided for @completeSelectionToPreview.
   ///
   /// In en, this message translates to:
@@ -1808,7 +1820,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceControlKeySwitchOffError.
   ///
   /// In en, this message translates to:
-  /// **'Key switch is off'**
+  /// **'Insert the key and turn the key switch to the right, then try again.'**
   String get deviceControlKeySwitchOffError;
 
   /// No description provided for @deviceControlManualGasOff.

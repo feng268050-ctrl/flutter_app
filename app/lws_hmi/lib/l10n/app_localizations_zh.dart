@@ -732,6 +732,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonSettingsShowSafetyGroundLockAlarm => '显示安全夹告警';
 
   @override
+  String get commonSettingsShowKeySwitchAlarm => '显示钥匙开关告警';
+
+  @override
+  String get keySwitchOffAlarmTitle => '钥匙开关未打开';
+
+  @override
   String get completeSelectionToPreview => '请完成选择以预览参数。';
 
   @override
@@ -925,7 +931,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceControlFeedStopped => '送丝已停止';
 
   @override
-  String get deviceControlKeySwitchOffError => '钥匙开关未打开';
+  String get deviceControlKeySwitchOffError => '请插上钥匙并旋转打开钥匙开关，然后重新操作。';
 
   @override
   String get deviceControlManualGasOff => '手动吹气已关闭';
@@ -3844,6 +3850,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get commonSettingsShowSafetyGroundLockAlarm => '顯示安全夾告警';
 
   @override
+  String get commonSettingsShowKeySwitchAlarm => '顯示鑰匙開關告警';
+
+  @override
+  String get keySwitchOffAlarmTitle => '鑰匙開關未打開';
+
+  @override
   String get completeSelectionToPreview => '請完成選擇以預覽參數。';
 
   @override
@@ -4019,7 +4031,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get deviceControlFeedStopped => '送絲已停止';
 
   @override
-  String get deviceControlKeySwitchOffError => '鑰匙開關未打開';
+  String get deviceControlKeySwitchOffError => '請插上鑰匙並旋轉打開鑰匙開關，然後重新操作。';
 
   @override
   String get deviceControlManualGasOff => '手動吹氣已關閉';

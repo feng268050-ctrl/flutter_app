@@ -14,7 +14,7 @@ Can't find part: boot
 | **A** | `boot` | `rootfs_a` |
 | **B** | `boot_b` (storage) | `rootfs_b` |
 
-**Try-boot (apply):** backup running FIT `boot` → `boot_b`, write new try FIT → `boot`, reboot. U-Boot always loads `boot`; running kernel/rootfs are unaffected until reboot. **Rollback (confirm):** swap `boot` ↔ `boot_b` to restore previous FIT. Rootfs letter is selected via FIT `root=PARTLABEL=rootfs_{a|b}` (inactive `rootfs_*` is written during apply; no rootfs swap).
+**Try-boot (apply):** backup running FIT `boot` → `boot_b`, write new try FIT → `boot`, reboot. U-Boot always loads `boot`; running kernel/rootfs are unaffected until reboot. **Rollback (confirm):** swap `boot` ↔ `boot_b` to restore previous FIT. **Rockchip ynh960 applies `root=` from the DTB embedded in `resource.img` inside that FIT**, not only from `fdt-*`. Slot **B** FITs (`boot_b.img`) MUST ship a slot-patched `resource.img` (`scripts/patch-resource-img-partlabel.py` during `make build-kernel`); `fdt-*` bootargs must match. Inactive `rootfs_*` is written during apply; no rootfs partition swap.
 
 Slot letter marker lives on **`misc`** (never userdata).
 

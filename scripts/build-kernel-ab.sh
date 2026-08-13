@@ -144,9 +144,8 @@ force_rebuild_inventory_dtbs() {
 	done
 }
 
-# Ensure the FIT's fdt-* blob(s) select $expect. resource.img may still carry
-# the factory letter (rootfs_a) from the shared Image build — that is OK as
-# long as fdt-* matches the slot (U-Boot uses the FIT configuration FDT).
+# Ensure every DTB blob carrying root=PARTLABEL in the FIT selects $expect.
+# ynh960 U-Boot honors resource.img's embedded DTB, not only fdt-*.
 assert_fit_fdt_partlabel() {
 	local img="$1" expect="$2" other
 	case "$expect" in
@@ -161,8 +160,6 @@ img, expect, other = Path(sys.argv[1]), sys.argv[2].encode(), sys.argv[3].encode
 data = img.read_bytes()
 want = f"PARTLABEL={expect.decode()}".encode()
 forbid = f"PARTLABEL={other.decode()}".encode()
-# External FIT: kernel then resource then fdt-*. Prefer the last DTB that
-# carries a PARTLABEL=rootfs_* bootargs — that is fdt-* after resource.
 found = []
 i = 0
 while True:
@@ -180,28 +177,56 @@ while True:
 if not found:
     print(f"ERROR: no DTB with PARTLABEL in {img}", file=sys.stderr)
     sys.exit(1)
-# Last matching DTB = FIT fdt-* (resource embeds an earlier copy).
-_off, has_want, has_forbid = found[-1]
-if not has_want or has_forbid:
+bad = [(off, has_want, has_forbid) for off, has_want, has_forbid in found if has_forbid or not has_want]
+if bad:
     print(
-        f"ERROR: {img} fdt PARTLABEL mismatch: expect {expect.decode()} only "
-        f"(last DTB @ {_off} want={has_want} other={has_forbid}; all={found})",
+        f"ERROR: {img} DTB PARTLABEL mismatch for {expect.decode()}: "
+        f"all DTBs must select {expect.decode()} only (bad={bad}; all={found})",
         file=sys.stderr,
     )
     sys.exit(1)
-print(f"OK: {img.name} fdt selects PARTLABEL={expect.decode()}")
+print(f"OK: {img.name} all {len(found)} DTB(s) select PARTLABEL={expect.decode()}")
 PY
 }
 
+find_resource_img() {
+	local c
+	for c in \
+		"$(kernel_source_dir)/resource.img" \
+		"$SDK/kernel/resource.img" \
+		"$SDK/output/resource.img" \
+		"$SDK/rockdev/resource.img" \
+		"$SDK/output/firmware/resource.img" \
+		"$SDK/rockdev/Image/resource.img"; do
+		if [[ -r "$c" ]]; then
+			printf '%s\n' "$c"
+			return 0
+		fi
+	done
+	return 1
+}
+
+stage_slot_resource_img() {
+	local slot="$1" expect src staging dest
+	expect="$(expect_partlabel "$slot")"
+	staging="$(slot_staging_dir "$slot")"
+	dest="$staging/resource.img"
+	src="$(find_resource_img)" || die "resource.img not found (./build.sh kernel first)"
+	mkdir -p "$staging"
+	cp -f "$src" "$dest"
+	python3 "$ROOT/scripts/patch-resource-img-partlabel.py" "$dest" "$expect" >&2
+	printf '%s\n' "$dest"
+}
+
 repack_multi_fit() {
-	local target="$1" dtb_dir="${2:-}" tmp
+	local target="$1" slot="$2" dtb_dir resource_img tmp expect
+	expect="$(expect_partlabel "$slot")"
+	dtb_dir="$(slot_dtb_dir "$slot")"
+	resource_img="$(stage_slot_resource_img "$slot")"
 	tmp="$(mktemp "${target}.XXXXXX")"
-	if [[ -n "$dtb_dir" ]]; then
-		FIT_DTB_DIR="$dtb_dir" SDK_DIR="$SDK" \
-			bash "$ROOT/scripts/pack-boot-fit-multi.sh" "$tmp"
-	else
-		SDK_DIR="$SDK" bash "$ROOT/scripts/pack-boot-fit-multi.sh" "$tmp"
-	fi
+	FIT_DTB_DIR="$dtb_dir" SDK_DIR="$SDK" \
+		bash "$ROOT/scripts/pack-boot-fit-multi.sh" "$tmp" "" "$resource_img"
+	assert_fit_fdt_partlabel "$tmp" "$expect"
 	bash "$ROOT/scripts/verify-boot-fit.sh" "$(dirname "$tmp")" "$(basename "$tmp")"
 	mkdir -p "$(dirname "$target")"
 	rm -f "$target"
@@ -291,9 +316,7 @@ build_kernel_slot() {
 		restore_canonical_root_dtsi
 	) 9>"$DTSI_LOCK"
 
-	repack_multi_fit "$fit_out" "$dtb_dir"
-	# resource.img (shared) may still embed rootfs_a; fdt-* must match the slot.
-	assert_fit_fdt_partlabel "$fit_out" "$expect"
+	repack_multi_fit "$fit_out" "$slot"
 	echo "=== slot ${slot} FIT ready: $fit_out ==="
 }
 

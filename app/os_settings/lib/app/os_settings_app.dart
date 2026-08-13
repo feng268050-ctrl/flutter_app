@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_capture/cyber_capture.dart';
 import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,8 @@ class _OsSettingsAppState extends State<OsSettingsApp> {
       ValueNotifier<double>(widget.services.uiScale().scale);
   late final CloudSettingsStore _cloudSettings = CloudSettingsStore()
     ..warmRead();
+  late final CaptureCommandWatcher _captureCommandWatcher =
+      CaptureCommandWatcher();
 
   @override
   void initState() {
@@ -53,10 +56,12 @@ class _OsSettingsAppState extends State<OsSettingsApp> {
       ),
     );
     unawaited(widget.services.mediaAudio().warmClickSession());
+    _captureCommandWatcher.start();
   }
 
   @override
   void dispose() {
+    unawaited(_captureCommandWatcher.dispose());
     CyberClickSoundRegistry.register(null);
     CyberImeLanguageRegistry.register(null);
     CyberImeRegionalLayoutRegistry.register(null);

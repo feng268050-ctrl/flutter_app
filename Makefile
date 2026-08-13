@@ -151,8 +151,8 @@ help:
 	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
-	@echo "  make screenshot            # HMI present-hook still → output/screenshot/ (ROTATE= Q=)"
-	@echo "  make record-screen         # HMI present-hook record → output/record-screen/ (FPS= SCALE= DURATION= AUDIO=)"
+	@echo "  make screenshot            # present-hook still (HMI or OS Settings) → output/screenshot/ (ROTATE= Q=)"
+	@echo "  make record-screen         # present-hook record (either seat) → output/record-screen/ (FPS= SCALE= DURATION= AUDIO= AUDIO_DEV=)"
 	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
 	@echo "  make prepare-debug-host    # USB ECM or registered SSH reachability for debug-app/IDE"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
@@ -456,7 +456,7 @@ screenshot:
 record-screen:
 	@chmod +x scripts/record-screen.sh
 	@set +e; \
-	$(call WITH_DOTENV,FPS='$(FPS)' SCALE='$(SCALE)' ROTATE='$(ROTATE)' AUDIO='$(AUDIO)' DURATION='$(DURATION)' bash scripts/record-screen.sh); \
+	$(call WITH_DOTENV,FPS='$(FPS)' SCALE='$(SCALE)' ROTATE='$(ROTATE)' AUDIO='$(AUDIO)' AUDIO_DEV='$(AUDIO_DEV)' DURATION='$(DURATION)' bash scripts/record-screen.sh); \
 	_ec=$$?; \
 	if [ $$_ec -eq 0 ] || [ $$_ec -eq 130 ]; then exit 0; fi; \
 	exit $$_ec

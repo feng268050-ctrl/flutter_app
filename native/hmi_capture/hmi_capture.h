@@ -22,14 +22,23 @@ typedef void *(*hmi_capture_gl_get_proc_fn)(const char *name);
 /* Arm one-shot still; next present encodes JPEG to out_dir/screen.jpg. */
 int hmi_capture_screenshot(const char *out_dir, int rotate_deg, int q_factor);
 
-/* Start continuous record into out_dir/screen.mp4. audio: 0=off, 1=try ALSA. */
+/* Start continuous record into out_dir/screen.mp4.
+ * audio: 0=off, 1=try ALSA (+ voaacenc); soft-fallback to video-only.
+ * audio_dev: ALSA PCM (NULL/empty → "default"). */
 int hmi_capture_record_start(const char *out_dir,
                              int fps,
                              int scale_pct,
                              int rotate_deg,
-                             int audio);
+                             int audio,
+                             const char *audio_dev);
 
 int hmi_capture_record_stop(void);
+
+/* Pre-init GStreamer + encode worker (call at App start to avoid first-shot jank). */
+int hmi_capture_warm(void);
+
+/* Fast path for SurfaceGl: 0 unless screenshot armed or recording (no GL work). */
+int hmi_capture_wants_present_hook(void);
 
 /* Write short status into buf (idle|armed|recording|done|error:…). */
 int hmi_capture_status(char *buf, size_t buflen);

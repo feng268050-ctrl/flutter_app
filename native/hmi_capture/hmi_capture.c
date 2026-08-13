@@ -9,6 +9,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +59,8 @@ typedef struct {
   int rotate_deg;
   int q_factor;
   int audio; /* request; may soft-fail */
+  char audio_dev[64]; /* ALSA PCM name; unused until a non-hijacking tap exists */
+  int seq; /* bumped on each arm; host waits for seq advance */
 
   int pending_still; /* 1 = next ready ring slot is a still */
   int record_active;
@@ -73,6 +76,18 @@ typedef struct {
 } CaptureState;
 
 static CaptureState g;
+static _Atomic int g_wants_present_hook;
+
+static void sync_present_hook_locked(void) {
+  atomic_store(&g_wants_present_hook,
+               (g.mode == kModeStillArmed || g.mode == kModeRecording) ? 1
+                                                                       : 0);
+}
+
+static void set_mode_locked(Mode mode) {
+  g.mode = mode;
+  sync_present_hook_locked();
+}
 
 static int64_t mono_ns(void) {
   struct timespec ts;
@@ -86,6 +101,7 @@ static void write_status_file_locked(void) {
     return;
   }
   fprintf(f, "%s\n", g.status);
+  fprintf(f, "seq=%d\n", g.seq);
   if (g.out_dir[0]) {
     fprintf(f, "out_dir=%s\n", g.out_dir);
   }
@@ -412,16 +428,31 @@ static void record_pipe_close(RecordPipe *rp) {
     return;
   }
   if (rp->pipeline) {
+    /* Live A/V: EOS appsrc alone leaves alsasrc running; mp4mux never finishes. */
+    gst_element_send_event(rp->pipeline, gst_event_new_eos());
     if (rp->appsrc) {
       gst_app_src_end_of_stream(GST_APP_SRC(rp->appsrc));
     }
     {
       GstBus *bus = gst_element_get_bus(rp->pipeline);
       GstMessage *msg = gst_bus_timed_pop_filtered(
-          bus, 8 * GST_SECOND,
+          bus, 15 * GST_SECOND,
           (GstMessageType)(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
       if (msg) {
+        if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
+          GError *e = NULL;
+          gchar *dbg = NULL;
+          gst_message_parse_error(msg, &e, &dbg);
+          fprintf(stderr, "hmi_capture: record error: %s\n",
+                  e ? e->message : "?");
+          if (e) {
+            g_error_free(e);
+          }
+          g_free(dbg);
+        }
         gst_message_unref(msg);
+      } else {
+        fprintf(stderr, "hmi_capture: record EOS timeout\n");
       }
       gst_object_unref(bus);
     }
@@ -435,35 +466,27 @@ static void record_pipe_close(RecordPipe *rp) {
   }
 }
 
-static int record_pipe_open(RecordPipe *rp,
-                            const char *mp4_path,
-                            int w,
-                            int h,
-                            int fps,
-                            int want_audio) {
+/* Reject shell/pipeline metacharacters in ALSA device names. */
+static int audio_dev_ok(const char *dev) {
+  size_t i;
+  if (!dev || !dev[0] || strlen(dev) >= 64) {
+    return 0;
+  }
+  for (i = 0; dev[i]; i++) {
+    char c = dev[i];
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+        (c >= '0' && c <= '9') || c == ':' || c == ',' || c == '.' ||
+        c == '-' || c == '_' || c == '/') {
+      continue;
+    }
+    return 0;
+  }
+  return 1;
+}
+
+static int record_pipe_try_launch(RecordPipe *rp, const char *desc) {
   GError *err = NULL;
-  char desc[1536];
   GstStateChangeReturn state;
-
-  memset(rp, 0, sizeof(*rp));
-  rp->width = w;
-  rp->height = h;
-  rp->fps = fps > 0 ? fps : 30;
-  rp->base_pts_ns = -1;
-  rp->last_pts_ns = 0;
-  snprintf(rp->audio_note, sizeof(rp->audio_note), "audio=off");
-
-  /* Video-only first; ALSA soft-fallback keeps the same mux path. */
-  (void)want_audio;
-  /* framerate caps are a hint; PTS come from monotonic submit time. */
-  snprintf(desc, sizeof(desc),
-           "appsrc name=src is-live=true format=time do-timestamp=false "
-           "block=false max-bytes=0 ! "
-           "video/x-raw,format=RGBA,width=%d,height=%d,framerate=%d/1 ! "
-           "videoconvert ! video/x-raw,format=NV12 ! "
-           "mpph264enc rc-mode=fixqp ! h264parse ! "
-           "mp4mux name=mux ! filesink location=\"%s\" sync=false",
-           w, h, rp->fps, mp4_path);
 
   rp->pipeline = gst_parse_launch(desc, &err);
   if (!rp->pipeline) {
@@ -484,12 +507,54 @@ static int record_pipe_open(RecordPipe *rp,
 
   state = gst_element_set_state(rp->pipeline, GST_STATE_PLAYING);
   if (state == GST_STATE_CHANGE_FAILURE) {
-    record_pipe_close(rp);
+    if (rp->appsrc) {
+      gst_object_unref(rp->appsrc);
+      rp->appsrc = NULL;
+    }
+    gst_element_set_state(rp->pipeline, GST_STATE_NULL);
+    gst_object_unref(rp->pipeline);
+    rp->pipeline = NULL;
     return -1;
   }
+  /* Live appsrc pipelines stay PAUSED until the first buffer; do not block here. */
+  return 0;
+}
+
+static int record_pipe_open(RecordPipe *rp,
+                            const char *mp4_path,
+                            int w,
+                            int h,
+                            int fps,
+                            int want_audio,
+                            const char *audio_dev) {
+  char desc[2048];
+  (void)audio_dev;
+
+  memset(rp, 0, sizeof(*rp));
+  rp->width = w;
+  rp->height = h;
+  rp->fps = fps > 0 ? fps : 30;
+  rp->base_pts_ns = -1;
+  rp->last_pts_ns = 0;
+  snprintf(rp->audio_note, sizeof(rp->audio_note), "audio=off");
+
+  /* Do not tap/hijack RK809 playback (snd-aloop/alsaloop). Video-only. */
   if (want_audio) {
     snprintf(rp->audio_note, sizeof(rp->audio_note),
-             "audio=skipped_no_aac_soft_fallback");
+             "audio=skipped_no_playback_tap");
+  }
+
+  snprintf(desc, sizeof(desc),
+           "appsrc name=src is-live=true format=time do-timestamp=false "
+           "block=false max-bytes=0 ! "
+           "video/x-raw,format=RGBA,width=%d,height=%d,framerate=%d/1 ! "
+           "videoconvert ! video/x-raw,format=NV12 ! "
+           "mpph264enc rc-mode=fixqp ! h264parse ! queue ! "
+           "mp4mux name=mux streamable=true ! filesink location=\"%s\" sync=false",
+           w, h, rp->fps, mp4_path);
+
+  if (record_pipe_try_launch(rp, desc) != 0) {
+    return -1;
   }
   return 0;
 }
@@ -521,13 +586,12 @@ static void *worker_main(void *arg) {
   (void)arg;
   memset(&rp, 0, sizeof(rp));
 
-  gst_init(NULL, NULL);
-
   for (;;) {
     FrameSlot local;
     Mode mode;
     char out_dir[kPathMax];
     int fps, scale_pct, rotate_deg, q_factor, audio;
+    char audio_dev[64];
     int stop;
     int is_still = 0;
 
@@ -567,6 +631,7 @@ static void *worker_main(void *arg) {
     rotate_deg = g.rotate_deg;
     q_factor = g.q_factor;
     audio = g.audio;
+    snprintf(audio_dev, sizeof(audio_dev), "%s", g.audio_dev);
     pthread_mutex_unlock(&g.mu);
 
     if (stop) {
@@ -612,12 +677,12 @@ static void *worker_main(void *arg) {
         if (encode_still_file(rgba, w, h, jpg_path, q_factor) == 0) {
           write_summary(out_dir, "still", w, h, 0, 1, g.drop_count, NULL);
           pthread_mutex_lock(&g.mu);
-          g.mode = kModeIdle;
+          set_mode_locked(kModeIdle);
           set_status_locked("done");
           pthread_mutex_unlock(&g.mu);
         } else {
           pthread_mutex_lock(&g.mu);
-          g.mode = kModeIdle;
+          set_mode_locked(kModeIdle);
           set_error_locked("still_encode_failed");
           pthread_mutex_unlock(&g.mu);
         }
@@ -629,9 +694,9 @@ static void *worker_main(void *arg) {
         if (!rp.pipeline || rp.width != w || rp.height != h) {
           record_pipe_close(&rp);
           snprintf(mp4_path, sizeof(mp4_path), "%s/screen.mp4", out_dir);
-          if (record_pipe_open(&rp, mp4_path, w, h, fps, audio) != 0) {
+          if (record_pipe_open(&rp, mp4_path, w, h, fps, audio, audio_dev) != 0) {
             pthread_mutex_lock(&g.mu);
-            g.mode = kModeIdle;
+            set_mode_locked(kModeIdle);
             g.record_active = 0;
             set_error_locked("record_pipeline_failed");
             pthread_mutex_unlock(&g.mu);
@@ -695,7 +760,7 @@ static void *worker_main(void *arg) {
                       g.drop_count, extra);
         pthread_mutex_lock(&g.mu);
         g.record_active = 0;
-        g.mode = kModeIdle;
+        set_mode_locked(kModeIdle);
         set_status_locked("done");
       }
     }
@@ -710,6 +775,9 @@ static int ensure_worker(void) {
   if (g.worker_started) {
     return 0;
   }
+  /* Init GStreamer on the control thread so the first arm is not blocked
+   * behind a cold gst_init inside the worker after frames are already queued. */
+  gst_init(NULL, NULL);
   if (pthread_create(&g.worker, NULL, worker_main, NULL) != 0) {
     return -1;
   }
@@ -729,7 +797,18 @@ static void capture_init_once(void) {
   g.fps = 30;
   g.scale_pct = 100;
   g.q_factor = 80;
+  snprintf(g.audio_dev, sizeof(g.audio_dev), "%s", "default");
   inited = 1;
+}
+
+int hmi_capture_warm(void) {
+  capture_init_once();
+  return ensure_worker();
+}
+
+int hmi_capture_wants_present_hook(void) {
+  capture_init_once();
+  return atomic_load(&g_wants_present_hook);
 }
 
 int hmi_capture_screenshot(const char *out_dir, int rotate_deg, int q_factor) {
@@ -754,7 +833,8 @@ int hmi_capture_screenshot(const char *out_dir, int rotate_deg, int q_factor) {
   g.pending_still = 0;
   g.drop_count = 0;
   g.frame_count = 0;
-  g.mode = kModeStillArmed;
+  g.seq++;
+  set_mode_locked(kModeStillArmed);
   set_status_locked("armed");
   set_error_locked("");
   pthread_cond_signal(&g.cv);
@@ -766,7 +846,8 @@ int hmi_capture_record_start(const char *out_dir,
                              int fps,
                              int scale_pct,
                              int rotate_deg,
-                             int audio) {
+                             int audio,
+                             const char *audio_dev) {
   capture_init_once();
   if (!out_dir || !out_dir[0]) {
     return -1;
@@ -787,9 +868,15 @@ int hmi_capture_record_start(const char *out_dir,
   g.scale_pct = (scale_pct > 0 && scale_pct <= 100) ? scale_pct : 100;
   g.rotate_deg = rotate_deg;
   g.audio = audio ? 1 : 0;
+  if (audio_dev && audio_dev[0] && audio_dev_ok(audio_dev)) {
+    snprintf(g.audio_dev, sizeof(g.audio_dev), "%s", audio_dev);
+  } else {
+    snprintf(g.audio_dev, sizeof(g.audio_dev), "%s", "default");
+  }
   g.drop_count = 0;
   g.frame_count = 0;
-  g.mode = kModeRecording;
+  g.seq++;
+  set_mode_locked(kModeRecording);
   set_status_locked("recording");
   set_error_locked("");
   pthread_cond_signal(&g.cv);
@@ -801,7 +888,7 @@ int hmi_capture_record_stop(void) {
   capture_init_once();
   pthread_mutex_lock(&g.mu);
   if (g.mode == kModeRecording || g.record_active) {
-    g.mode = kModeStopping;
+    set_mode_locked(kModeStopping);
     set_status_locked("stopping");
     pthread_cond_signal(&g.cv);
   }
@@ -830,8 +917,17 @@ int hmi_capture_cleanup(const char *path) {
       strncmp(path, "/tmp/", 5) != 0) {
     return -1;
   }
+  capture_init_once();
   snprintf(cmd, sizeof(cmd), "rm -rf '%s'", path);
-  return system(cmd) == 0 ? 0 : -1;
+  {
+    int rc = system(cmd) == 0 ? 0 : -1;
+    pthread_mutex_lock(&g.mu);
+    if (g.mode == kModeIdle) {
+      set_status_locked("idle");
+    }
+    pthread_mutex_unlock(&g.mu);
+    return rc;
+  }
 }
 
 void hmi_capture_on_present(hmi_capture_gl_get_proc_fn get_proc,
@@ -863,7 +959,7 @@ void hmi_capture_on_present(hmi_capture_gl_get_proc_fn get_proc,
   }
   if (!g.gl_ready) {
     set_error_locked("glReadPixels_missing");
-    g.mode = kModeIdle;
+    set_mode_locked(kModeIdle);
     pthread_mutex_unlock(&g.mu);
     return;
   }
@@ -905,7 +1001,7 @@ void hmi_capture_on_present(hmi_capture_gl_get_proc_fn get_proc,
   slot->ready = 1;
   if (g.mode == kModeStillArmed) {
     g.pending_still = 1;
-    g.mode = kModeIdle; /* do not capture further presents */
+    set_mode_locked(kModeIdle); /* do not capture further presents */
     set_status_locked("encoding");
   }
   pthread_cond_signal(&g.cv);

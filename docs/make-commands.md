@@ -353,14 +353,14 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make screenshot`
 
 - **怎么用：** `make screenshot`；可选 `ROTATE=0|90|180|270`、`Q=80`、`SN=` / `IP=`
-- **何时用：** HMI 运行中抓一张逻辑横屏静帧 → `output/screenshot/shot-<stamp>/`（`screen.jpg` + `summary.txt`），`shot-latest` 指向最近一次
-- **行为：** SSH 写 `/run/hmi/capture.cmd` → `cyber_capture` → `libhmi_capture` present-hook（**不是** ffmpeg/`kmsgrab`）；拉回后清理远端 staging
+- **何时用：** 当前前台 Flutter seat（`hmi.service` **或** `os-settings.service`）运行中抓一张逻辑横屏静帧 → `output/screenshot/shot-<stamp>/`（`screen.jpg` + `summary.txt`），`shot-latest` 指向最近一次
+- **行为：** SSH 写 `/run/hmi/capture.cmd` → `cyber_capture` → `libhmi_capture` present-hook（**不是** ffmpeg/`kmsgrab`）；host **单次 SSH 板端轮询** status（含 `seq=`，避免旧 `done` 误判），有进度输出；拉回后清理远端 staging。两 seat 共用同一 cmd 路径；录制中勿切换 seat
 
 ### `make record-screen`
 
 - **怎么用：** `make record-screen`；Ctrl+C 停止（退出码 0）；或 `DURATION=15 make record-screen`
-- **何时用：** Debug 录屏 → `output/record-screen/rec-<stamp>/screen.mp4`
-- **参数：** `FPS=`（默认 30）、`SCALE=`（默认 100）、`ROTATE=`、`AUDIO=0|1`（无 AAC 时软降级仅视频）
+- **何时用：** Debug 录屏（HMI 或 OS Settings 前台均可）→ `output/record-screen/rec-<stamp>/screen.mp4`（默认仅视频；扬声器抽取未做）
+- **参数：** `FPS=`（默认 30）、`SCALE=`（默认 100）、`ROTATE=`、`AUDIO=0|1`（默认 **0**）、`AUDIO_DEV=`（默认 `default`）
 
 ### `make smoke-ai`
 

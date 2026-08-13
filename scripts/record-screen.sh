@@ -6,6 +6,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/usb-ssh-session.sh
 source "$ROOT/scripts/usb-ssh-session.sh"
+# shellcheck source=scripts/capture-host-common.sh
+source "$ROOT/scripts/capture-host-common.sh"
 
 CMD_PATH="/run/hmi/capture.cmd"
 STATUS_PATH="/var/lib/hmi/capture/status"
@@ -14,8 +16,16 @@ FPS="${FPS:-30}"
 SCALE="${SCALE:-100}"
 ROTATE="${ROTATE:-0}"
 AUDIO="${AUDIO:-0}"
+AUDIO_DEV="${AUDIO_DEV:-default}"
 DURATION="${DURATION:-0}"
 WAIT_SEC="${WAIT_SEC:-120}"
+
+# ALSA device names for gst-launch / cmd dialect (reject metacharacters).
+case "$AUDIO_DEV" in
+''|*[!A-Za-z0-9:.,_/-]*)
+	AUDIO_DEV=default
+	;;
+esac
 
 die() {
 	echo "ERROR: $*" >&2
@@ -33,24 +43,12 @@ scp_from() {
 }
 
 write_cmd() {
-	local line="$1"
-	remote "mkdir -p /run/hmi /var/lib/hmi/capture && printf '%s\n' '${line}' > '${CMD_PATH}.tmp' && mv -f '${CMD_PATH}.tmp' '${CMD_PATH}'"
+	capture_host_write_cmd "$1"
 }
 
 wait_status_prefix() {
-	local want="$1" i st
-	st=""
-	for ((i = 0; i < WAIT_SEC * 5; i++)); do
-		st="$(remote "cat '${STATUS_PATH}' 2>/dev/null | head -1 | tr -d '\r'" || true)"
-		st="${st%%$'\n'*}"
-		if [[ "$st" == "$want"* ]] || [[ "$st" == error:* ]]; then
-			printf '%s\n' "$st"
-			return 0
-		fi
-		# Interrupted sleep must not abort under set -e (Ctrl+C → stop path).
-		sleep 0.2 || true
-	done
-	die "timeout waiting for status~$want (last: ${st:-empty})"
+	local want="$1" min_seq="${2:-0}"
+	capture_host_wait_status "$want" "$min_seq" "$WAIT_SEC"
 }
 
 fmt_time() {
@@ -74,7 +72,6 @@ pull_and_cleanup() {
 	ln -sfn "$stamp" "$HOST_OUT/rec-latest"
 
 	write_cmd "cleanup ${out_dir}" || true
-	sleep 0.5 || true
 	remote "rm -rf '${out_dir}'" || true
 
 	echo ""
@@ -89,10 +86,13 @@ on_interrupt() {
 }
 
 finalize_and_exit_ok() {
-	local st
+	local st seq_at_rec="${1:-0}"
 	echo ""
+	# After record-start, seq is already bumped; stop → done keeps the same seq.
+	# Wait with min_seq = seq_at_rec - 1 so seq >= seq_at_rec matches via -gt.
+	local min=$((seq_at_rec > 0 ? seq_at_rec - 1 : 0))
 	write_cmd "record-stop" || true
-	st="$(wait_status_prefix done)"
+	st="$(wait_status_prefix done "$min")"
 	if [[ "$st" == error:* ]]; then
 		die "device capture failed: $st"
 	fi
@@ -105,16 +105,24 @@ main() {
 	usb_ssh_session_load_env "$ROOT"
 	usb_ssh_session_select "$ROOT"
 	usb_ssh_session_configure_link
-	usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "${WAIT_SEC:-30}"
+	usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" 30
 
 	trap on_interrupt INT TERM
 
-	write_cmd "record-start fps=${FPS} scale=${SCALE} rotate=${ROTATE} audio=${AUDIO}"
+	capture_host_mkdir
+	capture_host_preflight_clear 20
+	capture_host_read_status
+	local seq0="${CAPTURE_HOST_SEQ:-0}"
+	echo "capture seq before=${seq0} status=${CAPTURE_HOST_STATUS:-empty}" >&2
+
+	write_cmd "record-start fps=${FPS} scale=${SCALE} rotate=${ROTATE} audio=${AUDIO} adev=${AUDIO_DEV}"
 	local st
-	st="$(wait_status_prefix recording)"
+	st="$(wait_status_prefix recording "$seq0")"
 	if [[ "$st" == error:* ]]; then
 		die "device capture failed: $st"
 	fi
+	capture_host_read_status
+	local seq_rec="${CAPTURE_HOST_SEQ:-0}"
 
 	local start_ts now elapsed
 	start_ts="$(date +%s)"
@@ -137,7 +145,7 @@ main() {
 		sleep 0.25 || true
 	done
 
-	finalize_and_exit_ok
+	finalize_and_exit_ok "$seq_rec"
 }
 
 main "$@"

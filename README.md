@@ -408,8 +408,8 @@ make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphen
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
-make screenshot                 # HMI present-hook still → output/screenshot/
-make record-screen              # HMI present-hook record → output/record-screen/ (Ctrl+C stops)
+make screenshot                 # present-hook still (HMI or OS Settings seat) → output/screenshot/
+make record-screen              # present-hook record (either seat) → output/record-screen/ (Ctrl+C stops)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make smoke-ai                   # upload stain demo JPG; offline RKNN via AI daemon sock (HMI running)
 make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if changed

@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/usb-ssh-session.sh
 source "$ROOT/scripts/usb-ssh-session.sh"
+# shellcheck source=scripts/capture-host-common.sh
+source "$ROOT/scripts/capture-host-common.sh"
 
 CMD_PATH="/run/hmi/capture.cmd"
 STATUS_PATH="/var/lib/hmi/capture/status"
@@ -28,31 +30,22 @@ scp_from() {
 		"${TARGET_USER:-root}@${TARGET_ADDR}:$src" "$dest"
 }
 
-wait_status() {
-	local want="$1" i st
-	st=""
-	for ((i = 0; i < WAIT_SEC * 5; i++)); do
-		st="$(remote "cat '${STATUS_PATH}' 2>/dev/null | head -1 | tr -d '\r'" || true)"
-		st="${st%%$'\n'*}"
-		if [[ "$st" == "$want" ]] || [[ "$st" == error:* ]]; then
-			printf '%s\n' "$st"
-			return 0
-		fi
-		sleep 0.2
-	done
-	die "timeout waiting for status=$want (last: ${st:-empty})"
-}
-
 main() {
 	usb_ssh_session_load_env "$ROOT"
 	usb_ssh_session_select "$ROOT"
 	usb_ssh_session_configure_link
-	usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "${WAIT_SEC:-30}"
+	usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" 30
 
-	remote "mkdir -p /run/hmi /var/lib/hmi/capture && printf '%s\n' 'screenshot rotate=${ROTATE} q=${Q}' > '${CMD_PATH}.tmp' && mv -f '${CMD_PATH}.tmp' '${CMD_PATH}'"
+	capture_host_mkdir
+	capture_host_preflight_clear 20
+	capture_host_read_status
+	local seq0="${CAPTURE_HOST_SEQ:-0}"
+	echo "capture seq before=${seq0} status=${CAPTURE_HOST_STATUS:-empty}" >&2
+
+	capture_host_write_cmd "screenshot rotate=${ROTATE} q=${Q}"
 
 	local st out_dir stamp host_dir
-	st="$(wait_status done)"
+	st="$(capture_host_wait_status done "$seq0" "$WAIT_SEC")"
 	if [[ "$st" == error:* ]]; then
 		die "device capture failed: $st"
 	fi
@@ -70,8 +63,7 @@ main() {
 	scp_from "${out_dir}/summary.txt" "$host_dir/summary.txt" || true
 	ln -sfn "$stamp" "$HOST_OUT/shot-latest"
 
-	remote "printf '%s\n' 'cleanup ${out_dir}' > '${CMD_PATH}.tmp' && mv -f '${CMD_PATH}.tmp' '${CMD_PATH}'" || true
-	sleep 0.5
+	capture_host_write_cmd "cleanup ${out_dir}" || true
 	remote "rm -rf '${out_dir}'" || true
 
 	echo "OK: $host_dir"

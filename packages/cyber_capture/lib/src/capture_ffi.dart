@@ -20,6 +20,7 @@ typedef _RecordStartNative = Int32 Function(
   Int32 scalePct,
   Int32 rotateDeg,
   Int32 audio,
+  Pointer<Utf8> audioDev,
 );
 typedef _RecordStartDart = int Function(
   Pointer<Utf8> outDir,
@@ -27,6 +28,7 @@ typedef _RecordStartDart = int Function(
   int scalePct,
   int rotateDeg,
   int audio,
+  Pointer<Utf8> audioDev,
 );
 
 typedef _VoidNative = Int32 Function();
@@ -52,6 +54,9 @@ final class CaptureNative {
         recordStop = _lib
             .lookup<NativeFunction<_VoidNative>>('hmi_capture_record_stop')
             .asFunction(),
+        warm = _lib
+            .lookup<NativeFunction<_VoidNative>>('hmi_capture_warm')
+            .asFunction(),
         status = _lib
             .lookup<NativeFunction<_StatusNative>>('hmi_capture_status')
             .asFunction(),
@@ -64,6 +69,7 @@ final class CaptureNative {
   final _ScreenshotDart screenshot;
   final _RecordStartDart recordStart;
   final _VoidDart recordStop;
+  final _VoidDart warm;
   final _StatusDart status;
   final _CleanupDart cleanup;
 

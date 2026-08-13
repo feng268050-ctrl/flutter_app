@@ -16,6 +16,18 @@ final class CaptureController {
 
   bool get isAvailable => _native != null;
 
+  /// Preload GStreamer/encode worker so the first screenshot is not cold.
+  Future<void> warm() async {
+    final native = _native;
+    if (native == null) {
+      return;
+    }
+    final rc = native.warm();
+    if (rc != 0) {
+      debugPrint('cyber_capture: warm failed rc=$rc');
+    }
+  }
+
   String _stamp() {
     final now = DateTime.now().toUtc();
     String two(int n) => n.toString().padLeft(2, '0');
@@ -58,6 +70,7 @@ final class CaptureController {
     int scalePct = 100,
     int rotateDeg = 0,
     bool audio = false,
+    String audioDev = 'default',
   }) async {
     final native = _native;
     if (native == null) {
@@ -67,12 +80,14 @@ final class CaptureController {
     final dir = await _stagingDir('rec');
     final rc = using((arena) {
       final p = dir.path.toNativeUtf8(allocator: arena);
+      final adev = audioDev.toNativeUtf8(allocator: arena);
       return native.recordStart(
         p,
         fps,
         scalePct,
         rotateDeg,
         audio ? 1 : 0,
+        adev,
       );
     });
     if (rc != 0) {

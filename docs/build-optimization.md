@@ -55,8 +55,9 @@ Daily:
 
 | Change | Run |
 |--------|-----|
-| App | `make build-app` → `make build-rootfs` → `make upgrade` |
-| Kernel / DTS / logo | `make build-kernel` → `make upgrade` |
+| App (hot-swap) | `make build-app` → `make push-app`（或 `upgrade-app`） |
+| App baked into image | `make build-app` → `make build-rootfs` → `make upgrade` |
+| Kernel / DTS / logo | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`（若改了 overlay）→ `make build-kernel` → `make upgrade` |
 | Defconfig / overlay | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
 
 See [`AGENTS.md`](AGENTS.md) for the full path → command mapping for agents.
@@ -70,6 +71,9 @@ See [`docs/boot-kpi-optimization.md`](boot-kpi-optimization.md) for boot KPI pha
 - External GCC 10.3 (`lws_hmi_toolchain_external.config`) — skip gcc/glibc compile
 - `BR2_JLEVEL=8` + `.env` `BUILD_JOBS=8` (Docker caps `nproc`; no global `MAKEFLAGS` in container — avoids busybox jobserver errors)
 - Keep `buildroot/output/` and `buildroot/dl/`
+- **Explicit `apply-overlay`:** `build-rootfs` / macOS `docker-run` do **not** auto-apply (default `SKIP_OVERLAY=1`). Run `make apply-overlay` when overlay/DTS/fs changed — same model as `build-kernel`.
+- **ext2 only:** `chips/lws_hmi_rootfs.config` unsets Rockchip cpio/squashfs/tar so incremental pack builds one image. After flipping those bits: `make apply-overlay` → `make lunch` → `make build-rootfs`.
+- **Postprocess:** `lws-hmi-rootfs-postprocess.sh` repacks `rootfs.ext2` only if fstab or systemctl wrapper actually changed.
 
 After toolchain or major defconfig change (usually **not** needed when migrating legacy `*_p1` output):
 

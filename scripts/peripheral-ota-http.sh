@@ -41,7 +41,7 @@ peripheral_ota_resolve_http_bind() {
 	fi
 	case "${TRANSPORT:-}" in
 	usb-ssh)
-		OTA_HTTP_BIND="${LWS_HMI_USB_HOST_ADDR:-${USB_SSH_HOST_ADDR:-192.168.55.2}}"
+		OTA_HTTP_BIND="${USB_HOST_ADDR:-${USB_SSH_HOST_ADDR:-192.168.55.2}}"
 		return 0
 		;;
 	esac

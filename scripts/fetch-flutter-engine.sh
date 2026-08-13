@@ -9,7 +9,7 @@ source "$ROOT/scripts/prebuilt-common.sh"
 source "$ROOT/scripts/cache-mirror.sh"
 cache_mirror_load_env "$ROOT"
 
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 ENGINE_PKG="$SDK/buildroot/package/flutter-engine"
 VERSION_FILE="$ROOT/overlay/buildroot/flutter-engine.version"
 FORCE="${FORCE:-0}"
@@ -43,7 +43,7 @@ if [[ -f "$TARBALL" && "$FORCE" != "1" ]]; then
 fi
 
 # gclient needs Linux + GNU getopt; mirror fetch can run on the macOS host first.
-if [[ ! -f "$TARBALL" && "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+if [[ ! -f "$TARBALL" && "$(uname -s)" == Darwin && "${DOCKER:-}" != "1" ]]; then
   if cache_mirror_enabled; then
     cache_mirror_fetch "$CATEGORY" "$VERSION" "$TARBALL_NAME" "$TARBALL" || true
   fi
@@ -52,7 +52,7 @@ if [[ ! -f "$TARBALL" && "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1"
     exit 0
   fi
   exec bash "$ROOT/scripts/docker-run.sh" \
-    env LWS_HMI_DOCKER=1 \
+    env DOCKER=1 \
          FORCE="${FORCE}" \
          FLUTTER_ENGINE_VERSION="${FLUTTER_ENGINE_VERSION:-}" \
          BUILD_JOBS="${BUILD_JOBS:-}" \

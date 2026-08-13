@@ -9,9 +9,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+if [[ "$(uname -s)" == Darwin && "${DOCKER:-}" != "1" ]]; then
   exec bash "$ROOT/scripts/docker-run.sh" \
-    bash -c 'export LWS_HMI_DOCKER=1 LWS_HMI_SDK_DIR=/work/sdk; exec bash /work/lws-hmi/scripts/export-runtime-prebuilt.sh "$@"' \
+    bash -c 'export DOCKER=1 SDK_DIR=/work/sdk; exec bash /work/lws-hmi/scripts/export-runtime-prebuilt.sh "$@"' \
     _ "$@"
 fi
 
@@ -25,7 +25,7 @@ case "$MODE" in
   *) echo "usage: export-runtime-prebuilt.sh [all|gstreamer|platform]" >&2; exit 1 ;;
 esac
 
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 PROFILE="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
 TARGET="$SDK/buildroot/output/${PROFILE}/target"
 GST_VER="$(read_version_file "$ROOT/overlay/third-party/gstreamer.version" "rockchip-mpp-gst-rtsp")"

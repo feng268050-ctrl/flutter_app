@@ -19,8 +19,8 @@ export BUILD_JOBS
 source "$ROOT/scripts/build-env.sh"
 setup_build_env
 
-export LWS_HMI_ROOT="$ROOT"
-export LWS_HMI_SDK_DIR="$SDK"
+export DOCKER_ROOT="$ROOT"
+export SDK_DIR="$SDK"
 
 if [[ -d "${CCACHE_DIR:-}" ]] || command -v ccache >/dev/null 2>&1; then
   export CCACHE_DIR="${CCACHE_DIR:-$ROOT/.cache/ccache}"

@@ -6,7 +6,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-/work/sdk}"
+SDK="${SDK_DIR:-/work/sdk}"
 FIRMWARE="$SDK/output/firmware"
 INVENTORY="${FIT_BOARD_INVENTORY:-$ROOT/board/rk356x-fit-boards.txt}"
 CANONICAL_DTSI="$ROOT/overlay/kernel/rockchip/ynh960-linux-root.dtsi"
@@ -197,10 +197,10 @@ repack_multi_fit() {
 	local target="$1" dtb_dir="${2:-}" tmp
 	tmp="$(mktemp "${target}.XXXXXX")"
 	if [[ -n "$dtb_dir" ]]; then
-		FIT_DTB_DIR="$dtb_dir" LWS_HMI_SDK_DIR="$SDK" \
+		FIT_DTB_DIR="$dtb_dir" SDK_DIR="$SDK" \
 			bash "$ROOT/scripts/pack-boot-fit-multi.sh" "$tmp"
 	else
-		LWS_HMI_SDK_DIR="$SDK" bash "$ROOT/scripts/pack-boot-fit-multi.sh" "$tmp"
+		SDK_DIR="$SDK" bash "$ROOT/scripts/pack-boot-fit-multi.sh" "$tmp"
 	fi
 	bash "$ROOT/scripts/verify-boot-fit.sh" "$(dirname "$tmp")" "$(basename "$tmp")"
 	mkdir -p "$(dirname "$target")"

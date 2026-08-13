@@ -19,7 +19,7 @@ app_select_resolve
 # shellcheck source=scripts/factory-sku.sh
 source "$ROOT/scripts/factory-sku.sh"
 
-FIRMWARE="${LWS_HMI_FIRMWARE_DIR:-$ROOT/output/firmware}"
+FIRMWARE="${FIRMWARE_DIR:-$ROOT/output/firmware}"
 OTA_DIR="/userdata/ota"
 PREFLIGHT_REMOTE="/usr/libexec/ab/ab-preflight.sh"
 CMD_PATH="/run/hmi/upgrade-ota.cmd"
@@ -88,7 +88,7 @@ Env (also in repo-root \`.env\`; command-line env overrides \`.env\`):
   OTA_SIGNING_KEY           Ed25519 PEM (default keys/ota/ed25519.pem if present)
   OTA_HTTP_HOST             bind/advertise IP for host HTTP (USB-SSH default 192.168.55.2)
   OTA_HTTP_PORT             host HTTP port (default 0 = ephemeral)
-  LWS_HMI_FIRMWARE_DIR      default: output/firmware
+  FIRMWARE_DIR      default: output/firmware
   FACTORY_SKU / OEM_ID      resolve default oem.img
   OEM_IMG                   oem.img path; unset=auto; empty=skip oem
   OEM_ONLY                  0|1 — 1 = oem partition only (required for oem-only packages)
@@ -343,7 +343,7 @@ ensure_ota_package() {
 	echo "upgrade: running pack-ota (archive + .sig for SSH staged verify)..."
 	APP="$APP" OEM_ONLY="$OEM_ONLY" \
 		OEM_IMG="${OEM_IMG-}" \
-		LWS_HMI_FIRMWARE_DIR="$FIRMWARE" \
+		FIRMWARE_DIR="$FIRMWARE" \
 		REQUIRE_OTA_SIG=1 \
 		bash "$ROOT/scripts/pack-ota.sh" \
 		|| die "pack-ota failed — set OTA_SIGNING_KEY= or run: make sign-keys"
@@ -508,7 +508,7 @@ resolve_ota_http_bind() {
 	fi
 	case "${TRANSPORT:-}" in
 	usb-ssh)
-		OTA_HTTP_BIND="${LWS_HMI_USB_HOST_ADDR:-${USB_SSH_HOST_ADDR:-192.168.55.2}}"
+		OTA_HTTP_BIND="${USB_HOST_ADDR:-${USB_SSH_HOST_ADDR:-192.168.55.2}}"
 		return 0
 		;;
 	esac

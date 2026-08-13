@@ -32,10 +32,10 @@ if prebuilt_ready "$ENGINE_PREBUILT" && [[ "$FORCE" != "1" ]]; then
   exit 0
 fi
 
-if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+if [[ "$(uname -s)" == Darwin && "${DOCKER:-}" != "1" ]]; then
   bash "$ROOT/scripts/fetch-flutter-sdk.sh"
   exec bash "$ROOT/scripts/docker-run.sh" \
-    env LWS_HMI_DOCKER=1 \
+    env DOCKER=1 \
          FORCE="${FORCE}" \
          FLUTTER_ENGINE_RUNTIME_MODE="${RUNTIME_MODE}" \
          FLUTTER_ENGINE_VERSION="${FLUTTER_ENGINE_VERSION:-}" \

@@ -75,7 +75,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make apply-overlay`
 
 - **怎么用：** `make apply-overlay`；改 DTS/kernel 后常用 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`
-- **何时用：** 改了 `overlay/**`、`board/**`（非纯 app 热更）后、多数 `build-*` 之前。
+- **何时用：** 改了 `overlay/**`、`board/**`（非纯 app 热更）后、**在** `build-kernel` / `build-rootfs` **之前**显式执行。`build-rootfs` / `docker-run` **不会**自动 apply（与 `build-kernel` 对称）。
 - **做什么：** 把 board/buildroot/kernel overlay 打进 `linux-sdk/`（macOS volume 模式下在容器内执行）。
 - **参数：**
 
@@ -83,6 +83,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 |-------------|------|
 | `FORCE_PLATFORM_OVERLAY=1` | 在已 owned 的 SDK 树上强制重打 kernel/device 补丁 |
 | `BUILD_BIND_MOUNT=1` | macOS：在宿主机跑 overlay（非 volume） |
+| `SKIP_OVERLAY=0` | 可选：让随后的 `docker-run` 在命令前再 apply 一次（默认跳过） |
 | `--restore`（经 `clean-overlay`） | 还原被 patch 的 SDK 文件 |
 
 ### `make clean-overlay`
@@ -237,15 +238,16 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 - **怎么用：** `make prepare-rootfs`；强制重刷栈 `FORCE=1 make prepare-rootfs`
 - **何时用：** 只想确保 Weston/Mali/embedder 栈，不打包 `rootfs.img`。
-- **注意：** `build-rootfs` 会先调用它（stamp 命中则跳过）。
+- **做什么：** `check-prebuilt` + `ensure-mali-variant`（**不**跑 `apply-overlay`）。
+- **注意：** `build-rootfs` 会先调用它（stamp 命中则跳过 Mali/embedder 重刷）。
 
 ### `make build-rootfs`
 
 - **怎么用：** `make build-rootfs` 或 `APP=cnc_hmi make build-rootfs`
-- **何时用：** overlay/systemd/LCD、Bake App 进镜像、Buildroot 用户态变更后。
-- **产物：** `output/firmware/<APP>/rootfs.img`。
-- **参数：** `APP`；若存在 `app/os_settings` 会自动确保 `/opt/os_settings`。
-- **重要：** 改 `overlay/buildroot/chips/*.config` 等**已有包的编译选项**时，`build-rootfs` **不会**重编该包；需先 `bash scripts/br-make-packages.sh <label> <pkg>…`。
+- **何时用：** overlay/systemd/LCD、Bake App 进镜像、Buildroot 用户态变更后。改 overlay 后须先 `make apply-overlay`（本目标不再内嵌 apply）。
+- **产物：** `output/firmware/<APP>/rootfs.img`（仅 `rootfs.ext2`；已关掉 cpio/squashfs/tar）。
+- **参数：** `APP`；若存在 `app/os_settings` 会自动确保 `/opt/os_settings`。缺 app 树时 `ensure-rootfs-apps` 会编 app 并**仅在此时** apply 一次。
+- **重要：** 改 `overlay/buildroot/chips/*.config` 等**已有包的编译选项**时，`build-rootfs` **不会**重编该包；需先 `bash scripts/br-make-packages.sh <label> <pkg>…`。关掉/打开 rootfs 镜像格式后需 `make apply-overlay` + `make lunch` 再 `build-rootfs`。
 - **后续：** `make upgrade`。
 
 ### `make build-oem`

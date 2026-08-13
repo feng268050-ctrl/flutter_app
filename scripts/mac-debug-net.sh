@@ -3,8 +3,8 @@
 # Not used at boot — single prod image has no kernel cmdline static eth0 IP.
 set -euo pipefail
 
-ADDR="${LWS_HMI_MAC_DEBUG_IP:-10.0.0.1}"
-MASK="${LWS_HMI_MAC_DEBUG_MASK:-24}"
+ADDR="${MAC_DEBUG_IP:-10.0.0.1}"
+MASK="${MAC_DEBUG_MASK:-24}"
 
 if [[ "$(uname -s)" != Darwin ]]; then
   echo "mac-debug-net: macOS only" >&2

@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/prebuilt-common.sh"
 
 BR_BOARD="$ROOT/overlay/board/rockchip/rk3566_rk3568"
-SDK_DIR="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK_DIR="${SDK_DIR:-$ROOT/linux-sdk}"
 SDK_BR_BOARD="$SDK_DIR/buildroot/board/rockchip/rk3566_rk3568"
 GST_SRC="$ROOT/prebuilt/gstreamer/target"
 PLAT_SRC="$ROOT/prebuilt/platform-packages/target"

@@ -3,7 +3,7 @@
 # Compatible with macOS bash 3.2 (no nameref).
 set -euo pipefail
 
-USB_SSH_HOST_ADDR="${LWS_HMI_USB_HOST_ADDR:-192.168.55.2}"
+USB_SSH_HOST_ADDR="${USB_HOST_ADDR:-192.168.55.2}"
 _USB_SSH_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # darwin | linux | windows | unknown

@@ -7,7 +7,7 @@ LIB=/usr/libexec/ab/ab-slot-lib.sh
 # shellcheck disable=SC1090
 . "$LIB"
 
-HMI_WAIT_SEC="${LWS_HMI_AB_HMI_WAIT_SEC:-120}"
+HMI_WAIT_SEC="${AB_HMI_WAIT_SEC:-120}"
 LOG=/var/lib/hmi/ab-boot-confirm.log
 
 mkdir -p /var/lib/hmi

@@ -2,13 +2,13 @@
 # Serial console geometry for ttyFIQ0: kernel winsize + xterm resize to host terminal.
 set -eu
 
-COLS="${LWS_HMI_SERIAL_COLS:-206}"
-ROWS="${LWS_HMI_SERIAL_ROWS:-50}"
+COLS="${SERIAL_COLS:-206}"
+ROWS="${SERIAL_ROWS:-50}"
 STTY=/bin/stty
 [ -x "$STTY" ] || STTY=stty
 
 log() {
-	[ "${LWS_HMI_SERIAL_STTY_DEBUG:-0}" = 1 ] || return 0
+	[ "${SERIAL_STTY_DEBUG:-0}" = 1 ] || return 0
 	echo "serial-console-stty: $*" >&2
 }
 

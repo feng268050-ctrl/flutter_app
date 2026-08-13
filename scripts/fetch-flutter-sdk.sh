@@ -141,7 +141,7 @@ ensure_linux_sdk_cache() {
 
 # Inside Docker: engine compile uses install-linux via flutter-sdk-bin.mk; do not
 # require the darwin flutter-sdk mount to execute.
-if [[ "${LWS_HMI_DOCKER:-}" == "1" ]]; then
+if [[ "${DOCKER:-}" == "1" ]]; then
 	if linux_sdk_ready "$LINUX_CACHE_INSTALL" && flutter_sdk_version_ok "$LINUX_CACHE_INSTALL"; then
 		echo "flutter-sdk $VERSION: linux cache ready at $LINUX_CACHE_INSTALL (Docker)"
 		exit 0

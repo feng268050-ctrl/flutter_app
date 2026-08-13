@@ -27,8 +27,8 @@ PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 VOLUME="${DOCKER_VOLUME:-lws-hmi-sdk}"
 
 resolve_host_sdk() {
-	if [[ -n "${LWS_HMI_SDK_DIR:-}" && -d "${LWS_HMI_SDK_DIR}" && "${LWS_HMI_SDK_DIR}" != /work/sdk ]]; then
-		echo "$LWS_HMI_SDK_DIR"
+	if [[ -n "${SDK_DIR:-}" && -d "${SDK_DIR}" && "${SDK_DIR}" != /work/sdk ]]; then
+		echo "$SDK_DIR"
 		return 0
 	fi
 	echo "$ROOT/linux-sdk"

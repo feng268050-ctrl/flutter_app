@@ -15,7 +15,7 @@ app_select_resolve
 # shellcheck source=scripts/factory-sku.sh
 source "$ROOT/scripts/factory-sku.sh"
 
-FIRMWARE="${LWS_HMI_FIRMWARE_DIR:-$ROOT/output/firmware}"
+FIRMWARE="${FIRMWARE_DIR:-$ROOT/output/firmware}"
 OUT_DIR="${APP_FIRMWARE_DIR:-$FIRMWARE/$APP}"
 ARCHIVE_NAME="${OTA_PACKAGE_NAME:-ota-package.tar.gz}"
 ARCHIVE="$OUT_DIR/$ARCHIVE_NAME"
@@ -46,7 +46,7 @@ REQUIRE_OTA_SIG=1 (publish/CI) fails if signing is unavailable.
 Local make upgrade may omit .sig when the key is unset.
 
 Env:
-  APP / LWS_HMI_FIRMWARE_DIR / FACTORY_SKU / OEM_ID / OEM_IMG / OEM_ONLY
+  APP / FIRMWARE_DIR / FACTORY_SKU / OEM_ID / OEM_IMG / OEM_ONLY
   OTA_SIGNING_KEY  OTA_PACKAGE_NAME  REQUIRE_OTA_SIG
 EOF
 }

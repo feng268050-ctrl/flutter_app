@@ -5,7 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-${SDK:-$ROOT/linux-sdk}}"
+SDK="${SDK_DIR:-${SDK:-$ROOT/linux-sdk}}"
 INNOHI_ROOTFS="$SDK/innohi/rootfs"
 BOARD="$SDK/innohi_board"
 

@@ -5,7 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-$ROOT/linux-sdk}}"
+SDK="${SDK_DIR:-${RK_SDK_DIR:-$ROOT/linux-sdk}}"
 INVENTORY="${FIT_BOARD_INVENTORY:-$ROOT/board/rk356x-fit-boards.txt}"
 ITS_SRC="${FIT_ITS_SRC:-$ROOT/board/boot-multi.its}"
 

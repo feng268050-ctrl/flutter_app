@@ -138,8 +138,8 @@ apply_overlay_in_volume() {
   docker run --rm --platform "$PLATFORM" \
     -v "$ROOT:/work/lws-hmi" \
     -v "$VOLUME:/work/sdk" \
-    -e LWS_HMI_DOCKER=1 \
-    -e LWS_HMI_SDK_DIR=/work/sdk \
+    -e DOCKER=1 \
+    -e SDK_DIR=/work/sdk \
     -w /work/lws-hmi \
     "$IMAGE" \
     bash /work/lws-hmi/scripts/apply-overlay.sh

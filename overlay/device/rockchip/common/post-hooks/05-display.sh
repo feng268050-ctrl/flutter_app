@@ -8,8 +8,8 @@ source "${RK_POST_HELPER:-$(dirname "$(realpath "$0")")/post-helper}"
 
 [ "$POST_OS" = buildroot ] || exit 0
 
-LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
-BOARD_DIR="$LWS_HMI_ROOT/board"
+DOCKER_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
+BOARD_DIR="$DOCKER_ROOT/board"
 if [[ ! -d "$BOARD_DIR" && -d "$(dirname "$0")/../../../../../../../lws-hmi/board" ]]; then
 	# Fallback when building outside Docker (host path next to SDK).
 	BOARD_DIR="$(realpath "$(dirname "$0")/../../../../../../..")/board"

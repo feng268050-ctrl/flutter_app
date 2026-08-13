@@ -105,7 +105,7 @@ ensure_sdk_uboot() {
   mkdir -p "$firmware" "$ROOT/output/firmware" "$sdk/u-boot"
 
   # ONLY unpatched vendor uboot. Do NOT binary-patch (env CRC → no backlight/maskrom).
-  # Do NOT use LWS_HMI_COMPILED_UBOOT (ynh960 brick risk). Do NOT use Innohi uboot for Linux GPT.
+  # Do NOT use locally-compiled U-Boot (ynh960 brick risk). Do NOT use Innohi uboot for Linux GPT.
   # Authoritative: prebuilt/bootloader/$UBOOT_ID — sdk/u-boot is pack staging only.
   rm -f "$dest" "$staging"
   install_file_follow "$vendor" "$dest"
@@ -152,7 +152,7 @@ PY
 }
 
 pack_in_sdk() {
-  local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+  local sdk="${SDK_DIR:-$ROOT/linux-sdk}"
   local firmware="$sdk/output/firmware"
   local updateimg="$firmware/update.img"
   local boot_bytes rootfs_img
@@ -232,14 +232,14 @@ pack_in_sdk() {
   publish_factory_artifacts "$updateimg"
 }
 
-if [[ "${LWS_HMI_PACK_IMG:-}" == "1" ]]; then
+if [[ "${PACK_IMG:-}" == "1" ]]; then
   pack_in_sdk
   exit 0
 fi
 
-export LWS_HMI_PACK_IMG=1
+export PACK_IMG=1
 bash "$ROOT/scripts/docker-run.sh" \
-  env LWS_HMI_PACK_IMG=1 APP="$APP" FACTORY_SKU="$FACTORY_SKU" UBOOT_ID="$UBOOT_ID" OEM_ID="$OEM_ID" \
+  env PACK_IMG=1 APP="$APP" FACTORY_SKU="$FACTORY_SKU" UBOOT_ID="$UBOOT_ID" OEM_ID="$OEM_ID" \
   bash /work/lws-hmi/scripts/build-img.sh
 
 bash "$ROOT/scripts/docker-export-artifacts.sh" update

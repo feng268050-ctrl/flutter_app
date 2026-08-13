@@ -67,5 +67,5 @@ Enable when needed:
 
 ```bash
 # example: flutter assemble + gen_snapshot / kernel compile with
---dart-define=LWS_HMI_TRACE=true
+--dart-define=CYBER_HAL_TRACE=true
 ```

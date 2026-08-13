@@ -64,7 +64,7 @@ ensure_helper() {
 	mkdir -p "$CACHE_DIR"
 	echo "==> cross-compile unix_json_req → $HELPER_BIN"
 	if [[ "$(uname -s)" == Darwin ]]; then
-		env LWS_HMI_SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" bash -c "
+		env SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" bash -c "
 set -euo pipefail
 GCC=\$(ls /work/sdk/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc 2>/dev/null | head -1)
 [[ -n \"\$GCC\" ]] || GCC=\$(find /work/sdk/prebuilts -name 'aarch64-*-gcc' 2>/dev/null | head -1)
@@ -76,8 +76,8 @@ file /work/lws-hmi/.cache/ai-smoke/unix_json_req
 "
 	else
 		local gcc
-		gcc="$(find "${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}/prebuilts" -name 'aarch64-*-gcc' 2>/dev/null | head -1 || true)"
-		[[ -x "$gcc" ]] || die "aarch64 gcc not found (set LWS_HMI_SDK_DIR or use Docker)"
+		gcc="$(find "${SDK_DIR:-$ROOT/linux-sdk}/prebuilts" -name 'aarch64-*-gcc' 2>/dev/null | head -1 || true)"
+		[[ -x "$gcc" ]] || die "aarch64 gcc not found (set SDK_DIR or use Docker)"
 		"$gcc" -O2 -static -o "$HELPER_BIN" "$SMOKE_SRC"
 	fi
 	[[ -x "$HELPER_BIN" ]] || die "failed to build $HELPER_BIN"

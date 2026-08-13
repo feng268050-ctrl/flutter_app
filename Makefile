@@ -96,8 +96,8 @@ help:
 	@echo "lws-hmi — Buildroot + ynh960 (Linux: native build; macOS: Docker linux/amd64)"
 	@echo ""
 	@echo "Setup:"
-	@echo "  make setup                 # apply overlay (+ Docker image on macOS)"
-	@echo "  make apply-overlay         # patch SDK with lws-hmi board/buildroot overlay"
+	@echo "  make setup                 # apply-overlay (+ Docker image on macOS)"
+	@echo "  make apply-overlay         # patch SDK (explicit; build-kernel/rootfs do not auto-apply)"
 	@echo "  make clean-overlay         # restore patched SDK files"
 	@echo ""
 	@echo "Docker (macOS only):"
@@ -120,8 +120,8 @@ help:
 	@echo "  make build-kernel          # parallel A+B FIT → boot.img + boot_b.img (+ bare Image)"
 	@echo "  make build-kernel-a        # slot A FIT only (rootfs_a → boot.img)"
 	@echo "  make build-kernel-b        # slot B FIT only (rootfs_b → boot_b.img)"
-	@echo "  make build-rootfs          # rootfs → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)"
-	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"
+	@echo "  make build-rootfs          # rootfs → output/firmware/<APP>/rootfs.img (needs prior apply-overlay if overlay changed)"
+	@echo "  make prepare-rootfs        # check-prebuilt + Mali/embedder stack (no apply-overlay; no rootfs.img)"
 	@echo "  make build-oem             # pack oem/out/<oem_id>/oem.img (FACTORY_SKU / OEM_ID)"
 	@echo "  make build-img             # pack output/firmware/<APP>/<sku>/factory.img; needs build-oem"
 	@echo "  make version               # print OS Version (default); APP=<id> → Flutter pubspec name+build"
@@ -235,8 +235,8 @@ help:
 	@echo "  FLUTTER_SDK=$(FLUTTER_SDK)"
 	@echo "  BUILD_JOBS=4|8             # parallel jobs (default 4 macOS Docker, 8 Linux native)"
 	@echo "  BUILD_BIND_MOUNT=1         # macOS only: bind-mount SDK instead of Docker volume"
-	@echo "  LWS_HMI_CACHE_ROOT=...   # NAS mount for large .cache artifacts (see .env.example)"
-	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
+	@echo "  CACHE_ROOT=...   # NAS mount for large .cache artifacts (see .env.example)"
+	@echo "  CACHE_URL=...      # optional HTTP mirror of the same layout"
 	@echo "  SN=<sn|chipid>             # select device by SN or ChipID (flash / USB-SSH / SSH)"
 	@echo "  CHIPID=<chipid>            # select by ChipID only (multi-board)"
 	@echo "  PRODUCT_SN=<sn>            # write-identity product serial only (not selection SN=; not register-device)"
@@ -273,9 +273,10 @@ setup: apply-overlay
 	@bash scripts/setup-host.sh
 
 apply-overlay:
-	@# macOS Docker volume: run overlay inside the builder so /work/sdk is updated.
+	@# macOS Docker volume: apply inside the builder (/work/sdk). docker-run skips
+	@# auto-overlay by default — run apply-overlay.sh as the container command.
 	@if [ "$$(uname -s)" = Darwin ] && [ "${BUILD_BIND_MOUNT:-}" != "1" ]; then \
-		bash scripts/docker-run.sh true; \
+		SKIP_OVERLAY=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/apply-overlay.sh; \
 	else \
 		bash scripts/apply-overlay.sh; \
 	fi
@@ -357,16 +358,17 @@ build-kernel:
 
 # Rootfs: Weston + eLinux + Mali wayland-gbm.
 # prepare-rootfs flips Mali/embedder only when the stack stamp differs.
-# Ensures APP (default lws_hmi) + auto os_settings when app/os_settings exists.
+# Does not apply-overlay — run make apply-overlay after overlay/DTS/fs changes.
+# Ensures APP (default lws_hmi) + auto os_settings when app/os_settings exists
+# (ensure-rootfs-apps applies overlay only if it had to build a missing app).
 build-rootfs: prepare-rootfs
 	@APP='$(APP)' bash scripts/ensure-rootfs-apps.sh
-	@bash scripts/apply-overlay.sh
 	@bash scripts/docker-run.sh ./build.sh rootfs
 	@bash scripts/lws-hmi-rootfs-postprocess.sh
 	@bash scripts/verify-rootfs-overlay.sh
 	@APP='$(APP)' bash scripts/docker-export-artifacts.sh rootfs
 
-# Stack ensure only (check-prebuilt + overlay + Mali/embedder). Idempotent.
+# Stack ensure only (check-prebuilt + Mali/embedder). Idempotent; no apply-overlay.
 prepare-rootfs:
 	@bash scripts/prepare-rootfs-stack.sh weston
 
@@ -398,7 +400,7 @@ build-boot-logo:
 
 build-app:
 	@APP='$(APP)' bash scripts/build-app.sh
-	@bash scripts/apply-overlay.sh
+	@$(MAKE) apply-overlay
 
 prepare-app-assets:
 	@bash scripts/prepare-hmi-ship-assets.sh
@@ -613,7 +615,7 @@ serial-ports:
 
 pull-display-params:
 	@$(call WITH_DOTENV,bash scripts/pull-display-params.sh)
-	@bash scripts/apply-overlay.sh
+	@$(MAKE) apply-overlay
 
 clean-buildroot-output:
 	@bash scripts/clean-buildroot-output.sh

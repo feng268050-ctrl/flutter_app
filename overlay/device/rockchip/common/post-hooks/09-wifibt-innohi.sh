@@ -5,7 +5,7 @@ source "${RK_POST_HELPER:-$(dirname "$(realpath "$0")")/post-helper}"
 
 [ "$POST_OS" = buildroot ] || exit 0
 
-SDK_DIR="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+SDK_DIR="${SDK_DIR:-${RK_SDK_DIR:-}}"
 if [[ -z "$SDK_DIR" ]]; then
 	SDK_DIR="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 fi

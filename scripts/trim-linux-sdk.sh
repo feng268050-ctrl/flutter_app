@@ -10,7 +10,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-${DEST:-${SDK:-$ROOT/linux-sdk}}}"
+SDK="${SDK_DIR:-${DEST:-${SDK:-$ROOT/linux-sdk}}}"
 WHITELIST="${WHITELIST:-$ROOT/board/linux-sdk-whitelist.txt}"
 CLEAN_OUTPUT="${CLEAN_OUTPUT:-0}"
 SKIP_SQUASH="${SKIP_SQUASH:-0}"
@@ -168,11 +168,11 @@ EOF
 echo "trim: wrote .lws-owned-tree"
 
 if [[ "$SKIP_SQUASH" != "1" ]]; then
-  LWS_HMI_SDK_DIR="$SDK" bash "$ROOT/scripts/squash-linux-sdk-platform.sh"
+  SDK_DIR="$SDK" bash "$ROOT/scripts/squash-linux-sdk-platform.sh"
 fi
 
 if [[ "$SKIP_CHECK" != "1" ]]; then
-  LWS_HMI_SDK_DIR="$SDK" bash "$ROOT/scripts/check-linux-sdk-whitelist.sh"
+  SDK_DIR="$SDK" bash "$ROOT/scripts/check-linux-sdk-whitelist.sh"
 fi
 
 echo "trim-linux-sdk: done"

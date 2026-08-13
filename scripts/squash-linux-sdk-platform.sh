@@ -8,7 +8,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-${SDK:-$ROOT/linux-sdk}}"
+SDK="${SDK_DIR:-${SDK:-$ROOT/linux-sdk}}"
 OVERLAY="$ROOT/overlay"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -19,7 +19,7 @@ echo "squash-linux-sdk-platform: SDK=$SDK"
 # Reuse apply-overlay platform functions by sourcing with a guarded mode.
 # Export flag so apply-overlay can run platform-only when invoked as:
 #   LWS_PLATFORM_SQUASH=1 bash scripts/apply-overlay.sh
-export LWS_HMI_SDK_DIR="$SDK"
+export SDK_DIR="$SDK"
 export LWS_PLATFORM_SQUASH=1
 bash "$ROOT/scripts/apply-overlay.sh" --platform-squash
 

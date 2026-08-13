@@ -50,7 +50,7 @@ UPDATE_IMG="${UPDATE_IMG:-${IMAGE:-$_DEFAULT_FLASH_IMG}}"
 if [[ "$ACTION" == upgrade || "$ACTION" == uf || "$ACTION" == update ]] && [[ -n "${2:-}" ]]; then
   UPDATE_IMG="$2"
 fi
-LOADER_BIN="${LWS_HMI_LOADER:-}"
+LOADER_BIN="${LOADER:-}"
 LOADER_CACHE_DIR="$ROOT/output/firmware/.loader-cache"
 
 # SN preferred; SERIAL= deprecated alias. CHIP_ID= rejected (use SN=).

@@ -13,9 +13,9 @@ USB_SSH_MODE="USB-SSH"
 USB_MTP_MODE="USB-MTP"
 USB_SSH_FS=$'\t'
 # g_ether plug-ssh (usb-plug-ssh-start.sh); MTP uses 0011 — must not count as USB-SSH.
-GADGET_VID="${LWS_HMI_USB_GADGET_VID:-2207}"
-GADGET_PID="${LWS_HMI_USB_GADGET_PID:-0019}"
-MTP_PID="${LWS_HMI_USB_MTP_PID:-0011}"
+GADGET_VID="${USB_GADGET_VID:-2207}"
+GADGET_PID="${USB_GADGET_PID:-0019}"
+MTP_PID="${USB_MTP_PID:-0011}"
 
 die() {
 	echo "ERROR: $*" >&2

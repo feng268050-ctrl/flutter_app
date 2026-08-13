@@ -26,8 +26,8 @@ GST_PACKAGES=(
 )
 
 staging_has_gst_pc() {
-  LWS_HMI_SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" bash -lc "
-    OUT=\"\${LWS_HMI_SDK_DIR:?}/buildroot/output/${BR_OUTPUT}\"
+  SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" bash -lc "
+    OUT=\"\${SDK_DIR:?}/buildroot/output/${BR_OUTPUT}\"
     STAGING=\"\$OUT/staging\"
     test -f \"\$STAGING/usr/lib/pkgconfig/gstreamer-1.0.pc\" &&
       test -f \"\$STAGING/usr/lib/pkgconfig/gstreamer-app-1.0.pc\" &&
@@ -45,7 +45,6 @@ build_gst_into_br() {
     bak="$(mktemp "${TMPDIR:-/tmp}/lws-gst-prebuilt.XXXXXX")"
     mv "$stamp" "$bak"
   fi
-  export LWS_HMI_WESTON=1
   bash "$ROOT/scripts/br-make-packages.sh" gstreamer "${GST_PACKAGES[@]}"
   if [[ -n "$bak" && -f "$bak" ]]; then
     mkdir -p "$STAMP_DIR"
@@ -73,7 +72,7 @@ fi
 build_gst_into_br
 
 bash "$ROOT/scripts/docker-run.sh" bash -lc "
-  OUT=\"\${LWS_HMI_SDK_DIR:?}/buildroot/output/${BR_OUTPUT}\"
+  OUT=\"\${SDK_DIR:?}/buildroot/output/${BR_OUTPUT}\"
   test -x \"\$OUT/target/usr/bin/gst-launch-1.0\"
 "
 

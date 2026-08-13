@@ -38,7 +38,7 @@ list_confs() {
 	local mk=""
 	local c
 	for c in \
-		"${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}/rkbin/tools/mkimage" \
+		"${SDK_DIR:-$ROOT/linux-sdk}/rkbin/tools/mkimage" \
 		"$ROOT/linux-sdk/rkbin/tools/mkimage"; do
 		if [[ -x "$c" ]]; then
 			mk="$c"

@@ -103,7 +103,7 @@ extract_rootfs() {
 	if [[ "$(uname -s)" == Darwin ]]; then
 		command -v docker >/dev/null 2>&1 || die "Docker required on macOS to extract ext4 rootfs.img"
 		# Skip apply-overlay; only need privileged loop mount + copy.
-		env LWS_HMI_SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" bash -c "
+		env SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" bash -c "
 set -euo pipefail
 IMG='/work/lws-hmi/${img#"$ROOT"/}'
 DEST='/work/lws-hmi/${dest#"$ROOT"/}'

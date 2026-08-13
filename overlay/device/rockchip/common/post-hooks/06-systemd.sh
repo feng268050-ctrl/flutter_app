@@ -122,7 +122,7 @@ done
 # Remove pre-rename units/profile (Buildroot overlay never deletes stale etc/ files).
 purge_retired_rootfs_artifacts() {
 	local sdk_dir purge_script
-	sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+	sdk_dir="${SDK_DIR:-${RK_SDK_DIR:-}}"
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
@@ -176,10 +176,10 @@ rm -rf \
 echo "post-systemd: purged dhcpcd (networkd-only L3)"
 
 # Install helper scripts from SDK buildroot board overlay (synced by apply-overlay).
-# Do not rely on LWS_HMI_ROOT — Rockchip post-hooks may not inherit it from docker-run.
+# Do not rely on DOCKER_ROOT — Rockchip post-hooks may not inherit it from docker-run.
 install_lws_hmi_helper_scripts() {
 	local sdk_dir overlay_scripts script
-	sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+	sdk_dir="${SDK_DIR:-${RK_SDK_DIR:-}}"
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
@@ -197,7 +197,7 @@ install_lws_hmi_helper_scripts() {
 }
 
 install_lws_hmi_helper_scripts
-sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+sdk_dir="${SDK_DIR:-${RK_SDK_DIR:-}}"
 if [ -z "$sdk_dir" ]; then
 	sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 fi
@@ -209,7 +209,7 @@ fi
 # Prebuilt flutter-engine: refresh /usr/lib on target/ (app bundle has no engine copy).
 sync_flutter_engine_prebuilt() {
 	local script sdk_dir
-	sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+	sdk_dir="${SDK_DIR:-${RK_SDK_DIR:-}}"
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
@@ -225,7 +225,7 @@ sync_flutter_engine_prebuilt
 # Same for eLinux client + video plugin (Buildroot stamp may keep an old .so).
 sync_flutter_elinux_prebuilt() {
 	local script sdk_dir
-	sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+	sdk_dir="${SDK_DIR:-${RK_SDK_DIR:-}}"
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi

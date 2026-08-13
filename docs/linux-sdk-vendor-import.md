@@ -57,7 +57,7 @@ exists (`FORCE_PLATFORM_OVERLAY=1` to force re-apply).
 
 ## Kernel 6.1 LTS pin
 
-Owned `linux-sdk/kernel-6.1` tracks the Linux **6.1.y** long-term stable line.
+Owned `linux-sdk/kernel` tracks the Linux **6.1.y** long-term stable line.
 Product policy (see `openspec/changes/kernel-61-lts-rebase`): catch up via **full
 stable merge**, not a primary CVE cherry-pick stack under `overlay/kernel/patches/`.
 
@@ -112,10 +112,42 @@ Each machine must obtain a rebased `linux-sdk/buildroot` matching the pin. Eithe
 macOS: after replacing Buildroot, refresh the Docker volume
 (`make docker-volume-init` or `make docker-volume-sync`).
 
+### Kernel directory layout (canonical `kernel/`)
+
+The owned SDK uses a single **`linux-sdk/kernel/`** source tree (no `kernel-6.1`
+sibling and no `kernel` → `kernel-6.1` symlink). Rockchip `build.sh` already
+uses `$SDK/kernel`; the old versioned sibling was vendor convention only.
+
+**One-time migration** (host `linux-sdk/` or inside the Docker volume):
+
+```bash
+cd linux-sdk   # or /work/sdk in the builder container
+rm -f kernel   # drop symlink if present
+mv kernel-6.1 kernel
+```
+
+macOS with Docker volume: migrate the host tree first, then sync into the volume:
+
+```bash
+# host (repo-root linux-sdk/)
+rm -f linux-sdk/kernel && mv linux-sdk/kernel-6.1 linux-sdk/kernel
+make docker-volume-sync
+```
+
+Or migrate directly in the volume (no full rsync):
+
+```bash
+docker run --rm --platform linux/amd64 -v lws-hmi-sdk:/work/sdk \
+  lws-hmi-builder:22.04 bash -c 'cd /work/sdk && rm -f kernel && mv kernel-6.1 kernel'
+```
+
+After migration, run `make apply-overlay` (or `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`
+once) so the owned `patch-mk-kernel.sh` lands in the SDK’s `mk-kernel.sh`.
+
 ## Device tree / kernel fragments (until S4)
 
 `linux-sdk/` is **not** in git. Colleagues cannot sync edits that live only under
-`linux-sdk/kernel-6.1/...`. Until S4 (SDK tracked), keep this policy:
+`linux-sdk/kernel/...`. Until S4 (SDK tracked), keep this policy:
 
 | Layer | Role |
 |-------|------|

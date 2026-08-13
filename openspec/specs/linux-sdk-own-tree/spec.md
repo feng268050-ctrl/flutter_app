@@ -78,7 +78,7 @@ Until `linux-sdk/` is committed to git (S4), **`overlay/kernel/` remains the git
 
 #### Scenario: post-LTS-bump forced re-apply
 
-- **WHEN** the owned `kernel-6.1` tree has been merged to a new 6.1.y tip and overlay patches were rebased
+- **WHEN** the owned `kernel` tree has been merged to a new 6.1.y tip and overlay patches were rebased
 - **THEN** a forced platform overlay or squash step is required so the SDK kernel tree picks up the rebased product deltas (plain `apply-overlay` skip MUST NOT be assumed sufficient)
 
 ### Requirement: linux-sdk remains untracked
@@ -100,14 +100,14 @@ Until S4 commit of `linux-sdk/`, git SoT under `overlay/kernel/` SHALL support *
 - **THEN** `overlay/kernel/` (and apply-overlay wiring) SHALL provide the DTS/DTSI inputs for each listed board
 - **AND** `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` SHALL install those inputs into the owned SDK tree used by `make build-kernel`
 
-### Requirement: Owned kernel-6.1 tracks documented 6.1 LTS pin
+### Requirement: Owned kernel tracks documented 6.1 LTS pin
 
-The owned SDK tree’s `kernel-6.1` Makefile `SUBLEVEL` (and resulting `uname -r`) SHALL match the product-documented 6.1 LTS pin from `kernel-61-lts-security` after this change is applied on a developer machine. Product DTS and patches continue to use **`overlay/kernel/` as git source of truth**; LTS stable merges land in the owned `linux-sdk/kernel-6.1` tree and are not a substitute for committing product deltas only under `linux-sdk/`.
+The owned SDK tree’s `kernel` Makefile `SUBLEVEL` (and resulting `uname -r`) SHALL match the product-documented 6.1 LTS pin from `kernel-61-lts-security` after this change is applied on a developer machine. Product DTS and patches continue to use **`overlay/kernel/` as git source of truth**; LTS stable merges land in the owned `linux-sdk/kernel` tree and are not a substitute for committing product deltas only under `linux-sdk/`.
 
 #### Scenario: Makefile SUBLEVEL matches pin after merge
 
 - **WHEN** a developer completes the LTS merge and refresh of the owned tree per this change
-- **THEN** `linux-sdk/kernel-6.1/Makefile` `SUBLEVEL` equals the documented tip and product overlay still reapplies with `FORCE_PLATFORM_OVERLAY=1`
+- **THEN** `linux-sdk/kernel/Makefile` `SUBLEVEL` equals the documented tip and product overlay still reapplies with `FORCE_PLATFORM_OVERLAY=1`
 
 ### Requirement: bluez5_utils overlay pin remains always-injected
 

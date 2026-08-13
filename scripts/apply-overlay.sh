@@ -250,8 +250,8 @@ sync_kernel_display_dts() {
   local patch_script="$OVERLAY/device/rockchip/common/scripts/patch-ynh960-dts.sh"
 
   if [[ ! -d "$kernel_dts" ]]; then
-    kernel_dts="$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip"
-    customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
+    echo "WARNING: $kernel_dts missing; skip ynh960 display DTS patch" >&2
+    return 0
   fi
   if [[ ! -f "$customer_dtsi" ]]; then
     echo "WARNING: $customer_dtsi missing; skip ynh960 display DTS patch" >&2
@@ -304,9 +304,6 @@ sync_kernel_display_dts() {
 sync_kernel_config_fragments() {
   local configs_dir="$SDK/kernel/arch/arm64/configs"
   if [[ ! -d "$configs_dir" ]]; then
-    configs_dir="$SDK/kernel-6.1/arch/arm64/configs"
-  fi
-  if [[ ! -d "$configs_dir" ]]; then
     echo "WARNING: skip kernel config fragments" >&2
     return 0
   fi
@@ -347,11 +344,7 @@ sync_kernel_firmware() {
 }
 
 kernel_source_dir() {
-  if [[ -d "$SDK/kernel/drivers/gpu/drm" ]]; then
-    echo "$SDK/kernel"
-  else
-    echo "$SDK/kernel-6.1"
-  fi
+  echo "$SDK/kernel"
 }
 
 apply_kernel_patches() {
@@ -991,6 +984,18 @@ fix_innohi_scripts_buildroot_output_dir() {
   done
 }
 
+patch_mk_kernel() {
+  local target="$SCRIPTS_DIR/mk-kernel.sh"
+  if [[ ! -f "$target" ]]; then
+    echo "WARNING: $target missing; skip mk-kernel patch" >&2
+    return 0
+  fi
+  backup_sdk_script "$target"
+  bash "$OVERLAY/device/rockchip/common/scripts/patch-mk-kernel.sh" \
+    "$(sdk_realpath "$target")"
+  echo "overlay: patched $(basename "$(sdk_realpath "$target")") (canonical kernel/ layout)"
+}
+
 patch_mk_rootfs() {
   local target="$SCRIPTS_DIR/mk-rootfs.sh"
   if [[ ! -f "$target" ]]; then
@@ -1076,6 +1081,7 @@ run_platform_overlay() {
   sync_kernel_config_fragments
   sync_kernel_firmware
   apply_kernel_patches
+  patch_mk_kernel
   patch_mk_loader
   patch_mk_rootfs
   patch_30_rootfs
@@ -1180,8 +1186,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       echo "restored upstream source-han-sans-cn.mk"
     fi
     rm -f "$SDK/kernel/logo.bmp" "$SDK/kernel/logo_kernel.bmp"
-    for kernel_dts in "$SDK/kernel/arch/arm64/boot/dts/rockchip" \
-      "$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip"; do
+    for kernel_dts in "$SDK/kernel/arch/arm64/boot/dts/rockchip"; do
       if [[ -f "$kernel_dts/customer_board_ynh960.dtsi.orig" ]]; then
         mv -f "$kernel_dts/customer_board_ynh960.dtsi.orig" \
           "$kernel_dts/customer_board_ynh960.dtsi"
@@ -1215,9 +1220,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$kernel_dts/ynh960-mpp-dmc.dtsi" \
         "$kernel_dts/ynh960-panel-init.dtsi"
     done
-    for kernel in "$SDK/kernel" "$SDK/kernel-6.1"; do
-      rm -f "$kernel/firmware/regulatory.db" "$kernel/firmware/regulatory.db.p7s"
-    done
+    rm -f "$SDK/kernel/firmware/regulatory.db" "$SDK/kernel/firmware/regulatory.db.p7s"
     restore_kernel_patches
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"
   fi
@@ -1329,6 +1332,7 @@ sync_buildroot_version_script
 if [[ "$skip_platform_overlay" == "1" ]]; then
   echo "overlay: skip platform kernel/device patches (.lws-owned-tree present; FORCE_PLATFORM_OVERLAY=1 to re-apply)"
   sync_kernel_overlay_sources
+  patch_mk_kernel
 else
   run_platform_overlay
 fi

@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
-DTSI="$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip/customer_board_ynh960.dtsi"
+DTSI="$SDK/kernel/arch/arm64/boot/dts/rockchip/customer_board_ynh960.dtsi"
 MARKER='lws-hmi: sdk-native root=mmcblk0p6'
 
 die() { echo "ERROR: $*" >&2; exit 1; }

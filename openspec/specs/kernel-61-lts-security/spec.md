@@ -23,7 +23,7 @@ Security catch-up for the 6.1 line SHALL be performed by merging or rebasing ups
 
 ### Requirement: Product overlay kernel deltas rebase onto the new baseline
 
-Product-owned kernel changes under `overlay/kernel/` (including numbered patches and `rockchip/` DTS and kconfig fragments) SHALL apply cleanly to the post-merge `linux-sdk/kernel-6.1` tree via `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` or `make squash-linux-sdk-platform`. Patch fuzz that breaks apply MUST be fixed in overlay before the change is accepted.
+Product-owned kernel changes under `overlay/kernel/` (including numbered patches and `rockchip/` DTS and kconfig fragments) SHALL apply cleanly to the post-merge `linux-sdk/kernel` tree via `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` or `make squash-linux-sdk-platform`. Patch fuzz that breaks apply MUST be fixed in overlay before the change is accepted.
 
 #### Scenario: apply-overlay succeeds after rebase
 

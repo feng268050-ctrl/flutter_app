@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-kernel-a build-kernel-b build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-libexec-binaries rebuild-libexec-binaries check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-libexec-binaries rebuild-libexec-binaries build-umtprd rebuild-umtprd build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh ssh-keys test-debug-app alarm alarm-clean smoke-ai audit audit-cve fetch-cve-db l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-kernel-a build-kernel-b build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-libexec-binaries rebuild-libexec-binaries build-hmi-capture screenshot record-screen check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-libexec-binaries rebuild-libexec-binaries build-umtprd rebuild-umtprd build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh ssh-keys test-debug-app alarm alarm-clean smoke-ai audit audit-cve fetch-cve-db l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -151,6 +151,8 @@ help:
 	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
+	@echo "  make screenshot            # HMI present-hook still → output/screenshot/ (ROTATE= Q=)"
+	@echo "  make record-screen         # HMI present-hook record → output/record-screen/ (FPS= SCALE= DURATION= AUDIO=)"
 	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
 	@echo "  make prepare-debug-host    # USB ECM or registered SSH reachability for debug-app/IDE"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
@@ -178,7 +180,7 @@ help:
 	@echo "  make build-mediamtx        # runtime: mediamtx arm64 → prebuilt/ (App /opt/hmi)"
 	@echo "  make build-opencv          # runtime: OpenCV aarch64 → prebuilt/opencv (for lws_ai)"
 	@echo "  make build-umtprd          # runtime: umtprd aarch64 → prebuilt/ + fs-overlay (MTP)"
-	@echo "  make build-libexec-binaries     # libexec C binaries → prebuilt/ (reboot-loader, extract-video-frame, emulator touch bridge)"
+	@echo "  make build-libexec-binaries     # libexec C binaries → prebuilt/ (reboot-loader, extract-video-frame, hmi-capture, emulator touch bridge)"
 	@echo "  make build-secrets-seal    # OP-TEE seal TA + CA (signs with keys/oem/vendor_ta.pem; TA_SIGN_KEY= overrides)"
 	@echo "  make fetch-btop            # runtime: btop aarch64 musl → prebuilt/ + fs-overlay"
 	@echo "  make fetch-opencv          # runtime: OpenCV sources → .cache/opencv/"
@@ -441,6 +443,23 @@ build-libexec-binaries:
 
 rebuild-libexec-binaries:
 	@TOOL='$(TOOL)' FORCE=1 bash scripts/build-libexec-binaries.sh
+
+# Screen capture (HMI present-hook + libhmi_capture.so). Also via TOOL=hmi-capture make build-libexec-binaries.
+build-hmi-capture:
+	@FORCE='$(FORCE)' bash scripts/build-hmi-capture.sh
+
+screenshot:
+	@chmod +x scripts/screenshot.sh
+	@$(call WITH_DOTENV,ROTATE='$(ROTATE)' Q='$(Q)' bash scripts/screenshot.sh)
+
+# Ctrl+C is the normal stop; script exits 0 after pull. Map 130→0 so Make matches.
+record-screen:
+	@chmod +x scripts/record-screen.sh
+	@set +e; \
+	$(call WITH_DOTENV,FPS='$(FPS)' SCALE='$(SCALE)' ROTATE='$(ROTATE)' AUDIO='$(AUDIO)' DURATION='$(DURATION)' bash scripts/record-screen.sh); \
+	_ec=$$?; \
+	if [ $$_ec -eq 0 ] || [ $$_ec -eq 130 ]; then exit 0; fi; \
+	exit $$_ec
 
 fetch-uboot:
 	@bash scripts/docker-run.sh bash /work/lws-hmi/scripts/fetch-uboot.sh

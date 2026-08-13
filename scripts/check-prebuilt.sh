@@ -144,6 +144,21 @@ if has_include "lws_hmi_wayland.config"; then
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
+  if [[ -f "$ELINUX_DIR/.lws-prebuilt" ]] && \
+    [[ ! -f "$ELINUX_DIR/.lws-hmi-capture-present-hook" ]]; then
+    echo "ERROR: flutter-embedded-linux missing hmi_capture present-hook stamp" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
+  if [[ -x "$ELINUX_DIR/usr/bin/flutter-wayland-client" ]] && \
+    ! grep -a -F -q -- 'MaybeHmiCapturePresent' \
+      "$ELINUX_DIR/usr/bin/flutter-wayland-client" 2>/dev/null && \
+    ! grep -a -F -q -- 'hmi_capture_on_present' \
+      "$ELINUX_DIR/usr/bin/flutter-wayland-client" 2>/dev/null; then
+    # Hook symbol may be inlined/stripped; prefer stamp above. Soft note only if
+    # neither stamp path ran — stamp check already fails closed.
+    :
+  fi
 fi
 
 # mediamtx: App-owned under /opt/hmi/bin (make build-app); not a rootfs prebuilt gate.

@@ -52,11 +52,13 @@ Record = continuous frames + optional ALSA → Matroska/MP4 via MPP H.264 (prefe
 
 **Alternative:** keep ffmpeg for stills only — **rejected** (two toolchains; stills also suffer DRM/orientation duplication).
 
-### D2 — Flutter-paced producer, GStreamer consumer (native = C or Rust)
+### D2 — Flutter-paced producer, GStreamer consumer (native = C++ hook + C encode)
 
-- Dart registers a frame callback / platform “after present” hook and **only** forwards pace + control; pixel path lives in native.
-- **Prefer C** (same layout as `native/extract_video_frame` → `/usr/libexec/hmi/…`) **or Rust** for: async GPU/CPU readback, `appsrc` feed, GStreamer pipeline (RGA convert/scale, MPP encode). Do **not** implement continuous record as a Dart `RepaintBoundary.toImage` loop.
-- C++ only if unavoidable to touch an existing eLinux C++ surface API; new capture logic should still be C/Rust-owned where practical.
+- Dart registers control only (command watcher / FFI); pixel path lives in native.
+- **Embedder patch in C++** (`SurfaceGl` present-hook) — matches `flutter-wayland-client` / eLinux tree language.
+- **Encode library in C** (`libhmi_capture.so`, like `extract-video-frame`): async readback ring, `appsrc`, GStreamer/MPP. Optional Rust only if packaging clearly wins (not chosen).
+- Do **not** implement continuous record as a Dart `RepaintBoundary.toImage` loop.
+- C++ only as thin glue to the embedder present path; new encode logic stays C where practical.
 
 **Alternatives:**
 
@@ -120,6 +122,59 @@ Rollback: restore previous host scripts from git if needed; board without new Ap
 
 ## Open Questions
 
-- Exact eLinux hook for async readback (C/Rust FFI vs small embedder patch) — resolve in spike task; language default **C** unless Rust packaging for aarch64 libexec is clearly better for the spike.
-- Prefer `mpph264enc` vs MJPEG for Debug recordings once inspect confirms element names on tip.
-- Whether capture files live under `/var/lib/hmi/capture` (survives) vs `/tmp` (ephemeral like old path).
+_(Resolved in Spike notes — embedder patch **C++**; encode lib **C**; `mpph264enc`+`mp4mux`; `/var/lib/hmi/capture/`.)_
+
+## Spike notes (ynh960 / tip)
+
+**Date:** 2026-08-13 · **SN:** L1SZ2026070001 · **GStreamer:** 1.28.5 · **rockchipmpp plugin:** 1.14.4
+
+### 1.1 Encode inventory (`gst-inspect-1.0`)
+
+| Element | Status | Role |
+|---------|--------|------|
+| `mppjpegenc` | PRESENT | Still JPEG (`rc-mode=fixqp`, `q-factor=80` default) |
+| `mpph264enc` | PRESENT | Video H.264 (preferred) |
+| `mpph265enc` | PRESENT | Not used for Debug v1 |
+| `jpegenc` / `x264enc` | MISSING | Soft encoders absent (harden) — do not require |
+| `rgaconvert` / `rgageometry` | MISSING | No standalone RGA elements |
+| RGA inside `libgstrockchipmpp.so` | YES | `c_RkRgaBlit`, `gst_mpp_rga_do_convert`; disable via `GST_MPP_NO_RGA` |
+| `videoconvert` / `videoscale` / `appsrc` / `appsink` | PRESENT | CPU convert path + appsrc feed |
+| `mp4mux` / `qtmux` | PRESENT | Container |
+| `matroskamux` | MISSING | Do **not** use Matroska on tip |
+| `videoflip` | MISSING | Orientation via RGBA transpose in helper or `ROTATE=0` (Flutter already logical landscape) |
+| `alsasrc` | PRESENT | Optional record audio; soft-fallback when busy |
+| AAC/Opus enc | MISSING | Video-only or raw/PCM-in-MP4 if audio added later |
+
+**Locked still pipeline:**
+
+```text
+appsrc name=src is-live=true format=time !
+video/x-raw,format=RGBA,width=W,height=H,framerate=1/1 !
+videoconvert ! video/x-raw,format=NV12 !
+mppjpegenc rc-mode=fixqp q-factor=80 ! filesink location=screen.jpg
+```
+
+**Locked video pipeline (preferred):**
+
+```text
+appsrc name=src is-live=true format=time do-timestamp=false !
+video/x-raw,format=RGBA,width=W,height=H,framerate=FPS/1 !
+videoconvert ! video/x-raw,format=NV12 !
+mpph264enc rc-mode=fixqp ! h264parse ! mp4mux name=mux ! filesink location=screen.mp4
+# optional: alsasrc ! audioconvert ! audioresample ! queue ! mux.
+```
+
+(Timestamps set on each `GstBuffer` from Flutter/submit monotonic time — drop when behind; never invent a compressed wall timeline.)
+
+**Defaults after spike intent:** `FPS=30`, full logical `1280×800`, `SCALE=1` (operator may set `SCALE=0.5` / `FPS=15` under load). Container = **MP4** (not MKV). Staging = **`/var/lib/hmi/capture/<stamp>/`**.
+
+### 1.2 / 1.3 Readback + language (resolved — approach A)
+
+- **Language (split for consistency):**
+  - **Embedder present-hook patch:** **C++** — `flutter-wayland-client` / `surface_gl.cc` are C++; vendored overlay patch stays C++ (same style as upstream Sony/eLinux tree). Do **not** rewrite the hook as a `.c` file bolted onto the client.
+  - **Encode + control library:** **C** — `native/hmi_capture/hmi_capture.c` → `libhmi_capture.so` (same class as `extract-video-frame`); C ABI + `extern "C"` for Dart FFI and `dlopen` from the C++ client.
+- **eLinux public API:** none for screenshot. Continuous DRM/`kmsgrab` rejected.
+- **Producer (locked):** patch `SurfaceGl::GLContextPresent*` (C++) to `dlopen`/`dlsym` `hmi_capture_on_present` **before** `eglSwapBuffers`; C lib does `glReadPixels` into a drop-when-behind ring; encode thread feeds GStreamer `appsrc` → `mppjpegenc` / `mpph264enc`. Dart is control/watcher/FFI only — **no** `toImage` record loop.
+- **Orientation:** `flutter-wayland-client --fullscreen` + Weston `rotate-270`; buffer is logical landscape → default `ROTATE=0`.
+- **Open Questions resolved:** hook = present-hook (C++ patch + C lib); video = `mpph264enc`+`mp4mux`; staging = `/var/lib/hmi/capture/<stamp>/`.
+- **On-device smoke (2026-08-13):** still `1280×800` JPEG OK; continuous record with home motion ≈54s wall → **54.4s** playback (1632 frames @30, drops=0) — **accept FPS=30 / SCALE=100**. PTS use monotonic submit time (not frame-count CFR) so idle UI does not compress wall timeline.

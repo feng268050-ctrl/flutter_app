@@ -126,7 +126,10 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `prebuilt/btop/**`, `scripts/fetch-btop.sh`, or overlay `usr/bin/btop` | `make fetch-btop` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `prebuilt/umtprd/**`, `scripts/build-umtprd.sh`, or overlay `usr/bin/umtprd` / `usb-mtp-*.sh` | `make build-umtprd` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
-| `native/reboot_loader/**`, `native/extract_video_frame/**`, `native/emulator_tablet_to_touch/**`, `scripts/build-libexec-binaries.sh`, `prebuilt/{reboot_loader,extract_video_frame,emulator_tablet_to_touch}/**`, or overlay libexec copies | `make build-libexec-binaries` (`TOOL=<name>` 可选单项；`extract-video-frame` 需先 `make build-gstreamer`），`make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `native/reboot_loader/**`, `native/extract_video_frame/**`, `native/hmi_capture/**`, `native/emulator_tablet_to_touch/**`, `scripts/build-libexec-binaries.sh`, `scripts/build-hmi-capture.sh`, `prebuilt/{reboot_loader,extract_video_frame,hmi_capture,emulator_tablet_to_touch}/**`, or overlay libexec/lib copies | `make build-libexec-binaries`（`TOOL=hmi-capture` 或 `make build-hmi-capture`；`extract-video-frame`/`hmi-capture` 需先 `make build-gstreamer`），`make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `overlay/.../surface_gl.cc`（eLinux present-hook）或 `scripts/build-flutter-embedded-linux.sh` capture stamp | `FORCE=1 make rebuild-flutter-embedded-linux`, `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `packages/cyber_capture` / App capture watcher | `make build-app`, `make push-app`（native `.so` + patched `flutter-wayland-client` 需已在 rootfs） |
+| `scripts/screenshot.sh`, `scripts/record-screen.sh`（host only; board has watcher + lib） | none for firmware; exercise `make screenshot` / `make record-screen` |
 | `native/secrets_seal/**`, `scripts/build-secrets-seal.sh`, `prebuilt/secrets_seal/**`, overlay `usr/lib/optee_armtz/*.ta` / `usr/libexec/board/secrets-seal*` | `make build-secrets-seal`, `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `oem/**`, `scripts/build-oem.sh`, `scripts/factory-sku.sh`, `board/factory-skus.tsv` | `make build-oem`, then **`OEM_ONLY=1 make upgrade`** (oem partition only); use full `make upgrade` / `make build-img` + `make flash` only when also shipping OS or factory |
@@ -231,6 +234,7 @@ Keep long command examples in **README.md**; keep agent-only rules (rebuild bloc
 | `docs/settings-apps-roles.md` | OS Settings vs HMI Settings 角色与功能归属（canonical） |
 | `packages/cyber_hal/` | Dart HAL path 包 |
 | `packages/cyber_pm/` | 子进程监护（MediaMTX、AI daemon） |
+| `packages/cyber_capture/` | HMI 截屏/录屏（present-hook + GStreamer/MPP） |
 | `native/lws_ai/` | AI C++（`lws_ai_daemon`）；产物经 `make build-ai` → `/opt/hmi` |
 | `packages/cyber_ui/` / `cyber_ime/` / `cyber_alarm/` / `cyber_alarm_ui/` / `cyber_upgrade_ui/` | UI / IME / 告警引擎 / 告警 frost UX / 升级 UX |
 | `overlay/.../rootfs-overlay/` | Rootfs overlay (systemd, scripts, `/opt/hmi` staging) |

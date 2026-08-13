@@ -21,6 +21,7 @@ SRC="$CACHE/src"
 BUILD_HOST="$CACHE/out-wayland"
 PREBUILT="$ROOT/prebuilt/flutter-embedded-linux/${VERSION}"
 GST_VIDEO_STAMP="$PREBUILT/.lws-gstreamer-video-player"
+CAPTURE_HOOK_STAMP="$PREBUILT/.lws-hmi-capture-present-hook"
 
 ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.41.9")"
 RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
@@ -32,7 +33,8 @@ fi
 
 if prebuilt_ready "$PREBUILT" &&
   [[ "$FORCE" != "1" ]] &&
-  [[ -f "$GST_VIDEO_STAMP" ]]; then
+  [[ -f "$GST_VIDEO_STAMP" ]] &&
+  [[ -f "$CAPTURE_HOOK_STAMP" ]]; then
   echo "flutter-embedded-linux: prebuilt ready at $PREBUILT"
   exit 0
 fi
@@ -138,6 +140,13 @@ EOF
   install -m 0644 \"\$ELINUX_VP_PATCHDIR/gst_video_player.cc\" \"\$VP_DIR/gst_video_player.cc\"
   install -m 0644 \"\$ELINUX_VP_PATCHDIR/gst_video_player.h\" \"\$VP_DIR/gst_video_player.h\"
   echo \"flutter-embedded-linux: installed vendored gst_video_player.{cc,h}\"
+  # LWS screen-capture present-hook (libhmi_capture.so via dlopen).
+  install -m 0644 \"\$ELINUX_VP_PATCHDIR/surface_gl.cc\" \\
+    \"\$SRC/src/flutter/shell/platform/linux_embedded/surface/surface_gl.cc\"
+  echo \"flutter-embedded-linux: installed vendored surface_gl.cc (hmi_capture hook)\"
+  grep -q 'MaybeHmiCapturePresent' \\
+    \"\$SRC/src/flutter/shell/platform/linux_embedded/surface/surface_gl.cc\" \\
+    || { echo \"ERROR: vendored surface_gl.cc missing hmi_capture hook\" >&2; exit 1; }
   # Sanity: required product markers must be present in the vendored tree.
   for marker in \\
     'Live RTSP often has no negotiated caps' \\
@@ -160,6 +169,7 @@ EOF
     -DFLUTTER_RELEASE=ON \\
     -DUSER_PROJECT_PATH=examples/flutter-video-player-plugin \\
     -DENABLE_VSYNC=ON \\
+    -DCMAKE_EXE_LINKER_FLAGS=\"-ldl\" \\
     \"\$SRC\"
   cmake --build . -j\"\${BUILD_JOBS:-8}\"
 
@@ -190,4 +200,5 @@ install -m 0755 "$BUILD_HOST/libvideo_player_plugin.so" \
   "$STAGE/usr/lib/libvideo_player_plugin.so"
 prebuilt_install_tree "$STAGE" "$PREBUILT" "$VERSION"
 touch "$GST_VIDEO_STAMP"
+touch "$CAPTURE_HOOK_STAMP"
 echo "flutter-embedded-linux: prebuilt at $PREBUILT"

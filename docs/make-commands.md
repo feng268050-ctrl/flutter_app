@@ -350,6 +350,18 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **怎么用：** `make alarm CODE=L001`；清理限制：`make alarm-clean`
 - **何时用：** 演示告警弹窗（HMI 须在跑）。
 
+### `make screenshot`
+
+- **怎么用：** `make screenshot`；可选 `ROTATE=0|90|180|270`、`Q=80`、`SN=` / `IP=`
+- **何时用：** HMI 运行中抓一张逻辑横屏静帧 → `output/screenshot/shot-<stamp>/`（`screen.jpg` + `summary.txt`），`shot-latest` 指向最近一次
+- **行为：** SSH 写 `/run/hmi/capture.cmd` → `cyber_capture` → `libhmi_capture` present-hook（**不是** ffmpeg/`kmsgrab`）；拉回后清理远端 staging
+
+### `make record-screen`
+
+- **怎么用：** `make record-screen`；Ctrl+C 停止（退出码 0）；或 `DURATION=15 make record-screen`
+- **何时用：** Debug 录屏 → `output/record-screen/rec-<stamp>/screen.mp4`
+- **参数：** `FPS=`（默认 30）、`SCALE=`（默认 100）、`ROTATE=`、`AUDIO=0|1`（无 AAC 时软降级仅视频）
+
 ### `make smoke-ai`
 
 - **怎么用：** `make smoke-ai`；自定义图 `SMOKE_AI_IMAGE=foo.jpg make smoke-ai`
@@ -438,7 +450,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | `build-mediamtx` | MediaMTX 二进制 | → prebuilt；随 `build-app` 进 `/opt/hmi` |
 | `build-opencv` / `fetch-opencv` / `fetch-opencv-ximgproc` | AI 依赖 | OpenCV 源码/产物 |
 | `build-umtprd` | USB MTP | → prebuilt + overlay |
-| `build-libexec-binaries` | `/usr/libexec/` 小型 C 二进制（`reboot-loader`、`extract-video-frame`、模拟器触摸桥） | `TOOL=<name>` 单项；`rebuild-libexec-binaries`；macOS 自动进 Docker |
+| `build-libexec-binaries` | `/usr/libexec/` 小型 C 二进制 + `libhmi_capture.so`（`reboot-loader`、`extract-video-frame`、`hmi-capture`、模拟器触摸桥） | `TOOL=<name>` 单项；`rebuild-libexec-binaries`；`make build-hmi-capture`；macOS 自动进 Docker |
 | `build-secrets-seal` | OP-TEE seal TA + CA | → prebuilt + overlay |
 | `fetch-btop` | btop 二进制 | → prebuilt + overlay |
 | `fetch-rknn-rt` | `librknnrt` | → `prebuilt/rknn-rt/` |

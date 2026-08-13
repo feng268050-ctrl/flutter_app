@@ -794,6 +794,12 @@ EOF
 		echo "FAIL: usr/libexec/hmi/extract-video-frame missing" >&2
 		missing=1
 	fi
+	if [[ -f "$target/usr/lib/libhmi_capture.so" ]]; then
+		echo "OK:  usr/lib/libhmi_capture.so present"
+	else
+		echo "FAIL: usr/lib/libhmi_capture.so missing (make build-hmi-capture)" >&2
+		missing=1
+	fi
 
 	echo ""
 	echo "--- systemd udev hwdb (bin only) ---"

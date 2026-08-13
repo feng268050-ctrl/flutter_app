@@ -1,0 +1,19 @@
+name: cyber_capture
+description: >
+  Reusable HMI screen capture for product *_hmi Apps — screenshot / record via
+  libhmi_capture present-hook + GStreamer/MPP. Host Make triggers /run/hmi/capture.cmd.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

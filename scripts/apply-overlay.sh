@@ -361,6 +361,7 @@ apply_kernel_patches() {
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
     "drivers/pinctrl/pinctrl-rockchip.c"
+    "drivers/mfd/rk808.c"
     "drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c"
     # Restore from .lws-hmi.orig even with no active patch: keep vendor
     # `if (1) return -EINVAL` (PMIC RTC probe off). Do not re-add 0008.
@@ -414,6 +415,7 @@ restore_kernel_patches() {
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
     "drivers/pinctrl/pinctrl-rockchip.c"
+    "drivers/mfd/rk808.c"
     "drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_mod_params.c"
     "drivers/rtc/rtc-rk808.c"
   )

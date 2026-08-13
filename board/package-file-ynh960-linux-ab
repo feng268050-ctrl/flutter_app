@@ -9,6 +9,7 @@ uboot	uboot.img
 misc	misc.img
 boot	boot.img
 boot_b	boot_b.img
-rootfs_a	rootfs.img
-rootfs_b	rootfs.img
+# Distinct LABEL/UUID per slot (same payload). Do not point both at rootfs.img.
+rootfs_a	rootfs_a.img
+rootfs_b	rootfs_b.img
 oem	oem.img

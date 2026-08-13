@@ -230,6 +230,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **何时用：** 改 kernel、DTS（`overlay/kernel/`）、boot logo、FIT 多 conf；仅重打 B 槽 FIT 时用 `build-kernel-b`。
 - **Image 何时重编：** SDK 里已有 `kernel/arch/arm64/boot/Image` 时默认**跳过** `./build.sh kernel`，只重编 DTB + 打 FIT（日志里有 `kernel Image present — skip`）。改 `*.config` 片段、驱动/补丁、`board/logo`、或首次构建 → `FORCE_KERNEL_IMAGE=1 make build-kernel`。仅改 DTS/dtsi、FIT 清单 →  plain `make build-kernel` 即可。详见 `AGENTS.md`「make build-kernel = Image + DTB/FIT」。
 - **产物：** `output/firmware/boot.img`（rootfs_a）、`boot_b.img`（rootfs_b）、裸 `Image`（模拟器用）。
+- **A/B `resource.img`：** 每槽 FIT 会 patch PARTLABEL 并**刷新 RSCE ENTR SHA-1**（`scripts/patch-resource-img-partlabel.py`）。漏刷 hash 会导致 **仅 B 槽**无 splash / 卡顿 / 关机冷启动 panic。打包后自动 `--verify`；说明与踩坑见 [`docs/ab-slot-misc.md`](ab-slot-misc.md)。
 - **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`；强制重编 Image：`FORCE_KERNEL_IMAGE=1 make build-kernel`。
 - **日志：** `output/logs/build-kernel-{ab|a|b}-*.log`
 - **后续：** 板端 `make upgrade`（不必 `build-img`）。
@@ -262,11 +263,9 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 - **怎么用：** 先 `make build-oem`，再 `make build-img`
 - **何时用：** 出厂/USB 烧录用的 `factory.img`；**不**编译 kernel/rootfs。
-- **产物：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img` + `update.img` symlink。
+- **产物：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img` + `update.img` symlink。打包前会对 `rootfs_a.img` / `rootfs_b.img` 打独立 LABEL/UUID（`scripts/stamp-rootfs-ext4-identity.sh`）；无开机 `ab-rootfs-identity.service`。
 - **参数：** `APP`、`FACTORY_SKU`（由此取 `UBOOT_ID`/`OEM_ID` 打进镜像）。
 - **后续：** `make reboot-loader` → `make flash`。
-
----
 
 ---
 

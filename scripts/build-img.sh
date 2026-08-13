@@ -203,10 +203,17 @@ pack_in_sdk() {
   install_file_follow "$rootfs_img" "$firmware/rootfs.img"
   rootfs_img="$firmware/rootfs.img"
   echo "build-img: APP=$APP staged rootfs from host → $firmware/rootfs.img"
+  # Factory package-file flashes both letters; stamp distinct LABEL/UUID here
+  # (no boot-time ab-rootfs-identity.service — keep boot KPI lean).
+  cp -f "$rootfs_img" "$firmware/rootfs_a.img"
+  cp -f "$rootfs_img" "$firmware/rootfs_b.img"
+  bash "$ROOT/scripts/stamp-rootfs-ext4-identity.sh" "$firmware/rootfs_a.img" rootfs_a
+  bash "$ROOT/scripts/stamp-rootfs-ext4-identity.sh" "$firmware/rootfs_b.img" rootfs_b
 
   boot_bytes="$(wc -c <"$firmware/boot.img" | tr -d ' ')"
   echo "Firmware inputs:"
   bash "$SIZE_HELPER" "$firmware/boot.img" "$firmware/boot_b.img" "$rootfs_img" \
+    "$firmware/rootfs_a.img" "$firmware/rootfs_b.img" \
     "$firmware/MiniLoaderAll.bin" "$firmware/uboot.img" "$firmware/misc.img" "$firmware/oem.img"
   if [[ "$boot_bytes" -gt "$LINUX_BOOT_MAX" ]]; then
     die "boot.img is ${boot_bytes} bytes — Linux boot partition is 64 MiB"

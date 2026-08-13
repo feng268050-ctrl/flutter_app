@@ -813,8 +813,19 @@ EOF
     echo "Full-system: boot + boot_b + rootfs_a + rootfs_b${oem_img:+ + oem}"
     run_download_image boot "$boot_img"
     run_download_image boot_b "$boot_b_img"
-    run_download_image rootfs_a "$rootfs_img"
-    run_download_image rootfs_b "$rootfs_img"
+    # Same rootfs.img bytes for both slots, but distinct LABEL/UUID so udev
+    # by-label/by-uuid never collapse onto one partition (tooling hygiene;
+    # boot itself uses PARTLABEL). Stamp on host — no boot-time service.
+    rootfs_stamp_dir="$(mktemp -d "${TMPDIR:-/tmp}/lws-rootfs-stamp.XXXXXX")"
+    rootfs_a_img="$rootfs_stamp_dir/rootfs_a.img"
+    rootfs_b_img="$rootfs_stamp_dir/rootfs_b.img"
+    cp -f "$rootfs_img" "$rootfs_a_img"
+    cp -f "$rootfs_img" "$rootfs_b_img"
+    bash "$ROOT/scripts/stamp-rootfs-ext4-identity.sh" "$rootfs_a_img" rootfs_a
+    bash "$ROOT/scripts/stamp-rootfs-ext4-identity.sh" "$rootfs_b_img" rootfs_b
+    run_download_image rootfs_a "$rootfs_a_img"
+    run_download_image rootfs_b "$rootfs_b_img"
+    rm -rf "$rootfs_stamp_dir"
     if [[ -n "$oem_img" ]]; then
       run_download_image oem "$oem_img"
     else

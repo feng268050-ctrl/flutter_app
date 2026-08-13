@@ -117,5 +117,18 @@ done
 bash "$ROOT/scripts/verify-firmware-partitions.sh" "$FIRMWARE" "$PARAM" \
 	|| die "partition size check failed"
 
+# resource.img inside FIT: RSCE ENTR SHA-1 + PARTLABEL (ynh960 U-Boot root=)
+# boot.img → rootfs_a; boot_b.img → rootfs_b. Stale hash after PARTLABEL patch
+# caused B-only missing splash / UI jank / cold-boot panic — see docs/ab-slot-misc.md.
+expect_pl=""
+case "$BOOT_NAME" in
+boot.img) expect_pl=rootfs_a ;;
+boot_b.img) expect_pl=rootfs_b ;;
+esac
+if [[ -n "$expect_pl" ]]; then
+	python3 "$ROOT/scripts/patch-resource-img-partlabel.py" --verify "$BOOT_IMG" "$expect_pl" \
+		|| die "resource RSCE verify failed for $BOOT_NAME (docs/ab-slot-misc.md)"
+fi
+
 [[ "$missing" -eq 0 ]] || die "FIT missing one or more inventory configurations"
 echo "verify-boot-fit: OK"

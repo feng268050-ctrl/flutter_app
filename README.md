@@ -844,5 +844,6 @@ make build                 # full firmware → output/firmware/update.img
 - Weston + eLinux is enabled via `lws_hmi_wayland.config` + `lws_hmi_flutter_weston.config`. See [`app/README.md`](app/README.md).
 - **Linux Flutter HMI 规划**（组件裁剪、Hello World、RTSP 分阶段）：[`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md)
 - **ynh960 串口 / GPIO / pinmux 台账**（P2.1）：[`docs/ynh960-io-pinmux-ledger.md`](docs/ynh960-io-pinmux-ledger.md)
+- **A/B misc + resource RSCE**（含 B 槽 splash/卡顿/冷启动踩坑）：[`docs/ab-slot-misc.md`](docs/ab-slot-misc.md)；验收：[`docs/ab-upgrade-acceptance.md`](docs/ab-upgrade-acceptance.md)
 - **SELinux**（permissive；不改 U-Boot）：[`docs/selinux.md`](docs/selinux.md)
 - `make clean-overlay` restores patched SDK files (`check-sdk.sh`, `rk3566_rk3568.config`, post-hook, fs-overlay).

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Build dual multi-conf FIT: boot.img → rootfs_a, boot_b.img → rootfs_b.
-# Image + resource.img are shared; only DTB bootargs (PARTLABEL) differ per slot.
+# Image is shared; per-slot resource.img PARTLABEL (+ RSCE ENTR SHA-1) and DTBs differ.
 # Slots a/b rebuild DTBs under flock, stage per-slot DTBs, then pack FITs in parallel.
 # Run inside the SDK container (/work/sdk).
+# See docs/ab-slot-misc.md (resource RSCE SHA-1 pitfalls).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -153,7 +154,7 @@ assert_fit_fdt_partlabel() {
 	rootfs_b) other=rootfs_a ;;
 	*) die "assert_fit_fdt_partlabel: bad expect '$expect'" ;;
 	esac
-	python3 - "$img" "$expect" "$other" <<'PY' || die "FIT fdt PARTLABEL check failed for $img"
+	python3 - "$img" "$expect" "$other" <<'PY' || die "FIT DTB PARTLABEL check failed for $img"
 import struct, sys
 from pathlib import Path
 img, expect, other = Path(sys.argv[1]), sys.argv[2].encode(), sys.argv[3].encode()
@@ -227,6 +228,9 @@ repack_multi_fit() {
 	FIT_DTB_DIR="$dtb_dir" SDK_DIR="$SDK" \
 		bash "$ROOT/scripts/pack-boot-fit-multi.sh" "$tmp" "" "$resource_img"
 	assert_fit_fdt_partlabel "$tmp" "$expect"
+	# Gate: RSCE ENTR SHA-1 must match payloads (PARTLABEL patch refreshes them).
+	python3 "$ROOT/scripts/patch-resource-img-partlabel.py" --verify "$tmp" "$expect" \
+		|| die "FIT resource RSCE verify failed for $tmp (see docs/ab-slot-misc.md)"
 	bash "$ROOT/scripts/verify-boot-fit.sh" "$(dirname "$tmp")" "$(basename "$tmp")"
 	mkdir -p "$(dirname "$target")"
 	rm -f "$target"
@@ -382,6 +386,8 @@ main() {
 	[[ -r "$CANONICAL_DTSI" ]] || die "missing $CANONICAL_DTSI"
 	trap restore_canonical_root_dtsi EXIT
 
+	python3 "$ROOT/scripts/patch-resource-img-partlabel.py" --self-test \
+		|| die "resource PARTLABEL/RSCE self-test failed"
 	ensure_boot_fit_its
 	build_kernel_image
 

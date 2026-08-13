@@ -1344,6 +1344,7 @@ EOF
 		"$target/usr/libexec/ab/ab-slot-lib.sh" \
 		"$target/usr/libexec/ab/ab-preflight.sh" \
 		"$target/usr/libexec/ab/ab-boot-confirm.sh" \
+		"$target/usr/libexec/ab/ab-rootfs-identity.sh" \
 		"$target/etc/systemd/system/ab-boot-confirm.service"; do
 		if [[ -e "$f" ]]; then
 			echo "OK:  ${f#$target/}"
@@ -1352,6 +1353,17 @@ EOF
 			missing=1
 		fi
 	done
+	if [[ -e "$target/etc/systemd/system/ab-rootfs-identity.service" ]]; then
+		echo "FAIL: ab-rootfs-identity.service must not ship (write-time stamp only; boot KPI)" >&2
+		missing=1
+	else
+		echo "OK:  no ab-rootfs-identity.service"
+	fi
+	if grep -q 'ab-rootfs-identity.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "FAIL: preset must not mention ab-rootfs-identity.service" >&2
+		missing=1
+	fi
 	for retired in \
 		"$target/usr/libexec/ab/ab-upgrade-apply.sh" \
 		"$target/usr/libexec/ab/ab-upgrade-stream.sh" \

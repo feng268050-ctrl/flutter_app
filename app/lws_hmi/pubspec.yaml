@@ -136,6 +136,7 @@ flutter:
     - assets/.generated/firmware/control-board/
     - assets/.generated/firmware/camera/
     - assets/.generated/process-library/
+    - assets/.generated/process-library/L1/
     - assets/.generated/process-library/L1_Pro/
     # END generated-ship-assets
     # Product Home backdrop / heroes (from lws-ui mipmap-mdpi).

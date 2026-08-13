@@ -8,9 +8,13 @@ Drop versioned workbooks here. **Do not** add `manifest.json`, converted JSON, o
 process-library/<model>/<version>.xlsx
 ```
 
-- `<model>`: Vendor Storage / product `MODEL` with spaces → underscores (`L1 Pro` → `L1_Pro`)
+- `<model>`: Vendor Storage / product `MODEL` with spaces → underscores (`L1 Pro` → `L1_Pro`, `L1` → `L1`)
 - `<version>`: numeric semantic version basename, optional leading `v` / `V`
   (`1.0.4.xlsx`, `v1.4.0.xlsx`). **No** alpha/beta/prerelease suffixes.
+
+`L1/` and `L1_Pro/` are **separate** model trees (each ship entry has its own
+`supported_models`). Content may be identical for a while; when recipes diverge,
+edit only the model directory that should change.
 
 ## Multi-version
 

@@ -86,9 +86,10 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Enable Laser (filled) — [HmiButtonSize.jumbo] via [ProcessModeOutlineChrome].
   static const _laserButtonHeight = ProcessModeOutlineChrome.laserEnableHeight;
 
-  /// Top function-divider strip on last-three tabs (above Record Work).
-  /// Height is the strip that holds the centered hairline, not empty padding.
-  static const _topFunctionGapHeight = 26.0;
+  /// Top function-divider clearance on the last-three tabs (above Record Work).
+  /// The divider sits on this clearance's lower edge, so the container top →
+  /// divider gap matches Enable Laser → container bottom.
+  static const _topFunctionGapHeight = EngineerDevicePanel.panelBottomInset;
 
   bool get _showRamp =>
       widget.processType == ProcessType.continuousWelding ||
@@ -131,9 +132,11 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
           key: const ValueKey('engineer-device-panel'),
           edge: EngineerFrostEdge.topLeftBottomRight,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
+            // Last-three tabs: top gap is only the divider strip (= bottom
+            // inset). Ramp tabs keep a 2px inset above the accordion header.
+            padding: EdgeInsets.fromLTRB(
               20,
-              _panelTopInset,
+              _showTopFunctionDivider ? 0 : _panelTopInset,
               20,
               EngineerDevicePanel.panelBottomInset,
             ),
@@ -155,16 +158,20 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Last 3 tabs: 26px strip for the top function divider.
+                          // Last 3 tabs: place the divider at the lower edge
+                          // of the same clearance used below Enable Laser.
                           if (_showTopFunctionDivider)
                             const SizedBox(
                               key: ValueKey('engineer-panel-top-divider'),
                               height: _topFunctionGapHeight,
-                              child: Center(
-                                child: Divider(
-                                  height: 1,
-                                  thickness: 1,
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: ColoredBox(
                                   color: Color(0x33FFFFFF),
+                                  child: SizedBox(
+                                    height: 1,
+                                    width: double.infinity,
+                                  ),
                                 ),
                               ),
                             ),

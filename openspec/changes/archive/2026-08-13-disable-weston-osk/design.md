@@ -48,4 +48,6 @@ This is **unrelated** to USB/BT physical keyboards (evdev → libinput → XKB �
 
 ## Open Questions
 
-1. Confirm empty `path=` vs sentinel on device during implement (task 1.1).
+1. ~~Confirm empty `path=` vs sentinel on device during implement (task 1.1).~~
+   **Resolved:** On Weston 14.0.1, empty `path=` still launches `/usr/libexec/weston-keyboard`.
+   Locked policy: `path=/bin/false` (client never starts; compositor retries then gives up).

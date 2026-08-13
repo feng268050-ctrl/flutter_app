@@ -838,7 +838,7 @@ make build                 # full firmware → output/firmware/update.img
 ## Notes
 
 - First Buildroot build downloads packages; allow network and ~20GB+ free disk under SDK `output/` and `buildroot/dl/`.
-- Rockchip’s pre-build check used to probe `sources.buildroot.net` with HTTP HEAD on the site root, which always returns **403** (not a VPN/GFW issue). `make setup` patches `check-buildroot.sh` to probe `buildroot.net/downloads/buildroot-<version>.tar.gz` instead. Package downloads during the build may still use `sources.buildroot.net` via `BR2_PRIMARY_SITE`; that is separate from this pre-flight check.
+- Rockchip’s pre-build check used to probe `sources.buildroot.net` with HTTP HEAD on the site root, which always returns **403** (not a VPN/GFW issue). `make apply-overlay` installs `check-buildroot.sh` / `check-network.sh`: probe uses `buildroot.net/downloads/buildroot-<version>.tar.gz`, and **`RK_NETWORK_CHECK=n`** (ynh960 defconfig) skips the probe entirely — no 5s soft-fail delay on offline/Docker incremental `build-rootfs`. Set `RK_NETWORK_CHECK=y` only when you want a hard fail if the mirror is unreachable. Package downloads during the build may still use `sources.buildroot.net` via `BR2_PRIMARY_SITE`; that is separate from this pre-flight check.
 - Weston + eLinux is enabled via `lws_hmi_wayland.config` + `lws_hmi_flutter_weston.config`. See [`app/README.md`](app/README.md).
 - **Linux Flutter HMI 规划**（组件裁剪、Hello World、RTSP 分阶段）：[`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md)
 - **ynh960 串口 / GPIO / pinmux 台账**（P2.1）：[`docs/ynh960-io-pinmux-ledger.md`](docs/ynh960-io-pinmux-ledger.md)

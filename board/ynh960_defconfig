@@ -9,7 +9,7 @@ RK_USE_FIT_IMG=y
 # Generated from board/rk356x-fit-boards.txt via scripts/generate-boot-fit-its.sh.
 RK_BOOT_FIT_ITS_NAME="boot-multi.its"
 DEFAULT_LCD_PARAM="960_lcd_param_rk356x.txt"
-# Docker/offline: skip hard-fail preflight to buildroot.net.
+# Docker/offline: disable Rockchip buildroot.net preflight (see check-network.sh).
 RK_NETWORK_CHECK=n
 # P1 USB plug-ssh owns configfs ECM on the DRD UDC; Rockchip usbdevice (ADB) conflicts.
 RK_USB_GADGET=n

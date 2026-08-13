@@ -39,12 +39,17 @@ Screenshot and record-screen workflows SHALL select a device via the same `SN=` 
 
 ### Requirement: make record-screen captures video with audio
 
-`make record-screen` SHALL record device display video and ALSA audio via the staged ffmpeg for `DURATION` seconds (default documented positive duration), or until interrupted when `DURATION=0`, then pull the media file plus `summary.txt` under `output/record-screen/rec-<stamp>/`, updating `output/record-screen/rec-latest`. Operators SHALL be able to override the ALSA device with `AUDIO_DEV=` and disable audio with `AUDIO=0`.
+`make record-screen` SHALL record device display video and ALSA audio via the staged ffmpeg until the operator stops with Ctrl+C by default (`DURATION=0`), or for `DURATION` seconds when a positive limit is set, then pull the media file plus `summary.txt` under `output/record-screen/rec-<stamp>/`, updating `output/record-screen/rec-latest`. The pulled container MUST be playable after a clean stop (including Ctrl+C finalize). Operators SHALL be able to override the ALSA device with `AUDIO_DEV=` and disable audio with `AUDIO=0`.
 
 #### Scenario: Timed recording with audio
 
-- **WHEN** the operator runs `make record-screen` with default or positive `DURATION` and audio enabled
+- **WHEN** the operator runs `DURATION=30 make record-screen` with audio enabled
 - **THEN** the pulled media file contains a video track from the display capture path and an audio track from the selected ALSA input (unless the board has no usable capture PCM, in which case the command fails with a clear error or documents a forced `AUDIO=0` escape)
+
+#### Scenario: Default unlimited until Ctrl+C
+
+- **WHEN** the operator runs `make record-screen` without `DURATION=`
+- **THEN** recording continues until Ctrl+C (or equivalent interrupt) and the host pulls a playable artifact under `output/record-screen/`
 
 #### Scenario: Audio disabled
 

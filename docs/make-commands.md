@@ -223,12 +223,14 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **何时用：** 禁止裸 `fontSize: N` / 业务误用 `AppTypography.*Size`；本地或 CI。
 - **参数：** 无（不产固件）。
 
-### `make build-kernel`
+### `make build-kernel` / `make build-kernel-a` / `make build-kernel-b`
 
-- **怎么用：** `make build-kernel`
-- **何时用：** 改 kernel、DTS（`overlay/kernel/`）、boot logo、FIT 多 conf。
+- **怎么用：** `make build-kernel`（默认并行 A+B）；单槽 `make build-kernel-a` / `make build-kernel-b`
+- **何时用：** 改 kernel、DTS（`overlay/kernel/`）、boot logo、FIT 多 conf；仅重打 B 槽 FIT 时用 `build-kernel-b`。
+- **Image 何时重编：** SDK 里已有 `kernel/arch/arm64/boot/Image` 时默认**跳过** `./build.sh kernel`，只重编 DTB + 打 FIT（日志里有 `kernel Image present — skip`）。改 `*.config` 片段、驱动/补丁、`board/logo`、或首次构建 → `FORCE_KERNEL_IMAGE=1 make build-kernel`。仅改 DTS/dtsi、FIT 清单 →  plain `make build-kernel` 即可。详见 `AGENTS.md`「make build-kernel = Image + DTB/FIT」。
 - **产物：** `output/firmware/boot.img`（rootfs_a）、`boot_b.img`（rootfs_b）、裸 `Image`（模拟器用）。
-- **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`。
+- **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`；强制重编 Image：`FORCE_KERNEL_IMAGE=1 make build-kernel`。
+- **日志：** `output/logs/build-kernel-{ab|a|b}-*.log`
 - **后续：** 板端 `make upgrade`（不必 `build-img`）。
 
 ### `make prepare-rootfs`

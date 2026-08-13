@@ -32,7 +32,6 @@ RESOURCE_IMG="${3:-}"
 find_kernel_img() {
 	local c
 	for c in \
-		"$SDK/kernel-6.1/arch/arm64/boot/Image" \
 		"$SDK/kernel/arch/arm64/boot/Image" \
 		"$SDK/output/firmware/Image"; do
 		if [[ -r "$c" ]]; then
@@ -46,7 +45,6 @@ find_kernel_img() {
 find_resource_img() {
 	local c
 	for c in \
-		"$SDK/kernel-6.1/resource.img" \
 		"$SDK/kernel/resource.img" \
 		"$SDK/output/resource.img" \
 		"$SDK/rockdev/resource.img" \
@@ -62,8 +60,12 @@ find_resource_img() {
 
 find_dtb_dir() {
 	local c
+	if [[ -n "${FIT_DTB_DIR:-}" ]]; then
+		[[ -d "$FIT_DTB_DIR" ]] || die "FIT_DTB_DIR not a directory: $FIT_DTB_DIR"
+		echo "$FIT_DTB_DIR"
+		return 0
+	fi
 	for c in \
-		"$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip" \
 		"$SDK/kernel/arch/arm64/boot/dts/rockchip"; do
 		if [[ -d "$c" ]]; then
 			echo "$c"

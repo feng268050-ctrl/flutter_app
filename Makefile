@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-libexec-binaries rebuild-libexec-binaries check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-libexec-binaries rebuild-libexec-binaries build-umtprd rebuild-umtprd build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh ssh-keys test-debug-app alarm alarm-clean smoke-ai audit audit-cve fetch-cve-db l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-kernel-a build-kernel-b build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-libexec-binaries rebuild-libexec-binaries check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-libexec-binaries rebuild-libexec-binaries build-umtprd rebuild-umtprd build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params devices connect disconnect push-app upgrade-app pack-app upgrade-control-board upgrade-camera upgrade-process-library reset-process-library migrate-secrets migrate-seal-kek set-prop del-prop write-identity login register-device publish publish-only publish-app publish-app-only publish-control-board-firmware publish-control-board-firmware-only publish-camera-firmware publish-camera-firmware-only sign-keys pack-ota upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh ssh-keys test-debug-app alarm alarm-clean smoke-ai audit audit-cve fetch-cve-db l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -117,7 +117,9 @@ help:
 	@echo "  make prepare-app-assets    # prune/convert process-library + firmware → assets/.generated/"
 	@echo "  make build-app             # release AOT → fs-overlay (*_hmi→/opt/hmi; else /opt/<APP>)"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
-	@echo "  make build-kernel          # dual multi-conf FIT → boot.img + boot_b.img (+ bare Image)"
+	@echo "  make build-kernel          # parallel A+B FIT → boot.img + boot_b.img (+ bare Image)"
+	@echo "  make build-kernel-a        # slot A FIT only (rootfs_a → boot.img)"
+	@echo "  make build-kernel-b        # slot B FIT only (rootfs_b → boot_b.img)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)"
 	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"
 	@echo "  make build-oem             # pack oem/out/<oem_id>/oem.img (FACTORY_SKU / OEM_ID)"
@@ -323,8 +325,31 @@ build: check-prebuilt apply-overlay lunch build-boot-logo build-ai build-app bui
 		echo "ERROR: factory.img / update.img missing after build" >&2; exit 1; \
 	fi
 
+# Shared kernel Image once; slot scripts rebuild DTBs + repack FIT (parallel for build-kernel).
+define RUN_BUILD_KERNEL
+mkdir -p output/logs; \
+LOG="output/logs/build-kernel-$(1)-$$(date +%Y%m%d-%H%M%S).log"; \
+echo "Logging to $$LOG"; \
+bash scripts/docker-run.sh bash -lc 'bash /work/lws-hmi/scripts/sync-lunch-config.sh && bash /work/lws-hmi/scripts/build-kernel-ab.sh $(2)' 2>&1 | tee "$$LOG"; \
+test $${PIPESTATUS[0]} -eq 0
+endef
+
+build-kernel-a:
+	@$(call RUN_BUILD_KERNEL,a,a)
+	@bash scripts/docker-export-artifacts.sh boot
+	@mkdir -p output/firmware/emulator; \
+	 if [ -r output/firmware/Image ]; then cp -Lf output/firmware/Image output/firmware/emulator/Image; \
+	 echo "published output/firmware/emulator/Image"; fi
+
+build-kernel-b:
+	@$(call RUN_BUILD_KERNEL,b,b)
+	@bash scripts/docker-export-artifacts.sh boot
+	@mkdir -p output/firmware/emulator; \
+	 if [ -r output/firmware/Image ]; then cp -Lf output/firmware/Image output/firmware/emulator/Image; \
+	 echo "published output/firmware/emulator/Image"; fi
+
 build-kernel:
-	@bash scripts/docker-run.sh bash -lc 'bash /work/lws-hmi/scripts/sync-lunch-config.sh && bash /work/lws-hmi/scripts/build-kernel-ab.sh'
+	@$(call RUN_BUILD_KERNEL,ab,)
 	@bash scripts/docker-export-artifacts.sh boot
 	@mkdir -p output/firmware/emulator; \
 	 if [ -r output/firmware/Image ]; then cp -Lf output/firmware/Image output/firmware/emulator/Image; \

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 /// Shared 270° arc geometry: start bottom-left → end bottom-right, clockwise.
@@ -322,6 +323,40 @@ final class CurrentArcGaugeGeom {
     }
     return out;
   }
+
+  /// Positions [count] marks evenly from the start (0) to the end (1) of
+  /// the gauge arc. Used when a product scale keeps selected labels while
+  /// preserving equal visual intervals instead of numeric proportionality.
+  static List<double> evenlySpacedProgresses(int count) {
+    if (count <= 0) {
+      return const [];
+    }
+    if (count == 1) {
+      return const [0];
+    }
+    return List<double>.generate(count, (index) => index / (count - 1));
+  }
+
+  /// Inserts [countBetween] evenly spaced positions between each adjacent
+  /// pair of values in [majorProgresses].
+  static List<double> intermediateProgresses(
+    List<double> majorProgresses,
+    int countBetween,
+  ) {
+    if (countBetween <= 0 || majorProgresses.length < 2) {
+      return const [];
+    }
+    final progresses = <double>[];
+    for (var index = 0; index < majorProgresses.length - 1; index++) {
+      final start = majorProgresses[index];
+      final end = majorProgresses[index + 1];
+      final step = (end - start) / (countBetween + 1);
+      for (var minor = 1; minor <= countBetween; minor++) {
+        progresses.add(start + step * minor);
+      }
+    }
+    return progresses;
+  }
 }
 
 /// Machine-status gauge: majors-only ticks + rim arc + Flutter-laid-out labels.
@@ -340,6 +375,9 @@ class CurrentArcGauge extends StatefulWidget {
     this.trackWidth = 16,
     /// Step between labeled majors; `≤0` → `max/10` (11 marks).
     this.majorTickEvery = 0,
+    this.evenlySpacedTickValues,
+    this.minorTicksBetweenMajors = 0,
+    this.geometryMaxLabelValue,
     this.progressColor = const Color(0xFF4FC3F7),
     this.trackColor = const Color(0x33FFFFFF),
     this.tickColor = Colors.white,
@@ -356,6 +394,24 @@ class CurrentArcGauge extends StatefulWidget {
   final double size;
   final double trackWidth;
   final double majorTickEvery;
+
+  /// Complete tick-and-label scale rendered at equal visual intervals.
+  ///
+  /// When null, ticks use their numeric position from [majorTickEvery]. This
+  /// lets a product retain selected values without leaving unlabeled ticks.
+  final List<double>? evenlySpacedTickValues;
+
+  /// Number of shorter, unlabeled ticks inserted between adjacent major ticks.
+  ///
+  /// The minor marks use the same arc geometry as the major scale, so they
+  /// remain evenly spaced even when [evenlySpacedTickValues] is used.
+  final int minorTicksBetweenMajors;
+
+  /// Reference numeral used only to resolve the arc radius.
+  ///
+  /// A paired gauge can set this to its neighbour's maximum so both rings use
+  /// identical geometry while retaining their own tick labels and values.
+  final double? geometryMaxLabelValue;
   final Color progressColor;
   final Color trackColor;
   final Color tickColor;
@@ -433,13 +489,23 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
     final geom = CurrentArcGaugeGeom.compute(
       side: widget.size,
       trackWidth: widget.trackWidth,
-      maxValue: widget.max,
+      maxValue: widget.geometryMaxLabelValue ?? widget.max,
       labelStyle: labelStyle,
     );
     final majors = CurrentArcGaugeGeom.majorValues(
       min: widget.min,
       max: widget.max,
       majorTickEvery: widget.majorTickEvery,
+    );
+    final tickValues = widget.evenlySpacedTickValues ?? majors;
+    final tickProgresses = widget.evenlySpacedTickValues == null
+        ? majors
+            .map((mark) => ((mark - widget.min) / span).clamp(0.0, 1.0))
+            .toList(growable: false)
+        : CurrentArcGaugeGeom.evenlySpacedProgresses(tickValues.length);
+    final minorTickProgresses = CurrentArcGaugeGeom.intermediateProgresses(
+      tickProgresses,
+      widget.minorTicksBetweenMajors,
     );
     final labelProbe = TextPainter(
       text: TextSpan(
@@ -472,9 +538,8 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
                   painter: _CurrentArcPainter(
                     progress: t,
                     geom: geom,
-                    majors: majors,
-                    min: widget.min,
-                    max: widget.max,
+                    tickProgresses: tickProgresses,
+                    minorTickProgresses: minorTickProgresses,
                     progressColor: widget.progressColor,
                     trackColor: widget.trackColor,
                     tickColor: widget.tickColor,
@@ -483,13 +548,11 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
                 ),
                 // Tick numerals as real Text widgets (lws-ui horizontal, radial
                 // centers) — prefer Flutter layout over Canvas.drawText.
-                for (final mark in majors)
+                for (var index = 0; index < tickValues.length; index++)
                   _MajorTickLabel(
                     geom: geom,
-                    value: mark,
-                    min: widget.min,
-                    max: widget.max,
-                    text: _formatTick(mark),
+                    progress: tickProgresses[index],
+                    text: _formatTick(tickValues[index]),
                     style: labelStyle,
                   ),
                 Center(
@@ -556,28 +619,19 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
 final class _MajorTickLabel extends StatelessWidget {
   const _MajorTickLabel({
     required this.geom,
-    required this.value,
-    required this.min,
-    required this.max,
+    required this.progress,
     required this.text,
     required this.style,
   });
 
   final CurrentArcGaugeGeom geom;
-  final double value;
-  final double min;
-  final double max;
+  final double progress;
   final String text;
   final TextStyle style;
 
   @override
   Widget build(BuildContext context) {
-    final span = max - min;
-    if (span <= 0) {
-      return const SizedBox.shrink();
-    }
-    final t = ((value - min) / span).clamp(0.0, 1.0);
-    final angle = MonitorArcGeometry.angleForProgress(t);
+    final angle = MonitorArcGeometry.angleForProgress(progress);
     final anchor = MonitorArcGeometry.pointOnArc(
       geom.center,
       geom.labelBandRadius,
@@ -605,9 +659,8 @@ class _CurrentArcPainter extends CustomPainter {
   _CurrentArcPainter({
     required this.progress,
     required this.geom,
-    required this.majors,
-    required this.min,
-    required this.max,
+    required this.tickProgresses,
+    required this.minorTickProgresses,
     required this.progressColor,
     required this.trackColor,
     required this.tickColor,
@@ -616,9 +669,8 @@ class _CurrentArcPainter extends CustomPainter {
 
   final double progress;
   final CurrentArcGaugeGeom geom;
-  final List<double> majors;
-  final double min;
-  final double max;
+  final List<double> tickProgresses;
+  final List<double> minorTickProgresses;
   final Color progressColor;
   final Color trackColor;
   final Color tickColor;
@@ -626,11 +678,6 @@ class _CurrentArcPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final span = max - min;
-    if (span <= 0) {
-      return;
-    }
-
     final trackRect =
         Rect.fromCircle(center: geom.center, radius: geom.ringRadius);
 
@@ -687,15 +734,14 @@ class _CurrentArcPainter extends CustomPainter {
       rimPaint,
     );
 
-    // 4. Major ticks only (no minor ticks).
+    // 4. Major ticks, paired with the numeric labels rendered above.
     final tickPaint = Paint()
       ..color = tickColor
       ..strokeWidth = math.max(1.5, size.width * (2 / 200))
       ..strokeCap = StrokeCap.butt
       ..isAntiAlias = true;
-    for (final mark in majors) {
-      final mt = ((mark - min) / span).clamp(0.0, 1.0);
-      final angle = MonitorArcGeometry.angleForProgress(mt);
+    for (final tickProgress in tickProgresses) {
+      final angle = MonitorArcGeometry.angleForProgress(tickProgress);
       final p0 = MonitorArcGeometry.pointOnArc(
         geom.center,
         geom.scaleInnerRadius,
@@ -708,18 +754,43 @@ class _CurrentArcPainter extends CustomPainter {
       );
       canvas.drawLine(p0, p1, tickPaint);
     }
+
+    // 5. Optional half-step ticks. They share the major ticks' outer anchor
+    // but are shorter and deliberately do not have number labels.
+    if (minorTickProgresses.isNotEmpty) {
+      final minorTickPaint = Paint()
+        ..color = tickColor
+        ..strokeWidth = math.max(1.25, size.width * (1.5 / 200))
+        ..strokeCap = StrokeCap.butt
+        ..isAntiAlias = true;
+      final minorOuterRadius = geom.scaleInnerRadius +
+          (geom.scaleOuterRadius - geom.scaleInnerRadius) * 0.58;
+      for (final tickProgress in minorTickProgresses) {
+        final angle = MonitorArcGeometry.angleForProgress(tickProgress);
+        final p0 = MonitorArcGeometry.pointOnArc(
+          geom.center,
+          geom.scaleInnerRadius,
+          angle,
+        );
+        final p1 = MonitorArcGeometry.pointOnArc(
+          geom.center,
+          minorOuterRadius,
+          angle,
+        );
+        canvas.drawLine(p0, p1, minorTickPaint);
+      }
+    }
   }
 
   @override
   bool shouldRepaint(covariant _CurrentArcPainter oldDelegate) {
     return oldDelegate.progress != progress ||
-        oldDelegate.min != min ||
-        oldDelegate.max != max ||
         oldDelegate.geom.ringRadius != geom.ringRadius ||
         oldDelegate.progressColor != progressColor ||
         oldDelegate.trackColor != trackColor ||
         oldDelegate.tickColor != tickColor ||
         oldDelegate.rimStrokeColor != rimStrokeColor ||
-        oldDelegate.majors.length != majors.length;
+        !listEquals(oldDelegate.tickProgresses, tickProgresses) ||
+        !listEquals(oldDelegate.minorTickProgresses, minorTickProgresses);
   }
 }

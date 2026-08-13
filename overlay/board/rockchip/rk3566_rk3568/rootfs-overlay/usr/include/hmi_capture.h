@@ -23,8 +23,7 @@ typedef void *(*hmi_capture_gl_get_proc_fn)(const char *name);
 int hmi_capture_screenshot(const char *out_dir, int rotate_deg, int q_factor);
 
 /* Start continuous record into out_dir/screen.mp4.
- * audio: 0=off, 1=try ALSA (+ voaacenc); soft-fallback to video-only.
- * audio_dev: ALSA PCM (NULL/empty → "default"). */
+ * audio / audio_dev: accepted for ABI; playback tap was withdrawn (video-only). */
 int hmi_capture_record_start(const char *out_dir,
                              int fps,
                              int scale_pct,

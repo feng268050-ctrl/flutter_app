@@ -9,10 +9,9 @@ import 'package:lws_hmi/features/process_mode/presentation/safety_ground_lock_pr
 import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_host.dart';
 
 /// Coordinates gun-switch edges with Live Monitor + safety-ground prompt
-/// (Engineer Mode gun ↔ dialog linkage).
+/// (Quick / Engineer gun ↔ dialog linkage).
 ///
-/// Quick Mode does **not** host this coordinator. CNC pages must not start it
-/// (or must [setActive] false).
+/// CNC pages must [setActive] false (no gun Live Monitor / ground frost).
 final class GunDialogCoordinator {
   GunDialogCoordinator({
     required this.deviceControl,
@@ -21,6 +20,7 @@ final class GunDialogCoordinator {
     required this.showGroundLockAlarmGetter,
     this.resetGunLatchOnEnableOff = false,
     this.closeOnEnableOffImmediate = true,
+    this.showLiveMonitorOnGun = true,
   });
 
   final DeviceControlController deviceControl;
@@ -40,6 +40,9 @@ final class GunDialogCoordinator {
   /// Live Monitor immediately. When false, uses delayed close like Android
   /// `closeDialogDelayMillis`.
   final bool closeOnEnableOffImmediate;
+
+  /// Engineer-only parity: open the More Monitoring dialog on gun press.
+  final bool showLiveMonitorOnGun;
 
   bool? _lastGunOn;
   bool _lastLaserEnable = false;
@@ -200,12 +203,12 @@ final class GunDialogCoordinator {
 
     if (_lastGunOn != _gunSwitchOn) {
       _lastGunOn = _gunSwitchOn;
-      if (_gunSwitchOn) {
+      if (_gunSwitchOn && showLiveMonitorOnGun) {
         final ctx = contextGetter();
         if (ctx != null && ctx.mounted) {
           unawaited(WorkStatusDialogHost.showNoConfirmDialog(ctx));
         }
-      } else {
+      } else if (!_gunSwitchOn && showLiveMonitorOnGun) {
         WorkStatusDialogHost.scheduleCloseOnGunOff();
       }
     }
@@ -213,15 +216,44 @@ final class GunDialogCoordinator {
     final ctx = contextGetter();
     if (ctx != null && ctx.mounted) {
       unawaited(
-        SafetyGroundLockPrompt.maybeShow(
+        _maybeShowGroundLockPrompt(
           ctx,
-          laserEnableActive: laserEnable,
-          gunSwitchOn: _gunSwitchOn,
-          safetyGroundLocked: _safetyGroundLocked,
-          alarmEnabled: showGroundLockAlarm,
-          services: services,
+          laserEnable: laserEnable,
+          showGroundLockAlarm: showGroundLockAlarm,
         ),
       );
     }
+  }
+
+  Future<void> _maybeShowGroundLockPrompt(
+    BuildContext ctx, {
+    required bool laserEnable,
+    required bool showGroundLockAlarm,
+  }) async {
+    debugPrint(
+      'gun-dialog: ground-prompt check '
+      'enable=$laserEnable gun=$_gunSwitchOn '
+      'locked=$_safetyGroundLocked alarm=$showGroundLockAlarm',
+    );
+    if (!SafetyGroundLockPrompt.isEligibleForPrompt(
+      laserEnableActive: laserEnable,
+      gunSwitchOn: _gunSwitchOn,
+      safetyGroundLocked: _safetyGroundLocked,
+      alarmEnabled: showGroundLockAlarm,
+    )) {
+      return;
+    }
+    // The safety WARN takes precedence over the gun-managed monitor route.
+    WorkStatusDialogHost.cancelPendingClose();
+    WorkStatusDialogHost.closeDialog();
+
+    await SafetyGroundLockPrompt.maybeShow(
+      ctx,
+      laserEnableActive: laserEnable,
+      gunSwitchOn: _gunSwitchOn,
+      safetyGroundLocked: _safetyGroundLocked,
+      alarmEnabled: showGroundLockAlarm,
+      services: services,
+    );
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_alarm_ui/cyber_alarm_ui.dart';
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/output.dart';
 import 'package:cyber_hal/stub.dart';
@@ -212,6 +213,106 @@ void main() {
       expect(coord.lastGunOn, isNull);
       expect(WorkStatusDialogHost.hasPendingClose, isFalse);
     });
+
+    testWidgets('Quick gun edge does not open More Monitoring', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      late BuildContext hostContext;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: Builder(
+            builder: (context) {
+              hostContext = context;
+              return const Scaffold(body: SizedBox.expand());
+            },
+          ),
+        ),
+      );
+      coord = GunDialogCoordinator(
+        deviceControl: device,
+        services: services,
+        contextGetter: () => hostContext,
+        showGroundLockAlarmGetter: () => false,
+        showLiveMonitorOnGun: false,
+      );
+
+      coord.handleInputs(
+        laserEnable: true,
+        gunOn: true,
+        safetyGroundLocked: true,
+        showGroundLockAlarm: false,
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('live-machine-status-dialog')),
+        findsNothing,
+      );
+      expect(WorkStatusDialogHost.isGunManagedShowing, isFalse);
+    });
+
+    testWidgets('ground-lock WARN closes gun-managed More Monitoring',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      late BuildContext hostContext;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: Builder(
+            builder: (context) {
+              hostContext = context;
+              return const Scaffold(body: SizedBox.expand());
+            },
+          ),
+        ),
+      );
+      unawaited(WorkStatusDialogHost.showNoConfirmDialog(hostContext));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(
+        find.byKey(const ValueKey('live-machine-status-dialog')),
+        findsOneWidget,
+      );
+
+      coord = GunDialogCoordinator(
+        deviceControl: device,
+        services: services,
+        contextGetter: () => hostContext,
+        showGroundLockAlarmGetter: () => true,
+      );
+      coord.handleInputs(
+        laserEnable: true,
+        gunOn: true,
+        safetyGroundLocked: false,
+        showGroundLockAlarm: true,
+      );
+      await tester.pumpAndSettle();
+      final overflow = tester.takeException();
+      expect(
+        overflow == null ||
+            overflow.toString().contains('overflowed') ||
+            overflow.toString().contains('A RenderFlex overflowed'),
+        isTrue,
+      );
+
+      expect(
+        find.byKey(const ValueKey('live-machine-status-dialog')),
+        findsNothing,
+      );
+      expect(WorkStatusDialogHost.isGunManagedShowing, isFalse);
+      expect(
+        find.byKey(const ValueKey('safety-ground-lock-prompt-warn')),
+        findsOneWidget,
+      );
+    });
   });
 
   group('WorkStatusDialogHost', () {
@@ -401,8 +502,9 @@ void main() {
             overflow.toString().contains('A RenderFlex overflowed'),
         isTrue,
       );
-      expect(find.byKey(const ValueKey('safety-ground-lock-prompt')),
+      expect(find.byKey(const ValueKey('safety-ground-lock-prompt-warn')),
           findsOneWidget);
+      expect(SafetyGroundLockPrompt.showingChrome, WarnChromeStyle.warn);
       expect(find.text('Safety Clamp Disconnected'), findsOneWidget);
 
       unawaited(
@@ -415,12 +517,12 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byKey(const ValueKey('safety-ground-lock-prompt')),
+      expect(find.byKey(const ValueKey('safety-ground-lock-prompt-warn')),
           findsOneWidget);
 
       SafetyGroundLockPrompt.reset();
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('safety-ground-lock-prompt')),
+      expect(find.byKey(const ValueKey('safety-ground-lock-prompt-warn')),
           findsNothing);
     });
   });

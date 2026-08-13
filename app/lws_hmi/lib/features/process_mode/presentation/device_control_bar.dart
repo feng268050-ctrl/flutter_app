@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/emergency_stop_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/key_switch_off_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
@@ -153,10 +154,12 @@ final class DeviceControlBar extends StatelessWidget {
     if (err == LaserEnableBlockReason.keySwitchOff) {
       await KeySwitchOffPrompt.presentLaserEnableKeyOffBlock(
         context,
-        miscAlarmEnabled:
-            MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ?? false,
         services: AppScope.maybeOf(context),
       );
+      return;
+    }
+    if (err == LaserEnableBlockReason.emergencyStop) {
+      await EmergencyStopPrompt.presentLaserEnableBlock(context);
       return;
     }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(err)) {

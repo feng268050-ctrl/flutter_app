@@ -1778,8 +1778,14 @@ abstract class AppLocalizations {
   /// No description provided for @deviceControlEmergencyStopError.
   ///
   /// In en, this message translates to:
-  /// **'Device is in E-stop'**
+  /// **'The E-Stop button is pressed. Rotate the button in the direction of the arrow until it releases, then try again.'**
   String get deviceControlEmergencyStopError;
+
+  /// No description provided for @emergencyStopAlarmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Stop Is Active'**
+  String get emergencyStopAlarmTitle;
 
   /// No description provided for @deviceControlEndOfWorkFailed.
   ///

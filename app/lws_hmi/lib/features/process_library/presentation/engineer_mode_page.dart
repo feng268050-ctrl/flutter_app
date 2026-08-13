@@ -33,6 +33,7 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.
 import 'package:lws_hmi/features/process_mode/presentation/engineer_parameter_form.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_bar.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/emergency_stop_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/key_switch_off_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
@@ -164,6 +165,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
           resetGunLatchOnEnableOff: false,
         );
         unawaited(_gunDialogs!.start());
+        _gunDialogs!.setActive(_processType != ProcessType.cncCutting);
         setState(() {});
       }
       unawaited(_bootstrap());
@@ -201,6 +203,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     }
     switch (event) {
       case DeviceControlSafetyEvent.emergencyStopCleared:
+        EmergencyStopPrompt.reset();
         OperationFailedDialogHost.dismissForSafetyClear(event);
         return;
       case DeviceControlSafetyEvent.keySwitchRestored:
@@ -210,31 +213,25 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       case DeviceControlSafetyEvent.keySwitchOff:
         WorkStatusDialogHost.closeDialog();
         final control = _deviceControl;
-        if (control != null &&
-            !control.suppressKeySwitchOffSafetyPrompt &&
-            (MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ?? false)) {
+        if (control != null && !control.suppressKeySwitchOffSafetyPrompt) {
           unawaited(
             KeySwitchOffPrompt.maybeShow(
               context,
-              alarmEnabled: true,
+              miscAlarmEnabled:
+                  MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ??
+                      false,
               services: AppScope.of(context),
             ),
           );
         }
         return;
       case DeviceControlSafetyEvent.emergencyStop:
-        break;
+        WorkStatusDialogHost.closeDialog();
+        unawaited(
+          EmergencyStopPrompt.maybeShow(context),
+        );
+        return;
     }
-    WorkStatusDialogHost.closeDialog();
-    final l10n = AppLocalizations.of(context)!;
-    final message = DeviceControlFeedbackCopy.emergencyStopError(l10n);
-    unawaited(
-      OperationFailedDialogHost.show(
-        context,
-        message: message,
-        safetyEvent: event,
-      ),
-    );
   }
 
   Future<void> _bootstrap() async {
@@ -352,6 +349,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       );
     });
     LaserEnableLedHolder.instance.setWorkModel(type);
+    _gunDialogs?.setActive(type != ProcessType.cncCutting);
     final gen = ++_processSwitchGen;
     debugPrint(
       'engineer-mode: process tab changed '

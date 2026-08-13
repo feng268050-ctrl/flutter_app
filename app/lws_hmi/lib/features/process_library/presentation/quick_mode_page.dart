@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_laser_work_guard_host.dart';
+import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
@@ -32,6 +33,7 @@ import 'package:lws_hmi/features/process_mode/presentation/cnc_exit_dialog.dart'
 import 'package:lws_hmi/features/process_mode/presentation/cnc_running_overlay.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_region_frost.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/emergency_stop_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/key_switch_off_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
@@ -75,6 +77,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   DeviceControlLaserWorkGuardHost? _laserWorkGuardHost;
   WorkSessionStatisticsRecorder? _workSessionStatistics;
   RecordWorkController? _recordWork;
+  GunDialogCoordinator? _gunDialogs;
   CncSessionController? _cncSession;
   bool _exiting = false;
 
@@ -126,6 +129,19 @@ final class _QuickModePageState extends State<QuickModePage> {
             },
           );
           unawaited(_recordWork!.start(services));
+          _gunDialogs = GunDialogCoordinator(
+            deviceControl: _deviceControl!,
+            services: services,
+            contextGetter: () => mounted ? context : null,
+            showGroundLockAlarmGetter: () =>
+                MiscSettingsScope.maybeOf(context)?.showGroundLockAlarm ??
+                    false,
+            // Quick re-edges after re-Enable while gun is held.
+            resetGunLatchOnEnableOff: true,
+            showLiveMonitorOnGun: false,
+          );
+          unawaited(_gunDialogs!.start());
+          _gunDialogs!.setActive(_processType != ProcessType.cncCutting);
         }
         if (_cncSession == null) {
           _cncSession = CncSessionController(services);
@@ -151,6 +167,8 @@ final class _QuickModePageState extends State<QuickModePage> {
       LaserWorkGuard.unregister(host);
       _laserWorkGuardHost = null;
     }
+    _gunDialogs?.dispose();
+    _gunDialogs = null;
     _recordWork?.dispose();
     _deviceControl?.onSafetyEvent = null;
     _deviceControl?.removeListener(_onDeviceControlChanged);
@@ -173,6 +191,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     switch (event) {
       case DeviceControlSafetyEvent.emergencyStopCleared:
+        EmergencyStopPrompt.reset();
         OperationFailedDialogHost.dismissForSafetyClear(event);
         return;
       case DeviceControlSafetyEvent.keySwitchRestored:
@@ -182,31 +201,25 @@ final class _QuickModePageState extends State<QuickModePage> {
       case DeviceControlSafetyEvent.keySwitchOff:
         WorkStatusDialogHost.closeDialog();
         final control = _deviceControl;
-        if (control != null &&
-            !control.suppressKeySwitchOffSafetyPrompt &&
-            (MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ?? false)) {
+        if (control != null && !control.suppressKeySwitchOffSafetyPrompt) {
           unawaited(
             KeySwitchOffPrompt.maybeShow(
               context,
-              alarmEnabled: true,
+              miscAlarmEnabled:
+                  MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ??
+                      false,
               services: AppScope.of(context),
             ),
           );
         }
         return;
       case DeviceControlSafetyEvent.emergencyStop:
-        break;
+        WorkStatusDialogHost.closeDialog();
+        unawaited(
+          EmergencyStopPrompt.maybeShow(context),
+        );
+        return;
     }
-    WorkStatusDialogHost.closeDialog();
-    final l10n = AppLocalizations.of(context)!;
-    final message = DeviceControlFeedbackCopy.emergencyStopError(l10n);
-    unawaited(
-      OperationFailedDialogHost.show(
-        context,
-        message: message,
-        safetyEvent: event,
-      ),
-    );
   }
 
   void _onCncSessionChanged() {
@@ -272,6 +285,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     setState(() => _processType = type);
     LaserEnableLedHolder.instance.setWorkModel(type);
+    _gunDialogs?.setActive(type != ProcessType.cncCutting);
     _rebuildSelection(
       ProcessLibraryScope.of(context),
       applyMode: ProcessApplyMode.modeSwitch,
@@ -544,10 +558,14 @@ final class _QuickModePageState extends State<QuickModePage> {
       unawaited(
         KeySwitchOffPrompt.presentLaserEnableKeyOffBlock(
           context,
-          miscAlarmEnabled:
-              MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ?? false,
           services: AppScope.of(context),
         ),
+      );
+      return reason.localizedMessage(l10n);
+    }
+    if (reason == LaserEnableBlockReason.emergencyStop) {
+      unawaited(
+        EmergencyStopPrompt.presentLaserEnableBlock(context),
       );
       return reason.localizedMessage(l10n);
     }
@@ -584,10 +602,12 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (reason == LaserEnableBlockReason.keySwitchOff) {
       await KeySwitchOffPrompt.presentLaserEnableKeyOffBlock(
         context,
-        miscAlarmEnabled:
-            MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ?? false,
         services: AppScope.of(context),
       );
+      return;
+    }
+    if (reason == LaserEnableBlockReason.emergencyStop) {
+      await EmergencyStopPrompt.presentLaserEnableBlock(context);
       return;
     }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(reason)) {

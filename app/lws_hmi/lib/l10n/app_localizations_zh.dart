@@ -910,7 +910,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceControlContinuousFeedLabel => '持续送丝';
 
   @override
-  String get deviceControlEmergencyStopError => '设备处于急停状态';
+  String get deviceControlEmergencyStopError =>
+      '急停按钮当前处于按下状态。请按按钮上的箭头方向旋转，待按钮弹起复位后重试。';
+
+  @override
+  String get emergencyStopAlarmTitle => '急停已触发';
 
   @override
   String get deviceControlEndOfWorkFailed => '结束工作失败 — 请检查控制板连接';
@@ -4010,7 +4014,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get deviceControlContinuousFeedLabel => '連續送絲';
 
   @override
-  String get deviceControlEmergencyStopError => '設備處於急停狀態';
+  String get deviceControlEmergencyStopError =>
+      '急停按鈕當前處於按下狀態。請按按鈕上的箭頭方向旋轉，待按鈕彈起復位後重試。';
+
+  @override
+  String get emergencyStopAlarmTitle => '急停已觸發';
 
   @override
   String get deviceControlEndOfWorkFailed => '結束工作失敗 — 請檢查控制板連接';

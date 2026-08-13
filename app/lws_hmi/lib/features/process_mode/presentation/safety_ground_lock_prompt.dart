@@ -7,11 +7,12 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_sound.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Informational Frost prompt when Laser Enable is on, gun is pressed, and
-/// safety ground is unlocked (lws-ui `SafetyGroundLockPrompt`).
+/// Warn Frost when Laser Enable is on, gun is pressed, and safety ground is
+/// unlocked (lws-ui `SafetyGroundLockPrompt`).
 ///
-/// Not a logged alarm. Once per gun press; auto-dismisses when Enable turns
-/// off, gun releases, or ground locks.
+/// WARN chrome + SFX. Not a logged alarm; does not change Laser Enable.
+/// Once per gun press. Confirm dismisses frost + SFX only. Auto-dismisses
+/// when Enable turns off, gun releases, or ground locks.
 abstract final class SafetyGroundLockPrompt {
   static const warnEpisodeCode = 'safety_ground_lock_prompt';
 
@@ -19,14 +20,17 @@ abstract final class SafetyGroundLockPrompt {
   static bool _isShowing = false;
   static BuildContext? _dialogContext;
   static WarnAlarmSound? _sound;
+  static WarnChromeStyle? _showingChrome;
 
   static bool get isShowing => _isShowing;
 
   @visibleForTesting
   static bool get promptedForCurrentGunPress => _promptedForCurrentGunPress;
 
-  /// Eligibility (settings gate + Enable + gun + unlocked ground).
   @visibleForTesting
+  static WarnChromeStyle? get showingChrome => _showingChrome;
+
+  /// Eligibility (settings gate + Enable + gun + unlocked ground).
   static bool isEligibleForPrompt({
     required bool laserEnableActive,
     required bool gunSwitchOn,
@@ -57,6 +61,7 @@ abstract final class SafetyGroundLockPrompt {
       }
     }
     _isShowing = false;
+    _showingChrome = null;
     unawaited(_stopSound());
   }
 
@@ -83,12 +88,15 @@ abstract final class SafetyGroundLockPrompt {
       return;
     }
     if (!alarmEnabled) {
+      debugPrint('safety-ground-prompt: skip (Misc showGroundLockAlarm off)');
       return;
     }
     if (_promptedForCurrentGunPress) {
+      debugPrint('safety-ground-prompt: skip (already latched this gun press)');
       return;
     }
     _promptedForCurrentGunPress = true;
+    debugPrint('safety-ground-prompt: show');
     await _show(context, services: services, sound: sound);
   }
 
@@ -114,6 +122,7 @@ abstract final class SafetyGroundLockPrompt {
     final scope =
         context.findAncestorStateOfType<CyberBlurBackdropScopeState>();
     _isShowing = true;
+    _showingChrome = WarnChromeStyle.warn;
     unawaited(_sound?.ensurePlaying(warnEpisodeCode));
 
     try {
@@ -128,16 +137,16 @@ abstract final class SafetyGroundLockPrompt {
           final l10n = AppLocalizations.of(dialogContext);
           return Material(
             type: MaterialType.transparency,
-            key: const ValueKey('safety-ground-lock-prompt'),
+            key: const ValueKey('safety-ground-lock-prompt-warn'),
             child: WarnFrostShell(
               scope: scope,
               child: WarnDialogBody(
                 title: l10n?.safetyGroundLockNotConnectedTitle ??
                     'Safety Clamp Disconnected',
-                body: l10n?.connectSafetyClampBeforeLaser ??
+                body: l10n?.safetyGroundLockNotConnectedMessage ??
                     'Connect the safety clamp before enabling the laser.',
                 confirmLabel: l10n?.confirmText ?? 'Confirm',
-                infoStyle: true,
+                chromeStyle: WarnChromeStyle.warn,
                 beforeConfirm: () => _stopSound(),
                 onConfirm: () {
                   Navigator.of(dialogContext).pop();
@@ -150,6 +159,7 @@ abstract final class SafetyGroundLockPrompt {
     } finally {
       _dialogContext = null;
       _isShowing = false;
+      _showingChrome = null;
       _promptedForCurrentGunPress = false;
       unawaited(_stopSound());
     }
@@ -166,6 +176,7 @@ abstract final class SafetyGroundLockPrompt {
     _promptedForCurrentGunPress = false;
     _dialogContext = null;
     _isShowing = false;
+    _showingChrome = null;
     _sound = null;
   }
 }

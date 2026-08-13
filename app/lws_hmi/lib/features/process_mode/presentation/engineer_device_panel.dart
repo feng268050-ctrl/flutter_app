@@ -12,6 +12,7 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.dart';
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
+import 'package:lws_hmi/features/process_mode/presentation/emergency_stop_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/key_switch_off_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
@@ -21,7 +22,6 @@ import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.da
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
-import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
@@ -410,12 +410,12 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   await KeySwitchOffPrompt
                                       .presentLaserEnableKeyOffBlock(
                                     context,
-                                    miscAlarmEnabled: MiscSettingsScope.maybeOf(
-                                              context,
-                                            )?.showKeySwitchAlarm ??
-                                        false,
                                     services: AppScope.maybeOf(context),
                                   );
+                                } else if (err ==
+                                    LaserEnableBlockReason.emergencyStop) {
+                                  await EmergencyStopPrompt
+                                      .presentLaserEnableBlock(context);
                                 } else if (DeviceControlFeedbackCopy
                                     .isSafetyTipBlock(err)) {
                                   await OperationFailedDialogHost.show(

@@ -5,14 +5,12 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
-import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_sound.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Informational Frost prompt when the key switch turns off and the Misc
-/// "Show Key Switch Alarm" preference is on (mirrors [SafetyGroundLockPrompt]).
+/// Warn Frost for key-switch off: WARN (Misc alarm on) or INFO (Misc off).
 ///
-/// Not a logged alarm. Once per key-off until the key is restored.
+/// Not a logged alarm. Edge latched once per key-off until key restore.
 abstract final class KeySwitchOffPrompt {
   static const warnEpisodeCode = 'key_switch_off_prompt';
 
@@ -20,16 +18,20 @@ abstract final class KeySwitchOffPrompt {
   static bool _isShowing = false;
   static BuildContext? _dialogContext;
   static WarnAlarmSound? _sound;
+  static WarnChromeStyle? _showingChrome;
 
   static bool get isShowing => _isShowing;
 
   @visibleForTesting
   static bool get promptedForCurrentKeyOff => _promptedForCurrentKeyOff;
 
-  /// Eligibility (Misc "Show Key Switch Alarm" gate only).
   @visibleForTesting
-  static bool isEligibleForPrompt({required bool alarmEnabled}) {
-    return alarmEnabled;
+  static WarnChromeStyle? get showingChrome => _showingChrome;
+
+  /// WARN when Misc Show Key Switch Alarm is on; INFO when off.
+  @visibleForTesting
+  static WarnChromeStyle chromeForMiscAlarmEnabled(bool miscAlarmEnabled) {
+    return miscAlarmEnabled ? WarnChromeStyle.warn : WarnChromeStyle.info;
   }
 
   static void reset() {
@@ -47,73 +49,85 @@ abstract final class KeySwitchOffPrompt {
       }
     }
     _isShowing = false;
+    _showingChrome = null;
     unawaited(_stopSound());
   }
 
-  /// Show when eligible and not yet latched for this key-off press.
+  /// Physical key-off edge: WARN or INFO from Misc; latched until key restore.
   static Future<void> maybeShow(
     BuildContext context, {
-    required bool alarmEnabled,
+    required bool miscAlarmEnabled,
     AppServices? services,
     WarnAlarmSound? sound,
   }) async {
-    if (!isEligibleForPrompt(alarmEnabled: alarmEnabled)) {
-      return;
-    }
     if (_promptedForCurrentKeyOff) {
       return;
     }
     _promptedForCurrentKeyOff = true;
-    await _show(context, services: services, sound: sound);
+    await _show(
+      context,
+      chrome: chromeForMiscAlarmEnabled(miscAlarmEnabled),
+      services: services,
+      sound: sound,
+    );
   }
 
-  /// Laser Enable blocked with key off: Misc alarm popup, else Operation-failed tip.
+  /// Laser Enable blocked with key off: always INFO (silent); replaces WARN if up.
   static Future<void> presentLaserEnableKeyOffBlock(
     BuildContext context, {
-    required bool miscAlarmEnabled,
     AppServices? services,
+    WarnAlarmSound? sound,
   }) async {
     if (!context.mounted) {
       return;
     }
-    if (miscAlarmEnabled) {
-      await maybeShow(
-        context,
-        alarmEnabled: true,
-        services: services,
-      );
-      return;
+    if (_isShowing) {
+      dismissIfShowing();
     }
-    final l10n = AppLocalizations.of(context)!;
-    await OperationFailedDialogHost.show(
+    await _show(
       context,
-      message: DeviceControlFeedbackCopy.keySwitchOffError(l10n),
+      chrome: WarnChromeStyle.info,
+      services: services,
+      sound: sound,
+      ignoreEdgeLatch: true,
     );
   }
 
   static Future<void> _show(
     BuildContext context, {
+    required WarnChromeStyle chrome,
     AppServices? services,
     WarnAlarmSound? sound,
+    bool ignoreEdgeLatch = false,
   }) async {
     if (!context.mounted) {
-      _promptedForCurrentKeyOff = false;
+      if (!ignoreEdgeLatch) {
+        _promptedForCurrentKeyOff = false;
+      }
       return;
     }
     if (_isShowing) {
       return;
     }
 
-    final resolvedServices = services ?? AppScope.maybeOf(context);
-    _sound = sound ??
-        (resolvedServices != null
-            ? WarnAlarmSound(resolvedServices.audio)
-            : null);
+    final useSound = chrome == WarnChromeStyle.warn;
+    if (useSound) {
+      final resolvedServices = services ?? AppScope.maybeOf(context);
+      _sound = sound ??
+          (resolvedServices != null
+              ? WarnAlarmSound(resolvedServices.audio)
+              : null);
+    } else {
+      _sound = null;
+    }
 
     final scope =
         context.findAncestorStateOfType<CyberBlurBackdropScopeState>();
     _isShowing = true;
-    unawaited(_sound?.ensurePlaying(warnEpisodeCode));
+    _showingChrome = chrome;
+    if (useSound) {
+      unawaited(_sound?.ensurePlaying(warnEpisodeCode));
+    }
 
     try {
       await showGeneralDialog<void>(
@@ -127,7 +141,7 @@ abstract final class KeySwitchOffPrompt {
           final l10n = AppLocalizations.of(dialogContext);
           return Material(
             type: MaterialType.transparency,
-            key: const ValueKey('key-switch-off-prompt'),
+            key: ValueKey('key-switch-off-prompt-${chrome.name}'),
             child: WarnFrostShell(
               scope: scope,
               child: WarnDialogBody(
@@ -136,8 +150,8 @@ abstract final class KeySwitchOffPrompt {
                     ? DeviceControlFeedbackCopy.keySwitchOffError(l10n)
                     : 'Key switch is off',
                 confirmLabel: l10n?.confirmText ?? 'Confirm',
-                infoStyle: true,
-                beforeConfirm: () => _stopSound(),
+                chromeStyle: chrome,
+                beforeConfirm: useSound ? () => _stopSound() : null,
                 onConfirm: () {
                   Navigator.of(dialogContext).pop();
                 },
@@ -149,7 +163,7 @@ abstract final class KeySwitchOffPrompt {
     } finally {
       _dialogContext = null;
       _isShowing = false;
-      _promptedForCurrentKeyOff = false;
+      _showingChrome = null;
       unawaited(_stopSound());
     }
   }
@@ -165,6 +179,7 @@ abstract final class KeySwitchOffPrompt {
     _promptedForCurrentKeyOff = false;
     _dialogContext = null;
     _isShowing = false;
+    _showingChrome = null;
     _sound = null;
   }
 }

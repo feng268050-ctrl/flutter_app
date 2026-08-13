@@ -953,7 +953,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceControlContinuousFeedLabel => 'Continuous Feed';
 
   @override
-  String get deviceControlEmergencyStopError => 'Device is in E-stop';
+  String get deviceControlEmergencyStopError =>
+      'The E-Stop button is pressed. Rotate the button in the direction of the arrow until it releases, then try again.';
+
+  @override
+  String get emergencyStopAlarmTitle => 'Emergency Stop Is Active';
 
   @override
   String get deviceControlEndOfWorkFailed =>

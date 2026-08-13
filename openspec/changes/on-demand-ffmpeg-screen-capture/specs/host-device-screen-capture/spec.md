@@ -51,6 +51,20 @@ Screenshot and record-screen workflows SHALL select a device via the same `SN=` 
 - **WHEN** the operator runs `AUDIO=0 make record-screen`
 - **THEN** the workflow records video only and still pulls the file under `output/record-screen/`
 
+### Requirement: record-screen shows live elapsed duration
+
+While `make record-screen` is actively recording, the host SHALL update a single console status line at least once per second with the elapsed recording time. When `DURATION` is a positive limit, the status line SHALL also show the configured total (and/or remaining). When `DURATION=0`, the status line SHALL show elapsed time and indicate that Ctrl+C stops recording. The live timer MUST be driven primarily by the host wall clock (not solely by buffered remote ffmpeg progress lines).
+
+#### Scenario: Timed run shows elapsed over total
+
+- **WHEN** the operator runs `DURATION=30 make record-screen` on a TTY
+- **THEN** during the capture the console shows updating elapsed time against 30 seconds (e.g. `00:12 / 00:30`) until the recording finishes
+
+#### Scenario: Open-ended run shows elapsed until stop
+
+- **WHEN** the operator runs `DURATION=0 make record-screen` on a TTY
+- **THEN** during the capture the console shows updating elapsed time until the operator interrupts, after which the host finalizes and pulls the recording
+
 ### Requirement: Debug Make help and docs
 
 `make screenshot` and `make record-screen` SHALL appear in the Makefile **Debug** help group, and operator usage (env vars, output paths, ffmpeg ensure/build) SHALL be documented in README Make-commands material and `docs/make-commands.md`. AGENTS rebuild guidance SHALL mark these as host-only (no firmware rebuild).

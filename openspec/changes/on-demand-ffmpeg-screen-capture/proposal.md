@@ -6,7 +6,7 @@ Operators need a repeatable host path to grab device UI screenshots and short sc
 
 - Add **on-demand aarch64 ffmpeg** for device screen capture: cross-compile (or rebuild when forced) a board-oriented ffmpeg binary cached under `.cache/` — **not** packaged into product rootfs / HMI bundle.
 - Add **`make screenshot`**: SSH to the selected device, stage ffmpeg under `/tmp`, capture one still from the live Weston/DRM session, pull PNG/JPEG to `output/screenshot/`, then remove the staged binary (and remote temp frames).
-- Add **`make record-screen`**: same staging model; record video **with audio** for a configurable duration (or until interrupt), pull the file to `output/record-screen/`, then clean up remote staging.
+- Add **`make record-screen`**: same staging model; record video **with audio** for a configurable duration (or until interrupt), show a **live elapsed-duration** status line on the host TTY while recording, pull the file to `output/record-screen/`, then clean up remote staging.
 - Wire both targets into the Makefile **Debug** help group; document in README / `docs/make-commands.md` / AGENTS rebuild notes (host-only; no firmware rebuild).
 - Reuse existing device selection (`SN=` / `IP=` / USB-SSH session helpers), same as `make audit` / `make push-app`.
 

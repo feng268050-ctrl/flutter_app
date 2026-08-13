@@ -13,7 +13,8 @@
 
 - [ ] 3.1 Implement `scripts/screenshot.sh`: single-frame `kmsgrab` (+ orientation filter / `ROTATE=`), pull image to `output/screenshot/shot-<stamp>/`, update `shot-latest`, print path
 - [ ] 3.2 Implement `scripts/record-screen.sh`: A/V record with `DURATION=` (default 30; `0` = until Ctrl+C), `AUDIO_DEV=` / `AUDIO=0`, pull to `output/record-screen/rec-<stamp>/`, update `rec-latest`
-- [ ] 3.3 Fail fast with clear errors when DRM grab or (when audio enabled) ALSA open fails
+- [ ] 3.3 Host live duration UI: refresh a single TTY line ≥1 Hz with elapsed (and total/remaining when `DURATION>0`); wall-clock based while waiting on SSH/ffmpeg
+- [ ] 3.4 Fail fast with clear errors when DRM grab or (when audio enabled) ALSA open fails
 
 ## 4. Makefile Debug wiring + docs
 

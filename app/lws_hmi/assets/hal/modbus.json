@@ -15,7 +15,6 @@
     "interval_ms": 100,
     "discard_if_busy": true,
     "health": {
-      "window_size": 5,
       "failure_threshold": 3,
       "mode": "slide_window"
     },

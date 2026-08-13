@@ -50,7 +50,6 @@ class _FakeTransport extends ModbusRtuTransport {
 
 ModbusConfig _healthConfig({
   required String mode,
-  int windowSize = 5,
   int failureThreshold = 3,
   int intervalMs = 20,
 }) {
@@ -66,7 +65,6 @@ ModbusConfig _healthConfig({
       intervalMs: intervalMs,
       discardIfBusy: true,
       health: ModbusHealthWindowConfig(
-        windowSize: windowSize,
         failureThreshold: failureThreshold,
         mode: mode,
       ),
@@ -97,7 +95,7 @@ void main() {
       () async {
     final transport = _FakeTransport();
     final hal = ModbusHal.fromConfig(
-      _healthConfig(mode: 'slide_window', failureThreshold: 3, windowSize: 5),
+      _healthConfig(mode: 'slide_window', failureThreshold: 3),
       transport: transport,
     );
     final health = <ModbusHealth>[];
@@ -124,7 +122,6 @@ void main() {
       _healthConfig(
         mode: 'slide_window',
         failureThreshold: 3,
-        windowSize: 5,
         intervalMs: 15,
       ),
       transport: transport,

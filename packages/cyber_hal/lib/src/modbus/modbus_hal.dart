@@ -318,9 +318,11 @@ final class _LinuxModbusHal implements ModbusHal {
   /// stop/start polling (nested sessions used to leave polling permanently off).
   Future<void> _exclusiveChain = Future<void>.value();
 
-  /// Recent group-cycle outcomes for slide_window health (true = failure).
-  /// Unhealthy when the trailing streak of failures reaches [failureThreshold].
-  final List<bool> _healthFailures = [];
+  /// Consecutive trailing group-cycle failures (success resets to 0).
+  int _consecutiveFailures = 0;
+
+  /// True after at least one continuous-poll sample has been recorded.
+  bool _hasHealthSample = false;
 
   /// Runtime override for [ModbusHealthWindowConfig.mode] (App-supplied).
   String? _healthModeOverride;
@@ -1195,30 +1197,22 @@ final class _LinuxModbusHal implements ModbusHal {
   void _recordHealthFailure(bool failed) {
     final window = _effectiveHealthWindow();
     if (window == null) return;
-    _healthFailures.add(failed);
-    while (_healthFailures.length > window.windowSize) {
-      _healthFailures.removeAt(0);
+    _hasHealthSample = true;
+    if (failed) {
+      _consecutiveFailures++;
+    } else {
+      _consecutiveFailures = 0;
     }
-  }
-
-  /// Trailing consecutive failures at the end of [_healthFailures].
-  int _trailingFailureStreak() {
-    var streak = 0;
-    for (var i = _healthFailures.length - 1; i >= 0; i--) {
-      if (!_healthFailures[i]) {
-        break;
-      }
-      streak++;
-    }
-    return streak;
   }
 
   bool _isWindowUnhealthy(ModbusHealthWindowConfig window) {
-    if (window.mode == 'immediate') {
-      return _healthFailures.isNotEmpty && _healthFailures.last;
+    if (!_hasHealthSample) {
+      return false;
     }
-    // slide_window: consecutive failures (not any N failures in the window).
-    return _trailingFailureStreak() >= window.failureThreshold;
+    if (window.mode == 'immediate') {
+      return _consecutiveFailures > 0;
+    }
+    return _consecutiveFailures >= window.failureThreshold;
   }
 
   void _emitAggregateHealth({required bool anySample}) {
@@ -1227,13 +1221,12 @@ final class _LinuxModbusHal implements ModbusHal {
       return;
     }
     final unhealthy = _isWindowUnhealthy(window);
-    final streak = _trailingFailureStreak();
     _emitHealth(
       ModbusHealth(
         ok: !unhealthy,
         truncated: unhealthy,
         message: unhealthy
-            ? 'health window: $streak consecutive failures'
+            ? 'health window: $_consecutiveFailures consecutive failures'
             : null,
       ),
     );

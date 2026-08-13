@@ -32,6 +32,10 @@ final class WarnAlarmSound {
 
   /// True when the HAL still has an armed warn loop but this facade is idle —
   /// e.g. stop raced ahead of a finishing [playLoopingAsset].
+  ///
+  /// Also true when **another** [WarnAlarmSound] on the same
+  /// [MediaAudioController] owns the loop. Callers MUST NOT treat that as
+  /// "safe to [stop]" unless they know this facade started the loop.
   bool get hasOrphanPlayback => !isActive && _audio.hasActiveLoop;
 
   /// Start / keep loop for [episodeCode] (dialog appear).

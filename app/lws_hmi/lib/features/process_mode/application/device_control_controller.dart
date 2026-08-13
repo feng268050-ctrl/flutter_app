@@ -74,6 +74,11 @@ final class DeviceControlController extends ChangeNotifier {
   bool _haltWriteInFlight = false;
   bool _disposed = false;
 
+  /// While forcing Auto Wire Feed ON (entry / process-tab default), ignore
+  /// stale watch OFF so Quick side keys do not flash between snapshot/prime
+  /// and the CONTROL_FIELD_1 write.
+  bool _holdingAutoWireDefault = false;
+
   /// Latch: tip already shown for the current e-stop press.
   bool _eStopTipShownThisPress = false;
 
@@ -111,9 +116,15 @@ final class DeviceControlController extends ChangeNotifier {
         ids: DeviceControlIds.watchIds,
       );
       _sub = stream.listen(applyChanges);
-      // lws-ui GeneralOperationsFragment.initData: Auto Wire Feed ON unless
-      // e-stop halt (device snapshot often leaves the bit off).
-      await ensureAutoWireFeedDefault();
+      // Soft entry defaults: never hold [busy] (Quick side keys share
+      // enabled:!busy). Defer writes so concurrent ProcessApply modeSwitch
+      // can claim the RTU first (avoids FC16 overlap on 0x58/0x98).
+      await ensureAutoWireFeedDefault(
+        defer: const Duration(milliseconds: 200),
+      );
+      if (_disposed) {
+        return;
+      }
       // lws-ui advanced-settings sync: fixed default manual feed speed 80 mm/s.
       await ensureManualWireFeedSpeed();
     } catch (e) {
@@ -124,22 +135,45 @@ final class DeviceControlController extends ChangeNotifier {
   }
 
   /// Match lws-ui Quick `initData`: always force Auto Wire Feed ON when safe.
-  Future<void> ensureAutoWireFeedDefault() async {
+  ///
+  /// Soft write: does not toggle [busy] (avoids Quick side-key opacity flash).
+  /// [defer] yields before Modbus so ProcessApply can enqueue first on entry.
+  Future<void> ensureAutoWireFeedDefault({
+    Duration defer = Duration.zero,
+  }) async {
     if (emergencyStop) {
       return;
     }
-    LaserEnableBlockReason? lastError;
-    for (var attempt = 0; attempt < 3; attempt++) {
-      lastError = await setAutoWireFeed(true);
-      if (lastError == null) {
+    _holdingAutoWireDefault = true;
+    if (!autoWireFeed) {
+      autoWireFeed = true;
+      notifyListeners();
+    }
+    try {
+      if (defer > Duration.zero) {
+        await Future<void>.delayed(defer);
+      }
+      if (_disposed || emergencyStop) {
         return;
       }
-      await Future<void>.delayed(Duration(milliseconds: 120 * (attempt + 1)));
+      LaserEnableBlockReason? lastError;
+      for (var attempt = 0; attempt < 3; attempt++) {
+        if (_disposed || emergencyStop) {
+          return;
+        }
+        lastError = await setAutoWireFeed(true, holdBusy: false);
+        if (lastError == null) {
+          return;
+        }
+        await Future<void>.delayed(Duration(milliseconds: 120 * (attempt + 1)));
+      }
+      debugPrint(
+        'device-control: ensureAutoWireFeedDefault failed '
+        'after retries: $lastError',
+      );
+    } finally {
+      _holdingAutoWireDefault = false;
     }
-    debugPrint(
-      'device-control: ensureAutoWireFeedDefault failed '
-      'after retries: $lastError',
-    );
   }
 
   /// Match lws-ui default `manualWireFeedSpeed` (80 mm/s) on holding 0x0098.
@@ -330,6 +364,11 @@ final class DeviceControlController extends ChangeNotifier {
             changed = true;
           }
         case DeviceControlIds.wireManualMode:
+          // Stale OFF from snapshot/watch prime must not uncheck while we are
+          // forcing the lws-ui default ON onto CONTROL_FIELD_1.
+          if (_holdingAutoWireDefault && !on) {
+            break;
+          }
           if (autoWireFeed != on) {
             autoWireFeed = on;
             changed = true;
@@ -346,6 +385,10 @@ final class DeviceControlController extends ChangeNotifier {
           }
         case DeviceControlIds.laserOn:
           if (laserOn != on) {
+            debugPrint(
+              'device-control: machine.laser_on $laserOn → $on '
+              '(enable=$laserEnable)',
+            );
             laserOn = on;
             changed = true;
           }
@@ -625,11 +668,19 @@ final class DeviceControlController extends ChangeNotifier {
   }
 
   /// Toggle automatic wire-feed enable, first stopping any manual movement.
-  Future<LaserEnableBlockReason?> setAutoWireFeed(bool enabled) async {
+  ///
+  /// [holdBusy] false for entry/default sync so Quick side keys (enabled when
+  /// `!busy`) do not dim/flicker while ProcessApply shares the RTU.
+  Future<LaserEnableBlockReason?> setAutoWireFeed(
+    bool enabled, {
+    bool holdBusy = true,
+  }) async {
     return _enqueueWrite(() async {
-      busy = true;
-      lastError = null;
-      notifyListeners();
+      if (holdBusy) {
+        busy = true;
+        lastError = null;
+        notifyListeners();
+      }
       try {
         final ok = await _exclusiveField1WithRetry(() async {
           var word = 0;
@@ -661,8 +712,12 @@ final class DeviceControlController extends ChangeNotifier {
         lastError = '$e';
         return LaserEnableBlockReason.writeFailed;
       } finally {
-        busy = false;
-        notifyListeners();
+        if (holdBusy) {
+          busy = false;
+        }
+        if (!_disposed) {
+          notifyListeners();
+        }
       }
     });
   }

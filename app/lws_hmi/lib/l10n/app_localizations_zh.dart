@@ -732,6 +732,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonSettingsShowSafetyGroundLockAlarm => '显示安全夹告警';
 
   @override
+  String get commonSettingsShowKeySwitchAlarm => '显示钥匙开关告警';
+
+  @override
+  String get keySwitchOffAlarmTitle => '钥匙开关未打开';
+
+  @override
   String get completeSelectionToPreview => '请完成选择以预览参数。';
 
   @override
@@ -904,7 +910,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceControlContinuousFeedLabel => '持续送丝';
 
   @override
-  String get deviceControlEmergencyStopError => '设备处于急停状态';
+  String get deviceControlEmergencyStopError =>
+      '急停按钮当前处于按下状态。请按按钮上的箭头方向旋转，待按钮弹起复位后重试。';
+
+  @override
+  String get emergencyStopAlarmTitle => '急停已触发';
 
   @override
   String get deviceControlEndOfWorkFailed => '结束工作失败 — 请检查控制板连接';
@@ -925,7 +935,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceControlFeedStopped => '送丝已停止';
 
   @override
-  String get deviceControlKeySwitchOffError => '钥匙开关未打开';
+  String get deviceControlKeySwitchOffError => '请插上钥匙并旋转打开钥匙开关，然后重新操作。';
 
   @override
   String get deviceControlManualGasOff => '手动吹气已关闭';
@@ -2120,6 +2130,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get processApplyFailureProcessReadbackFailed => '回读不匹配';
+
+  @override
+  String get processApplyFailureProcessReadFailed => '回读失败';
+
+  @override
+  String get processApplyFailureProcessTypeReadFailed => '工艺类型回读失败';
 
   @override
   String get processApplyFailureProcessTypeReadbackMismatch => '工艺类型回读不匹配';
@@ -3838,6 +3854,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get commonSettingsShowSafetyGroundLockAlarm => '顯示安全夾告警';
 
   @override
+  String get commonSettingsShowKeySwitchAlarm => '顯示鑰匙開關告警';
+
+  @override
+  String get keySwitchOffAlarmTitle => '鑰匙開關未打開';
+
+  @override
   String get completeSelectionToPreview => '請完成選擇以預覽參數。';
 
   @override
@@ -3992,7 +4014,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get deviceControlContinuousFeedLabel => '連續送絲';
 
   @override
-  String get deviceControlEmergencyStopError => '設備處於急停狀態';
+  String get deviceControlEmergencyStopError =>
+      '急停按鈕當前處於按下狀態。請按按鈕上的箭頭方向旋轉，待按鈕彈起復位後重試。';
+
+  @override
+  String get emergencyStopAlarmTitle => '急停已觸發';
 
   @override
   String get deviceControlEndOfWorkFailed => '結束工作失敗 — 請檢查控制板連接';
@@ -4013,7 +4039,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get deviceControlFeedStopped => '送絲已停止';
 
   @override
-  String get deviceControlKeySwitchOffError => '鑰匙開關未打開';
+  String get deviceControlKeySwitchOffError => '請插上鑰匙並旋轉打開鑰匙開關，然後重新操作。';
 
   @override
   String get deviceControlManualGasOff => '手動吹氣已關閉';
@@ -5022,6 +5048,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get processApplyFailureProcessReadbackFailed => '回讀不匹配';
+
+  @override
+  String get processApplyFailureProcessReadFailed => '回讀失敗';
+
+  @override
+  String get processApplyFailureProcessTypeReadFailed => '工藝類型回讀失敗';
 
   @override
   String get processApplyFailureProcessTypeReadbackMismatch => '工藝類型回讀不匹配';

@@ -111,8 +111,24 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                             min: 0,
                             // lws-ui MachineStatusBaseFragment.setBlowAirPressure max.
                             max: 1500,
-                            // lws-ui CircleProgressView: scaleInterval = max/10.
-                            majorTickEvery: 150,
+                            // Seven displayed marks. Their visual positions are
+                            // evenly distributed across the arc, preserving 0,
+                            // 750, and 1500 at start / top / end.
+                            evenlySpacedTickValues: const [
+                              0,
+                              300,
+                              600,
+                              750,
+                              900,
+                              1200,
+                              1500,
+                            ],
+                            // One short, unlabelled mark halfway between each
+                            // consecutive displayed pressure value.
+                            minorTicksBetweenMajors: 1,
+                            // Match the adjacent 0–100 A gauge's ring size;
+                            // only the gas labels use the larger 0–1500 scale.
+                            geometryMaxLabelValue: 100,
                             unit: 'kPa',
                             titleLine1: l10n.machineBlowTitle,
                             titleLine2: l10n.machineBlowContent,

@@ -15,8 +15,22 @@ class _FakeTransport extends ModbusRtuTransport {
 
   final Map<int, List<int>> inputByStart = {};
 
+  /// When non-null, each read consumes the next outcome (true = success words).
+  List<bool>? scriptedSuccess;
+
+  int scriptIndex = 0;
+
   @override
   Future<List<int>?> readInputRegisters(int startAddress, int count) async {
+    final script = scriptedSuccess;
+    if (script != null) {
+      if (scriptIndex >= script.length) {
+        return List<int>.filled(count, 0);
+      }
+      final ok = script[scriptIndex++];
+      if (!ok) return null;
+      return List<int>.filled(count, 0)..[2] = 42;
+    }
     final words = inputByStart[startAddress];
     if (words == null) return null;
     if (words.length < count) return words;
@@ -36,7 +50,6 @@ class _FakeTransport extends ModbusRtuTransport {
 
 ModbusConfig _healthConfig({
   required String mode,
-  int windowSize = 5,
   int failureThreshold = 3,
   int intervalMs = 20,
 }) {
@@ -52,7 +65,6 @@ ModbusConfig _healthConfig({
       intervalMs: intervalMs,
       discardIfBusy: true,
       health: ModbusHealthWindowConfig(
-        windowSize: windowSize,
         failureThreshold: failureThreshold,
         mode: mode,
       ),
@@ -79,10 +91,11 @@ ModbusConfig _healthConfig({
 }
 
 void main() {
-  test('slide_window emits aggregate unhealthy only after threshold', () async {
+  test('slide_window emits aggregate unhealthy only after consecutive threshold',
+      () async {
     final transport = _FakeTransport();
     final hal = ModbusHal.fromConfig(
-      _healthConfig(mode: 'slide_window', failureThreshold: 3, windowSize: 5),
+      _healthConfig(mode: 'slide_window', failureThreshold: 3),
       transport: transport,
     );
     final health = <ModbusHealth>[];
@@ -95,7 +108,40 @@ void main() {
     expect(health.every((h) => h.groupId == null), isTrue);
     final rising = health.where((h) => !h.ok).toList();
     expect(rising, isNotEmpty);
-    expect(rising.first.message, contains('health window'));
+    expect(rising.first.message, contains('consecutive failures'));
+
+    await sub.cancel();
+    await hal.close();
+  });
+
+  test('slide_window ignores interleaved non-consecutive failures', () async {
+    final transport = _FakeTransport()
+      // fail, ok, fail, ok, fail — three failures, never three consecutive.
+      ..scriptedSuccess = [false, true, false, true, false, true, true];
+    final hal = ModbusHal.fromConfig(
+      _healthConfig(
+        mode: 'slide_window',
+        failureThreshold: 3,
+        intervalMs: 15,
+      ),
+      transport: transport,
+    );
+    final health = <ModbusHealth>[];
+    final sub = hal.watchHealth().listen(health.add);
+
+    await hal.startPolling();
+    // Wait until the scripted pattern has been consumed.
+    while (transport.scriptIndex < 5) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    await hal.stopPolling();
+
+    expect(
+      health.where((h) => !h.ok),
+      isEmpty,
+      reason: 'interleaved failures must not trip consecutive threshold',
+    );
 
     await sub.cancel();
     await hal.close();

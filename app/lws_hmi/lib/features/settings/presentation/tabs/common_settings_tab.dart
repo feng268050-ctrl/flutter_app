@@ -441,6 +441,25 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 );
               },
             ),
+            Builder(
+              builder: (context) {
+                final misc = MiscSettingsScope.maybeOf(context);
+                final enabled = misc?.showKeySwitchAlarm ?? false;
+                return SettingsSwitchRow(
+                  title: l10n.commonSettingsShowKeySwitchAlarm,
+                  subtitle: misc == null ? l10n.unavailable : null,
+                  value: enabled,
+                  onChanged: misc == null
+                      ? null
+                      : (v) {
+                          unawaited(() async {
+                            await misc.setShowKeySwitchAlarm(v);
+                            if (mounted) setState(() {});
+                          }());
+                        },
+                );
+              },
+            ),
           ],
         ),
       ],

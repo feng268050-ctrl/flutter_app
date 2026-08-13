@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/live_machine_status_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
@@ -76,6 +77,10 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
     if (widget.laserOn == _lastLaserOn) {
       return;
     }
+    debugPrint(
+      'laser-dashboard: laserOn $_lastLaserOn → ${widget.laserOn} '
+      '(enable=${widget.laserEnable}, progress=${_progress.toStringAsFixed(1)})',
+    );
     _lastLaserOn = widget.laserOn;
     if (widget.laserOn) {
       _animateTo(100, QuickModeLaserDashboard.upDuration);
@@ -98,12 +103,14 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
           .round()
           .clamp(1, fullDuration.inMilliseconds),
     );
-    _controller
-      ..stop()
-      ..duration = scaled
-      ..value = 0;
+    _controller.stop();
+    // Attach the new tween before resetting the controller. Setting value=0
+    // while the previous (down) tween is still live jumps to that tween's
+    // begin — a one-frame flash back to the last peak, then snap to [from]
+    // (the "retreat ghost" on re-trigger).
     _tween = Tween<double>(begin: from, end: target).animate(_controller);
-    _controller.forward();
+    _controller.duration = scaled;
+    _controller.forward(from: 0);
   }
 
   @override
@@ -117,7 +124,11 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
     final palette = _LaserDashboardPalette.forType(widget.processType);
     final metrics =
         _LaserDashboardMetrics.fromViewport(MediaQuery.sizeOf(context));
-    final ringAlpha = widget.laserEnable ? 1.0 : 0.5;
+    final welding = widget.processType == ProcessType.continuousWelding ||
+        widget.processType == ProcessType.spotWelding;
+    // Welding uses the same always-bright orange as an enabled Quick side
+    // button. The legacy 50% laser-disabled dim made this outer rail muddy.
+    final ringAlpha = welding || widget.laserEnable ? 1.0 : 0.5;
     final pressureText = widget.gasPressureKpa.round().toString();
 
     return SizedBox(
@@ -131,6 +142,7 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
         // cropping it at 570.
         clipBehavior: Clip.hardEdge,
         children: [
+          // Tracks under the split mipmaps (lws-ui seekbars sit below them).
           Align(
             alignment: Alignment.center,
             child: IgnorePointer(
@@ -142,8 +154,21 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                     progress: _progress / 100.0,
                     palette: palette,
                     metrics: metrics,
+                    layer: _LaserRingPaintLayer.track,
                   ),
                 ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: metrics.borderLeft,
+            top: metrics.borderTop,
+            child: IgnorePointer(
+              child: Image.asset(
+                ProcessModeAssets.circleBorder,
+                width: metrics.borderWidth,
+                height: metrics.borderHeight,
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -173,15 +198,23 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
               ),
             ),
           ),
-          Positioned(
-            left: metrics.borderLeft,
-            top: metrics.borderTop,
+          // Progress above split decorations so the climb covers 分割线 even
+          // when progress colors are close to the track (product expectation).
+          Align(
+            alignment: Alignment.center,
             child: IgnorePointer(
-              child: Image.asset(
-                ProcessModeAssets.circleBorder,
-                width: metrics.borderWidth,
-                height: metrics.borderHeight,
-                fit: BoxFit.contain,
+              child: Opacity(
+                opacity: ringAlpha,
+                child: CustomPaint(
+                  key: const ValueKey('quick-mode-laser-rings-progress'),
+                  size: Size.square(metrics.size),
+                  painter: _LaserProgressRingsPainter(
+                    progress: _progress / 100.0,
+                    palette: palette,
+                    metrics: metrics,
+                    layer: _LaserRingPaintLayer.progress,
+                  ),
+                ),
               ),
             ),
           ),
@@ -308,8 +341,8 @@ final class _LaserDashboardPalette {
     required this.pressureBg,
   });
 
-  final Color outerTrack;
-  final Color innerTrack;
+  final List<Color> outerTrack;
+  final List<Color> innerTrack;
   final Color lineProgress;
   final List<Color> outerProgress;
   final List<Color> innerProgress;
@@ -318,8 +351,8 @@ final class _LaserDashboardPalette {
   static _LaserDashboardPalette forType(ProcessType type) {
     if (type.isCleaning) {
       return const _LaserDashboardPalette(
-        outerTrack: Color(0xFF37F3D2),
-        innerTrack: Color(0xFF19C0A4),
+        outerTrack: [Color(0xFF37F3D2)],
+        innerTrack: [Color(0xFF19C0A4)],
         lineProgress: Color(0xFF19C7AA),
         outerProgress: [
           Color(0xFF37EFD3),
@@ -338,8 +371,8 @@ final class _LaserDashboardPalette {
     }
     if (type == ProcessType.handCutting || type == ProcessType.cncCutting) {
       return const _LaserDashboardPalette(
-        outerTrack: Color(0xFF0151F4),
-        innerTrack: Color(0xFF1C35BD),
+        outerTrack: [Color(0xFF0151F4)],
+        innerTrack: [Color(0xFF1C35BD)],
         lineProgress: Color(0xFF1E38C9),
         outerProgress: [
           Color(0xFF5552FF),
@@ -357,9 +390,15 @@ final class _LaserDashboardPalette {
       );
     }
     return const _LaserDashboardPalette(
-      outerTrack: Color(0xFFF46E01),
-      innerTrack: Color(0xFFB35517),
-      lineProgress: Color(0xFFB65718),
+      // Always-bright welding rail (see ringAlpha). Progress must stay a
+      // distinct warm gradient — matching track colors made laserOn climb
+      // invisible on continuous/spot after the bright-rail restyle.
+      outerTrack: [
+        Color(0xFFFFA23A),
+        ProcessModeOutlineChrome.actionOrange,
+      ],
+      innerTrack: [Color(0xFF20100A), Color(0xFFA0310F)],
+      lineProgress: Color(0xFFFFB016),
       outerProgress: [
         Color(0xFFB75717),
         Color(0xFFFFB016),
@@ -441,16 +480,20 @@ final class _LaserDashboardMetrics {
       (contentTop + titleSize + contentGap + valueSize / 2);
 }
 
+enum _LaserRingPaintLayer { track, progress }
+
 final class _LaserProgressRingsPainter extends CustomPainter {
   _LaserProgressRingsPainter({
     required this.progress,
     required this.palette,
     required this.metrics,
+    required this.layer,
   });
 
   final double progress;
   final _LaserDashboardPalette palette;
   final _LaserDashboardMetrics metrics;
+  final _LaserRingPaintLayer layer;
 
   /// Matches `quick_mode_circular` start_angle / end_angle.
   static const double _startDeg = 130;
@@ -462,6 +505,8 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     final start = _startDeg * math.pi / 180;
     final fullSweep = _totalDeg * math.pi / 180;
     final progressSweep = fullSweep * progress.clamp(0.0, 1.0);
+    final paintTrack = layer == _LaserRingPaintLayer.track;
+    final paintProgress = layer == _LaserRingPaintLayer.progress;
 
     // CircularSeekBar radius: viewSize / 2 - circleStrokeWidth.
     _paintRing(
@@ -470,11 +515,13 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       viewSize: metrics.outerViewSize,
       circleStrokeWidth: metrics.outerCircleStroke,
       progressStrokeWidth: metrics.outerProgressStroke,
-      trackColor: palette.outerTrack,
+      trackColors: palette.outerTrack,
       progressColors: palette.outerProgress,
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
+      paintTrack: paintTrack,
+      paintProgress: paintProgress,
     );
 
     // Inner seekbar — its 514dp View and 50dp rail are deliberately not
@@ -485,11 +532,13 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       viewSize: metrics.innerViewSize,
       circleStrokeWidth: metrics.innerCircleStroke,
       progressStrokeWidth: metrics.innerProgressStroke,
-      trackColor: palette.innerTrack,
+      trackColors: palette.innerTrack,
       progressColors: palette.innerProgress,
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
+      paintTrack: paintTrack,
+      paintProgress: paintProgress,
     );
 
     // The source's third CircularSeekBar is an independent 6dp highlight
@@ -504,7 +553,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       // `laser_circular_seek_line` declares `circle_color=transparent` in
       // lws-ui: this layer is only the 6dp progress highlight, never a dark
       // inactive rail outside the static white trim.
-      trackColor: Colors.transparent,
+      trackColors: const [Colors.transparent],
       // Product: thin bright edge at 75% opacity.
       progressColors: [
         palette.lineProgress.withOpacity(0.75),
@@ -515,6 +564,8 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       progressSweep: progressSweep,
       solidProgress: true,
       radius: metrics.outerHighlightRadius,
+      paintTrack: paintTrack,
+      paintProgress: paintProgress,
     );
   }
 
@@ -524,27 +575,40 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     required double viewSize,
     required double circleStrokeWidth,
     required double progressStrokeWidth,
-    required Color trackColor,
+    required List<Color> trackColors,
     required List<Color> progressColors,
     required double start,
     required double fullSweep,
     required double progressSweep,
+    required bool paintTrack,
+    required bool paintProgress,
     bool solidProgress = false,
     double? radius,
   }) {
     final pathRadius = radius ?? viewSize / 2 - circleStrokeWidth;
     final rect = Rect.fromCircle(center: center, radius: pathRadius);
 
-    if (trackColor.alpha > 0) {
+    if (paintTrack && trackColors.any((color) => color.alpha > 0)) {
       final track = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = circleStrokeWidth
-        ..strokeCap = StrokeCap.butt
-        ..color = trackColor;
+        ..strokeCap = StrokeCap.butt;
+      if (trackColors.length == 1) {
+        track.color = trackColors.first;
+      } else {
+        track.shader = RadialGradient(
+          colors: trackColors,
+          stops: _ringGradientStops(
+            viewSize: viewSize,
+            pathRadius: pathRadius,
+            strokeWidth: circleStrokeWidth,
+          ),
+        ).createShader(Rect.fromCircle(center: center, radius: viewSize / 2));
+      }
       canvas.drawArc(rect, start, fullSweep, false, track);
     }
 
-    if (progressSweep <= 0) {
+    if (!paintProgress || progressSweep <= 0) {
       return;
     }
 
@@ -564,7 +628,11 @@ final class _LaserProgressRingsPainter extends CustomPainter {
               0.9,
               1.0,
             ]
-          : null;
+          : _ringGradientStops(
+              viewSize: viewSize,
+              pathRadius: pathRadius,
+              strokeWidth: progressStrokeWidth,
+            );
       progressPaint.shader = RadialGradient(
         colors: progressColors,
         stops: stops,
@@ -574,9 +642,22 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     canvas.drawArc(rect, start, progressSweep, false, progressPaint);
   }
 
+  List<double> _ringGradientStops({
+    required double viewSize,
+    required double pathRadius,
+    required double strokeWidth,
+  }) {
+    final shaderRadius = viewSize / 2;
+    return [
+      ((pathRadius - strokeWidth / 2) / shaderRadius).clamp(0.0, 1.0),
+      ((pathRadius + strokeWidth / 2) / shaderRadius).clamp(0.0, 1.0),
+    ];
+  }
+
   @override
   bool shouldRepaint(covariant _LaserProgressRingsPainter oldDelegate) =>
       oldDelegate.progress != progress ||
       oldDelegate.palette != palette ||
-      oldDelegate.metrics.scale != metrics.scale;
+      oldDelegate.metrics.scale != metrics.scale ||
+      oldDelegate.layer != layer;
 }

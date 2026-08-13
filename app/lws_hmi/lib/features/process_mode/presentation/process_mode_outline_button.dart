@@ -6,7 +6,6 @@ import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/ui/hmi/hmi_adaptive_icon_label.dart';
@@ -199,14 +198,6 @@ final class _ProcessModeOutlineWireButtonState
     if (!widget.enabled) {
       return;
     }
-    if (widget.controller.busy) {
-      widget.onMessage(
-        LaserEnableBlockReason.busy.localizedMessage(
-          AppLocalizations.of(context)!,
-        ),
-      );
-      return;
-    }
     if (widget.laserBlocked) {
       widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(
           AppLocalizations.of(context)!));
@@ -222,7 +213,7 @@ final class _ProcessModeOutlineWireButtonState
   }
 
   void _pointerUp() {
-    if (!widget.enabled || widget.controller.busy || widget.laserBlocked) {
+    if (!widget.enabled || widget.laserBlocked) {
       return;
     }
     final wasLatched = _gesture.latched;

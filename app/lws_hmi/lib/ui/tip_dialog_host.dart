@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 
 /// Product tip / prompt dialogs.
 ///
-/// - [showSuccess] / [showError]: lws-ui FrostStatus — LIGHT cream glass with
-///   baked Gaussian + warm wash (pass / fail icons only; shared panel chrome).
+/// - [showSuccess] / [showError]: Startup Self-Check frost (same dark realtime
+///   blur path as boot self-check prompts), with pass / fail icon variants.
 /// - [showDarkPrompt]: Startup Self-Check frost (transparent barrier, realtime
 ///   dark wallpaper blur) for Wi‑Fi / register / firmware confirm prompts.
 /// - [showLightPrompt]: same LIGHT cream glass recipe at large prompt sizes
@@ -106,36 +106,14 @@ abstract final class TipDialogHost {
     );
   }
 
-  /// Pass / fail status tips — shrink-wrap LIGHT cream glass (WarnFrostShell).
-  static Future<T?> _showStatusTipFrost<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    bool barrierDismissible = true,
-    BoxConstraints? constraints,
-  }) {
-    assert(() {
-      // Status tips shrink-wrap; explicit constraints are ignored.
-      // ignore: unnecessary_statements
-      constraints;
-      return true;
-    }());
-    return _showLightCreamFrost<T>(
-      context: context,
-      builder: builder,
-      barrierDismissible: barrierDismissible,
-      transitionDuration: Duration.zero,
-      useWarnFrostShell: true,
-    );
-  }
-
-  /// Pass / toast tip — LIGHT cream glass (baked blur).
+  /// Pass / toast tip — Startup Self-Check frost (dark realtime blur).
   static Future<T?> showSuccess<T>({
     required BuildContext context,
     required WidgetBuilder builder,
     bool barrierDismissible = true,
     BoxConstraints? constraints,
   }) {
-    return _showStatusTipFrost<T>(
+    return _showSelfCheckFrost<T>(
       context: context,
       builder: builder,
       barrierDismissible: barrierDismissible,
@@ -143,14 +121,14 @@ abstract final class TipDialogHost {
     );
   }
 
-  /// Fail / error tip — same cream panel as [showSuccess]; icon/copy differ.
+  /// Fail / error tip — same dark frost panel as [showSuccess].
   static Future<T?> showError<T>({
     required BuildContext context,
     required WidgetBuilder builder,
     bool barrierDismissible = true,
     BoxConstraints? constraints,
   }) {
-    return _showStatusTipFrost<T>(
+    return _showSelfCheckFrost<T>(
       context: context,
       builder: builder,
       barrierDismissible: barrierDismissible,

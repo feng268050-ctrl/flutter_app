@@ -1421,6 +1421,18 @@ abstract class AppLocalizations {
   /// **'Show Safety Clamp Alarm'**
   String get commonSettingsShowSafetyGroundLockAlarm;
 
+  /// No description provided for @commonSettingsShowKeySwitchAlarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Key Switch Alarm'**
+  String get commonSettingsShowKeySwitchAlarm;
+
+  /// No description provided for @keySwitchOffAlarmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Switch Off'**
+  String get keySwitchOffAlarmTitle;
+
   /// No description provided for @completeSelectionToPreview.
   ///
   /// In en, this message translates to:
@@ -1766,8 +1778,14 @@ abstract class AppLocalizations {
   /// No description provided for @deviceControlEmergencyStopError.
   ///
   /// In en, this message translates to:
-  /// **'Device is in E-stop'**
+  /// **'The E-Stop button is pressed. Rotate the button in the direction of the arrow until it releases, then try again.'**
   String get deviceControlEmergencyStopError;
+
+  /// No description provided for @emergencyStopAlarmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Stop Is Active'**
+  String get emergencyStopAlarmTitle;
 
   /// No description provided for @deviceControlEndOfWorkFailed.
   ///
@@ -1808,7 +1826,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceControlKeySwitchOffError.
   ///
   /// In en, this message translates to:
-  /// **'Key switch is off'**
+  /// **'Insert the key and turn the key switch to the right, then try again.'**
   String get deviceControlKeySwitchOffError;
 
   /// No description provided for @deviceControlManualGasOff.
@@ -4055,6 +4073,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Readback Mismatch'**
   String get processApplyFailureProcessReadbackFailed;
+
+  /// No description provided for @processApplyFailureProcessReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Read Failed'**
+  String get processApplyFailureProcessReadFailed;
+
+  /// No description provided for @processApplyFailureProcessTypeReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Type Read Failed'**
+  String get processApplyFailureProcessTypeReadFailed;
 
   /// No description provided for @processApplyFailureProcessTypeReadbackMismatch.
   ///

@@ -33,6 +33,8 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.
 import 'package:lws_hmi/features/process_mode/presentation/engineer_parameter_form.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_bar.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/emergency_stop_prompt.dart';
+import 'package:lws_hmi/features/process_mode/presentation/key_switch_off_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_host.dart';
@@ -163,6 +165,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
           resetGunLatchOnEnableOff: false,
         );
         unawaited(_gunDialogs!.start());
+        _gunDialogs!.setActive(_processType != ProcessType.cncCutting);
         setState(() {});
       }
       unawaited(_bootstrap());
@@ -200,32 +203,35 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     }
     switch (event) {
       case DeviceControlSafetyEvent.emergencyStopCleared:
-      case DeviceControlSafetyEvent.keySwitchRestored:
-        // Warn-style auto-dismiss when the safety condition clears.
+        EmergencyStopPrompt.reset();
         OperationFailedDialogHost.dismissForSafetyClear(event);
         return;
-      case DeviceControlSafetyEvent.emergencyStop:
+      case DeviceControlSafetyEvent.keySwitchRestored:
+        KeySwitchOffPrompt.reset();
+        OperationFailedDialogHost.dismissForSafetyClear(event);
+        return;
       case DeviceControlSafetyEvent.keySwitchOff:
-        break;
+        WorkStatusDialogHost.closeDialog();
+        final control = _deviceControl;
+        if (control != null && !control.suppressKeySwitchOffSafetyPrompt) {
+          unawaited(
+            KeySwitchOffPrompt.maybeShow(
+              context,
+              miscAlarmEnabled:
+                  MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ??
+                      false,
+              services: AppScope.of(context),
+            ),
+          );
+        }
+        return;
+      case DeviceControlSafetyEvent.emergencyStop:
+        WorkStatusDialogHost.closeDialog();
+        unawaited(
+          EmergencyStopPrompt.maybeShow(context),
+        );
+        return;
     }
-    WorkStatusDialogHost.closeDialog();
-    final l10n = AppLocalizations.of(context)!;
-    final message = switch (event) {
-      DeviceControlSafetyEvent.emergencyStop =>
-        DeviceControlFeedbackCopy.emergencyStopError(l10n),
-      DeviceControlSafetyEvent.keySwitchOff =>
-        DeviceControlFeedbackCopy.keySwitchOffError(l10n),
-      DeviceControlSafetyEvent.emergencyStopCleared ||
-      DeviceControlSafetyEvent.keySwitchRestored =>
-        '', // unreachable — handled above
-    };
-    unawaited(
-      OperationFailedDialogHost.show(
-        context,
-        message: message,
-        safetyEvent: event,
-      ),
-    );
   }
 
   Future<void> _bootstrap() async {
@@ -343,6 +349,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       );
     });
     LaserEnableLedHolder.instance.setWorkModel(type);
+    _gunDialogs?.setActive(type != ProcessType.cncCutting);
     final gen = ++_processSwitchGen;
     debugPrint(
       'engineer-mode: process tab changed '
@@ -353,7 +360,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       // Kick apply without waiting for wire/laser Modbus (those can be slow on
       // a busy RTU). Interlock still blocks when laser is actually on — then
       // [_syncDeviceForProcessType] re-applies after disable.
-      _scheduleApply(preset);
+      _scheduleApply(preset, mode: ProcessApplyMode.modeSwitch);
     }
     _enqueueDeviceSyncForProcessType(type, gen);
   }
@@ -553,17 +560,23 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   /// Quick handoff / tab switch (`selectModel` sendData). Unlike Quick Mode,
   /// the same draft uuid may change field values, so every edit schedules an
   /// apply — do not skip on uuid equality.
-  void _scheduleApply(ProcessPreset preset) {
+  void _scheduleApply(
+    ProcessPreset preset, {
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
+  }) {
     _applyDebounce?.cancel();
     _applyDebounce = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) {
         return;
       }
-      unawaited(_applyDraft(preset));
+      unawaited(_applyDraft(preset, mode: mode));
     });
   }
 
-  Future<bool> _applyDraft(ProcessPreset preset) async {
+  Future<bool> _applyDraft(
+    ProcessPreset preset, {
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
+  }) async {
     final gen = ++_applyGen;
     final library = ProcessLibraryScope.of(context);
     // Tab-switch apply can land while continuous first-entry apply still holds
@@ -573,7 +586,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       if (!mounted || gen != _applyGen) {
         return false;
       }
-      result = await library.apply(preset);
+      result = await library.apply(preset, mode: mode);
       if (result.isSuccess || result.failure != ProcessApplyFailure.busy) {
         break;
       }
@@ -692,7 +705,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     // fall through to live-tune if the enable bit is still stuck on.
     final result = await library.apply(
       draft.preset,
-      allowLiveTune: false,
+      mode: ProcessApplyMode.modeSwitch,
     );
     if (!mounted) {
       return false;
@@ -745,10 +758,14 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         l10n.processApplyFailureBaselineReadFailed,
       ProcessApplyFailure.processWriteFailed =>
         l10n.processApplyFailureProcessWriteFailed,
+      ProcessApplyFailure.processReadFailed =>
+        l10n.processApplyFailureProcessReadFailed,
       ProcessApplyFailure.processReadbackFailed =>
         l10n.processApplyFailureProcessReadbackFailed,
       ProcessApplyFailure.processTypeWriteFailed =>
         l10n.processApplyFailureProcessTypeWriteFailed,
+      ProcessApplyFailure.processTypeReadFailed =>
+        l10n.processApplyFailureProcessTypeReadFailed,
       ProcessApplyFailure.processTypeReadbackFailed =>
         l10n.processApplyFailureProcessTypeReadbackMismatch,
       ProcessApplyFailure.partialApply => l10n.processApplyFailurePartialApply,
@@ -883,6 +900,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
           appBar: WorkModeStatusBar(
             mode: WorkMode.engineer,
             processType: _processType,
+            showHomeEdgeAccent: false,
             backLabel: widget.fromQuickHandoff
                 ? (AppLocalizations.of(context)?.equipmentStatusBack ?? 'Back')
                 : (AppLocalizations.of(context)?.equipmentStatusHome ?? 'Home'),

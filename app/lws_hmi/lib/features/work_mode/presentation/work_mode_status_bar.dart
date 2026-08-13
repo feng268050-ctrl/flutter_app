@@ -36,6 +36,7 @@ final class WorkModeStatusBar extends StatelessWidget
     this.onBack,
     this.clockNow,
     this.toolbarHeight = WorkModeStatusBarDimens.height,
+    this.showHomeEdgeAccent = true,
   });
 
   final WorkMode mode;
@@ -54,6 +55,9 @@ final class WorkModeStatusBar extends StatelessWidget
   final VoidCallback? onBack;
   final DateTime Function()? clockNow;
   final double toolbarHeight;
+
+  /// Whether the Home / Back rail draws its top and bottom accent lines.
+  final bool showHomeEdgeAccent;
 
   @override
   Size get preferredSize => Size.fromHeight(toolbarHeight);
@@ -87,6 +91,7 @@ final class WorkModeStatusBar extends StatelessWidget
                   accent: accent.statusBarAccent,
                   enabled: backEnabled,
                   expandWidth: false,
+                  showEdgeAccent: showHomeEdgeAccent,
                   label: backLabel ??
                       AppLocalizations.of(context)?.equipmentStatusHome ??
                       'Home',

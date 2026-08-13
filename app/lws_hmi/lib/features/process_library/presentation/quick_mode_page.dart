@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_laser_work_guard_host.dart';
+import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
@@ -32,6 +33,8 @@ import 'package:lws_hmi/features/process_mode/presentation/cnc_exit_dialog.dart'
 import 'package:lws_hmi/features/process_mode/presentation/cnc_running_overlay.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_region_frost.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/emergency_stop_prompt.dart';
+import 'package:lws_hmi/features/process_mode/presentation/key_switch_off_prompt.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_device_controls.dart';
@@ -43,6 +46,7 @@ import 'package:lws_hmi/features/process_mode/presentation/quick_mode_parameter_
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_process_wheel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
@@ -73,6 +77,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   DeviceControlLaserWorkGuardHost? _laserWorkGuardHost;
   WorkSessionStatisticsRecorder? _workSessionStatistics;
   RecordWorkController? _recordWork;
+  GunDialogCoordinator? _gunDialogs;
   CncSessionController? _cncSession;
   bool _exiting = false;
 
@@ -124,6 +129,19 @@ final class _QuickModePageState extends State<QuickModePage> {
             },
           );
           unawaited(_recordWork!.start(services));
+          _gunDialogs = GunDialogCoordinator(
+            deviceControl: _deviceControl!,
+            services: services,
+            contextGetter: () => mounted ? context : null,
+            showGroundLockAlarmGetter: () =>
+                MiscSettingsScope.maybeOf(context)?.showGroundLockAlarm ??
+                    false,
+            // Quick re-edges after re-Enable while gun is held.
+            resetGunLatchOnEnableOff: true,
+            showLiveMonitorOnGun: false,
+          );
+          unawaited(_gunDialogs!.start());
+          _gunDialogs!.setActive(_processType != ProcessType.cncCutting);
         }
         if (_cncSession == null) {
           _cncSession = CncSessionController(services);
@@ -149,6 +167,8 @@ final class _QuickModePageState extends State<QuickModePage> {
       LaserWorkGuard.unregister(host);
       _laserWorkGuardHost = null;
     }
+    _gunDialogs?.dispose();
+    _gunDialogs = null;
     _recordWork?.dispose();
     _deviceControl?.onSafetyEvent = null;
     _deviceControl?.removeListener(_onDeviceControlChanged);
@@ -171,32 +191,35 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     switch (event) {
       case DeviceControlSafetyEvent.emergencyStopCleared:
-      case DeviceControlSafetyEvent.keySwitchRestored:
-        // Warn-style auto-dismiss when the safety condition clears.
+        EmergencyStopPrompt.reset();
         OperationFailedDialogHost.dismissForSafetyClear(event);
         return;
-      case DeviceControlSafetyEvent.emergencyStop:
+      case DeviceControlSafetyEvent.keySwitchRestored:
+        KeySwitchOffPrompt.reset();
+        OperationFailedDialogHost.dismissForSafetyClear(event);
+        return;
       case DeviceControlSafetyEvent.keySwitchOff:
-        break;
+        WorkStatusDialogHost.closeDialog();
+        final control = _deviceControl;
+        if (control != null && !control.suppressKeySwitchOffSafetyPrompt) {
+          unawaited(
+            KeySwitchOffPrompt.maybeShow(
+              context,
+              miscAlarmEnabled:
+                  MiscSettingsScope.maybeOf(context)?.showKeySwitchAlarm ??
+                      false,
+              services: AppScope.of(context),
+            ),
+          );
+        }
+        return;
+      case DeviceControlSafetyEvent.emergencyStop:
+        WorkStatusDialogHost.closeDialog();
+        unawaited(
+          EmergencyStopPrompt.maybeShow(context),
+        );
+        return;
     }
-    WorkStatusDialogHost.closeDialog();
-    final l10n = AppLocalizations.of(context)!;
-    final message = switch (event) {
-      DeviceControlSafetyEvent.emergencyStop =>
-        DeviceControlFeedbackCopy.emergencyStopError(l10n),
-      DeviceControlSafetyEvent.keySwitchOff =>
-        DeviceControlFeedbackCopy.keySwitchOffError(l10n),
-      DeviceControlSafetyEvent.emergencyStopCleared ||
-      DeviceControlSafetyEvent.keySwitchRestored =>
-        '', // unreachable — handled above
-    };
-    unawaited(
-      OperationFailedDialogHost.show(
-        context,
-        message: message,
-        safetyEvent: event,
-      ),
-    );
   }
 
   void _onCncSessionChanged() {
@@ -208,7 +231,10 @@ final class _QuickModePageState extends State<QuickModePage> {
   List<ProcessPreset> _rowsFor(ProcessLibraryController controller) =>
       controller.quickPresets(processType: _processType).toList();
 
-  void _rebuildSelection(ProcessLibraryController controller) {
+  void _rebuildSelection(
+    ProcessLibraryController controller, {
+    ProcessApplyMode applyMode = ProcessApplyMode.liveTune,
+  }) {
     if (_processType == ProcessType.cncCutting) {
       setState(() {
         _selection = null;
@@ -229,7 +255,7 @@ final class _QuickModePageState extends State<QuickModePage> {
       _selection = next;
       _statusMessage = null;
     });
-    _scheduleApply(next.matched);
+    _scheduleApply(next.matched, mode: applyMode);
   }
 
   Future<void> _onProcessTypeChanged(ProcessType type) async {
@@ -259,7 +285,11 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     setState(() => _processType = type);
     LaserEnableLedHolder.instance.setWorkModel(type);
-    _rebuildSelection(ProcessLibraryScope.of(context));
+    _gunDialogs?.setActive(type != ProcessType.cncCutting);
+    _rebuildSelection(
+      ProcessLibraryScope.of(context),
+      applyMode: ProcessApplyMode.modeSwitch,
+    );
     if (type == ProcessType.cncCutting) {
       unawaited(session?.enter() ?? _enterCncWhenReady());
     }
@@ -412,30 +442,33 @@ final class _QuickModePageState extends State<QuickModePage> {
     _scheduleApply(next.matched);
   }
 
-  void _scheduleApply(ProcessPreset? preset) {
+  void _scheduleApply(
+    ProcessPreset? preset, {
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
+  }) {
     _applyDebounce?.cancel();
     if (preset == null) {
       return;
     }
-    if (preset.uuid == _lastAppliedUuid) {
+    if (preset.uuid == _lastAppliedUuid && mode == ProcessApplyMode.liveTune) {
       return;
     }
     _applyDebounce = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) {
         return;
       }
-      unawaited(_applyPreset(preset));
+      unawaited(_applyPreset(preset, mode: mode));
     });
   }
 
   Future<bool> _applyPreset(
     ProcessPreset preset, {
-    bool allowLiveTune = true,
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
   }) async {
     final controller = ProcessLibraryScope.of(context);
     final result = await controller.apply(
       preset,
-      allowLiveTune: allowLiveTune,
+      mode: mode,
     );
     if (!mounted) {
       return false;
@@ -449,6 +482,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     setState(() => _statusMessage = message);
     // Prefer toast/snackbar — do not paint a persistent red corner banner.
     final silent = switch (result.failure) {
+      ProcessApplyFailure.busy ||
       ProcessApplyFailure.baselineReadFailed ||
       ProcessApplyFailure.unsafeMachineState ||
       ProcessApplyFailure.statusUnavailable ||
@@ -476,10 +510,14 @@ final class _QuickModePageState extends State<QuickModePage> {
         l10n.processApplyFailureBaselineReadFailed,
       ProcessApplyFailure.processWriteFailed =>
         l10n.processApplyFailureProcessWriteFailed,
+      ProcessApplyFailure.processReadFailed =>
+        l10n.processApplyFailureProcessReadFailed,
       ProcessApplyFailure.processReadbackFailed =>
         l10n.processApplyFailureProcessReadbackFailed,
       ProcessApplyFailure.processTypeWriteFailed =>
         l10n.processApplyFailureProcessTypeWriteFailed,
+      ProcessApplyFailure.processTypeReadFailed =>
+        l10n.processApplyFailureProcessTypeReadFailed,
       ProcessApplyFailure.processTypeReadbackFailed =>
         l10n.processApplyFailureProcessTypeReadbackMismatch,
       ProcessApplyFailure.partialApply => l10n.processApplyFailurePartialApply,
@@ -516,10 +554,25 @@ final class _QuickModePageState extends State<QuickModePage> {
       unawaited(_presentLaserEnableAlarmBlock());
       return reason.localizedMessage(l10n);
     }
+    if (reason == LaserEnableBlockReason.keySwitchOff) {
+      unawaited(
+        KeySwitchOffPrompt.presentLaserEnableKeyOffBlock(
+          context,
+          services: AppScope.of(context),
+        ),
+      );
+      return reason.localizedMessage(l10n);
+    }
+    if (reason == LaserEnableBlockReason.emergencyStop) {
+      unawaited(
+        EmergencyStopPrompt.presentLaserEnableBlock(context),
+      );
+      return reason.localizedMessage(l10n);
+    }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(reason)) {
-      // Key / E-stop not reset → tip dialog (not Toast).
       unawaited(_showSafetyTip(
-          DeviceControlFeedbackCopy.tipForLaserEnableBlock(l10n, reason)));
+        DeviceControlFeedbackCopy.tipForLaserEnableBlock(l10n, reason),
+      ));
       return reason.localizedMessage(l10n);
     }
     return reason.localizedMessage(l10n);
@@ -544,6 +597,17 @@ final class _QuickModePageState extends State<QuickModePage> {
     final l10n = AppLocalizations.of(context)!;
     if (reason == LaserEnableBlockReason.alarmBlocked) {
       await _presentLaserEnableAlarmBlock();
+      return;
+    }
+    if (reason == LaserEnableBlockReason.keySwitchOff) {
+      await KeySwitchOffPrompt.presentLaserEnableKeyOffBlock(
+        context,
+        services: AppScope.of(context),
+      );
+      return;
+    }
+    if (reason == LaserEnableBlockReason.emergencyStop) {
+      await EmergencyStopPrompt.presentLaserEnableBlock(context);
       return;
     }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(reason)) {
@@ -631,7 +695,10 @@ final class _QuickModePageState extends State<QuickModePage> {
 
     // Match lws-ui ordering: current process + advanced settings, then control.
     // Require idle so a stuck laser_enable cannot skip process_type.
-    final applied = await _applyPreset(preset, allowLiveTune: false);
+    final applied = await _applyPreset(
+      preset,
+      mode: ProcessApplyMode.modeSwitch,
+    );
     if (!mounted) {
       return;
     }
@@ -875,121 +942,122 @@ final class _QuickModePageState extends State<QuickModePage> {
                   ),
                 ),
               if (showPickers) ...[
-            Center(
-              child: QuickModeLaserDashboard(
-                processType: _processType,
-                gasPressureKpa: device?.gasPressureKpa ?? 0,
-                laserEnable: device?.laserEnable ?? false,
-                laserOn: device?.laserOn ?? false,
-              ),
-            ),
-            Align(
-              alignment: Alignment.center,
-              child: Transform.translate(
-                offset: Offset(
-                  QuickModePickerDimens.gearPickCenterFromPageCenter(
-                    highlightR,
+                Center(
+                  child: QuickModeLaserDashboard(
+                    processType: _processType,
+                    gasPressureKpa: device?.gasPressureKpa ?? 0,
+                    laserEnable: device?.laserEnable ?? false,
+                    laserOn: device?.laserOn ?? false,
                   ),
-                  ProcessModeDimens.pickerVerticalFromPageCenter,
                 ),
-                child: QuickModeGearPick(
-                  processType: _processType,
-                  gears: selection.gears,
-                  selectedIndex: gearIndex < 0 ? 0 : gearIndex,
-                  onChanged: _onGearIndex,
-                  interactionEnabled: selectorsInteractive,
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.center,
-              child: Transform.translate(
-                offset: Offset(
-                  QuickModePickerDimens.thicknessPickCenterFromPageCenter(
-                    highlightR,
-                  ),
-                  ProcessModeDimens.pickerVerticalFromPageCenter,
-                ),
-                child: Builder(
-                  builder: (context) {
-                    final unitStore = CommonSettingsScope.maybeOf(context);
-                    Widget pick(bool useMm) {
-                      final unit = useMm ? 'mm' : 'in';
-                      final l10n = AppLocalizations.of(context)!;
-                      final label = selection.useSwingWidth
-                          ? l10n.swingWidthLabel
-                          : l10n.thicknessLabel;
-                      return QuickModeDimensionPick(
-                        processType: _processType,
-                        title: l10n.dimensionWithUnit(label, unit),
-                        dimensions: selection.dimensions,
-                        selectedIndex: dimensionIndex < 0 ? 0 : dimensionIndex,
-                        onChanged: _onDimensionIndex,
-                        useMmUnit: useMm,
-                        interactionEnabled: selectorsInteractive,
-                      );
-                    }
-
-                    if (unitStore == null) {
-                      return pick(true);
-                    }
-                    return ListenableBuilder(
-                      listenable: unitStore,
-                      builder: (context, _) => pick(
-                        LengthUnitConvert.isMetric(unitStore.unitWire),
+                Align(
+                  alignment: Alignment.center,
+                  child: Transform.translate(
+                    offset: Offset(
+                      QuickModePickerDimens.gearPickCenterFromPageCenter(
+                        highlightR,
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Transform.translate(
-                offset: const Offset(
-                  0,
-                  ProcessModeDimens.materialVerticalOffset,
-                ),
-                child: LaserEnableRegionFrost(
-                  armed: laserEnable,
-                  child: QuickModeMaterialWheel(
-                    materials: selection.materials,
-                    selectedIndex: materialIndex < 0 ? 0 : materialIndex,
-                    onChanged: _onMaterialIndex,
+                      ProcessModeDimens.pickerVerticalFromPageCenter,
+                    ),
+                    child: QuickModeGearPick(
+                      processType: _processType,
+                      gears: selection.gears,
+                      selectedIndex: gearIndex < 0 ? 0 : gearIndex,
+                      onChanged: _onGearIndex,
+                      interactionEnabled: selectorsInteractive,
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
-          if (!isCnc &&
-              controller.initialized &&
-              selection != null &&
-              selection.materials.isEmpty)
-            Center(
-              child: Text(
-                AppLocalizations.of(context)!.processLibraryNotInstalled,
-                key: const ValueKey('quick-mode-empty-library'),
-                style: context.hmiTypography.supporting.copyWith(
-                  color: const Color(0xB3FFFFFF),
+                Align(
+                  alignment: Alignment.center,
+                  child: Transform.translate(
+                    offset: Offset(
+                      QuickModePickerDimens.thicknessPickCenterFromPageCenter(
+                        highlightR,
+                      ),
+                      ProcessModeDimens.pickerVerticalFromPageCenter,
+                    ),
+                    child: Builder(
+                      builder: (context) {
+                        final unitStore = CommonSettingsScope.maybeOf(context);
+                        Widget pick(bool useMm) {
+                          final unit = useMm ? 'mm' : 'in';
+                          final l10n = AppLocalizations.of(context)!;
+                          final label = selection.useSwingWidth
+                              ? l10n.swingWidthLabel
+                              : l10n.thicknessLabel;
+                          return QuickModeDimensionPick(
+                            processType: _processType,
+                            title: l10n.dimensionWithUnit(label, unit),
+                            dimensions: selection.dimensions,
+                            selectedIndex:
+                                dimensionIndex < 0 ? 0 : dimensionIndex,
+                            onChanged: _onDimensionIndex,
+                            useMmUnit: useMm,
+                            interactionEnabled: selectorsInteractive,
+                          );
+                        }
+
+                        if (unitStore == null) {
+                          return pick(true);
+                        }
+                        return ListenableBuilder(
+                          listenable: unitStore,
+                          builder: (context, _) => pick(
+                            LengthUnitConvert.isMetric(unitStore.unitWire),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          if (!isCnc && device != null)
-            Positioned.fill(
-              child: QuickModeDeviceControls(
-                controller: device,
-                processType: _processType,
-                laserPreflight: _laserPreflight,
-                onEnableConfirmed: _confirmAndEnableLaser,
-                onDisable: _disableLaser,
-              ),
-            ),
-          if (isCnc && cncSession != null && cncSession.runningOverlay)
-            Positioned.fill(
-              child: CncRunningOverlay(
-                onExitPressed: _onCncExitPressed,
-              ),
-            ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Transform.translate(
+                    offset: const Offset(
+                      0,
+                      ProcessModeDimens.materialVerticalOffset,
+                    ),
+                    child: LaserEnableRegionFrost(
+                      armed: laserEnable,
+                      child: QuickModeMaterialWheel(
+                        materials: selection.materials,
+                        selectedIndex: materialIndex < 0 ? 0 : materialIndex,
+                        onChanged: _onMaterialIndex,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (!isCnc &&
+                  controller.initialized &&
+                  selection != null &&
+                  selection.materials.isEmpty)
+                Center(
+                  child: Text(
+                    AppLocalizations.of(context)!.processLibraryNotInstalled,
+                    key: const ValueKey('quick-mode-empty-library'),
+                    style: context.hmiTypography.supporting.copyWith(
+                      color: const Color(0xB3FFFFFF),
+                    ),
+                  ),
+                ),
+              if (!isCnc && device != null)
+                Positioned.fill(
+                  child: QuickModeDeviceControls(
+                    controller: device,
+                    processType: _processType,
+                    laserPreflight: _laserPreflight,
+                    onEnableConfirmed: _confirmAndEnableLaser,
+                    onDisable: _disableLaser,
+                  ),
+                ),
+              if (isCnc && cncSession != null && cncSession.runningOverlay)
+                Positioned.fill(
+                  child: CncRunningOverlay(
+                    onExitPressed: _onCncExitPressed,
+                  ),
+                ),
             ],
           );
         },
@@ -1002,6 +1070,7 @@ final class _QuickModePageState extends State<QuickModePage> {
         appBar: WorkModeStatusBar(
           mode: WorkMode.quick,
           processType: _processType,
+          showHomeEdgeAccent: false,
           onBack: _onBack,
         ),
         body: ProcessModeToastLayer(

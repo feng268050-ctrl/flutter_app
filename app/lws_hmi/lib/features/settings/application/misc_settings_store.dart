@@ -20,6 +20,7 @@ final class MiscSettingsStore extends ChangeNotifier {
   static const keyShowStartupSelfCheck = 'showStartupSelfCheck';
   static const keyShowSystemStatusOverlay = 'showSystemStatusOverlay';
   static const keyShowGroundLockAlarm = 'showGroundLockAlarm';
+  static const keyShowKeySwitchAlarm = 'showKeySwitchAlarm';
   static const keyAutoCheckOtaUpdate = 'autoCheckOtaUpdate';
 
   /// Obsolete per-channel keys (migrated into [keyAutoCheckOtaUpdate]).
@@ -31,6 +32,7 @@ final class MiscSettingsStore extends ChangeNotifier {
   static const defaultShowStartupSelfCheck = true;
   static const defaultShowSystemStatusOverlay = false;
   static const defaultShowGroundLockAlarm = false;
+  static const defaultShowKeySwitchAlarm = false;
   static const defaultAutoCheckOtaUpdate = false;
 
   final String preferencePath;
@@ -40,12 +42,14 @@ final class MiscSettingsStore extends ChangeNotifier {
   bool _showStartupSelfCheck = defaultShowStartupSelfCheck;
   bool _showSystemStatusOverlay = defaultShowSystemStatusOverlay;
   bool _showGroundLockAlarm = defaultShowGroundLockAlarm;
+  bool _showKeySwitchAlarm = defaultShowKeySwitchAlarm;
   bool _autoCheckOtaUpdate = defaultAutoCheckOtaUpdate;
   bool _warmed = false;
 
   bool get showStartupSelfCheck => _showStartupSelfCheck;
   bool get showSystemStatusOverlay => _showSystemStatusOverlay;
   bool get showGroundLockAlarm => _showGroundLockAlarm;
+  bool get showKeySwitchAlarm => _showKeySwitchAlarm;
 
   /// Master switch: Home tips + Settings upgrade-page auto-check for system OTA,
   /// control-board, and camera program firmware.
@@ -146,6 +150,16 @@ final class MiscSettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setShowKeySwitchAlarm(bool value) async {
+    warmRead();
+    if (_showKeySwitchAlarm == value) {
+      return;
+    }
+    _showKeySwitchAlarm = value;
+    await _writeUnlocked();
+    notifyListeners();
+  }
+
   Future<void> setAutoCheckOtaUpdate(bool value) async {
     warmRead();
     if (_autoCheckOtaUpdate == value) {
@@ -160,6 +174,7 @@ final class MiscSettingsStore extends ChangeNotifier {
     _showStartupSelfCheck = defaultShowStartupSelfCheck;
     _showSystemStatusOverlay = defaultShowSystemStatusOverlay;
     _showGroundLockAlarm = defaultShowGroundLockAlarm;
+    _showKeySwitchAlarm = defaultShowKeySwitchAlarm;
     _autoCheckOtaUpdate = defaultAutoCheckOtaUpdate;
   }
 
@@ -192,6 +207,10 @@ final class MiscSettingsStore extends ChangeNotifier {
       if (map.containsKey(keyShowGroundLockAlarm)) {
         _showGroundLockAlarm =
             _asBool(map[keyShowGroundLockAlarm], defaultShowGroundLockAlarm);
+      }
+      if (map.containsKey(keyShowKeySwitchAlarm)) {
+        _showKeySwitchAlarm =
+            _asBool(map[keyShowKeySwitchAlarm], defaultShowKeySwitchAlarm);
       }
       if (map.containsKey(keyAutoCheckOtaUpdate)) {
         _autoCheckOtaUpdate =
@@ -302,6 +321,7 @@ final class MiscSettingsStore extends ChangeNotifier {
         keyShowStartupSelfCheck: _showStartupSelfCheck,
         keyShowSystemStatusOverlay: _showSystemStatusOverlay,
         keyShowGroundLockAlarm: _showGroundLockAlarm,
+        keyShowKeySwitchAlarm: _showKeySwitchAlarm,
         keyAutoCheckOtaUpdate: _autoCheckOtaUpdate,
       };
 

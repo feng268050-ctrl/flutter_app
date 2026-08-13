@@ -8,6 +8,11 @@ export 'package:cyber_ui/cyber_ui.dart'
 extension WorkModeAccentStatusBar on WorkModeAccent {
   CyberStatusBarAccent get statusBarAccent => CyberStatusBarAccent(
         solid: solid,
-        pressCenter: pressCenter,
+        // Only weld Back/Home uses the product orange press peak. Cleaning
+        // and cutting deliberately keep their existing green / blue peaks.
+        pressCenter: family == WorkModeAccentFamily.weld &&
+                solid == const Color(0xFFF46E01)
+            ? const Color(0xFFF46E01)
+            : pressCenter,
       );
 }

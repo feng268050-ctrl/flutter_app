@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_boot_marker.dart';
 
 /// Process-wide gate so overlapping warn/camera monitors can defer (lws-ui
@@ -55,11 +56,12 @@ abstract final class BootSelfCheckGate {
   /// When self-check succeeds it offers maps via [BootSelfCheckLiveCacheSeed]
   /// so the live cache can skip re-seeding those groups.
   ///
-  /// [armGrace] covers the short gap between App first-frame cloud start and
-  /// Home raising [isActive] for the dialog pipeline.
+  /// Blocks until Home either starts self-check ([isActive]) or marks it
+  /// skipped/completed, then until the gate clears. No timed armGrace — avoids
+  /// live-cache `readGroup` racing self-check snapshot reads.
   static Future<void> waitForModbusAccess({
-    Duration armGrace = const Duration(seconds: 2),
     Duration pollInterval = const Duration(milliseconds: 40),
+    Duration startupDeadline = const Duration(seconds: 30),
   }) async {
     if (isCompletedInProcess) {
       while (isActive) {
@@ -68,10 +70,15 @@ abstract final class BootSelfCheckGate {
       return;
     }
 
-    final armDeadline = DateTime.now().add(armGrace);
-    while (!isActive &&
-        !isCompletedInProcess &&
-        DateTime.now().isBefore(armDeadline)) {
+    final startupDeadlineAt = DateTime.now().add(startupDeadline);
+    while (!isActive && !isCompletedInProcess) {
+      if (!DateTime.now().isBefore(startupDeadlineAt)) {
+        debugPrint(
+          'boot-self-check: waitForModbusAccess startup deadline elapsed; '
+          'proceeding without gate',
+        );
+        return;
+      }
       await Future<void>.delayed(pollInterval);
     }
     while (isActive) {

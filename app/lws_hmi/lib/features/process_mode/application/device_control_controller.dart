@@ -54,6 +54,11 @@ final class DeviceControlController extends ChangeNotifier {
   bool busy = false;
   String? lastError;
 
+  /// Serializes Modbus writes with process apply (lws-ui ModbusSerialGate parity).
+  Future<T> _enqueueWrite<T>(Future<T> Function() body) {
+    return services.modbus.runCommandQueued(body);
+  }
+
   /// Laser Enable **session** armed (lws-ui `DeviceControlData.isOpenLaser()`).
   ///
   /// Use for End-of-work button, side-ops hide, record-work sync, and wire
@@ -69,8 +74,21 @@ final class DeviceControlController extends ChangeNotifier {
   bool _haltWriteInFlight = false;
   bool _disposed = false;
 
+  /// While forcing Auto Wire Feed ON (entry / process-tab default), ignore
+  /// stale watch OFF so Quick side keys do not flash between snapshot/prime
+  /// and the CONTROL_FIELD_1 write.
+  bool _holdingAutoWireDefault = false;
+
   /// Latch: tip already shown for the current e-stop press.
   bool _eStopTipShownThisPress = false;
+
+  /// Suppress Misc key-switch warn frost while Laser Enable preflight surfaces
+  /// the same condition as a toast (avoids dialog on hold-to-enable).
+  bool _suppressKeySwitchOffSafetyPrompt = false;
+  Timer? _suppressKeySwitchOffSafetyPromptTimer;
+
+  bool get suppressKeySwitchOffSafetyPrompt =>
+      _suppressKeySwitchOffSafetyPrompt;
 
   /// Process `0x0068` saved across a manual Feed/Retract so we can restore it.
   int? _savedProcessWireSpeedMmPerS;
@@ -98,9 +116,15 @@ final class DeviceControlController extends ChangeNotifier {
         ids: DeviceControlIds.watchIds,
       );
       _sub = stream.listen(applyChanges);
-      // lws-ui GeneralOperationsFragment.initData: Auto Wire Feed ON unless
-      // e-stop halt (device snapshot often leaves the bit off).
-      await ensureAutoWireFeedDefault();
+      // Soft entry defaults: never hold [busy] (Quick side keys share
+      // enabled:!busy). Defer writes so concurrent ProcessApply modeSwitch
+      // can claim the RTU first (avoids FC16 overlap on 0x58/0x98).
+      await ensureAutoWireFeedDefault(
+        defer: const Duration(milliseconds: 200),
+      );
+      if (_disposed) {
+        return;
+      }
       // lws-ui advanced-settings sync: fixed default manual feed speed 80 mm/s.
       await ensureManualWireFeedSpeed();
     } catch (e) {
@@ -111,11 +135,45 @@ final class DeviceControlController extends ChangeNotifier {
   }
 
   /// Match lws-ui Quick `initData`: always force Auto Wire Feed ON when safe.
-  Future<void> ensureAutoWireFeedDefault() async {
+  ///
+  /// Soft write: does not toggle [busy] (avoids Quick side-key opacity flash).
+  /// [defer] yields before Modbus so ProcessApply can enqueue first on entry.
+  Future<void> ensureAutoWireFeedDefault({
+    Duration defer = Duration.zero,
+  }) async {
     if (emergencyStop) {
       return;
     }
-    await setAutoWireFeed(true);
+    _holdingAutoWireDefault = true;
+    if (!autoWireFeed) {
+      autoWireFeed = true;
+      notifyListeners();
+    }
+    try {
+      if (defer > Duration.zero) {
+        await Future<void>.delayed(defer);
+      }
+      if (_disposed || emergencyStop) {
+        return;
+      }
+      LaserEnableBlockReason? lastError;
+      for (var attempt = 0; attempt < 3; attempt++) {
+        if (_disposed || emergencyStop) {
+          return;
+        }
+        lastError = await setAutoWireFeed(true, holdBusy: false);
+        if (lastError == null) {
+          return;
+        }
+        await Future<void>.delayed(Duration(milliseconds: 120 * (attempt + 1)));
+      }
+      debugPrint(
+        'device-control: ensureAutoWireFeedDefault failed '
+        'after retries: $lastError',
+      );
+    } finally {
+      _holdingAutoWireDefault = false;
+    }
   }
 
   /// Match lws-ui default `manualWireFeedSpeed` (80 mm/s) on holding 0x0098.
@@ -306,6 +364,11 @@ final class DeviceControlController extends ChangeNotifier {
             changed = true;
           }
         case DeviceControlIds.wireManualMode:
+          // Stale OFF from snapshot/watch prime must not uncheck while we are
+          // forcing the lws-ui default ON onto CONTROL_FIELD_1.
+          if (_holdingAutoWireDefault && !on) {
+            break;
+          }
           if (autoWireFeed != on) {
             autoWireFeed = on;
             changed = true;
@@ -322,6 +385,10 @@ final class DeviceControlController extends ChangeNotifier {
           }
         case DeviceControlIds.laserOn:
           if (laserOn != on) {
+            debugPrint(
+              'device-control: machine.laser_on $laserOn → $on '
+              '(enable=$laserEnable)',
+            );
             laserOn = on;
             changed = true;
           }
@@ -399,6 +466,7 @@ final class DeviceControlController extends ChangeNotifier {
       onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchOff);
     }
     if (keyRose) {
+      _clearSuppressKeySwitchOffSafetyPrompt();
       onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchRestored);
     }
 
@@ -475,44 +543,44 @@ final class DeviceControlController extends ChangeNotifier {
       return;
     }
     _haltWriteInFlight = true;
-    for (var i = 0; i < 10 && busy; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    }
-    busy = true;
-    lastError = null;
-    _applyLocalJobHalt();
-    try {
-      final ok = await services.modbus.exclusiveSession(() async {
-        // Android packs all five job switches into one CONTROL_FIELD_1 word.
-        return services.modbus.writeAttribute(
-          DeviceControlIds.controlField1,
-          0,
-        );
-      });
-      if (!ok) {
-        lastError = 'Halt write failed';
-        debugPrint('device-control: haltAllJobFunctions write returned false');
-        // Keep local halt even when the write fails — e-stop hardware already
-        // cut outputs; UI must not remain in Laser Enable.
-        _applyLocalJobHalt();
-      }
-    } catch (e) {
-      debugPrint('device-control: haltAllJobFunctions failed: $e');
-      lastError = '$e';
+    await _enqueueWrite(() async {
+      busy = true;
+      lastError = null;
       _applyLocalJobHalt();
-    } finally {
-      busy = false;
-      _haltWriteInFlight = false;
-      // Reconcile job-control bits only — do not re-read status here or a
-      // transient group-read failure / empty fake can clear e-stop/key while
-      // the halt edge is still being processed.
-      await _reconcileControlBitsFromHardware();
-      // If RTU still reports enable armed after a failed halt write, keep the
-      // local session exited for this e-stop (lws-ui forces local UI off).
-      if (emergencyStop && laserEnable) {
+      try {
+        final ok = await services.modbus.exclusiveSession(() async {
+          // Android packs all five job switches into one CONTROL_FIELD_1 word.
+          return services.modbus.writeAttribute(
+            DeviceControlIds.controlField1,
+            0,
+          );
+        });
+        if (!ok) {
+          lastError = 'Halt write failed';
+          debugPrint('device-control: haltAllJobFunctions write returned false');
+          // Keep local halt even when the write fails — e-stop hardware already
+          // cut outputs; UI must not remain in Laser Enable.
+          _applyLocalJobHalt();
+        }
+      } catch (e) {
+        debugPrint('device-control: haltAllJobFunctions failed: $e');
+        lastError = '$e';
         _applyLocalJobHalt();
+      } finally {
+        busy = false;
+        _haltWriteInFlight = false;
+        // Reconcile job-control bits only — do not re-read status here or a
+        // transient group-read failure / empty fake can clear e-stop/key while
+        // the halt edge is still being processed.
+        await _reconcileControlBitsFromHardware();
+        // If RTU still reports enable armed after a failed halt write, keep the
+        // local session exited for this e-stop (lws-ui forces local UI off).
+        if (emergencyStop && laserEnable) {
+          _applyLocalJobHalt();
+        }
       }
-    }
+    });
+    _haltWriteInFlight = false;
   }
 
   /// Close Laser Enable even if another write briefly holds [busy].
@@ -521,29 +589,7 @@ final class DeviceControlController extends ChangeNotifier {
   /// safety closes). Modbus may still reject writes while the key is off.
   Future<void> forceDisableLaserForSafety() async {
     _disarmLaserSessionLocally();
-    for (var i = 0; i < 10 && busy; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    }
-    final err = await disableLaser(keepUiDisarmed: true);
-    if (err == LaserEnableBlockReason.busy) {
-      // Last resort: write without the busy gate.
-      busy = true;
-      notifyListeners();
-      try {
-        await services.modbus.exclusiveSession(() async {
-          return _writeControlField1ClearingJobBits(
-            clearMask: 0x5, // laser_enable | wire_work
-          );
-        });
-      } catch (e) {
-        debugPrint('device-control: forceDisableLaserForSafety failed: $e');
-      } finally {
-        busy = false;
-        _disarmLaserSessionLocally();
-      }
-    }
-    // Never re-arm the session from a flaky reconcile while this safety path
-    // owns the close (key-off / e-stop callers already cleared UI).
+    await disableLaser(keepUiDisarmed: true);
     _disarmLaserSessionLocally();
   }
 
@@ -578,13 +624,11 @@ final class DeviceControlController extends ChangeNotifier {
 
   /// Returns null on success, otherwise a block reason.
   Future<LaserEnableBlockReason?> setManualGas(bool enabled) async {
-    if (busy) {
-      return LaserEnableBlockReason.busy;
-    }
-    busy = true;
-    lastError = null;
-    notifyListeners();
-    try {
+    return _enqueueWrite(() async {
+      busy = true;
+      lastError = null;
+      notifyListeners();
+      try {
       // One CONTROL_FIELD_1 word: mutual exclusion with laser + wire (lws-ui).
       final ok = await _exclusiveField1WithRetry(() async {
         var word = 0;
@@ -620,86 +664,94 @@ final class DeviceControlController extends ChangeNotifier {
       busy = false;
       notifyListeners();
     }
+    });
   }
 
   /// Toggle automatic wire-feed enable, first stopping any manual movement.
-  Future<LaserEnableBlockReason?> setAutoWireFeed(bool enabled) async {
-    if (busy) {
-      return LaserEnableBlockReason.busy;
-    }
-    busy = true;
-    lastError = null;
-    notifyListeners();
-    try {
-      final ok = await _exclusiveField1WithRetry(() async {
-        var word = 0;
-        if (manualGas) {
-          word |= 1 << 1;
-        }
-        if (enabled) {
-          word |= 1 << 4;
-        }
-        // Clearing wire bits; leave laser alone only when already off — when
-        // syncing auto-wire on process switch, laser session should be idle.
-        if (laserEnable) {
-          word |= 1 << 0;
-        }
-        return services.modbus.writeAttribute(
-          DeviceControlIds.controlField1,
-          word,
-        );
-      });
-      if (!ok) {
-        lastError = 'Auto wire-feed write failed';
-        return LaserEnableBlockReason.writeFailed;
+  ///
+  /// [holdBusy] false for entry/default sync so Quick side keys (enabled when
+  /// `!busy`) do not dim/flicker while ProcessApply shares the RTU.
+  Future<LaserEnableBlockReason?> setAutoWireFeed(
+    bool enabled, {
+    bool holdBusy = true,
+  }) async {
+    return _enqueueWrite(() async {
+      if (holdBusy) {
+        busy = true;
+        lastError = null;
+        notifyListeners();
       }
-      autoWireFeed = enabled;
-      wireWork = false;
-      wireRetracting = false;
-      return null;
-    } catch (e) {
-      lastError = '$e';
-      return LaserEnableBlockReason.writeFailed;
-    } finally {
-      busy = false;
-      notifyListeners();
-    }
+      try {
+        final ok = await _exclusiveField1WithRetry(() async {
+          var word = 0;
+          if (manualGas) {
+            word |= 1 << 1;
+          }
+          if (enabled) {
+            word |= 1 << 4;
+          }
+          // Clearing wire bits; leave laser alone only when already off — when
+          // syncing auto-wire on process switch, laser session should be idle.
+          if (laserEnable) {
+            word |= 1 << 0;
+          }
+          return services.modbus.writeAttribute(
+            DeviceControlIds.controlField1,
+            word,
+          );
+        });
+        if (!ok) {
+          lastError = 'Auto wire-feed write failed';
+          return LaserEnableBlockReason.writeFailed;
+        }
+        autoWireFeed = enabled;
+        wireWork = false;
+        wireRetracting = false;
+        return null;
+      } catch (e) {
+        lastError = '$e';
+        return LaserEnableBlockReason.writeFailed;
+      } finally {
+        if (holdBusy) {
+          busy = false;
+        }
+        if (!_disposed) {
+          notifyListeners();
+        }
+      }
+    });
   }
 
   /// Begin a manual feed (forward) or retract (reverse) movement.
   Future<LaserEnableBlockReason?> startWire({required bool retract}) async {
-    if (busy) {
-      return LaserEnableBlockReason.busy;
-    }
-    // Soft speed writes outside [busy] so a flaky RTU does not block Manual
-    // Gas / Laser taps with "控制忙" for multiple timeouts.
-    await _assertManualWireSpeedsBestEffort();
-    if (busy) {
-      return LaserEnableBlockReason.busy;
-    }
-    busy = true;
-    lastError = null;
-    notifyListeners();
-    try {
-      final ok = await _exclusiveField1WithRetry(() async {
-        // lws-ui openFeed/openBackFeed: one CONTROL_FIELD_1 word (not bit RMW).
-        return _writePackedWireControl(run: true, retract: retract);
-      });
-      if (!ok) {
-        lastError = 'Wire control write failed';
-        return LaserEnableBlockReason.writeFailed;
-      }
-      laserEnable = false;
-      wireRetracting = retract;
-      wireWork = true;
-      return null;
-    } catch (e) {
-      lastError = '$e';
-      return LaserEnableBlockReason.writeFailed;
-    } finally {
-      busy = false;
+    return _enqueueWrite(() async {
+      // Soft speed writes outside [busy] so a flaky RTU does not block Manual
+      // Gas / Laser taps for multiple timeouts.
+      await _assertManualWireSpeedsBestEffort();
+      busy = true;
+      lastError = null;
       notifyListeners();
-    }
+      try {
+        final ok = await _exclusiveField1WithRetry(() async {
+          // lws-ui openFeed/openBackFeed: one CONTROL_FIELD_1 word (not bit RMW).
+          return _writePackedWireControl(run: true, retract: retract);
+        });
+        if (!ok) {
+          lastError = 'Wire control write failed';
+          return LaserEnableBlockReason.writeFailed;
+        }
+        laserEnable = false;
+        wireRetracting = retract;
+        wireWork = true;
+        return null;
+      } catch (e) {
+        lastError = '$e';
+        return LaserEnableBlockReason.writeFailed;
+      } finally {
+        busy = false;
+        notifyListeners();
+      }
+    });
   }
 
   /// Idempotent clear of continuous feed/retract (mode switch / exit prep).
@@ -707,37 +759,36 @@ final class DeviceControlController extends ChangeNotifier {
 
   /// Stop whichever manual wire movement is active.
   Future<LaserEnableBlockReason?> stopWire() async {
-    if (busy) {
-      return LaserEnableBlockReason.busy;
-    }
-    busy = true;
-    lastError = null;
-    notifyListeners();
-    try {
-      final ok = await _exclusiveField1WithRetry(() async {
-        // lws-ui closeFeedOrBack: wire off, direction feed, laser off.
-        return _writePackedWireControl(
-          run: false,
-          retract: false,
-        );
-      });
-      if (!ok) {
-        lastError = 'Wire control write failed';
-        return LaserEnableBlockReason.writeFailed;
-      }
-      wireWork = false;
-      wireRetracting = false;
-      // Restore process wire speed outside the exclusive write so we release
-      // [busy] promptly; soft-fail is fine.
-      unawaited(_restoreProcessWireSpeedBestEffort());
-      return null;
-    } catch (e) {
-      lastError = '$e';
-      return LaserEnableBlockReason.writeFailed;
-    } finally {
-      busy = false;
+    return _enqueueWrite(() async {
+      busy = true;
+      lastError = null;
       notifyListeners();
-    }
+      try {
+        final ok = await _exclusiveField1WithRetry(() async {
+          // lws-ui closeFeedOrBack: wire off, direction feed, laser off.
+          return _writePackedWireControl(
+            run: false,
+            retract: false,
+          );
+        });
+        if (!ok) {
+          lastError = 'Wire control write failed';
+          return LaserEnableBlockReason.writeFailed;
+        }
+        wireWork = false;
+        wireRetracting = false;
+        // Restore process wire speed outside the exclusive write so we release
+        // [busy] promptly; soft-fail is fine.
+        unawaited(_restoreProcessWireSpeedBestEffort());
+        return null;
+      } catch (e) {
+        lastError = '$e';
+        return LaserEnableBlockReason.writeFailed;
+      } finally {
+        busy = false;
+        notifyListeners();
+      }
+    });
   }
 
   /// Hold-to-enable path: run preflight then write laser_enable=true.
@@ -745,9 +796,6 @@ final class DeviceControlController extends ChangeNotifier {
     WarnAlarmController? warnAlarm,
     LaserAlarmPolicySnapshot? policy,
   }) {
-    if (busy) {
-      return LaserEnableBlockReason.busy;
-    }
     if (manualGas) {
       return LaserEnableBlockReason.manualGasOn;
     }
@@ -757,6 +805,9 @@ final class DeviceControlController extends ChangeNotifier {
       keySwitchOn: keySwitchOn,
     );
     if (machineBlock != null) {
+      if (machineBlock == LaserEnableBlockReason.keySwitchOff) {
+        _armSuppressKeySwitchOffSafetyPrompt();
+      }
       lastError = machineBlock.message;
       notifyListeners();
       return machineBlock;
@@ -791,91 +842,95 @@ final class DeviceControlController extends ChangeNotifier {
     WarnAlarmController? warnAlarm,
     LaserAlarmPolicySnapshot? policy,
   }) async {
-    final block = preflightLaserEnable(
-      warnAlarm: warnAlarm,
-      policy: policy,
-    );
-    if (block != null) {
-      return block;
-    }
-
-    busy = true;
-    lastError = null;
-    notifyListeners();
-    try {
-      // One CONTROL_FIELD_1 write: set laser, clear wire_work + direction
-      // (same register as disableLaser — avoids two bit timeouts).
-      final ok = await _exclusiveField1WithRetry(() async {
-        return _writeControlField1RmW(
-          // laser | wire_work | wire_direction
-          clearMask: 0xD,
-          setMask: 0x1, // laser_enable
-        );
-      });
-      if (!ok) {
-        lastError = LaserEnableBlockReason.writeFailed.message;
-        return LaserEnableBlockReason.writeFailed;
+    return _enqueueWrite(() async {
+      final block = preflightLaserEnable(
+        warnAlarm: warnAlarm,
+        policy: policy,
+      );
+      if (block != null) {
+        if (block == LaserEnableBlockReason.keySwitchOff) {
+          _armSuppressKeySwitchOffSafetyPrompt();
+        }
+        return block;
       }
-      laserEnable = true;
-      wireWork = false;
-      wireRetracting = false;
-      await workSessionStatistics?.recordLaserEnabled();
-      return null;
-    } catch (e) {
-      lastError = '$e';
-      return LaserEnableBlockReason.writeFailed;
-    } finally {
-      busy = false;
+
+      busy = true;
+      lastError = null;
       notifyListeners();
-    }
+      try {
+        // One CONTROL_FIELD_1 write: set laser, clear wire_work + direction
+        // (same register as disableLaser — avoids two bit timeouts).
+        final ok = await _exclusiveField1WithRetry(() async {
+          return _writeControlField1RmW(
+            // laser | wire_work | wire_direction
+            clearMask: 0xD,
+            setMask: 0x1, // laser_enable
+          );
+        });
+        if (!ok) {
+          lastError = LaserEnableBlockReason.writeFailed.message;
+          return LaserEnableBlockReason.writeFailed;
+        }
+        laserEnable = true;
+        wireWork = false;
+        wireRetracting = false;
+        await workSessionStatistics?.recordLaserEnabled();
+        return null;
+      } catch (e) {
+        lastError = '$e';
+        return LaserEnableBlockReason.writeFailed;
+      } finally {
+        busy = false;
+        notifyListeners();
+      }
+    });
   }
 
   Future<LaserEnableBlockReason?> disableLaser({
     bool keepUiDisarmed = false,
   }) async {
-    if (busy) {
-      return LaserEnableBlockReason.busy;
-    }
-    busy = true;
-    lastError = null;
-    notifyListeners();
-    try {
-      final ok = await _exclusiveField1WithRetry(() async {
-        // One RMW of CONTROL_FIELD_1 — clears laser_enable + wire_work together
-        // (lws-ui single-register switch write). Avoids two bit timeouts that
-        // pause continuous poll under a sticky key/e-stop bus.
-        return _writeControlField1ClearingJobBits(
-          clearMask: 0x5, // bit0 laser_enable | bit2 wire_work
-        );
-      });
-      if (!ok) {
-        lastError = LaserEnableBlockReason.writeFailed.message;
+    return _enqueueWrite(() async {
+      busy = true;
+      lastError = null;
+      notifyListeners();
+      try {
+        final ok = await _exclusiveField1WithRetry(() async {
+          // One RMW of CONTROL_FIELD_1 — clears laser_enable + wire_work together
+          // (lws-ui single-register switch write). Avoids two bit timeouts that
+          // pause continuous poll under a sticky key/e-stop bus.
+          return _writeControlField1ClearingJobBits(
+            clearMask: 0x5, // bit0 laser_enable | bit2 wire_work
+          );
+        });
+        if (!ok) {
+          lastError = LaserEnableBlockReason.writeFailed.message;
+          if (keepUiDisarmed) {
+            _disarmLaserSessionLocally();
+          }
+          return LaserEnableBlockReason.writeFailed;
+        }
+        _disarmLaserSessionLocally();
+        await workSessionStatistics?.settle();
+        busy = false;
+        if (!keepUiDisarmed) {
+          await _reconcileControlBitsFromHardware();
+          if (laserEnable) {
+            lastError = LaserEnableBlockReason.writeFailed.message;
+            return LaserEnableBlockReason.writeFailed;
+          }
+        }
+        return null;
+      } catch (e) {
+        lastError = '$e';
         if (keepUiDisarmed) {
           _disarmLaserSessionLocally();
         }
         return LaserEnableBlockReason.writeFailed;
+      } finally {
+        busy = false;
+        notifyListeners();
       }
-      _disarmLaserSessionLocally();
-      await workSessionStatistics?.settle();
-      busy = false;
-      if (!keepUiDisarmed) {
-        await _reconcileControlBitsFromHardware();
-        if (laserEnable) {
-          lastError = LaserEnableBlockReason.writeFailed.message;
-          return LaserEnableBlockReason.writeFailed;
-        }
-      }
-      return null;
-    } catch (e) {
-      lastError = '$e';
-      if (keepUiDisarmed) {
-        _disarmLaserSessionLocally();
-      }
-      return LaserEnableBlockReason.writeFailed;
-    } finally {
-      busy = false;
-      notifyListeners();
-    }
+    });
   }
 
   /// Clear and/or set bits in CONTROL_FIELD_1 with a single holding write.
@@ -926,39 +981,38 @@ final class DeviceControlController extends ChangeNotifier {
   /// job bits (laser, manual gas, wire work/dir, auto wire). Retries once on
   /// failure.
   Future<void> shutdownForExit() async {
-    for (var i = 0; i < 10 && busy; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    }
-    busy = true;
-    lastError = null;
-    if (!_disposed) {
-      notifyListeners();
-    }
-    try {
-      Future<bool> writeOff() => _writeControlField1RmW(
-            clearMask: DeviceControlIds.controlField1JobBitsMask,
-          );
-      final ok = await _exclusiveField1WithRetry(writeOff);
-      if (!ok) {
-        lastError = 'Laser disarm write failed';
-        debugPrint('device-control: shutdownForExit write returned false');
-      } else {
-        await workSessionStatistics?.settle();
-      }
-    } catch (e) {
-      debugPrint('device-control: shutdownForExit failed: $e');
-      lastError = '$e';
-    } finally {
-      laserEnable = false;
-      manualGas = false;
-      autoWireFeed = false;
-      wireWork = false;
-      wireRetracting = false;
-      busy = false;
+    await _enqueueWrite(() async {
+      busy = true;
+      lastError = null;
       if (!_disposed) {
         notifyListeners();
       }
-    }
+      try {
+        Future<bool> writeOff() => _writeControlField1RmW(
+              clearMask: DeviceControlIds.controlField1JobBitsMask,
+            );
+        final ok = await _exclusiveField1WithRetry(writeOff);
+        if (!ok) {
+          lastError = 'Laser disarm write failed';
+          debugPrint('device-control: shutdownForExit write returned false');
+        } else {
+          await workSessionStatistics?.settle();
+        }
+      } catch (e) {
+        debugPrint('device-control: shutdownForExit failed: $e');
+        lastError = '$e';
+      } finally {
+        laserEnable = false;
+        manualGas = false;
+        autoWireFeed = false;
+        wireWork = false;
+        wireRetracting = false;
+        busy = false;
+        if (!_disposed) {
+          notifyListeners();
+        }
+      }
+    });
   }
 
   @override
@@ -969,9 +1023,25 @@ final class DeviceControlController extends ChangeNotifier {
     super.notifyListeners();
   }
 
+  void _armSuppressKeySwitchOffSafetyPrompt() {
+    _suppressKeySwitchOffSafetyPrompt = true;
+    _suppressKeySwitchOffSafetyPromptTimer?.cancel();
+    _suppressKeySwitchOffSafetyPromptTimer = Timer(
+      const Duration(milliseconds: 800),
+      () => _suppressKeySwitchOffSafetyPrompt = false,
+    );
+  }
+
+  void _clearSuppressKeySwitchOffSafetyPrompt() {
+    _suppressKeySwitchOffSafetyPromptTimer?.cancel();
+    _suppressKeySwitchOffSafetyPromptTimer = null;
+    _suppressKeySwitchOffSafetyPrompt = false;
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    _clearSuppressKeySwitchOffSafetyPrompt();
     LaserEnableLedHolder.instance.clearLaserEnable();
     // Fire-and-forget: page/route teardown must still request laser off even
     // when dispose cannot await (abnormal leave / Navigator pop).

@@ -67,6 +67,50 @@ void main() {
     expect(modbus.writes, isEmpty);
   });
 
+  test('ensureAutoWireFeedDefault does not toggle busy', () async {
+    final modbus = _SlowField1Modbus();
+    final controller = DeviceControlController(servicesWith(modbus))
+      ..autoWireFeed = false
+      ..keySwitchOn = true;
+
+    final busyWhileWriting = <bool>[];
+    controller.addListener(() {
+      busyWhileWriting.add(controller.busy);
+    });
+
+    final done = controller.ensureAutoWireFeedDefault();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(controller.busy, isFalse);
+    expect(controller.autoWireFeed, isTrue);
+    await done;
+    expect(controller.busy, isFalse);
+    expect(busyWhileWriting, isNot(contains(true)));
+  });
+
+  test('ensureAutoWireFeedDefault ignores stale watch OFF while forcing',
+      () async {
+    final modbus = _RecordingModbus();
+    final controller = DeviceControlController(servicesWith(modbus))
+      ..autoWireFeed = true
+      ..keySwitchOn = true;
+
+    // Simulate ensure in-flight holding latch via a deferred write gate.
+    final gate = Completer<void>();
+    modbus.writeGate = gate.future;
+    final pending = controller.ensureAutoWireFeedDefault();
+    await Future<void>.delayed(Duration.zero);
+    controller.applyChanges(const [
+      ModbusAttributeChange(
+        id: DeviceControlIds.wireManualMode,
+        value: false,
+      ),
+    ]);
+    expect(controller.autoWireFeed, isTrue);
+    gate.complete();
+    await pending;
+    expect(controller.autoWireFeed, isTrue);
+  });
+
   test('start applies ensure after stale watch prime so UI stays ON', () async {
     final modbus = _StaleAutoWirePrimeModbus();
     final controller = DeviceControlController(servicesWith(modbus))
@@ -76,25 +120,55 @@ void main() {
     expect(controller.autoWireFeed, isTrue);
   });
 
-  test('offset arc pads match lws-ui OffsetWheelBuilder', () {
+  test('gear/thickness arc follows the Dashboard circle continuously', () {
     expect(ProcessModeDimens.linearArcPad(0), 24);
     expect(ProcessModeDimens.linearArcPad(1), 34);
     expect(ProcessModeDimens.linearArcPad(2), 44);
     expect(QuickModePickerDimens.linearArcPad(1), 34);
-    expect(QuickModePickerDimens.unselectedOffset(0), 8);
-    expect(QuickModePickerDimens.unselectedOffset(1), 16);
-    expect(QuickModePickerDimens.unselectedOffset(2), 40);
+
+    const radius = 300.0;
+    double inset(double distance) => QuickModePickerDimens.circularArcInset(
+          signedDistanceFromCenter: distance,
+          radius: radius,
+        );
+
+    expect(inset(0), 0);
+    expect(inset(1), closeTo(radius - 294.72699, 0.0001));
+    expect(inset(-1), closeTo(inset(1), 0.0001));
+    expect(inset(0.499), lessThan(inset(0.501)));
+    expect((inset(0.501) - inset(0.499)).abs(), lessThan(0.1));
+
+    final gearOffset = QuickModePickerDimens.circularArcHorizontalOffset(
+      signedDistanceFromCenter: 1,
+      radius: radius,
+      scaleOnLeft: true,
+    );
+    final thicknessOffset = QuickModePickerDimens.circularArcHorizontalOffset(
+      signedDistanceFromCenter: 1,
+      radius: radius,
+      scaleOnLeft: false,
+    );
+    expect(gearOffset, greaterThan(0));
+    expect(thicknessOffset, closeTo(-gearOffset, 0.0001));
   });
 }
 
 final class _RecordingModbus extends ModbusRtuClient {
   final writes = <(String, Object?)>[];
+  Future<void>? writeGate;
 
   @override
   Future<T> exclusiveSession<T>(Future<T> Function() body) => body();
 
   @override
+  Future<T> runCommandQueued<T>(Future<T> Function() body) => body();
+
+  @override
   Future<bool> writeAttribute(String id, Object? value) async {
+    final gate = writeGate;
+    if (gate != null) {
+      await gate;
+    }
     writes.add((id, value));
     return true;
   }
@@ -107,6 +181,15 @@ final class _RecordingModbus extends ModbusRtuClient {
     Iterable<String>? ids,
   }) async =>
       const Stream.empty();
+}
+
+/// Holds [writeAttribute] long enough for listeners to observe [busy].
+final class _SlowField1Modbus extends _RecordingModbus {
+  @override
+  Future<bool> writeAttribute(String id, Object? value) async {
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    return super.writeAttribute(id, value);
+  }
 }
 
 /// Sync-primes auto-wire OFF on listen (HAL watch prime), then allows

@@ -63,6 +63,28 @@ void main() {
 
     await sfx.dispose();
   });
+
+  test('foreign facade loop looks like orphan but isActive stays false', () async {
+    final audio = _FakeAudio();
+    final tip = WarnAlarmSound(audio);
+    final controller = WarnAlarmSound(audio);
+
+    await tip.ensurePlaying('emergency_stop_prompt');
+    expect(tip.isActive, isTrue);
+    expect(controller.isActive, isFalse);
+    expect(controller.hasOrphanPlayback, isTrue,
+        reason: 'shared HAL loop is visible to idle facades');
+
+    // WarnAlarmController must only stop when its own facade isActive —
+    // killing hasOrphanPlayback here would truncate tip SFX to one blip.
+    expect(audio.hasActiveLoop, isTrue);
+
+    await tip.stopForEpisode('emergency_stop_prompt');
+    expect(audio.hasActiveLoop, isFalse);
+
+    await tip.dispose();
+    await controller.dispose();
+  });
 }
 
 final class _FakeAudio implements MediaAudioController {

@@ -67,7 +67,7 @@ Status alarm and machine bits SHALL be mapped in config to **stable, human-reada
 
 ### Requirement: Read health for comm fault (C001 input)
 
-HAL SHALL expose aggregate continuous-poll read health suitable for controller↔HMI communication faults (C001-class). Config MAY define a sliding window (`window_size`, `failure_threshold`, default 5 / 3) and mode (`slide_window` | `immediate`) under `poll.health` in the product modbus asset. HAL SHALL record group-cycle outcomes into that window and emit **aggregate** `ModbusHealth` events only (not per-group rising/falling that would bypass the window). Recovery SHALL emit `ok: true` when the window is healthy again. HAL SHALL support a runtime mode override API (`applyHealthWindowMode`) so the App can apply `properties.ini` `control_card_comm_alarm_mode` (`slide_window` | `immediate`); empty/absent `properties.ini` key keeps the asset default. On-demand `readGroup` MUST NOT drive the C001 health stream. HAL MUST NOT own Warn dialog presentation.
+HAL SHALL expose aggregate continuous-poll read health suitable for controller↔HMI communication faults (C001-class). Config MAY define `failure_threshold` (default 3) and mode (`slide_window` | `immediate`) under `poll.health` in the product modbus asset. In `slide_window` mode, `failure_threshold` SHALL mean **consecutive trailing** group-cycle failures (a success resets the streak). A legacy `window_size` key MAY be present for older assets and MUST NOT affect detection. HAL SHALL emit **aggregate** `ModbusHealth` events only (not per-group rising/falling that would bypass the streak). Recovery SHALL emit `ok: true` when the trailing failure streak falls below the threshold. HAL SHALL support a runtime mode override API (`applyHealthWindowMode`) so the App can apply `properties.ini` `control_card_comm_alarm_mode` (`slide_window` | `immediate`); empty/absent `properties.ini` key keeps the asset default. On-demand `readGroup` MUST NOT drive the C001 health stream. HAL MUST NOT own Warn dialog presentation.
 
 #### Scenario: Truncated status keeps last-good
 
@@ -77,8 +77,14 @@ HAL SHALL expose aggregate continuous-poll read health suitable for controller�
 #### Scenario: Aggregate window gates C001 input
 
 - **WHEN** `poll.health.mode` is `slide_window` with failure_threshold 3
-- **AND** continuous poll records fewer than three failures in the window
+- **AND** continuous poll has not yet recorded three consecutive trailing failures
 - **THEN** aggregate health SHALL remain `ok: true` (no premature per-group `ok: false` emission for C001)
+
+#### Scenario: Interleaved failures do not trip slide_window
+
+- **WHEN** `poll.health.mode` is `slide_window` with failure_threshold 3
+- **AND** continuous poll records a pattern such as fail/ok/fail/ok/fail (three failures total, never three consecutive)
+- **THEN** aggregate health SHALL remain `ok: true`
 
 #### Scenario: properties.ini mode override
 

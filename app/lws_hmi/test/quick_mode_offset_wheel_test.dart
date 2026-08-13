@@ -104,6 +104,101 @@ void main() {
     expect(selected, 2);
   });
 
+  testWidgets('builder receives continuous signed scroll distance',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 600));
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+
+    final distances = <int, double>{};
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 160,
+              height: 340,
+              child: QuickModeOffsetWheel(
+                itemCount: 6,
+                selectedIndex: 0,
+                itemExtent: 56,
+                onChanged: (_) {},
+                itemBuilder: (context, index, signedDistance) {
+                  distances[index] = signedDistance;
+                  return Center(child: Text('arc-$index'));
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final center = tester.getCenter(find.byType(ListWheelScrollView));
+    final gesture = await tester.startGesture(center);
+    await tester.pump();
+    // First move crosses the drag slop; the second contributes scroll pixels.
+    await gesture.moveBy(const Offset(0, -20));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, -20));
+    await tester.pump();
+
+    expect(distances[0], isNotNull);
+    expect(distances[0]!, lessThan(0));
+    expect(distances[0]!.abs(), greaterThan(0));
+    expect(distances[0]!.abs(), lessThan(1));
+    expect(distances[1], greaterThan(0));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('tap settle keeps fractional distance during animation',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 600));
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+
+    var distanceOfZero = 0.0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 200,
+              height: 400,
+              child: QuickModeOffsetWheel(
+                itemCount: 6,
+                selectedIndex: 0,
+                itemExtent: 56,
+                onChanged: (_) {},
+                itemBuilder: (context, index, signedDistance) {
+                  if (index == 0) {
+                    distanceOfZero = signedDistance;
+                  }
+                  return Center(child: Text('snap-$index'));
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('snap-2', skipOffstage: false));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+
+    expect(distanceOfZero, lessThan(0));
+    expect(distanceOfZero, greaterThan(-2));
+    await tester.pumpAndSettle();
+    expect(distanceOfZero, closeTo(-2, 0.01));
+  });
+
   testWidgets('drag plays click once on release, not during press',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 600));
@@ -160,7 +255,8 @@ void main() {
     expect(clicks.calls, 1);
   });
 
-  testWidgets('parent rebuild mid-drag does not snap wheel back', (tester) async {
+  testWidgets('parent rebuild mid-drag does not snap wheel back',
+      (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 600));
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);

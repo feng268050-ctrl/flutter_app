@@ -371,7 +371,10 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
     final l10n = AppLocalizations.of(context)!;
     ProcessApplyResult result;
     try {
-      result = await controller.apply(preset);
+      result = await controller.apply(
+        preset,
+        mode: ProcessApplyMode.modeSwitch,
+      );
     } catch (error) {
       if (mounted) {
         _message(l10n.processApplyFailedGeneric('$error'));

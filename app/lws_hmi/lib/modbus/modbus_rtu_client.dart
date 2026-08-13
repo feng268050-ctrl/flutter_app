@@ -61,6 +61,8 @@ class ModbusRtuClient {
   final BoardProfile? _profile;
   Future<ModbusHal>? _loading;
   bool _polling = false;
+  Future<void>? _commandChain;
+  static final Object _queueZoneKey = Object();
 
   Future<ModbusHal> _ensureHal() {
     if (_hal != null) {
@@ -229,10 +231,35 @@ class ModbusRtuClient {
     }
   }
 
+  /// Serializes Modbus control transactions app-wide (apply + device control).
+  Future<T> runCommandQueued<T>(Future<T> Function() body) async {
+    // Re-entrant queued call (e.g. controller queue -> exclusiveSession) must
+    // execute inline to avoid waiting on itself and deadlocking busy=true.
+    if (Zone.current[_queueZoneKey] == true) {
+      return body();
+    }
+    final previous = _commandChain ?? Future<void>.value();
+    final completer = Completer<void>();
+    _commandChain = completer.future;
+    await previous.catchError((_) {});
+    try {
+      return await runZoned(
+        body,
+        zoneValues: {_queueZoneKey: true},
+      );
+    } finally {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
+  }
+
   /// Pause background polling while [body] performs a control transaction.
   Future<T> exclusiveSession<T>(Future<T> Function() body) async {
-    final hal = await _ensureHal();
-    return hal.exclusiveSession(body);
+    return runCommandQueued(() async {
+      final hal = await _ensureHal();
+      return hal.exclusiveSession(body);
+    });
   }
 }
 

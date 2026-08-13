@@ -27,6 +27,7 @@ final class ProcessLibraryController extends ChangeNotifier {
   bool _initialized = false;
   bool _closed = false;
   bool _applying = false;
+  Future<ProcessApplyResult>? _applyChain;
 
   List<ProcessPreset> get presets => List.unmodifiable(_presets);
   Object? get lastError => _lastError;
@@ -144,32 +145,43 @@ final class ProcessLibraryController extends ChangeNotifier {
 
   Future<ProcessApplyResult> apply(
     ProcessPreset preset, {
+    ProcessApplyMode mode = ProcessApplyMode.liveTune,
     bool allowLiveTune = true,
   }) async {
-    if (_applying) {
-      return const ProcessApplyResult.failure(ProcessApplyFailure.busy);
+    if (!allowLiveTune) {
+      mode = ProcessApplyMode.modeSwitch;
     }
-    _applying = true;
-    _notify();
-    try {
-      final resolved = ProcessParameterDefaults.resolve(preset);
-      final result = await applier.apply(
-        resolved,
-        allowLiveTune: allowLiveTune,
-      );
-      if (result.isSuccess) {
-        ProcessParametersSnapshotStore.instance.updateFromPreset(
-          resolved,
-          DeviceRemoteSnapshotModbusMapper.processParametersFromGroup(
-            Map<String, Object?>.from(resolved.parameters.values),
-          ),
+    final resolved = ProcessParameterDefaults.resolve(preset);
+    final previous =
+        _applyChain ?? Future<ProcessApplyResult>.value(
+          const ProcessApplyResult.success(),
         );
-      }
-      return result;
-    } finally {
-      _applying = false;
+    final next = previous.catchError((_) {
+      return const ProcessApplyResult.failure(ProcessApplyFailure.busy);
+    }).then((_) async {
+      _applying = true;
       _notify();
-    }
+      try {
+        final result = await applier.apply(
+          resolved,
+          mode: mode,
+        );
+        if (result.isSuccess) {
+          ProcessParametersSnapshotStore.instance.updateFromPreset(
+            resolved,
+            DeviceRemoteSnapshotModbusMapper.processParametersFromGroup(
+              Map<String, Object?>.from(resolved.parameters.values),
+            ),
+          );
+        }
+        return result;
+      } finally {
+        _applying = false;
+        _notify();
+      }
+    });
+    _applyChain = next;
+    return next;
   }
 
   Future<void> _reload() async {

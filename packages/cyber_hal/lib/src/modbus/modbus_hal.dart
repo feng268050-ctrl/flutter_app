@@ -318,8 +318,11 @@ final class _LinuxModbusHal implements ModbusHal {
   /// stop/start polling (nested sessions used to leave polling permanently off).
   Future<void> _exclusiveChain = Future<void>.value();
 
-  /// Recent group-cycle outcomes for slide_window health (true = failure).
-  final List<bool> _healthFailures = [];
+  /// Consecutive trailing group-cycle failures (success resets to 0).
+  int _consecutiveFailures = 0;
+
+  /// True after at least one continuous-poll sample has been recorded.
+  bool _hasHealthSample = false;
 
   /// Runtime override for [ModbusHealthWindowConfig.mode] (App-supplied).
   String? _healthModeOverride;
@@ -1194,19 +1197,22 @@ final class _LinuxModbusHal implements ModbusHal {
   void _recordHealthFailure(bool failed) {
     final window = _effectiveHealthWindow();
     if (window == null) return;
-    _healthFailures.add(failed);
-    while (_healthFailures.length > window.windowSize) {
-      _healthFailures.removeAt(0);
+    _hasHealthSample = true;
+    if (failed) {
+      _consecutiveFailures++;
+    } else {
+      _consecutiveFailures = 0;
     }
   }
 
   bool _isWindowUnhealthy(ModbusHealthWindowConfig window) {
-    if (window.mode == 'immediate') {
-      return _healthFailures.isNotEmpty && _healthFailures.last;
+    if (!_hasHealthSample) {
+      return false;
     }
-    if (_healthFailures.length < window.failureThreshold) return false;
-    final failures = _healthFailures.where((f) => f).length;
-    return failures >= window.failureThreshold;
+    if (window.mode == 'immediate') {
+      return _consecutiveFailures > 0;
+    }
+    return _consecutiveFailures >= window.failureThreshold;
   }
 
   void _emitAggregateHealth({required bool anySample}) {
@@ -1215,13 +1221,12 @@ final class _LinuxModbusHal implements ModbusHal {
       return;
     }
     final unhealthy = _isWindowUnhealthy(window);
-    final failCount = _healthFailures.where((f) => f).length;
     _emitHealth(
       ModbusHealth(
         ok: !unhealthy,
         truncated: unhealthy,
         message: unhealthy
-            ? 'health window: $failCount/${window.windowSize} failures'
+            ? 'health window: $_consecutiveFailures consecutive failures'
             : null,
       ),
     );

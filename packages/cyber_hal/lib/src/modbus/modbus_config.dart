@@ -253,7 +253,12 @@ final class ModbusHealthWindowConfig {
     this.mode = 'slide_window',
   });
 
+  /// Legacy JSON `window_size`. Ignored: consecutive [failureThreshold] is
+  /// the only slide_window gate (kept so older assets still parse).
   final int windowSize;
+
+  /// For `slide_window`: consecutive trailing failures required to mark
+  /// unhealthy. For `immediate`: unused (any latest failure trips).
   final int failureThreshold;
 
   /// `slide_window` (default) or `immediate`.

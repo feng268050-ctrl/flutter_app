@@ -66,7 +66,6 @@ void main() {
       expect(config.transport.commandIntervalMs, 50);
       expect(config.poll.intervalMs, 100);
       expect(config.poll.discardIfBusy, isTrue);
-      expect(config.poll.health?.windowSize, 5);
       expect(config.poll.health?.failureThreshold, 3);
       expect(config.poll.health?.mode, 'slide_window');
       expect(config.capabilities.readHolding, isTrue);

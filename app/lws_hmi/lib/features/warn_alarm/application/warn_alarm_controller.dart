@@ -331,11 +331,16 @@ final class WarnAlarmController {
   /// chain — including while [GlobalPromptQueue] still has Wi‑Fi / register /
   /// other guidance ahead. Queued faults must not start SFX.
   /// Confirm / dismiss clears presentation showing → stop.
+  ///
+  /// Only stop loops **this** [WarnAlarmSound] facade armed ([isActive]).
+  /// Safety tip prompts (`EmergencyStopPrompt`, `KeySwitchOffPrompt`,
+  /// `SafetyGroundLockPrompt`) use a separate facade on the same
+  /// [MediaAudioController]; treating their HAL loop as [hasOrphanPlayback]
+  /// stole the tip SFX (E-stop: H022/W001 falling → onClosed → one blip).
   void _syncWarnSound() {
     final showing = _presentation.showingCode;
     if (showing == null) {
-      // Also clear orphan HAL loops left by ensurePlaying/stop races.
-      if (_sound.isActive || _sound.hasOrphanPlayback) {
+      if (_sound.isActive) {
         unawaited(_sound.stop());
       }
       return;
@@ -346,7 +351,7 @@ final class WarnAlarmController {
     );
     if (alertingCodes.contains(showing)) {
       unawaited(_sound.ensurePlaying(showing));
-    } else if (_sound.isActive || _sound.hasOrphanPlayback) {
+    } else if (_sound.isActive) {
       unawaited(_sound.stop());
     }
   }

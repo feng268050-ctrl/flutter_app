@@ -97,7 +97,7 @@ abstract final class DeviceControlFeedbackCopy {
   }
 
   /// Whether [reason] should use Operation-failed tip (not Toast).
-  static bool isSafetyTipBlock(LaserEnableBlockReason reason) =>
-      reason == LaserEnableBlockReason.keySwitchOff ||
-      reason == LaserEnableBlockReason.emergencyStop;
+  ///
+  /// Key-off and E-stop use Warn Frost prompts instead.
+  static bool isSafetyTipBlock(LaserEnableBlockReason reason) => false;
 }

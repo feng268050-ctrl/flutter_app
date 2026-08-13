@@ -72,7 +72,7 @@ void main() {
     expect(events, isEmpty);
 
     adapter.debugApplyHealth(
-      const ModbusHealth(ok: false, message: 'health window: 5/5 failures'),
+      const ModbusHealth(ok: false, message: 'health window: 3 consecutive failures'),
     );
     expect(events, hasLength(1));
     expect(events.single.code, kModbusHealthAlarmCode);

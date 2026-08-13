@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cyber_ime/cyber_ime.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/http/http_proxy_config.dart';
@@ -25,7 +26,6 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
   String _user = '';
   String _pass = '';
   bool _busy = false;
-  String? _error;
 
   @override
   void initState() {
@@ -45,23 +45,40 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
         _pass = p.password;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (!mounted) return;
+      ProcessModeToast.show(
+        context,
+        _proxyErrorMessage(AppLocalizations.of(context)!, e),
+      );
     }
   }
 
   Future<void> _save(HttpProxyConfig config) async {
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
+    final l10n = AppLocalizations.of(context)!;
+    if (config.enabled && config.host.trim().isEmpty) {
+      ProcessModeToast.show(context, l10n.httpProxyValidationHostRequired);
+      return;
+    }
+    setState(() => _busy = true);
     try {
       await widget.services.http.setProxy(config);
       await _load();
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (!mounted) return;
+      await _load();
+      if (!mounted) return;
+      ProcessModeToast.show(context, _proxyErrorMessage(l10n, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  String _proxyErrorMessage(AppLocalizations l10n, Object error) {
+    final raw = '$error';
+    if (raw.contains('proxy host is empty')) {
+      return l10n.httpProxyValidationHostRequired;
+    }
+    return raw;
   }
 
   Future<void> _editField({
@@ -186,14 +203,6 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
               ),
             ],
           ),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Colors.redAccent),
-              ),
-            ),
         ],
       ),
     );

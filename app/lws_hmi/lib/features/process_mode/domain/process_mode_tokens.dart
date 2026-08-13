@@ -41,6 +41,19 @@ abstract final class ProcessModeTokens {
     return tabWeldActive;
   }
 
+  /// Quick Mode selection band shared by process, material, gear and thickness.
+  /// The active point is product orange and fades symmetrically to transparent.
+  static const LinearGradient quickSelectionHighlightGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      Color(0x00F46E01),
+      Color(0xFFF46E01),
+      Color(0x00F46E01),
+    ],
+    stops: [0.0, 0.5, 1.0],
+  );
+
   /// Side-op highlight mid color (lws-ui `quick_mode_wheel_active_*`).
   static Color sideOperationHighlightMid(ProcessType type) {
     if (type.isCleaning) {
@@ -120,12 +133,15 @@ abstract final class ProcessModeDimens {
   static const double wheelItemHeight = 168 / 3; // 56 — was 136/3; more row gap
   /// Mode / material selected label → sectionTitle (22).
   static const double wheelSelectedTextSize = HmiTypography.sectionTitleSize;
+
   /// Mode / material unselected label → control (20).
   static const double wheelUnselectedTextSize = HmiTypography.controlSize;
+
   /// Full-page mode / material highlight length (lws-ui 400dp) plus a little
   /// past the scale *image* box so the fill peak meets the visible ticks after
   /// [QuickModePickerDimens.scaleImageVisualScale] shrinks the asset.
   static const double wheelAccentBandWidth = 410;
+
   /// Solid label segment — mode / material accent under the labels.
   static const double wheelAccentSolidWidth = 255;
 
@@ -243,6 +259,7 @@ abstract final class ProcessModeDimens {
   /// Side ops (Manual Gas / Auto Wire / Feed / Retract) — lws-ui styles.
   static const double quickSideButtonWidth = 275;
   static const double quickSideButtonInset = 30;
+
   /// Match [quickSideButtonInset] so bottom edge equals left/right screen gap.
   static const double quickSideButtonBottom = 30;
   static const double quickSideOpIconSize = 24;
@@ -276,6 +293,7 @@ abstract final class ProcessModeDimens {
   /// ([QuickModePickerDimens.topChromeBandHeight]) so both controls share one
   /// centered baseline.
   static const double quickTopChromeInset = 40;
+
   /// Fallback top inset when gear/thickness pickers are not shown (CNC / empty).
   static const double quickTopChromeTop = 20;
   static const double quickTopChromeLabelSize = 24.0; // navigation
@@ -283,6 +301,7 @@ abstract final class ProcessModeDimens {
   /// Gear/Thickness: toStartOf/toEndOf dashboard + overlap + translation.
   static const double pickerWidth = 560 / 3; // 186.666…
   static const double pickerCenterOverlap = 100;
+
   /// Smaller than lws-ui 60dp so gear/thickness sit further outward.
   static const double pickerHorizontalOffset = 40 / 3; // 13.333…
 
@@ -325,7 +344,6 @@ abstract final class ProcessModeDimens {
   /// Aliases [HmiTypography.navigationSize] (primary top-tab label SoT).
   static const double engineerTabLabelSize = HmiTypography.navigationSize;
 
-
   /// Horizontal inset around the Engineer device + parameters row.
   static const double engineerPanelHorizontalPad = 16;
 
@@ -347,9 +365,7 @@ abstract final class ProcessModeDimens {
 
   /// Engineer left (and Alarm Log) width for the current screen width.
   static double engineerLeftPanelWidthFor(double screenWidth) {
-    final row = screenWidth -
-        engineerPanelHorizontalPad * 2 -
-        engineerPanelGap;
+    final row = screenWidth - engineerPanelHorizontalPad * 2 - engineerPanelGap;
     return row *
         engineerLeftPanelFlex /
         (engineerLeftPanelFlex + engineerRightPanelFlex);

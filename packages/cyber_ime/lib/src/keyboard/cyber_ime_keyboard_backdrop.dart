@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 /// Root [Overlay] entries on Weston paint black with realtime blur, so callers
 /// should pass [backdropScope] from the page scope instead of forcing realtime.
 ///
-/// Paints a top center-bright gradient hairline (两边向中间渐变亮边).
+/// Paints a top edge-bright gradient hairline (两边向中间渐变亮边).
 class CyberImeKeyboardBackdrop extends StatelessWidget {
   const CyberImeKeyboardBackdrop({
     super.key,

@@ -11,10 +11,8 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui [FrostStatusDialog] failure / tip mode (`OperationDialogBuilder.openErrorDialog`).
 ///
-/// Panel chrome matches pass tips ([TipDialogHost.showSuccess]) — LIGHT cream
-/// glass with baked blur; only the error icon and copy differ.
-/// Key-off / E-stop tips auto-dismiss when the safety edge clears (warn-style
-/// falling → dismiss), unless the operator already closed them.
+/// Panel uses Startup Self-Check dark frost ([TipDialogHost.showError]); title/body
+/// use light ink. Key-off / E-stop tips auto-dismiss when the safety edge clears.
 abstract final class OperationFailedDialogHost {
   static bool _showing = false;
   static BuildContext? _dialogContext;
@@ -139,9 +137,9 @@ final class _OperationFailedBody extends StatelessWidget {
   /// `frost_dialog_prompt_confirm_button_min_width` / entry confirm 500dp.
   static const _confirmMinWidth = 500.0;
 
-  /// Dark ink on cream status tips (`dialog_frost_body_status`).
-  static const _titleInk = Color(0xFF1A1A1A);
-  static const _bodyInk = Color(0xFF1A1A1A);
+  /// Light ink on dark frost status tips (matches [CyberPromptContent] dark tone).
+  static const _titleInk = CyberColors.textPrimary;
+  static const _bodyInk = CyberColors.textSecondary;
 
   @override
   Widget build(BuildContext context) {

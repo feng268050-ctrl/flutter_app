@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_evaluator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_live_cache_seed.dart';
+import 'package:lws_hmi/features/monitor/application/monitor_modbus_ids.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 /// Bounded one-shot Modbus group reads for boot self-check.
@@ -25,41 +27,67 @@ abstract final class BootSelfCheckModbusSnapshotReader {
   static Future<BootSelfCheckModbusSnapshot> read(
     ModbusRtuClient modbus, {
     Duration timeout = defaultTimeout,
-  }) async {
-    try {
-      final opened = await modbus.open();
-      if (!opened) {
+  }) {
+    return modbus.exclusiveSession(() async {
+      try {
+        final opened = await modbus.open();
+        if (!opened) {
+          return const BootSelfCheckModbusSnapshot(
+            values: {},
+            modbusAvailable: false,
+            controllerReady: false,
+          );
+        }
+      } catch (_) {
         return const BootSelfCheckModbusSnapshot(
           values: {},
           modbusAvailable: false,
           controllerReady: false,
         );
       }
-    } catch (_) {
-      return const BootSelfCheckModbusSnapshot(
-        values: {},
-        modbusAvailable: false,
-        controllerReady: false,
+
+      Map<String, Object?> status = const {};
+      Map<String, Object?> data = const {};
+      var statusErr = 'ok';
+      var dataErr = 'ok';
+      try {
+        status = await modbus.readGroup('status').timeout(timeout);
+      } on TimeoutException {
+        status = const {};
+        statusErr = 'timeout';
+      } catch (e) {
+        status = const {};
+        statusErr = '$e';
+      }
+      if (status.isNotEmpty) {
+        try {
+          data = await modbus.readGroup('data').timeout(timeout);
+        } on TimeoutException {
+          data = const {};
+          dataErr = 'timeout';
+        } catch (e) {
+          data = const {};
+          dataErr = '$e';
+        }
+      } else {
+        dataErr = 'skipped(status-empty)';
+      }
+
+      return _buildSnapshot(
+        status: status,
+        data: data,
+        statusErr: statusErr,
+        dataErr: dataErr,
       );
-    }
+    });
+  }
 
-    Map<String, Object?> status = const {};
-    Map<String, Object?> data = const {};
-    try {
-      status = await modbus.readGroup('status').timeout(timeout);
-    } on TimeoutException {
-      status = const {};
-    } catch (_) {
-      status = const {};
-    }
-    try {
-      data = await modbus.readGroup('data').timeout(timeout);
-    } on TimeoutException {
-      data = const {};
-    } catch (_) {
-      data = const {};
-    }
-
+  static BootSelfCheckModbusSnapshot _buildSnapshot({
+    required Map<String, Object?> status,
+    required Map<String, Object?> data,
+    required String statusErr,
+    required String dataErr,
+  }) {
     final values = <String, Object?>{};
     for (final id in BootSelfCheckModbusIds.all) {
       if (status.containsKey(id)) {
@@ -74,6 +102,26 @@ abstract final class BootSelfCheckModbusSnapshotReader {
     final anyOk = values.values.any((v) => v != null);
     final ready = BootSelfCheckModbusSnapshot.isControllerReady(
       values[BootSelfCheckModbusIds.deviceType],
+    );
+    final dataReady = BootSelfCheckModbusSnapshot.hasBootSelfCheckDataReady(
+      values,
+    );
+
+    debugPrint(
+      'boot-self-check: snapshot '
+      'status=${status.isEmpty ? "EMPTY($statusErr)" : "ok(${status.length})"} '
+      'data=${data.isEmpty ? "EMPTY($dataErr)" : "ok(${data.length})"} '
+      'type=${values[BootSelfCheckModbusIds.deviceType]} '
+      'ready=$ready dataReady=$dataReady '
+      'temps='
+      'drv=${values[MonitorModbusIds.motorDriverTemp]}/'
+      '${values[MonitorModbusIds.driverOverTemp]} '
+      'mot=${values[MonitorModbusIds.motorTemp]}/'
+      '${values[MonitorModbusIds.motorOverTemp]} '
+      'mir=${values[MonitorModbusIds.protectiveMirrorTemp]}/'
+      '${values[MonitorModbusIds.protectiveMirrorOverTemp]} '
+      'col=${values[MonitorModbusIds.collimatorTemp]}/'
+      '${values[MonitorModbusIds.collimatorOverTemp]}',
     );
 
     if (status.isNotEmpty || data.isNotEmpty) {

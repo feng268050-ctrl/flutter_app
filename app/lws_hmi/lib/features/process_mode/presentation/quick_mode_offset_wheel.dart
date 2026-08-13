@@ -33,7 +33,7 @@ final class QuickModeOffsetWheel extends StatefulWidget {
   final Widget Function(
     BuildContext context,
     int index,
-    double distanceFromCenter,
+    double signedDistanceFromCenter,
   ) itemBuilder;
   final double diameterRatio;
   final double perspective;
@@ -142,7 +142,6 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
     }
     setState(() {
       _index = index;
-      _scrollIndex = index.toDouble();
     });
     // Defer parent notify while dragging — mid-drag setState in ancestors
     // (process-type / CNC enter) jumpToItem and kill the gesture.
@@ -178,7 +177,6 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
     CyberClickSoundRegistry.playClick();
     setState(() {
       _index = index;
-      _scrollIndex = index.toDouble();
     });
     _commitIfNeeded(index);
     _ignoreSelectionCallbacks = true;
@@ -254,7 +252,11 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
             childDelegate: ListWheelChildBuilderDelegate(
               childCount: widget.itemCount,
               builder: (context, index) {
-                final distance = (index - _scrollIndex).abs();
+                // Keep this signed and fractional. Arc wheels derive their
+                // per-frame Y/X position from the live scroll offset; taking
+                // abs here or snapping it in [_onSelected] loses direction
+                // and introduces a horizontal jump at half-item boundaries.
+                final distance = index - _scrollIndex;
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: widget.enabled ? () => _onItemTap(index) : null,

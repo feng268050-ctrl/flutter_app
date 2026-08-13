@@ -10,7 +10,7 @@ final class CyberStatusBarAccent {
   /// Product weld orange — lws-ui `quick_model_orange` (#F46E01).
   static const weld = CyberStatusBarAccent(
     solid: Color(0xFFF46E01),
-    pressCenter: Color(0xB2FF8000),
+    pressCenter: Color(0xFFF46E01),
   );
 
   final Color solid;

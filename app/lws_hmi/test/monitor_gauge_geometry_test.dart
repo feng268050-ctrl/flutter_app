@@ -28,6 +28,15 @@ void main() {
     );
     expect(kpa.length, 11);
     expect(kpa, [0, 150, 300, 450, 600, 750, 900, 1050, 1200, 1350, 1500]);
+
+    expect(
+      CurrentArcGaugeGeom.evenlySpacedProgresses(7),
+      [0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6, 1],
+    );
+    expect(
+      CurrentArcGaugeGeom.intermediateProgresses([0, .5, 1], 1),
+      [.25, .75],
+    );
   });
 
   test('geometry: tick feet flush with track outer rim', () {
@@ -118,5 +127,88 @@ void main() {
     expect(find.text('100'), findsOneWidget);
     // Minor 5 would appear only if subdiv ticks were labeled.
     expect(find.text('5'), findsNothing);
+  });
+
+  testWidgets('CurrentArcGauge renders only evenly spaced selected ticks',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: CurrentArcGauge(
+              value: 256,
+              min: 0,
+              max: 1500,
+              evenlySpacedTickValues: [0, 300, 600, 750, 900, 1200, 1500],
+              size: 220,
+              trackWidth: 16,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    for (final label in ['0', '300', '600', '750', '900', '1200', '1500']) {
+      expect(find.text(label), findsOneWidget);
+    }
+    for (final label in ['150', '450', '1050', '1350']) {
+      expect(find.text(label), findsNothing);
+    }
+  });
+
+  testWidgets('paired gauges align their arc geometry despite label width',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CurrentArcGauge(
+                  value: 0,
+                  max: 1500,
+                  evenlySpacedTickValues: [
+                    0,
+                    300,
+                    600,
+                    750,
+                    900,
+                    1200,
+                    1500,
+                  ],
+                  geometryMaxLabelValue: 100,
+                  size: 220,
+                  trackWidth: 16,
+                ),
+                CurrentArcGauge(
+                  value: 0,
+                  max: 100,
+                  majorTickEvery: 10,
+                  size: 220,
+                  trackWidth: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final gasRect = tester.getRect(find.byType(CurrentArcGauge).first);
+    final currentRect = tester.getRect(find.byType(CurrentArcGauge).last);
+    final gasTop = tester.getRect(find.text('750')).center - gasRect.topLeft;
+    final currentTop =
+        tester.getRect(find.text('50')).center - currentRect.topLeft;
+    final gasEnd = tester.getRect(find.text('1500')).center - gasRect.topLeft;
+    final currentEnd =
+        tester.getRect(find.text('100')).center - currentRect.topLeft;
+
+    expect(gasTop.dx, closeTo(currentTop.dx, 0.01));
+    expect(gasTop.dy, closeTo(currentTop.dy, 0.01));
+    expect(gasEnd.dx, closeTo(currentEnd.dx, 0.01));
+    expect(gasEnd.dy, closeTo(currentEnd.dy, 0.01));
   });
 }

@@ -140,6 +140,7 @@ class _CyberImeInputDialogBodyState extends State<_CyberImeInputDialogBody> {
           widthPolicy: HmiButtonWidthPolicy.equal,
           width: 196,
           variant: CyberButtonVariant.secondary,
+          shape: CyberButtonShape.rounded,
           onPressed: () => Navigator.pop(context),
         ),
         HmiButton(
@@ -148,6 +149,7 @@ class _CyberImeInputDialogBodyState extends State<_CyberImeInputDialogBody> {
           widthPolicy: HmiButtonWidthPolicy.equal,
           width: 196,
           variant: CyberButtonVariant.primary,
+          shape: CyberButtonShape.rounded,
           onPressed: _trySubmit,
         ),
       ],

@@ -723,8 +723,9 @@ EOF
 		echo "FAIL: USB plug-ssh is not the g_ether implementation" >&2
 		missing=1
 	fi
-	if [[ -f "$target/system/lib/modules/g_ether.ko" ]]; then
-		echo "OK:  system/lib/modules/g_ether.ko"
+	if [[ -f "$target/system/lib/modules/g_ether.ko" ]] || \
+		[[ -f "$target/vendor/lib/modules/g_ether.ko" ]]; then
+		echo "OK:  g_ether.ko (system or vendor/lib/modules)"
 	else
 		echo "FAIL: g_ether.ko missing from rootfs" >&2
 		missing=1

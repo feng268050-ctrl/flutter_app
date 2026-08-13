@@ -6,7 +6,6 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_wheel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
-import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 
 /// Quick Mode process-type offset wheel (lws-ui `wheel_view` + accent bands).
 ///
@@ -30,7 +29,6 @@ final class QuickModeProcessWheel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final accent = ProcessModeTokens.accentFor(processType);
     final hideSideAccent =
         !showAccents || processType == ProcessType.cncCutting;
     // CNC: only the solid accent (Android left fill is INVISIBLE). Keep width
@@ -99,8 +97,7 @@ final class QuickModeProcessWheel extends StatelessWidget {
           final distance = signedDistance.abs();
           final type = QuickProcessWheelItems.types[index];
           final selected = distance < 0.5;
-          final alpha =
-              selected ? 1.0 : (1.0 - distance * 0.2).clamp(0.4, 1.0);
+          final alpha = selected ? 1.0 : (1.0 - distance * 0.2).clamp(0.4, 1.0);
           // Right-offset arc: left pad = |d|×10+24; selected uses fixed pad.
           final startPad = selected
               ? ProcessModeDimens.wheelSelectedPadding
@@ -175,7 +172,6 @@ final class QuickModeProcessWheel extends StatelessWidget {
                 width: leftAccentWidth,
                 height: ProcessModeDimens.wheelItemHeight,
                 child: _WheelAccentBand(
-                  accent: accent,
                   alignEnd: false,
                   showFillTail: !hideSideAccent,
                 ),
@@ -190,7 +186,6 @@ final class QuickModeProcessWheel extends StatelessWidget {
                   width: ProcessModeDimens.wheelAccentBandWidth,
                   height: ProcessModeDimens.wheelItemHeight,
                   child: _WheelAccentBand(
-                    accent: accent,
                     alignEnd: true,
                     showFillTail: true,
                   ),
@@ -213,12 +208,10 @@ final class QuickModeProcessWheel extends StatelessWidget {
 /// (lws-ui `quick_mode_wheel_active_*`).
 final class _WheelAccentBand extends StatelessWidget {
   const _WheelAccentBand({
-    required this.accent,
     required this.alignEnd,
     required this.showFillTail,
   });
 
-  final WorkModeAccent accent;
   final bool alignEnd;
   final bool showFillTail;
 
@@ -228,12 +221,16 @@ final class _WheelAccentBand extends StatelessWidget {
       width: ProcessModeDimens.wheelAccentSolidWidth,
       height: double.infinity,
       child: DecoratedBox(
-        decoration: BoxDecoration(gradient: accent.pressGradient),
+        decoration: BoxDecoration(
+          gradient: ProcessModeTokens.quickSelectionHighlightGradient,
+        ),
       ),
     );
     final fill = Expanded(
       child: DecoratedBox(
-        decoration: BoxDecoration(gradient: accent.pressGradient),
+        decoration: BoxDecoration(
+          gradient: ProcessModeTokens.quickSelectionHighlightGradient,
+        ),
       ),
     );
 

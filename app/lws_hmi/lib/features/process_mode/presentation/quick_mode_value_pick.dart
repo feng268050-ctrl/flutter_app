@@ -8,7 +8,6 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_wheel.dart';
 import 'package:cyber_hal/locale.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
-import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 
 /// Shared dimens for gear / thickness V2-style picks (lws-ui quick_mode_picker_*).
 ///
@@ -18,6 +17,7 @@ abstract final class QuickModePickerDimens {
   static const double titleHeight = 32;
   static const double titleTextSize = 20.0; // control
   static const double titleScaleGap = 16;
+
   /// lws-ui `quick_mode_picker_scale_height` / scale ImageView height.
   static const double scaleHeight = 402;
   static const double bottomPadding = 140 / 3; // 46.666…
@@ -29,6 +29,7 @@ abstract final class QuickModePickerDimens {
   static const double valueWheelWidth = 280 / 3; // 93.333…
   static const double materialWidth = 640 / 3; // 213.333…
   static const double materialHeight = 240;
+
   /// Material wheel labels → sectionTitle / control.
   static const double materialSelectedTextSize = 22.0;
   static const double materialUnselectedTextSize = 20.0;
@@ -45,8 +46,7 @@ abstract final class QuickModePickerDimens {
   /// (after [titleNudgeY]). Used to vertically center Record Work / More
   /// Parameters with equal top/bottom gaps in that blank region.
   static double topChromeBandHeight(double bodyHeight) {
-    const pickTotal =
-        titleHeight + titleScaleGap + scaleHeight + bottomPadding;
+    const pickTotal = titleHeight + titleScaleGap + scaleHeight + bottomPadding;
     final pickCenterY =
         bodyHeight / 2 + ProcessModeDimens.pickerVerticalFromPageCenter;
     final titleTop = pickCenterY - pickTotal / 2 + titleNudgeY;
@@ -68,8 +68,10 @@ abstract final class QuickModePickerDimens {
 
   /// Pull scales inward so [scaleToOuterFrameGap] holds with value ring-hug:
   /// `accentWidth/2 + scaleValueGap + valueWheelWidth/2 - gap`.
-  static const double scaleInwardInset =
-      accentWidth / 2 + scaleValueGap + valueWheelWidth / 2 - scaleToOuterFrameGap;
+  static const double scaleInwardInset = accentWidth / 2 +
+      scaleValueGap +
+      valueWheelWidth / 2 -
+      scaleToOuterFrameGap;
 
   /// Extra end padding per wheel distance unit (material arc, lws-ui linear).
   static const double materialArcPadPerDistance = 10;
@@ -168,7 +170,6 @@ final class QuickModeValuePick extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = ProcessModeTokens.accentFor(processType);
     final pageSize = MediaQuery.sizeOf(context);
     final arcRadius = ProcessModeDimens.outerHighlightRadiusFor(pageSize) +
         QuickModePickerDimens.accentWidth / 2;
@@ -284,7 +285,7 @@ final class QuickModeValuePick extends StatelessWidget {
                       offAxisFraction: 0,
                       enabled: interactionEnabled,
                       onChanged: onChanged,
-                      fixedAccent: _ValueAccentChip(accent: accent),
+                      fixedAccent: const _ValueAccentChip(),
                       itemBuilder: (context, index, distance) {
                         return _ValuePickItem(
                           label: labelOf(values[index]),
@@ -309,9 +310,7 @@ final class QuickModeValuePick extends StatelessWidget {
 
 /// Accent chip locked to the value-wheel viewport center.
 final class _ValueAccentChip extends StatelessWidget {
-  const _ValueAccentChip({required this.accent});
-
-  final WorkModeAccent accent;
+  const _ValueAccentChip();
 
   @override
   Widget build(BuildContext context) {
@@ -321,16 +320,7 @@ final class _ValueAccentChip extends StatelessWidget {
       height: QuickModePickerDimens.itemHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              accent.pressCenter.withOpacity(0),
-              accent.pressCenter,
-              accent.pressCenter.withOpacity(0),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
+          gradient: ProcessModeTokens.quickSelectionHighlightGradient,
         ),
       ),
     );
@@ -476,9 +466,7 @@ final class QuickModeDimensionPick extends StatelessWidget {
   static String _formatDimension(double valueMm, {required bool useMmUnit}) {
     return LengthUnitConvert.formatMm(
       valueMm,
-      unitWire: useMmUnit
-          ? UnitSystem.metric.wire
-          : UnitSystem.imperial.wire,
+      unitWire: useMmUnit ? UnitSystem.metric.wire : UnitSystem.imperial.wire,
     );
   }
 }

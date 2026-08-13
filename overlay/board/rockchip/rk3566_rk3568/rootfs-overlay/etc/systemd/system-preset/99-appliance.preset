@@ -26,6 +26,7 @@ enable pwrkey-poweroff.service
 enable ab-boot-confirm.service
 enable tee-supplicant.service
 enable lws-hostname.service
+enable emulator-tablet-to-touch.service
 enable emulator-sshd.service
 enable emulator-wlan0-dhcp.service
 enable emulator-storage-init.service

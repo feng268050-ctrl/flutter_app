@@ -19,6 +19,9 @@
 #   EMULATOR_SSH_PORT=2222         (SSH hostfwd; always enabled; auto-bumps if busy)
 #   EMULATOR_HTTP_PORT=5580        (LAN HTTP :5580 hostfwd; auto-bumps if busy)
 #   EMULATOR_GL is ignored — host VirGL is required (virtio-gpu-gl).
+#   EMULATOR_INPUT=touch|tablet  (default touch: host mouse → guest touch via
+#                                 virtio-tablet + guest uinput bridge; tablet:
+#                                 absolute pointer debug, visible cursor)
 #   EMULATOR_XRES=1536 EMULATOR_YRES=960  (defaults; virt display, not panel 800×1280)
 #   QEMU=/path/to/qemu-system-aarch64  (prefer qemu-virgl keg on macOS)
 set -euo pipefail
@@ -532,6 +535,30 @@ build_audio_args() {
 	esac
 }
 
+build_input_args() {
+	INPUT_ARGS=()
+	local mode="${EMULATOR_INPUT:-touch}"
+	case "$mode" in
+	touch)
+		# Android Emulator converts host mouse → touch in its patched QEMU UI
+		# (goldfish / android_virtio_touch_event). Stock qemu-virgl cocoa sends
+		# pointer events only to absolute devices — not virtio-multitouch MTT.
+		# Host: virtio-tablet; guest: emulator-tablet-to-touch (uinput).
+		INPUT_ARGS=(-device virtio-tablet-pci)
+		INPUT_DESC="virtio-tablet → guest touch bridge (Android Emulator–like)"
+		EMULATOR_INPUT_CMDLINE="lws.emulator.input=touch"
+		;;
+	tablet)
+		INPUT_ARGS=(-device virtio-tablet-pci)
+		INPUT_DESC="virtio-tablet (absolute pointer; EMULATOR_INPUT=tablet)"
+		EMULATOR_INPUT_CMDLINE="lws.emulator.input=tablet"
+		;;
+	*)
+		die "unknown EMULATOR_INPUT=$mode (use touch|tablet)"
+		;;
+	esac
+}
+
 print_hw_map() {
 	cat <<EOF
 emulator: hardware map (sim OEM contract)
@@ -541,6 +568,7 @@ emulator: hardware map (sim OEM contract)
   disk1   : /dev/vdb ← sim_virt oem.img → /oem
   disk2   : /dev/vdc ← provision.img → /mnt/provision (per-developer identity + tunables)
   display : ${DISPLAY_DESC}
+  input   : ${INPUT_DESC} (+ virtio-keyboard)
   nic eth0  MAC $MAC_ETH0  ← IP camera link (host Ethernet/USB-LAN → vmnet-bridged)
   nic wlan0 MAC $MAC_WLAN0 ← wifi.station (virtio; USB Wi-Fi dongle overrides when passed)
   nic eth1  MAC $MAC_DBG   ← debug (not in net_roles)
@@ -641,13 +669,15 @@ fi
 [[ -f "$MESA_VIRGL_HOST/lib/libweston-14/gl-renderer.so" ]] \
 	|| die "missing Mesa-patched Weston modules — run: make fetch-emulator-swgl"
 
-GPU_ARGS=(-device "virtio-gpu-gl-pci,xres=${EMU_XRES},yres=${EMU_YRES}")
+GPU_ARGS=(-device "virtio-gpu-gl-pci,id=virtio_gpu_0,xres=${EMU_XRES},yres=${EMU_YRES}")
+# show-cursor=on: with virtio-tablet, cocoa/gtk hide the host pointer by default.
+# Touch mode also hides the guest cursor — without this the window has no pointer.
 if [[ "$(uname -s)" == "Darwin" ]]; then
-	DISPLAY_ARGS=(-display cocoa,gl=es)
+	DISPLAY_ARGS=(-display cocoa,gl=es,show-cursor=on)
 else
-	DISPLAY_ARGS=(-display gtk,gl=on)
+	DISPLAY_ARGS=(-display gtk,gl=on,show-cursor=on)
 fi
-DISPLAY_DESC="virtio-gpu-gl ${EMU_XRES}×${EMU_YRES} + host VirGL"
+DISPLAY_DESC="virtio-gpu-gl ${EMU_XRES}×${EMU_YRES} + host VirGL (host cursor on)"
 MESA_DESC="9p lws_gl → $MESA_VIRGL_HOST"
 FS_ARGS=(
 	-fsdev "local,id=lws_gl,path=$MESA_VIRGL_HOST,security_model=none,readonly=on"
@@ -663,6 +693,10 @@ fi
 build_net_args "$QEMU_BIN"
 build_usb_args
 build_audio_args "$QEMU_BIN"
+build_input_args
+if [[ -n "${EMULATOR_INPUT_CMDLINE:-}" ]]; then
+	CMDLINE="$CMDLINE $EMULATOR_INPUT_CMDLINE"
+fi
 log "qemu: $QEMU_BIN"
 print_hw_map
 
@@ -697,7 +731,7 @@ trap cleanup_ssh_endpoint_on_exit EXIT
 	-device virtio-blk-pci,drive=provisiondisk \
 	"${GPU_ARGS[@]}" \
 	-device virtio-keyboard-pci \
-	-device virtio-tablet-pci \
+	"${INPUT_ARGS[@]}" \
 	"${FS_ARGS[@]}" \
 	"${NET_ARGS[@]}" \
 	"${USB_ARGS[@]}" \

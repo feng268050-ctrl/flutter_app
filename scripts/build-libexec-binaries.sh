@@ -56,8 +56,10 @@ select_tools() {
 }
 
 if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
-	exec env LWS_HMI_SKIP_OVERLAY=1 FORCE="$FORCE" TOOL="$TOOL" \
+	# Pass TOOL/FORCE on the remote argv — docker-run.sh does not forward TOOL=.
+	exec env LWS_HMI_SKIP_OVERLAY=1 \
 		bash "$ROOT/scripts/docker-run.sh" \
+		env FORCE="$FORCE" TOOL="$TOOL" \
 		bash /work/lws-hmi/scripts/build-libexec-binaries.sh
 fi
 

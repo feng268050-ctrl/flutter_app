@@ -1,16 +1,17 @@
 /*
- * P3.2 emulator: map QEMU virtio-tablet (host mouse on macOS cocoa) to a
- * libinput touch device via uinput — same idea as Android Emulator's
- * goldfish events_device / android_virtio_touch_event UI glue.
+ * P3.2 emulator: map QEMU virtio-tablet (host mouse on macOS cocoa) to:
+ *   1) uinput touch  — BTN_LEFT / ABS → touch (Android Emulator–like)
+ *   2) uinput wheel  — REL_WHEEL passthrough (smooth scroll; not touch-flick)
  *
- * Grab the tablet node so Weston/Flutter see touch-only input in touch mode.
+ * Grab the tablet so Weston does not also see the raw pointer.
+ * Wheel→touch flick was laggy and felt like taps; real REL_WHEEL + Weston
+ * natural-scroll matches macOS host scrolling.
  */
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
-#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,39 +21,22 @@
 #ifndef INPUT_PROP_DIRECT
 #define INPUT_PROP_DIRECT 0x01
 #endif
+#ifndef INPUT_PROP_POINTER
+#define INPUT_PROP_POINTER 0x00
+#endif
 
 #ifndef EVIOCABSINFO
 #define EVIOCABSINFO(abs) _IOR('E', 0x40 + (abs), struct input_absinfo)
 #endif
 
-#define SCROLL_PX 80
+#ifndef REL_WHEEL_HI_RES
+#define REL_WHEEL_HI_RES 0x0b
+#endif
+#ifndef REL_HWHEEL_HI_RES
+#define REL_HWHEEL_HI_RES 0x0c
+#endif
 
-static int clamp(int v, int lo, int hi)
-{
-	if (v < lo)
-		return lo;
-	if (v > hi)
-		return hi;
-	return v;
-}
-
-/* Normalize REL_WHEEL (±1 or ±120 per notch) to signed step count. */
-static int wheel_steps(int value)
-{
-	int sign, mag;
-
-	if (value == 0)
-		return 0;
-	sign = (value > 0) ? 1 : -1;
-	mag = value > 0 ? value : -value;
-	if (mag >= 120)
-		mag = mag / 120;
-	else if (mag > 10)
-		mag = (mag + 119) / 120;
-	if (mag < 1)
-		mag = 1;
-	return sign * mag;
-}
+static int g_tracking = 1;
 
 static int abs_max(int fd, int code, int fallback)
 {
@@ -79,6 +63,7 @@ static int open_tablet(void)
 			continue;
 		}
 		fclose(f);
+		name[strcspn(name, "\r\n")] = '\0';
 		if (strstr(name, "QEMU") == NULL && strstr(name, "Virtio") == NULL)
 			continue;
 		if (strstr(name, "Tablet") == NULL && strstr(name, "tablet") == NULL)
@@ -97,13 +82,18 @@ static int open_tablet(void)
 
 static int emit(int ufd, int type, int code, int value)
 {
-	struct input_event ev = { .type = type, .code = code, .value = value };
+	struct input_event ev;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.type = type;
+	ev.code = code;
+	ev.value = value;
 	if (write(ufd, &ev, sizeof(ev)) != (ssize_t)sizeof(ev))
 		return -1;
 	return 0;
 }
 
-static int setup_uinput(int max_x, int max_y)
+static int setup_touch_uinput(int max_x, int max_y)
 {
 	struct uinput_setup us = { .name = "LWS Emulator Touch" };
 	struct uinput_abs_setup abs_setup;
@@ -125,25 +115,21 @@ static int setup_uinput(int max_x, int max_y)
 	rc |= ioctl(ufd, UI_SET_ABSBIT, ABS_MT_POSITION_Y);
 	rc |= ioctl(ufd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);
 	if (rc) {
-		perror("UI_SET_*BIT");
+		perror("touch UI_SET_*");
 		close(ufd);
 		return -1;
 	}
 
 	memset(&abs_setup, 0, sizeof(abs_setup));
 	abs_setup.code = ABS_MT_POSITION_X;
-	abs_setup.absinfo.minimum = 0;
 	abs_setup.absinfo.maximum = max_x;
 	ioctl(ufd, UI_ABS_SETUP, &abs_setup);
-
 	abs_setup.code = ABS_MT_POSITION_Y;
 	abs_setup.absinfo.maximum = max_y;
 	ioctl(ufd, UI_ABS_SETUP, &abs_setup);
-
 	abs_setup.code = ABS_MT_SLOT;
 	abs_setup.absinfo.maximum = 9;
 	ioctl(ufd, UI_ABS_SETUP, &abs_setup);
-
 	abs_setup.code = ABS_MT_TRACKING_ID;
 	abs_setup.absinfo.minimum = -1;
 	abs_setup.absinfo.maximum = 65535;
@@ -153,44 +139,110 @@ static int setup_uinput(int max_x, int max_y)
 	us.id.vendor = 0x27;
 	us.id.product = 0x03;
 	if (ioctl(ufd, UI_DEV_SETUP, &us) || ioctl(ufd, UI_DEV_CREATE)) {
-		perror("UI_DEV_CREATE");
+		perror("touch UI_DEV_CREATE");
 		close(ufd);
 		return -1;
 	}
-	usleep(100000);
-	fprintf(stderr, " → uinput %dx%d\n", max_x + 1, max_y + 1);
 	return ufd;
 }
 
-static void sync_touch(int ufd, int x, int y, int down)
+/*
+ * Pointer that only exists so wheel events have a seat position + REL_WHEEL.
+ * cursor-size=0 in weston keeps it invisible in touch mode.
+ */
+static int setup_wheel_uinput(int max_x, int max_y)
+{
+	struct uinput_setup us = { .name = "LWS Emulator Wheel" };
+	struct uinput_abs_setup abs_setup;
+	int ufd, rc;
+
+	ufd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+	if (ufd < 0) {
+		perror("open /dev/uinput (wheel)");
+		return -1;
+	}
+
+	rc = ioctl(ufd, UI_SET_EVBIT, EV_KEY);
+	rc |= ioctl(ufd, UI_SET_EVBIT, EV_ABS);
+	rc |= ioctl(ufd, UI_SET_EVBIT, EV_REL);
+	rc |= ioctl(ufd, UI_SET_EVBIT, EV_SYN);
+	rc |= ioctl(ufd, UI_SET_KEYBIT, BTN_LEFT);
+	rc |= ioctl(ufd, UI_SET_ABSBIT, ABS_X);
+	rc |= ioctl(ufd, UI_SET_ABSBIT, ABS_Y);
+	rc |= ioctl(ufd, UI_SET_RELBIT, REL_WHEEL);
+	rc |= ioctl(ufd, UI_SET_RELBIT, REL_HWHEEL);
+	rc |= ioctl(ufd, UI_SET_RELBIT, REL_WHEEL_HI_RES);
+	rc |= ioctl(ufd, UI_SET_RELBIT, REL_HWHEEL_HI_RES);
+	rc |= ioctl(ufd, UI_SET_PROPBIT, INPUT_PROP_POINTER);
+	if (rc) {
+		perror("wheel UI_SET_*");
+		close(ufd);
+		return -1;
+	}
+
+	memset(&abs_setup, 0, sizeof(abs_setup));
+	abs_setup.code = ABS_X;
+	abs_setup.absinfo.maximum = max_x;
+	ioctl(ufd, UI_ABS_SETUP, &abs_setup);
+	abs_setup.code = ABS_Y;
+	abs_setup.absinfo.maximum = max_y;
+	ioctl(ufd, UI_ABS_SETUP, &abs_setup);
+
+	us.id.bustype = BUS_VIRTUAL;
+	us.id.vendor = 0x27;
+	us.id.product = 0x04;
+	if (ioctl(ufd, UI_DEV_SETUP, &us) || ioctl(ufd, UI_DEV_CREATE)) {
+		perror("wheel UI_DEV_CREATE");
+		close(ufd);
+		return -1;
+	}
+	return ufd;
+}
+
+static void touch_down(int ufd, int x, int y)
 {
 	emit(ufd, EV_ABS, ABS_MT_SLOT, 0);
-	if (down) {
-		emit(ufd, EV_ABS, ABS_MT_TRACKING_ID, 1);
-		emit(ufd, EV_ABS, ABS_MT_POSITION_X, x);
-		emit(ufd, EV_ABS, ABS_MT_POSITION_Y, y);
-		emit(ufd, EV_KEY, BTN_TOUCH, 1);
-	} else {
-		emit(ufd, EV_ABS, ABS_MT_TRACKING_ID, -1);
-		emit(ufd, EV_KEY, BTN_TOUCH, 0);
-	}
+	emit(ufd, EV_ABS, ABS_MT_TRACKING_ID, g_tracking);
+	emit(ufd, EV_ABS, ABS_MT_POSITION_X, x);
+	emit(ufd, EV_ABS, ABS_MT_POSITION_Y, y);
+	emit(ufd, EV_KEY, BTN_TOUCH, 1);
 	emit(ufd, EV_SYN, SYN_REPORT, 0);
 }
 
-/* Wheel → brief touch flick (Android Emulator–style list scroll). */
-static void touch_flick(int ufd, int x0, int y0, int dx, int dy, int max_x, int max_y)
+static void touch_move(int ufd, int x, int y)
 {
-	int x1 = clamp(x0 + dx, 0, max_x);
-	int y1 = clamp(y0 + dy, 0, max_y);
+	emit(ufd, EV_ABS, ABS_MT_SLOT, 0);
+	emit(ufd, EV_ABS, ABS_MT_POSITION_X, x);
+	emit(ufd, EV_ABS, ABS_MT_POSITION_Y, y);
+	emit(ufd, EV_SYN, SYN_REPORT, 0);
+}
 
-	sync_touch(ufd, x0, y0, 1);
-	sync_touch(ufd, x1, y1, 1);
-	sync_touch(ufd, x1, y1, 0);
+static void touch_up(int ufd)
+{
+	emit(ufd, EV_ABS, ABS_MT_SLOT, 0);
+	emit(ufd, EV_ABS, ABS_MT_TRACKING_ID, -1);
+	emit(ufd, EV_KEY, BTN_TOUCH, 0);
+	emit(ufd, EV_SYN, SYN_REPORT, 0);
+	g_tracking = (g_tracking % 60000) + 1;
+}
+
+/* Place seat pointer, then emit wheel — no sleeps, no touch gesture. */
+static void emit_wheel(int wfd, int x, int y, int code, int value)
+{
+	if (value == 0)
+		return;
+	emit(wfd, EV_ABS, ABS_X, x);
+	emit(wfd, EV_ABS, ABS_Y, y);
+	emit(wfd, EV_REL, code, value);
+	emit(wfd, EV_SYN, SYN_REPORT, 0);
 }
 
 int main(void)
 {
-	int tfd, ufd, max_x, max_y, x = 0, y = 0, down = 0;
+	int tfd, touch_fd, wheel_fd;
+	int max_x, max_y, x = 0, y = 0, down = 0, dirty = 0;
+	int pending_wheel = 0, pending_hwheel = 0;
+	int pending_wheel_hi = 0, pending_hwheel_hi = 0;
 
 	if (access("/proc/cmdline", R_OK) == 0) {
 		FILE *f = fopen("/proc/cmdline", "r");
@@ -209,12 +261,18 @@ int main(void)
 		return 1;
 	}
 
-	max_x = abs_max(tfd, ABS_X, 1535);
-	max_y = abs_max(tfd, ABS_Y, 959);
+	max_x = abs_max(tfd, ABS_X, 32767);
+	max_y = abs_max(tfd, ABS_Y, 32767);
 
-	ufd = setup_uinput(max_x, max_y);
-	if (ufd < 0)
+	touch_fd = setup_touch_uinput(max_x, max_y);
+	if (touch_fd < 0)
 		return 1;
+	wheel_fd = setup_wheel_uinput(max_x, max_y);
+	if (wheel_fd < 0)
+		return 1;
+
+	usleep(100000);
+	fprintf(stderr, " → touch+wheel uinput %dx%d\n", max_x + 1, max_y + 1);
 
 	if (ioctl(tfd, EVIOCGRAB, (void *)1)) {
 		perror("EVIOCGRAB tablet");
@@ -234,41 +292,79 @@ int main(void)
 		}
 		switch (ev.type) {
 		case EV_ABS:
-			if (ev.code == ABS_X)
+			if (ev.code == ABS_X) {
 				x = ev.value;
-			else if (ev.code == ABS_Y)
+				dirty = 1;
+			} else if (ev.code == ABS_Y) {
 				y = ev.value;
-			if (down)
-				sync_touch(ufd, x, y, 1);
+				dirty = 1;
+			}
 			break;
 		case EV_KEY:
-			if (ev.code != BTN_LEFT && ev.code != BTN_TOUCH)
+			if (ev.code == BTN_LEFT || ev.code == BTN_TOUCH) {
+				if (ev.value) {
+					down = 1;
+					dirty = 0;
+					touch_down(touch_fd, x, y);
+				} else if (down) {
+					down = 0;
+					dirty = 0;
+					touch_up(touch_fd);
+				}
 				break;
-			if (ev.value) {
-				down = 1;
-				sync_touch(ufd, x, y, 1);
-			} else if (down) {
-				down = 0;
-				sync_touch(ufd, x, y, 0);
+			}
+			if (ev.value && !down) {
+				if (ev.code == BTN_GEAR_UP)
+					pending_wheel += 1;
+				else if (ev.code == BTN_GEAR_DOWN)
+					pending_wheel -= 1;
 			}
 			break;
 		case EV_REL:
-			/* Skip while finger is down — drag already scrolls. */
 			if (down)
 				break;
-			if (ev.code == REL_WHEEL) {
-				int steps = wheel_steps(ev.value);
-
-				if (steps)
-					/* Wheel down → content up → finger moves up (y−). */
-					touch_flick(ufd, x, y, 0, -steps * SCROLL_PX,
-						    max_x, max_y);
-			} else if (ev.code == REL_HWHEEL) {
-				int steps = wheel_steps(ev.value);
-
-				if (steps)
-					touch_flick(ufd, x, y, -steps * SCROLL_PX, 0,
-						    max_x, max_y);
+			if (ev.code == REL_WHEEL)
+				pending_wheel += ev.value;
+			else if (ev.code == REL_HWHEEL)
+				pending_hwheel += ev.value;
+			else if (ev.code == REL_WHEEL_HI_RES)
+				pending_wheel_hi += ev.value;
+			else if (ev.code == REL_HWHEEL_HI_RES)
+				pending_hwheel_hi += ev.value;
+			break;
+		case EV_SYN:
+			if (ev.code != SYN_REPORT)
+				break;
+			if (down && dirty) {
+				touch_move(touch_fd, x, y);
+				dirty = 0;
+			}
+			if (!down) {
+				/*
+				 * Passthrough. macOS/host already applied the user's scroll
+				 * direction (natural or not); do not invert here and keep
+				 * guest weston natural-scroll=false to avoid double flip.
+				 */
+				if (pending_wheel_hi) {
+					emit_wheel(wheel_fd, x, y, REL_WHEEL_HI_RES,
+						   pending_wheel_hi);
+					pending_wheel_hi = 0;
+					pending_wheel = 0;
+				} else if (pending_wheel) {
+					emit_wheel(wheel_fd, x, y, REL_WHEEL,
+						   pending_wheel);
+					pending_wheel = 0;
+				}
+				if (pending_hwheel_hi) {
+					emit_wheel(wheel_fd, x, y, REL_HWHEEL_HI_RES,
+						   pending_hwheel_hi);
+					pending_hwheel_hi = 0;
+					pending_hwheel = 0;
+				} else if (pending_hwheel) {
+					emit_wheel(wheel_fd, x, y, REL_HWHEEL,
+						   pending_hwheel);
+					pending_hwheel = 0;
+				}
 			}
 			break;
 		default:

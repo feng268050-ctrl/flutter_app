@@ -82,7 +82,40 @@ mouse_pointer_speed_to_accel() {
 	if [ "$p" -gt 100 ]; then
 		p=100
 	fi
-	awk -v p="$p" 'BEGIN { printf "%.3f\n", (p / 100.0) * 2.0 - 1.0 }'
+	awk -v p="$p" 'BEGIN { printf "%.3f\n", (p / 100.0) * 2.0 - 1.0 	}'
+}
+
+# USB / by-id pointer HID (excludes virtio tablet — touch bridge owns pointer path).
+emulator_usb_pointer_present() {
+	for pattern in /dev/input/by-id/*-mouse /dev/input/by-id/*event-mouse*; do
+		# shellcheck disable=SC2086
+		for f in $pattern; do
+			[ -e "$f" ] || continue
+			return 0
+		done
+	done
+	for pattern in /dev/input/by-path/*-mouse /dev/input/by-path/*event-mouse*; do
+		# shellcheck disable=SC2086
+		for f in $pattern; do
+			[ -e "$f" ] || continue
+			case "$f" in *usb*) return 0 ;; esac
+		done
+	done
+	return 1
+}
+
+# LWS uinput touch from emulator-tablet-to-touch (or board Goodix).
+emulator_touch_input_present() {
+	if grep -q 'Name="LWS Emulator Touch"' /proc/bus/input/devices 2>/dev/null; then
+		return 0
+	fi
+	for pattern in /dev/input/by-id/*-touch* /dev/input/by-path/*-touch*; do
+		# shellcheck disable=SC2086
+		for f in $pattern; do
+			[ -e "$f" ] && return 0
+		done
+	done
+	return 1
 }
 
 # Write runtime weston.ini for HMI (DRM + splash bridge + mouse prefs).
@@ -106,6 +139,14 @@ weston_write_hmi_ini() {
 
 	cursor_px="$(mouse_pointer_size_to_cursor_px "$pointer_size")"
 	accel="$(mouse_pointer_speed_to_accel "$pointer_speed")"
+
+	emulator_touch_only=0
+	if [ "${BOARD_ID:-}" = "sim" ] || grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null; then
+		if emulator_touch_input_present && ! emulator_usb_pointer_present; then
+			emulator_touch_only=1
+			cursor_px=0
+		fi
+	fi
 
 	case "$natural" in
 	1 | true | TRUE | yes | YES) natural_ini=true ;;
@@ -186,5 +227,8 @@ mode=$output_mode
 transform=$transform
 EOF
 	export XCURSOR_SIZE="$cursor_px"
+	if [ "$emulator_touch_only" -eq 1 ]; then
+		echo "weston-hmi-config: emulator touch-only — cursor hidden (no USB pointer HID)" >&2
+	fi
 	echo "weston-hmi-config: output=$output_name mode=$output_mode transform=$transform shell=desktop-shell splash=$splash cursor-size=$cursor_px pointer_size=${pointer_size}% accel=$accel natural=$natural_ini left_handed=$left_handed" >&2
 }

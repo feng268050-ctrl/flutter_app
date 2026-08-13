@@ -67,6 +67,19 @@ Naming is via rootfs systemd `.link` files (`20-emulator-*.link`). Those MACs ne
 
 If sudo is refused / cancelled, QEMU exits — retry and approve, or use `EMULATOR_ETH0_BRIDGE=off`.
 
+### Input (`EMULATOR_INPUT`)
+
+Android Studio Emulator is also QEMU, but it converts host mouse → touch in **patched UI code** (`goldfish/events_device` / `android_virtio_touch_event`), not via stock `virtio-multitouch-pci`. Homebrew **qemu-virgl + cocoa** only delivers pointer events to absolute devices (tablet) — **not** MT events to `virtio-multitouch`.
+
+| Value | Host QEMU | Guest | UX |
+|-------|-----------|-------|-----|
+| `touch` (default) | `virtio-tablet-pci` | `emulator-tablet-to-touch`（触摸 + **REL_WHEEL** 透传） | Host 点击/拖动 → touch；**滚轮/触控板双指 → 真滚轮事件**（自然滚动）；Guest 光标隐藏；QEMU `show-cursor=on` 保留 Host 指针 |
+| `tablet` | `virtio-tablet-pci` | no bridge (`lws.emulator.input=tablet`) | Absolute pointer + visible guest cursor (debug) |
+
+Guest check: `libinput list-devices` should list **LWS Emulator Touch** in default mode.
+
+Build the bridge: `make build-libexec-binaries TOOL=emulator-tablet-to-touch` (then `make apply-overlay` → `make build-rootfs` → `make build-emulator`). Kernel needs `CONFIG_INPUT_UINPUT=y` (`overlay/kernel/rockchip/emulator-virtio.config`).
+
 ### USB (`EMULATOR_USB`)
 
 | Value | Behavior |
@@ -100,7 +113,7 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 - Default **`EMULATOR_CPU=1`** (override with `EMULATOR_CPU=4`): systemd 256 `(sd-gens)` under Apple HVF can hang after Welcome with smp≥2; same OS image, virt form-factor quirk  
 - Three virtio-net NICs with fixed MACs (above); vmnet adds `ethssh` for SSH hostfwd  
 - virtio-sound (host CoreAudio / Pulse / ALSA; playback-only `streams=1`; guest `CONFIG_SND_VIRTIO`)  
-- virtio-gpu-gl 1536×960 + virtio keyboard + **virtio-tablet** (absolute pointer, no host mouse grab — Android Emulator–like) for Weston (`Virtual-1`, not board `DSI-1`); OEM `screens/virt` matches QEMU `xres/yres` defaults (~1.2× panel 1280×800 for MacBook HiDPI; panel remains 800×1280)
+- virtio-gpu-gl 1536×960 + virtio keyboard + **virtio-tablet** (default: guest touch bridge — Android Emulator–like) for Weston (`Virtual-1`, not board `DSI-1`); **`EMULATOR_INPUT=tablet`** skips bridge and keeps pointer cursor; OEM `screens/virt` matches QEMU `xres/yres` defaults (~1.2× panel 1280×800 for MacBook HiDPI; panel remains 800×1280)
 - Host VirGL: `-device virtio-gpu-gl-pci` + `-display cocoa,gl=es` (qemu-virgl / ANGLE→Metal)  
 - Guest Mesa: QEMU 9p tag `lws_gl` → host `prebuilt/emulator-swgl` (mounted at `/run/lws-gl`; **not** in `rootfs.img`)  
 

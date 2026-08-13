@@ -4,7 +4,7 @@
 set -eu
 
 TARGET_DIR="${1:?TARGET_DIR required}"
-HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
+HMI_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
 RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
 
 read_ver() {

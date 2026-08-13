@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 CFG="$SDK/output/.config"
 DEF="${LWS_BOARD_DEF:-$ROOT/board/ynh960_defconfig}"
 

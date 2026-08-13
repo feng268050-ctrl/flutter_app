@@ -7,13 +7,13 @@ source "${RK_POST_HELPER:-$(dirname "$(realpath "$0")")/post-helper}"
 [ "$POST_OS" = buildroot ] || exit 0
 [ -x "$TARGET_DIR/usr/bin/weston" ] || exit 0
 
-src="${LWS_HMI_ROOT:-/work/lws-hmi}/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/xdg/weston/weston.ini"
+src="${DOCKER_ROOT:-/work/lws-hmi}/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/xdg/weston/weston.ini"
 if [ ! -f "$src" ]; then
 	src="$TARGET_DIR/usr/libexec/hmi/weston.ini"
 fi
 if [ ! -f "$src" ]; then
 	# Fall back to board BR overlay synced into the SDK tree.
-	sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+	sdk_dir="${SDK_DIR:-${RK_SDK_DIR:-}}"
 	if [ -n "$sdk_dir" ]; then
 		src="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/xdg/weston/weston.ini"
 	fi

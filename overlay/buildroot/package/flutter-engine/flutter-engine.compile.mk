@@ -31,9 +31,9 @@ FLUTTER_ENGINE_LICENSE_FILES = LICENSE
 # Used only by `make build-flutter-engine` (not build-rootfs).
 # build-rootfs uses flutter-engine.mk (prebuilt install only).
 
-LWS_HMI_ROOT ?= $(TOPDIR)/../..
-FLUTTER_ENGINE_TARBALL_PATH = $(LWS_HMI_ROOT)/.cache/flutter-engine/flutter-$(FLUTTER_ENGINE_VERSION).tar.gz
-LWS_HMI_CURL_HOME = $(LWS_HMI_ROOT)/.cache/curl-home
+DOCKER_ROOT ?= $(TOPDIR)/../..
+FLUTTER_ENGINE_TARBALL_PATH = $(DOCKER_ROOT)/.cache/flutter-engine/flutter-$(FLUTTER_ENGINE_VERSION).tar.gz
+CURL_HOME_DIR = $(DOCKER_ROOT)/.cache/curl-home
 FLUTTER_ENGINE_INSTALL_STAGING = YES
 FLUTTER_ENGINE_DEPENDENCIES = \
 	host-flutter-sdk-bin \
@@ -201,13 +201,13 @@ endef
 
 # Docker linux/amd64: curl needs --no-alpn for cipd (gn → vpython3 bootstrap).
 define FLUTTER_ENGINE_ENSURE_CIPD_CURL
-	mkdir -p $(LWS_HMI_CURL_HOME)
-	test -f $(LWS_HMI_CURL_HOME)/.curlrc || \
-		printf '%s\n%s\n' '--http1.1' '--no-alpn' > $(LWS_HMI_CURL_HOME)/.curlrc
+	mkdir -p $(CURL_HOME_DIR)
+	test -f $(CURL_HOME_DIR)/.curlrc || \
+		printf '%s\n%s\n' '--http1.1' '--no-alpn' > $(CURL_HOME_DIR)/.curlrc
 endef
 
 define FLUTTER_ENGINE_BOOTSTRAP_DEPOT_VPYTHON
-	CURL_HOME=$(LWS_HMI_CURL_HOME) PATH=$(HOST_DIR)/share/depot_tools:$(BR_PATH) \
+	CURL_HOME=$(CURL_HOME_DIR) PATH=$(HOST_DIR)/share/depot_tools:$(BR_PATH) \
 		$(HOST_DIR)/share/depot_tools/vpython3 --version >/dev/null
 endef
 FLUTTER_ENGINE_PRE_CONFIGURE_HOOKS += FLUTTER_ENGINE_ENSURE_CIPD_CURL
@@ -218,7 +218,7 @@ FLUTTER_ENGINE_PRE_CONFIGURE_HOOKS += FLUTTER_ENGINE_BOOTSTRAP_DEPOT_VPYTHON
 define FLUTTER_ENGINE_CONFIGURE_CMDS
 	cd $(@D)/engine/src && \
 		rm -rf $(FLUTTER_ENGINE_BUILD_DIR) && \
-		CURL_HOME=$(LWS_HMI_CURL_HOME) \
+		CURL_HOME=$(CURL_HOME_DIR) \
 		PATH=$(HOST_DIR)/share/depot_tools:$(BR_PATH) \
 		PUB_CACHE=$(FLUTTER_SDK_BIN_PUB_CACHE) \
 		HOME=$(HOST_FLUTTER_SDK_BIN_SDK) \
@@ -228,7 +228,7 @@ endef
 
 define FLUTTER_ENGINE_BUILD_CMDS
 	cd $(@D)/engine/src && \
-		CURL_HOME=$(LWS_HMI_CURL_HOME) \
+		CURL_HOME=$(CURL_HOME_DIR) \
 		PATH=$(HOST_DIR)/share/depot_tools:$(BR_PATH) \
 		PUB_CACHE=$(FLUTTER_SDK_BIN_PUB_CACHE) \
 		HOME=$(HOST_FLUTTER_SDK_BIN_SDK) \

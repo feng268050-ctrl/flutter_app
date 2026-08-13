@@ -81,4 +81,4 @@ _(Rootfs / device acceptance filled in §4–§5.)_
 
 **Cause:** BR 2025.02 `optee-client` ships `libteec.so.2`; git `prebuilt/secrets_seal` CA was still linked to `libteec.so.1` → OP-TEE unseal failed → Ed25519 token mint → WS/HTTP **401 TOKEN_REQUIRED**.
 
-**Fix:** `FORCE=1` rebuild seal CA against volume staging (`libteec.so.2`), sync overlay; hot-pushed `/usr/libexec/board/secrets-seal-ca` for smoke. Bake with `make apply-overlay` → `make build-rootfs` → `make upgrade` (prebuilt already updated). `scripts/build-secrets-seal.sh` now forces `LWS_HMI_SDK_DIR=/work/sdk` on macOS Docker rebuilds.
+**Fix:** `FORCE=1` rebuild seal CA against volume staging (`libteec.so.2`), sync overlay; hot-pushed `/usr/libexec/board/secrets-seal-ca` for smoke. Bake with `make apply-overlay` → `make build-rootfs` → `make upgrade` (prebuilt already updated). `scripts/build-secrets-seal.sh` now forces `SDK_DIR=/work/sdk` on macOS Docker rebuilds.

@@ -30,7 +30,7 @@ bash "$ROOT/scripts/br-make-packages.sh" platform-packages "${PLATFORM_PACKAGES[
 
 bash "$ROOT/scripts/docker-run.sh" bash -lc "
   set -euo pipefail
-  OUT=\"\${LWS_HMI_SDK_DIR:?}/buildroot/output/${BR_OUTPUT}\"
+  OUT=\"\${SDK_DIR:?}/buildroot/output/${BR_OUTPUT}\"
   require_glob() {
     local label=\"\$1\"
     shift

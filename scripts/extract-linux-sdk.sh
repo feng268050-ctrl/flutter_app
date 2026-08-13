@@ -145,7 +145,7 @@ ls -la "$DEST" | head -20
 
 if [[ "$TRIM" == "1" ]]; then
   echo "extract-linux-sdk: TRIM=1 → trim-linux-sdk"
-  DEST="$DEST" LWS_HMI_SDK_DIR="$DEST" bash "$ROOT/scripts/trim-linux-sdk.sh"
+  DEST="$DEST" SDK_DIR="$DEST" bash "$ROOT/scripts/trim-linux-sdk.sh"
 fi
 
 if [[ "$(cd "$DEST" && pwd)" == "$(cd "$ROOT/linux-sdk" 2>/dev/null && pwd)" ]]; then

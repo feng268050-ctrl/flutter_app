@@ -3,7 +3,7 @@
 # Apply/verify live in packages/cyber_ota (HMI); this is preflight-only.
 set -eu
 
-LIB="${LWS_HMI_AB_LIB:-/usr/libexec/ab/ab-slot-lib.sh}"
+LIB="${AB_LIB:-/usr/libexec/ab/ab-slot-lib.sh}"
 # shellcheck disable=SC1090
 . "$LIB"
 

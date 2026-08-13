@@ -6,7 +6,7 @@ source "${RK_POST_HELPER:-$(dirname "$(realpath "$0")")/post-helper}"
 
 [ "$POST_OS" = buildroot ] || exit 0
 
-SDK_DIR="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+SDK_DIR="${SDK_DIR:-${RK_SDK_DIR:-}}"
 if [[ -z "$SDK_DIR" ]]; then
 	SDK_DIR="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 fi
@@ -26,8 +26,8 @@ for bin in MountAll ParamUpdate MainServer; do
 	echo "post-innohi: installed /usr/bin/$bin"
 done
 
-LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
-DISPLAY_INIT="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/display/ynh960-display-init.sh"
+DOCKER_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
+DISPLAY_INIT="$DOCKER_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/display/ynh960-display-init.sh"
 if [[ -f "$DISPLAY_INIT" ]]; then
 	install -d "$TARGET_DIR/usr/libexec/hmi"
 	install -m 0755 "$DISPLAY_INIT" "$TARGET_DIR/usr/libexec/display/ynh960-display-init.sh"

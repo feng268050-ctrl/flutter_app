@@ -59,7 +59,7 @@
 
 ## 8. Boot KPI optimization (P1 adjustment — beyond original task list)
 
-- [x] 8.1 Single-image policy: remove `lws-hmi-debug-boot`, kernel `ip=` bootargs; no `LWS_HMI_DEV` split
+- [x] 8.1 Single-image policy: remove `lws-hmi-debug-boot`, kernel `ip=` bootargs; no separate DEV image flag
 - [x] 8.2 Defer Wi‑Fi/BT/network at boot (`wifibt-init`, `wpa_supplicant`, `network.service` disabled in wants)
 - [x] 8.3 `cpu-performance.service` — CPU/DMC/GPU `performance` governors before HMI start
 - [x] 8.4 `pwrkey-poweroff.service` + `shutdown.sh` SysRq poweroff (avoid Mali DRM teardown oops)

@@ -33,15 +33,18 @@ if [[ ! -d "$SDK" && "$USE_VOLUME" != "1" ]]; then
   exit 1
 fi
 
+# Default: do not auto-apply overlay (explicit make apply-overlay).
+# Opt-in before a Docker command: SKIP_OVERLAY=0 bash scripts/docker-run.sh …
+SKIP_OVERLAY="${SKIP_OVERLAY:-1}"
+
 if [[ "$USE_VOLUME" == "1" ]]; then
   bash "$ROOT/scripts/docker-volume.sh" ensure-ready
-  if [[ "${LWS_HMI_SKIP_OVERLAY:-}" != "1" ]]; then
+  if [[ "$SKIP_OVERLAY" != "1" ]]; then
     docker run --rm --platform "$PLATFORM" \
       -v "$ROOT:/work/lws-hmi" \
       -v "$VOLUME:/work/sdk" \
-      -e LWS_HMI_DOCKER=1 \
-      -e LWS_HMI_SDK_DIR=/work/sdk \
-      -e "LWS_HMI_WESTON=${LWS_HMI_WESTON:-1}" \
+      -e DOCKER=1 \
+      -e SDK_DIR=/work/sdk \
       -e "FORCE_PLATFORM_OVERLAY=${FORCE_PLATFORM_OVERLAY:-0}" \
       -w /work/lws-hmi \
       "$IMAGE" \
@@ -56,19 +59,18 @@ docker_args=(
   --privileged
   --shm-size=2g
   --ulimit "nofile=65536:65536"
-  -e LWS_HMI_DOCKER=1
+  -e DOCKER=1
   -e "BUILD_JOBS=${BUILD_JOBS}"
-  -e "LWS_HMI_NO_MAKEFLAGS=${LWS_HMI_NO_MAKEFLAGS:-}"
-  -e LWS_HMI_ROOT=/work/lws-hmi
-  -e LWS_HMI_SDK_DIR=/work/sdk
-  -e "LWS_HMI_WESTON=${LWS_HMI_WESTON:-1}"
+  -e "NO_MAKEFLAGS=${NO_MAKEFLAGS:-}"
+  -e DOCKER_ROOT=/work/lws-hmi
+  -e SDK_DIR=/work/sdk
   -e "FORCE_PLATFORM_OVERLAY=${FORCE_PLATFORM_OVERLAY:-0}"
   -e "NAS_READ_ONLY=${NAS_READ_ONLY:-0}"
   -e "FORCE=${FORCE:-0}"
   -e "FORCE_KERNEL_IMAGE=${FORCE_KERNEL_IMAGE:-0}"
   -e "OPTEE_OS_VER=${OPTEE_OS_VER:-}"
   -e "TA_SIGN_KEY=${TA_SIGN_KEY:-}"
-  -e "LWS_HMI_SKIP_OVERLAY=${LWS_HMI_SKIP_OVERLAY:-}"
+  -e "SKIP_OVERLAY=${SKIP_OVERLAY}"
   -v "$ROOT:/work/lws-hmi"
   -v lws-hmi-ccache:/ccache
   -e CCACHE_DIR=/ccache

@@ -54,7 +54,7 @@ ensure_optee_os() {
 }
 
 find_cross_prefix() {
-	local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+	local sdk="${SDK_DIR:-$ROOT/linux-sdk}"
 	local cand br
 	for cand in \
 		"$sdk/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-" \
@@ -77,7 +77,7 @@ find_cross_prefix() {
 }
 
 resolve_teec() {
-	local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+	local sdk="${SDK_DIR:-$ROOT/linux-sdk}"
 	local br staging
 	br="$(resolve_br_output_dir "$sdk")"
 	staging="$br/staging"
@@ -223,7 +223,7 @@ if [[ "$FORCE" == "1" ]]; then
 fi
 
 # macOS: compile inside builder against Docker-volume SDK staging (libteec SONAME).
-if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+if [[ "$(uname -s)" == Darwin ]] && [[ "${DOCKER:-}" != "1" ]]; then
 	# Resolve on the host first, then remap into the docker bind mount.
 	ta_sign_key="$(resolve_ta_sign_key)"
 	if [[ -n "$ta_sign_key" ]]; then
@@ -237,9 +237,9 @@ if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
 			;;
 		esac
 	fi
-	exec env LWS_HMI_SKIP_OVERLAY=1 FORCE="$FORCE" OPTEE_OS_VER="$OPTEE_OS_VER" \
+	exec env SKIP_OVERLAY=1 FORCE="$FORCE" OPTEE_OS_VER="$OPTEE_OS_VER" \
 		BUILD_JOBS="${BUILD_JOBS:-8}" TA_SIGN_KEY="$ta_sign_key" \
-		LWS_HMI_SDK_DIR=/work/sdk \
+		SDK_DIR=/work/sdk \
 		bash "$ROOT/scripts/docker-run.sh" \
 		bash /work/lws-hmi/scripts/build-secrets-seal.sh
 fi

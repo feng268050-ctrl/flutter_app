@@ -141,8 +141,8 @@ make show-config
 Firmware stage outputs:
 
 - `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`. Publishes both to `output/firmware/`.
-- `make build-rootfs` builds `rootfs.img` (Weston + `flutter-wayland-client` + Mali `wayland-gbm`) and publishes it to `output/firmware/<APP>/` (default `APP=lws_hmi`). Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`.
-- `make prepare-rootfs` flips Buildroot stack prep (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
+- `make build-rootfs` builds `rootfs.img` (Weston + `flutter-wayland-client` + Mali `wayland-gbm`) and publishes it to `output/firmware/<APP>/` (default `APP=lws_hmi`). Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`. Does **not** auto-`apply-overlay` — run `make apply-overlay` after overlay changes (same as kernel).
+- `make prepare-rootfs` flips Mali/embedder packages without packing `rootfs.img` and without `apply-overlay`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
 - `make build-img` does **not** compile the kernel or rootfs. It requires `make build-oem`, then packages loader, U-Boot, misc, both FIT images, APP-scoped rootfs, and **oem** into `output/firmware/<APP>/<FACTORY_SKU>/factory.img` (default APP `lws_hmi`, sku `ynh960-p800`) and refreshes `output/firmware/update.img` as a symlink for `make flash`.
 - Full-system `make upgrade` does **not** transfer `factory.img`. Two host transports (auto-selected; override with `UPGRADE_TRANSPORT=ssh|rockusb`):
   - **SSH** (USB-SSH / registered LAN): runs **`make pack-ota`** (unless `UPGRADE_PACKAGE=` + sibling `.sig`), starts an ephemeral **host HTTP** server for `ota-package.tar.gz` + `.sig`, triggers the HMI to **download** into `/userdata/ota/`, then Ed25519-verify + staged extract/apply writes inactive boot+rootfs (+ optional oem). SSH is control-plane only. Host console shows HTTP send progress until transfer complete (does not wait for apply). Returns as soon as transfer is complete. Allow inbound TCP on the bind IP if the OS firewall prompts (USB-SSH default `192.168.55.2`).
@@ -666,7 +666,7 @@ On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under
 
 ### `innohi/` / WiFi-BT firmware errors
 
-Rockchip Innohi board binaries and Wi‑Fi/BT firmware live under **`linux-sdk/innohi/`** (vendor drop; not in git). `make apply-overlay` runs `normalize-innohi-sdk` to drop any legacy `innohi_board/` mirror and retarget scripts to `innohi/rootfs`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on missing `rk_wifi_init` / firmware, re-extract the SDK (ensure `linux-sdk/innohi/rootfs` exists) and run `make apply-overlay` again (macOS: auto before each Docker build).
+Rockchip Innohi board binaries and Wi‑Fi/BT firmware live under **`linux-sdk/innohi/`** (vendor drop; not in git). `make apply-overlay` runs `normalize-innohi-sdk` to drop any legacy `innohi_board/` mirror and retarget scripts to `innohi/rootfs`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on missing `rk_wifi_init` / firmware, re-extract the SDK (ensure `linux-sdk/innohi/rootfs` exists) and run `make apply-overlay` again (macOS Docker builds no longer auto-apply; use `make apply-overlay` explicitly).
 
 **ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`). `RK_WIFIBT_CHIP="AIC8800D80"` keeps `post-wifibt` running for kernel `*.ko` → `/vendor/lib/modules` without Broadcom `AP6256`/`bcmdhd`/`fw_bcm*` dumps. Combo firmware ships in the OEM radio pack (`oem/boards/ynh960/radio/`); runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
 
@@ -820,7 +820,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `overlay/.../rootfs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |
 | `overlay/.../06-systemd.sh` | 镜像构建时 enable hmi / disable sshd 等 |
 | `overlay/.../05-display.sh` | Buildroot post-rootfs install hook |
-| `overlay/.../check-sdk.sh` | Skip ext4/WSL guards when `LWS_HMI_DOCKER=1` |
+| `overlay/.../check-sdk.sh` | Skip ext4/WSL guards when `DOCKER=1` |
 | `docker/Dockerfile` | Ubuntu 22.04 + Rockchip build dependencies |
 
 The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; this overlay adds the missing **`ynh960_defconfig`** for our RK3566 target. (SDK `ynh962` naming ≠ product ynh962 / RK3568B2 SKU — see [`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md) §3.0.)

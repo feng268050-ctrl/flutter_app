@@ -36,7 +36,7 @@ fi
 target_has() {
 	local bin="$1"
 	# Docker volume: probe inside the SDK container (skip overlay for speed).
-	LWS_HMI_SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" \
+	SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" \
 		test -x "${TARGET_BIN}/${bin}" >/dev/null 2>&1
 }
 

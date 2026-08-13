@@ -22,9 +22,9 @@ factory_sku_print_oem
 [[ -r "$PACK_DIR/manifest.json" ]] || die "missing $PACK_DIR/manifest.json"
 
 # macOS host: mkfs.ext4/loop need Linux — run the whole script in Docker once.
-if [[ "$(uname -s)" == Darwin && "${LWS_HMI_BUILD_OEM:-}" != "1" ]]; then
+if [[ "$(uname -s)" == Darwin && "${BUILD_OEM:-}" != "1" ]]; then
   bash "$ROOT/scripts/docker-run.sh" \
-    env LWS_HMI_BUILD_OEM=1 FACTORY_SKU="$FACTORY_SKU" UBOOT_ID="$UBOOT_ID" OEM_ID="$OEM_ID" \
+    env BUILD_OEM=1 FACTORY_SKU="$FACTORY_SKU" UBOOT_ID="$UBOOT_ID" OEM_ID="$OEM_ID" \
     bash /work/lws-hmi/scripts/build-oem.sh
   [[ -r "$FACTORY_OEM_IMG" ]] || die "oem.img missing after Docker build: $FACTORY_OEM_IMG"
   echo "oem.img ready: $FACTORY_OEM_IMG"

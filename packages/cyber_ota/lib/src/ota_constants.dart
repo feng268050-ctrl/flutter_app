@@ -1,4 +1,4 @@
-/// Default on-device OTA staging directory (`LWS_HMI_OTA_DIR` on board helpers).
+/// Default on-device OTA staging directory (`OTA_DIR` on board helpers).
 const kDefaultStagingDir = '/userdata/ota/';
 
 const kPackageFileName = 'ota-package.tar.gz';

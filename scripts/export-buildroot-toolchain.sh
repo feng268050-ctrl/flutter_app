@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 PROFILE="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
 OUT="$SDK/buildroot/output/${PROFILE}"
 DEST_DIR="$ROOT/prebuilt/buildroot-toolchain"

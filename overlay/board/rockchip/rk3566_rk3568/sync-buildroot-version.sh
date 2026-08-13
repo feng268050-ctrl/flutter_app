@@ -4,7 +4,7 @@
 set -eu
 
 TARGET_DIR="${1:?TARGET_DIR required}"
-HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
+HMI_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
 PIN_FILE="$HMI_ROOT/overlay/buildroot/BUILDROOT_VERSION"
 STAMP_DIR="$TARGET_DIR/usr/share/buildroot"
 STAMP="$STAMP_DIR/BUILDROOT_VERSION"

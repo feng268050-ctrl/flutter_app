@@ -5,12 +5,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+if [[ "$(uname -s)" == Darwin && "${DOCKER:-}" != "1" ]]; then
   exec bash "$ROOT/scripts/docker-run.sh" \
-    bash -c 'export LWS_HMI_DOCKER=1; exec bash /work/lws-hmi/scripts/fix-buildroot-host-rpaths.sh'
+    bash -c 'export DOCKER=1; exec bash /work/lws-hmi/scripts/fix-buildroot-host-rpaths.sh'
 fi
 
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 OUT_BASE="${SDK}/buildroot/output"
 TARGET_NAME="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
 OUT_DIR="${OUT_BASE}/${TARGET_NAME}"

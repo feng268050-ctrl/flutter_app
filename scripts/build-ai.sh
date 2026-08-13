@@ -23,7 +23,7 @@ FORCE="${FORCE:-0}"
 AI_VERSION="${AI_VERSION:-0.0.0-dev}"
 
 find_cross_gcc() {
-  local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+  local sdk="${SDK_DIR:-$ROOT/linux-sdk}"
   local cand
   for cand in \
     "$sdk/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc" \
@@ -74,9 +74,9 @@ BUILD_RKNN_MEM_DEMO=OFF
 EOF
 }
 
-if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+if [[ "$(uname -s)" == Darwin ]] && [[ "${DOCKER:-}" != "1" ]]; then
   # docker-run only forwards selected -e vars; pass FORCE/AI_VERSION on the remote argv.
-  exec env LWS_HMI_SKIP_OVERLAY=1 \
+  exec env SKIP_OVERLAY=1 \
     bash "$ROOT/scripts/docker-run.sh" \
     env "FORCE=${FORCE}" "AI_VERSION=${AI_VERSION}" \
     bash /work/lws-hmi/scripts/build-ai.sh

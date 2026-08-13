@@ -4,7 +4,7 @@
 set -eu
 
 TARGET_DIR="${1:?TARGET_DIR required}"
-LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
+DOCKER_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
 
 PURGE="$(dirname "$0")/purge-retired-rootfs-artifacts.sh"
 if [ -f "$PURGE" ]; then
@@ -16,7 +16,7 @@ fi
 
 ensure_script="$TARGET_DIR/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 if [ ! -f "$ensure_script" ]; then
-	ensure_script="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
+	ensure_script="$DOCKER_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 fi
 
 if [ ! -f "$ensure_script" ]; then

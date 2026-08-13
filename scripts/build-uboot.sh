@@ -4,8 +4,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ "${LWS_HMI_BUILD_UBOOT:-}" == "1" ]]; then
-  SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+if [[ "${BUILD_UBOOT:-}" == "1" ]]; then
+  SDK="${SDK_DIR:-$ROOT/linux-sdk}"
   [[ -d "$SDK" ]] || { echo "ERROR: SDK missing" >&2; exit 1; }
 
   bash "$ROOT/scripts/apply-overlay.sh" >/dev/null
@@ -28,6 +28,6 @@ if [[ "${LWS_HMI_BUILD_UBOOT:-}" == "1" ]]; then
   exit 0
 fi
 
-export LWS_HMI_BUILD_UBOOT=1
+export BUILD_UBOOT=1
 bash "$ROOT/scripts/docker-run.sh" \
-  bash -c 'export LWS_HMI_BUILD_UBOOT=1; bash /work/lws-hmi/scripts/build-uboot.sh'
+  bash -c 'export BUILD_UBOOT=1; bash /work/lws-hmi/scripts/build-uboot.sh'

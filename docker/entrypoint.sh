@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export LWS_HMI_DOCKER=1
+export DOCKER=1
 
-ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
+ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
 if [[ -f "$ROOT/scripts/build-env.sh" ]]; then
   # shellcheck source=scripts/build-env.sh
   source "$ROOT/scripts/build-env.sh"
@@ -12,7 +12,7 @@ else
   BUILD_JOBS="${BUILD_JOBS:-8}"
   export BUILD_JOBS
   # Do not set MAKEFLAGS in Docker — see scripts/build-env.sh
-  if [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+  if [[ "${DOCKER:-}" != "1" ]]; then
     export MAKEFLAGS="-j${BUILD_JOBS} ${MAKEFLAGS:-}"
   fi
 fi

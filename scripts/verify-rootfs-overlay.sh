@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 source "$ROOT/scripts/prebuilt-common.sh"
 
@@ -1583,7 +1583,7 @@ EOF
 }
 
 if [[ "${1:-}" == "--inside-docker" ]]; then
-	run_check "$(resolve_br_target "${LWS_HMI_SDK_DIR:-/work/sdk}")"
+	run_check "$(resolve_br_target "${SDK_DIR:-/work/sdk}")"
 	exit $?
 fi
 

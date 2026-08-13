@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 VERSION_FILE="$ROOT/overlay/third-party/uboot.version"
 CACHE="$ROOT/.cache/rockchip-u-boot"
 REPO="${UBOOT_REPO:-https://github.com/rockchip-linux/u-boot.git}"

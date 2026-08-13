@@ -104,7 +104,7 @@ bash "$ROOT/scripts/docker-run.sh" bash -lc "
     if ! pkg-config --exists \"\$pc\"; then
       echo \"ERROR: staging missing \$pc — restore Weston/Mali/GStreamer staging deps:\" >&2
       echo \"  make build-gstreamer\" >&2
-      echo \"  LWS_HMI_WESTON=1 make apply-overlay\" >&2
+      echo \"  make apply-overlay\" >&2
       echo \"  bash scripts/br-make-packages.sh wayland-deps wayland wayland-protocols\" >&2
       echo \"  # wayland-egl comes from rockchip-mali (wayland-gbm), not wayland:\" >&2
       echo \"  bash scripts/br-make-packages.sh mali-egl rockchip-mali\" >&2

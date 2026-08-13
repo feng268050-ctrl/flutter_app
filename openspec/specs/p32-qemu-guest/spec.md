@@ -88,25 +88,31 @@ It SHALL enable USB xHCI with auto passthrough of known USB-serial (and optional
 
 ### Requirement: Touchscreen input and playback audio
 
-The emulator SHALL present a **virtio multitouch** input device (or equivalent) bound to the primary virtio-gpu display so host mouse actions in the QEMU window produce guest **touch** events (single-contact down/move/up) without requiring mouse grab. It SHALL present virtio sound suitable for host playback (capture MAY be omitted when the host backend is unreliable). When no USB pointer HID is attached, the guest compositor/HMI SHALL NOT show a persistent software cursor (touch-only UX aligned with ynh960 panel).
+The emulator SHALL map host pointer actions in the QEMU window to guest **touch** events (single-contact down/move/up) without requiring mouse grab. On hosts where the display backend only delivers pointer events to absolute devices (e.g. qemu-virgl cocoa), the launcher SHALL attach **`virtio-tablet-pci`** and the guest SHALL run a **uinput bridge** (`emulator-tablet-to-touch` or equivalent) that grabs the tablet and exposes a libinput **touch** device; it MUST NOT rely on `virtio-multitouch-pci` alone on such hosts. Host wheel / trackpad scroll SHALL be delivered as **relative wheel** events to the guest (not as instantaneous touch flicks). It SHALL present virtio sound suitable for host playback (capture MAY be omitted when the host backend is unreliable). When no USB pointer HID is attached, the guest compositor/HMI SHALL NOT show a persistent software cursor (touch-only UX aligned with ynh960 panel). The host display backend SHOULD keep the host cursor visible (`show-cursor=on` or equivalent) while the guest cursor is hidden.
 
 #### Scenario: Host mouse maps to touch
 
 - **WHEN** the operator presses, moves, or releases the host mouse button over the active QEMU display while `EMULATOR_INPUT` is unset or `touch`
-- **THEN** the guest SHALL deliver touch contact lifecycle events to libinput (not sole reliance on a virtio-tablet pointer device)
+- **THEN** the guest SHALL deliver touch contact lifecycle events to libinput via the bridge touch device (tablet pointer MUST be grabbed so it is not the sole seat path)
 - **AND** the operator SHALL NOT need a mouse-grab release chord to move the host cursor outside the window
 
 #### Scenario: Touch device visible in guest
 
 - **WHEN** the emulator guest has booted with default launcher input settings
-- **THEN** `libinput list-devices` (or equivalent) SHALL report at least one device classified as touch on the primary seat
+- **THEN** `libinput list-devices` (or equivalent) SHALL report at least one device classified as touch on the primary seat (e.g. LWS Emulator Touch)
 - **AND** the HMI SHALL respond to tap and drag gestures on interactive controls
+
+#### Scenario: Host scroll maps to wheel
+
+- **WHEN** the operator scrolls with the host wheel or trackpad over the QEMU display in default touch mode
+- **THEN** the guest SHALL receive relative wheel events suitable for smooth UI scrolling
+- **AND** scroll direction SHALL follow the host OS preference (no extra guest inversion of already-naturalized host deltas)
 
 #### Scenario: Optional tablet pointer mode
 
 - **WHEN** the operator starts the emulator with `EMULATOR_INPUT=tablet`
-- **THEN** the launcher SHALL attach `virtio-tablet-pci` (or equivalent absolute pointer) instead of default multitouch
-- **AND** pointer-style debugging SHALL remain available without changing the device rootfs
+- **THEN** the launcher SHALL attach `virtio-tablet-pci` and skip (or no-op) the guest touch bridge
+- **AND** pointer-style debugging SHALL remain available without changing the device rootfs image contents beyond cmdline
 
 #### Scenario: Playback audio unchanged
 

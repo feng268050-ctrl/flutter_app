@@ -2,7 +2,7 @@
 
 ## Staging directory
 
-Default: `/userdata/ota/` (`LWS_HMI_OTA_DIR` override on board helpers).
+Default: `/userdata/ota/` (`OTA_DIR` override on board helpers).
 
 | Path | Role |
 |------|------|

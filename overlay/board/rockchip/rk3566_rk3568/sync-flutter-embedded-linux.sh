@@ -5,7 +5,7 @@
 set -eu
 
 TARGET_DIR="${1:?TARGET_DIR required}"
-HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
+HMI_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
 
 read_ver() {
 	if [ -f "$HMI_ROOT/overlay/buildroot/flutter-embedded-linux.version" ]; then

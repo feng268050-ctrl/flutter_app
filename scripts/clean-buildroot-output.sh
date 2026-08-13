@@ -5,12 +5,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ "$(uname -s)" == Darwin && "${BUILD_BIND_MOUNT:-}" != "1" && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
-  exec env LWS_HMI_SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" \
+if [[ "$(uname -s)" == Darwin && "${BUILD_BIND_MOUNT:-}" != "1" && "${DOCKER:-}" != "1" ]]; then
+  exec env SKIP_OVERLAY=1 bash "$ROOT/scripts/docker-run.sh" \
     bash /work/lws-hmi/scripts/clean-buildroot-output.sh "$@"
 fi
 
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 source "$ROOT/scripts/prebuilt-common.sh"
 
 OUT_BASE="${SDK}/buildroot/output"

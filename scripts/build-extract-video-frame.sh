@@ -24,7 +24,7 @@ sync_overlay() {
 }
 
 find_cross_gcc() {
-	local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+	local sdk="${SDK_DIR:-$ROOT/linux-sdk}"
 	local cand br
 	for cand in \
 		"$sdk/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc" \
@@ -48,7 +48,7 @@ find_cross_gcc() {
 
 do_build() {
 	local cc="$1"
-	local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+	local sdk="${SDK_DIR:-$ROOT/linux-sdk}"
 	local staging pc_cflags pc_libs
 	staging="$(resolve_br_output_dir "$sdk")/staging"
 	[[ -f "$staging/usr/lib/pkgconfig/gstreamer-1.0.pc" ]] || {
@@ -95,8 +95,8 @@ if [[ "$FORCE" == "1" ]]; then
 fi
 
 # macOS: compile inside builder (linux/amd64) with SDK toolchain + staging.
-if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
-	exec env LWS_HMI_SKIP_OVERLAY=1 FORCE="$FORCE" BR_OUTPUT="$BR_OUTPUT" \
+if [[ "$(uname -s)" == Darwin ]] && [[ "${DOCKER:-}" != "1" ]]; then
+	exec env SKIP_OVERLAY=1 FORCE="$FORCE" BR_OUTPUT="$BR_OUTPUT" \
 		bash "$ROOT/scripts/docker-run.sh" \
 		bash /work/lws-hmi/scripts/build-extract-video-frame.sh
 fi

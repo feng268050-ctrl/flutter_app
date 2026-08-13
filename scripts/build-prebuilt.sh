@@ -6,9 +6,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # macOS Docker volume: artifacts live in the container, not host linux-sdk/.
-if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+if [[ "$(uname -s)" == Darwin && "${DOCKER:-}" != "1" ]]; then
   exec bash "$ROOT/scripts/docker-run.sh" \
-    env LWS_HMI_DOCKER=1 LWS_HMI_SDK_DIR=/work/sdk \
+    env DOCKER=1 SDK_DIR=/work/sdk \
         PACK_ENGINE="${PACK_ENGINE:-1}" \
         PACK_FLUTTER_SDK="${PACK_FLUTTER_SDK:-1}" \
         FORCE="${FORCE:-0}" \
@@ -18,13 +18,13 @@ fi
 
 source "$ROOT/scripts/prebuilt-common.sh"
 
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 FORCE="${FORCE:-0}"
 PACK_FLUTTER_SDK="${PACK_FLUTTER_SDK:-1}"
 PACK_ENGINE="${PACK_ENGINE:-1}"
 
 # Host Flutter SDK lives on the macOS filesystem; Docker bind-mounts it :ro.
-if [[ "${LWS_HMI_DOCKER:-}" == "1" && "${PACK_FLUTTER_SDK:-1}" == "1" ]]; then
+if [[ "${DOCKER:-}" == "1" && "${PACK_FLUTTER_SDK:-1}" == "1" ]]; then
   echo "build-prebuilt: skipping flutter-sdk export inside Docker (use host: make fetch-flutter-sdk)"
   PACK_FLUTTER_SDK=0
 fi

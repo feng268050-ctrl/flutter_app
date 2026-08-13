@@ -40,7 +40,7 @@ Product HMI MUST NOT expose a visible **OS Settings** row in Common Settings. En
 
 - **WHEN** the operator opens Common Settings → Network
 - **THEN** Wi‑Fi, HTTP Proxy, and Cloud services entries are available under Network
-- **AND** Ethernet, Bluetooth, and LAN SSH debug entries are not present
+- **AND** Ethernet, Bluetooth, LAN SSH debug, and Cloud Environment tier entries are not present
 
 #### Scenario: Cloud services opens sub-page
 

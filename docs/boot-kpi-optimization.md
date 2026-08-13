@@ -11,7 +11,7 @@
 
 | 主题 | 约定 |
 |------|------|
-| **镜像** | 开发与量产 **同一份** `update.img`；无 `LWS_HMI_DEV`、无 sysinit 早期配网 |
+| **镜像** | 开发与量产 **同一份** `update.img`；无独立 DEV 镜像开关、无 sysinit 早期配网 |
 | **systemd** | **保留 systemd 作 PID 1**；平台库链接 **`libsystemd.so`**（`sd_event`），与 init 解耦（§3.6） |
 | **工程调试** | 串口 `ttyFIQ0` + `make serial-console`；远程 SSH 仅 §7.7 按需 |
 | **禁止** | `debug-boot`、内核 `ip=` bootargs、默认 enable `sshd`/`bluetoothd`（MediaMTX 已无 rootfs unit） |

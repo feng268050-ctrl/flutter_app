@@ -8,10 +8,10 @@
 FLUTTER_SDK_BIN_VERSION = 3.41.9
 
 
-LWS_HMI_ROOT ?= $(TOPDIR)/../..
-FLUTTER_SDK_BIN_LINKED = $(LWS_HMI_ROOT)/flutter-sdk
+DOCKER_ROOT ?= $(TOPDIR)/../..
+FLUTTER_SDK_BIN_LINKED = $(DOCKER_ROOT)/flutter-sdk
 # Linux x86_64 SDK for Buildroot host package (Docker on macOS uses this path).
-FLUTTER_SDK_BIN_CACHE = $(LWS_HMI_ROOT)/.cache/flutter-sdk/install-linux
+FLUTTER_SDK_BIN_CACHE = $(DOCKER_ROOT)/.cache/flutter-sdk/install-linux
 ifeq ($(wildcard $(FLUTTER_SDK_BIN_CACHE)/.lws-precache-done),)
 FLUTTER_SDK_BIN_SITE = $(FLUTTER_SDK_BIN_LINKED)
 else

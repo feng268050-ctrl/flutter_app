@@ -21,11 +21,11 @@ flutter-pi)
 esac
 
 # On macOS host, enter Docker once. Do not nest docker-run from inside the
-# builder: that would exec native-run and point LWS_HMI_SDK_DIR at repo
+# builder: that would exec native-run and point SDK_DIR at repo
 # linux-sdk/ instead of the Docker volume /work/sdk.
-if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" && ! -f /.dockerenv ]]; then
+if [[ "$(uname -s)" == Darwin && "${DOCKER:-}" != "1" && ! -f /.dockerenv ]]; then
 	exec bash "$ROOT/scripts/docker-run.sh" \
-		env LWS_HMI_DOCKER=1 \
+		env DOCKER=1 \
 		BUILD_JOBS="${JOBS}" \
 		BR_OUTPUT="${BR_OUTPUT}" \
 		bash /work/lws-hmi/scripts/br-compile-flutter.sh "$PKG"
@@ -33,22 +33,22 @@ fi
 
 echo "br-compile-flutter: building ${PKG} (compile.mk) in buildroot output ${BR_OUTPUT} ..."
 
-HMI_ROOT="${LWS_HMI_ROOT:-$ROOT}"
-if [[ -z "${LWS_HMI_SDK_DIR:-}" ]]; then
+HMI_ROOT="${DOCKER_ROOT:-$ROOT}"
+if [[ -z "${SDK_DIR:-}" ]]; then
 	if [[ -d /work/sdk/buildroot ]]; then
-		LWS_HMI_SDK_DIR=/work/sdk
+		SDK_DIR=/work/sdk
 	else
-		LWS_HMI_SDK_DIR="$ROOT/linux-sdk"
+		SDK_DIR="$ROOT/linux-sdk"
 	fi
 fi
-export LWS_HMI_ROOT="$HMI_ROOT" LWS_HMI_SDK_DIR
+export DOCKER_ROOT="$HMI_ROOT" SDK_DIR
 
 # shellcheck source=scripts/build-env.sh
 source "$HMI_ROOT/scripts/build-env.sh"
-export LWS_HMI_DOCKER="${LWS_HMI_DOCKER:-1}"
+export DOCKER="${DOCKER:-1}"
 setup_build_env
 
-SDK_PKG="${LWS_HMI_SDK_DIR}/buildroot/package/${PKG}"
+SDK_PKG="${SDK_DIR}/buildroot/package/${PKG}"
 COMPILE_MK="${HMI_ROOT}/overlay/buildroot/package/${PKG}/${PKG}.compile.mk"
 ACTIVE_MK="${SDK_PKG}/${PKG}.mk"
 BACKUP="${SDK_PKG}/${PKG}.mk.lws-prebuilt-swap"
@@ -89,10 +89,10 @@ restore() {
 }
 trap restore EXIT
 
-cd "${LWS_HMI_SDK_DIR}/buildroot"
+cd "${SDK_DIR}/buildroot"
 OUT="output/${BR_OUTPUT}"
 if [[ ! -d "$OUT" ]]; then
-	echo "ERROR: Buildroot output missing at ${LWS_HMI_SDK_DIR}/buildroot/${OUT}" >&2
+	echo "ERROR: Buildroot output missing at ${SDK_DIR}/buildroot/${OUT}" >&2
 	echo "  Run: make lunch" >&2
 	exit 1
 fi

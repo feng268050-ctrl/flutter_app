@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Prepare Buildroot output for the Weston + eLinux HMI stack (no rootfs.img pack).
 #
-# Does: check-prebuilt → apply-overlay → ensure-mali-variant (+ embedder pkgs).
+# Does: check-prebuilt → ensure-mali-variant (+ embedder pkgs).
+# Does not apply-overlay — run make apply-overlay after overlay/DTS/fs changes.
 # Shared packages already built in output/ are reused; only Mali / embedder
 # flip when the stack stamp or target binaries differ.
 #
@@ -10,6 +11,7 @@
 #   FORCE=1 bash scripts/prepare-rootfs-stack.sh weston
 #
 # Then pack:
+#   make apply-overlay   # if overlay changed
 #   make build-rootfs
 set -euo pipefail
 
@@ -19,7 +21,6 @@ STACK="${1:-weston}"
 case "$STACK" in
 weston | wayland-gbm | "" )
 	STACK=weston
-	export LWS_HMI_WESTON=1
 	MALI=wayland-gbm
 	;;
 *)
@@ -29,10 +30,9 @@ weston | wayland-gbm | "" )
 	;;
 esac
 
-echo "prepare-rootfs-stack: ${STACK} (LWS_HMI_WESTON=${LWS_HMI_WESTON} mali=${MALI})"
+echo "prepare-rootfs-stack: ${STACK} (mali=${MALI})"
 
 bash "$ROOT/scripts/check-prebuilt.sh"
-bash "$ROOT/scripts/apply-overlay.sh"
 bash "$ROOT/scripts/ensure-mali-variant.sh" "$MALI"
 
 echo "prepare-rootfs-stack: ${STACK} ready — next: make build-rootfs"

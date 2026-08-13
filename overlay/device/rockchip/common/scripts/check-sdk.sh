@@ -5,7 +5,7 @@ RK_SDK_DIR="${RK_SDK_DIR:-$RK_SCRIPTS_DIR/../../../..}"
 RK_OWNER="${RK_OWNER:-$(stat --format %U "$RK_SDK_DIR" 2>/dev/null || echo UNKNOWN)}"
 RK_OWNER_UID="${RK_OWNER_UID:-$(stat --format %u "$RK_SDK_DIR" 2>/dev/null || echo 0)}"
 
-if [ "${LWS_HMI_DOCKER:-}" != "1" ]; then
+if [ "${DOCKER:-}" != "1" ]; then
 	if [ "$(id -u)" -ne 0 ] && [ "$RK_OWNER_UID" -ne "$(id -u)" ]; then
 		echo -e "\e[35m"
 		echo "ERROR: Current user is not the owner of SDK source!"
@@ -22,7 +22,7 @@ fi
 
 # lws-hmi Docker builds mount the SDK from macOS (virtiofs/overlay). Rockchip's
 # upstream check rejects non-ext4; skip that guard inside our container workflow.
-if [ "${LWS_HMI_DOCKER:-}" != "1" ]; then
+if [ "${DOCKER:-}" != "1" ]; then
 	case "$(findmnt -fnu -o FSTYPE -T "$RK_SCRIPTS_DIR" 2>/dev/null || echo unknown)" in
 		ext* | f2fs | btrfs) ;;
 		*)

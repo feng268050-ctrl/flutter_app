@@ -5,7 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-${SDK:-$ROOT/linux-sdk}}"
+SDK="${SDK_DIR:-${SDK:-$ROOT/linux-sdk}}"
 WHITELIST="${WHITELIST:-$ROOT/board/linux-sdk-whitelist.txt}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }

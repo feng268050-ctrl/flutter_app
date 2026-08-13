@@ -18,7 +18,7 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 [[ -f "$SRC" ]] || die "missing $SRC"
 
 find_cross_gcc() {
-	local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+	local sdk="${SDK_DIR:-$ROOT/linux-sdk}"
 	local cand br
 	for cand in \
 		"$sdk/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc" \
@@ -69,8 +69,8 @@ if [[ "$FORCE" == "1" ]]; then
 	rm -f "$OVERLAY_BIN"
 fi
 
-if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
-	exec env LWS_HMI_SKIP_OVERLAY=1 FORCE="$FORCE" \
+if [[ "$(uname -s)" == Darwin ]] && [[ "${DOCKER:-}" != "1" ]]; then
+	exec env SKIP_OVERLAY=1 FORCE="$FORCE" \
 		bash "$ROOT/scripts/docker-run.sh" \
 		bash /work/lws-hmi/scripts/build-reboot-loader.sh
 fi

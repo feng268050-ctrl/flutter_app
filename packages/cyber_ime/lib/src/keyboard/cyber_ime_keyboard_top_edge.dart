@@ -1,8 +1,8 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
-/// Top hairline on the keyboard frost band: bright center, fades to both ends
-/// (两边向中间渐变亮边). Not painted on keycaps.
+/// Top hairline on the keyboard frost band: bright at both ends, fades toward
+/// center (两边向中间渐变亮边). Not painted on keycaps.
 class CyberImeKeyboardTopEdge extends StatelessWidget {
   const CyberImeKeyboardTopEdge({
     super.key,
@@ -11,14 +11,14 @@ class CyberImeKeyboardTopEdge extends StatelessWidget {
 
   final double height;
 
-  /// Horizontal H–center–H gradient (transparent → bright → transparent).
+  /// Horizontal edge–center–edge gradient (bright → transparent → bright).
   static const gradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [
-      Color(0x00FFFFFF),
       CyberColors.lightBorderHighlight,
       Color(0x00FFFFFF),
+      CyberColors.lightBorderHighlight,
     ],
     stops: [0.0, 0.5, 1.0],
   );

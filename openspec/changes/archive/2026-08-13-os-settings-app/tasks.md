@@ -59,8 +59,8 @@
 - [x] 9.1 Grep and delete dead HMI routes / Demo sections for migrated features; optionally remove P2 Demo if empty
 - [x] 9.2 Sync `openspec/specs` consumers / related docs (`platform-os-oem-sdk-plan.md` W6 links) for OS Settings vs factory_test wording
 - [x] 9.3 Run `flutter analyze` on `app/os_settings`; smoke list→push navigation (landscape and portrait same shell)
-- [ ] 9.4 On-device: HMI → OS Settings → Exit round-trip; confirm `/userdata` untouched; confirm migrated rows absent from HMI and present in OS Settings
-- [ ] 9.5 Confirm Bluetooth alias and Secrets Seal status on device; confirm rootfs verify with both `/opt/hmi` and `/opt/os_settings`
+- [x] 9.4 On-device: HMI → OS Settings → Exit round-trip; confirm `/userdata` untouched; confirm migrated rows absent from HMI and present in OS Settings
+- [x] 9.5 Confirm Bluetooth alias and Secrets Seal status on device; confirm rootfs verify with both `/opt/hmi` and `/opt/os_settings`
 
 ## 10. Phase H — Product decisions after initial ship
 

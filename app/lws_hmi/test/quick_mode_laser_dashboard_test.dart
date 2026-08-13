@@ -7,6 +7,13 @@ import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_dash
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  double ringProgress(WidgetTester tester) {
+    final paint = tester.widget<CustomPaint>(
+      find.byKey(const ValueKey('quick-mode-laser-rings-progress')),
+    );
+    return ((paint.painter as dynamic).progress as double) * 100.0;
+  }
+
   testWidgets('shows gas pressure and more status', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
@@ -123,6 +130,46 @@ void main() {
     expect(find.byKey(const ValueKey('quick-mode-laser-dashboard')),
         findsOneWidget);
     // Finish pending timers.
+    await tester.pump(const Duration(milliseconds: 5000));
+  });
+
+  testWidgets('re-trigger climb does not flash back to the down-tween peak',
+      (tester) async {
+    Widget dash({required bool laserOn}) {
+      return MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: QuickModeLaserDashboard(
+              processType: ProcessType.continuousWelding,
+              gasPressureKpa: 42,
+              laserEnable: true,
+              laserOn: laserOn,
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(dash(laserOn: true));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 2500));
+    final peak = ringProgress(tester);
+    expect(peak, closeTo(50, 3));
+
+    await tester.pumpWidget(dash(laserOn: false));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final falling = ringProgress(tester);
+    expect(falling, lessThan(peak - 5));
+
+    await tester.pumpWidget(dash(laserOn: true));
+    await tester.pump();
+    final afterReverse = ringProgress(tester);
+    expect(
+      afterReverse,
+      closeTo(falling, 3),
+      reason: 'must resume from current progress, not the previous peak',
+    );
     await tester.pump(const Duration(milliseconds: 5000));
   });
 

@@ -77,6 +77,10 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
     if (widget.laserOn == _lastLaserOn) {
       return;
     }
+    debugPrint(
+      'laser-dashboard: laserOn $_lastLaserOn → ${widget.laserOn} '
+      '(enable=${widget.laserEnable}, progress=${_progress.toStringAsFixed(1)})',
+    );
     _lastLaserOn = widget.laserOn;
     if (widget.laserOn) {
       _animateTo(100, QuickModeLaserDashboard.upDuration);
@@ -99,12 +103,14 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
           .round()
           .clamp(1, fullDuration.inMilliseconds),
     );
-    _controller
-      ..stop()
-      ..duration = scaled
-      ..value = 0;
+    _controller.stop();
+    // Attach the new tween before resetting the controller. Setting value=0
+    // while the previous (down) tween is still live jumps to that tween's
+    // begin — a one-frame flash back to the last peak, then snap to [from]
+    // (the "retreat ghost" on re-trigger).
     _tween = Tween<double>(begin: from, end: target).animate(_controller);
-    _controller.forward();
+    _controller.duration = scaled;
+    _controller.forward(from: 0);
   }
 
   @override
@@ -136,6 +142,7 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
         // cropping it at 570.
         clipBehavior: Clip.hardEdge,
         children: [
+          // Tracks under the split mipmaps (lws-ui seekbars sit below them).
           Align(
             alignment: Alignment.center,
             child: IgnorePointer(
@@ -147,8 +154,21 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                     progress: _progress / 100.0,
                     palette: palette,
                     metrics: metrics,
+                    layer: _LaserRingPaintLayer.track,
                   ),
                 ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: metrics.borderLeft,
+            top: metrics.borderTop,
+            child: IgnorePointer(
+              child: Image.asset(
+                ProcessModeAssets.circleBorder,
+                width: metrics.borderWidth,
+                height: metrics.borderHeight,
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -178,15 +198,23 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
               ),
             ),
           ),
-          Positioned(
-            left: metrics.borderLeft,
-            top: metrics.borderTop,
+          // Progress above split decorations so the climb covers 分割线 even
+          // when progress colors are close to the track (product expectation).
+          Align(
+            alignment: Alignment.center,
             child: IgnorePointer(
-              child: Image.asset(
-                ProcessModeAssets.circleBorder,
-                width: metrics.borderWidth,
-                height: metrics.borderHeight,
-                fit: BoxFit.contain,
+              child: Opacity(
+                opacity: ringAlpha,
+                child: CustomPaint(
+                  key: const ValueKey('quick-mode-laser-rings-progress'),
+                  size: Size.square(metrics.size),
+                  painter: _LaserProgressRingsPainter(
+                    progress: _progress / 100.0,
+                    palette: palette,
+                    metrics: metrics,
+                    layer: _LaserRingPaintLayer.progress,
+                  ),
+                ),
               ),
             ),
           ),
@@ -362,21 +390,26 @@ final class _LaserDashboardPalette {
       );
     }
     return const _LaserDashboardPalette(
-      // The outer rail starts with a brighter orange at the center-facing
-      // edge, then returns to the enabled Quick side-button orange outside.
+      // Always-bright welding rail (see ringAlpha). Progress must stay a
+      // distinct warm gradient — matching track colors made laserOn climb
+      // invisible on continuous/spot after the bright-rail restyle.
       outerTrack: [
         Color(0xFFFFA23A),
         ProcessModeOutlineChrome.actionOrange,
       ],
       innerTrack: [Color(0xFF20100A), Color(0xFFA0310F)],
-      lineProgress: ProcessModeOutlineChrome.actionOrange,
+      lineProgress: Color(0xFFFFB016),
       outerProgress: [
-        Color(0xFFFFA23A),
-        ProcessModeOutlineChrome.actionOrange,
+        Color(0xFFB75717),
+        Color(0xFFFFB016),
+        Color(0xFFFFB016),
+        Color(0xFFFFBD18),
       ],
       innerProgress: [
-        Color(0xFF20100A),
-        Color(0xFFA0310F),
+        Color(0xFF42260D),
+        Color(0xFFDD7315),
+        Color(0xFFDD7315),
+        Color(0xFFFFBD16),
       ],
       pressureBg: ProcessModeAssets.pressureMonitoringOrange,
     );
@@ -447,16 +480,20 @@ final class _LaserDashboardMetrics {
       (contentTop + titleSize + contentGap + valueSize / 2);
 }
 
+enum _LaserRingPaintLayer { track, progress }
+
 final class _LaserProgressRingsPainter extends CustomPainter {
   _LaserProgressRingsPainter({
     required this.progress,
     required this.palette,
     required this.metrics,
+    required this.layer,
   });
 
   final double progress;
   final _LaserDashboardPalette palette;
   final _LaserDashboardMetrics metrics;
+  final _LaserRingPaintLayer layer;
 
   /// Matches `quick_mode_circular` start_angle / end_angle.
   static const double _startDeg = 130;
@@ -468,6 +505,8 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     final start = _startDeg * math.pi / 180;
     final fullSweep = _totalDeg * math.pi / 180;
     final progressSweep = fullSweep * progress.clamp(0.0, 1.0);
+    final paintTrack = layer == _LaserRingPaintLayer.track;
+    final paintProgress = layer == _LaserRingPaintLayer.progress;
 
     // CircularSeekBar radius: viewSize / 2 - circleStrokeWidth.
     _paintRing(
@@ -481,6 +520,8 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
+      paintTrack: paintTrack,
+      paintProgress: paintProgress,
     );
 
     // Inner seekbar — its 514dp View and 50dp rail are deliberately not
@@ -496,6 +537,8 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
+      paintTrack: paintTrack,
+      paintProgress: paintProgress,
     );
 
     // The source's third CircularSeekBar is an independent 6dp highlight
@@ -521,6 +564,8 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       progressSweep: progressSweep,
       solidProgress: true,
       radius: metrics.outerHighlightRadius,
+      paintTrack: paintTrack,
+      paintProgress: paintProgress,
     );
   }
 
@@ -535,13 +580,15 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     required double start,
     required double fullSweep,
     required double progressSweep,
+    required bool paintTrack,
+    required bool paintProgress,
     bool solidProgress = false,
     double? radius,
   }) {
     final pathRadius = radius ?? viewSize / 2 - circleStrokeWidth;
     final rect = Rect.fromCircle(center: center, radius: pathRadius);
 
-    if (trackColors.any((color) => color.alpha > 0)) {
+    if (paintTrack && trackColors.any((color) => color.alpha > 0)) {
       final track = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = circleStrokeWidth
@@ -561,7 +608,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       canvas.drawArc(rect, start, fullSweep, false, track);
     }
 
-    if (progressSweep <= 0) {
+    if (!paintProgress || progressSweep <= 0) {
       return;
     }
 
@@ -611,5 +658,6 @@ final class _LaserProgressRingsPainter extends CustomPainter {
   bool shouldRepaint(covariant _LaserProgressRingsPainter oldDelegate) =>
       oldDelegate.progress != progress ||
       oldDelegate.palette != palette ||
-      oldDelegate.metrics.scale != metrics.scale;
+      oldDelegate.metrics.scale != metrics.scale ||
+      oldDelegate.layer != layer;
 }

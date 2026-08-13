@@ -922,121 +922,122 @@ final class _QuickModePageState extends State<QuickModePage> {
                   ),
                 ),
               if (showPickers) ...[
-            Center(
-              child: QuickModeLaserDashboard(
-                processType: _processType,
-                gasPressureKpa: device?.gasPressureKpa ?? 0,
-                laserEnable: device?.laserEnable ?? false,
-                laserOn: device?.laserOn ?? false,
-              ),
-            ),
-            Align(
-              alignment: Alignment.center,
-              child: Transform.translate(
-                offset: Offset(
-                  QuickModePickerDimens.gearPickCenterFromPageCenter(
-                    highlightR,
+                Center(
+                  child: QuickModeLaserDashboard(
+                    processType: _processType,
+                    gasPressureKpa: device?.gasPressureKpa ?? 0,
+                    laserEnable: device?.laserEnable ?? false,
+                    laserOn: device?.laserOn ?? false,
                   ),
-                  ProcessModeDimens.pickerVerticalFromPageCenter,
                 ),
-                child: QuickModeGearPick(
-                  processType: _processType,
-                  gears: selection.gears,
-                  selectedIndex: gearIndex < 0 ? 0 : gearIndex,
-                  onChanged: _onGearIndex,
-                  interactionEnabled: selectorsInteractive,
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.center,
-              child: Transform.translate(
-                offset: Offset(
-                  QuickModePickerDimens.thicknessPickCenterFromPageCenter(
-                    highlightR,
-                  ),
-                  ProcessModeDimens.pickerVerticalFromPageCenter,
-                ),
-                child: Builder(
-                  builder: (context) {
-                    final unitStore = CommonSettingsScope.maybeOf(context);
-                    Widget pick(bool useMm) {
-                      final unit = useMm ? 'mm' : 'in';
-                      final l10n = AppLocalizations.of(context)!;
-                      final label = selection.useSwingWidth
-                          ? l10n.swingWidthLabel
-                          : l10n.thicknessLabel;
-                      return QuickModeDimensionPick(
-                        processType: _processType,
-                        title: l10n.dimensionWithUnit(label, unit),
-                        dimensions: selection.dimensions,
-                        selectedIndex: dimensionIndex < 0 ? 0 : dimensionIndex,
-                        onChanged: _onDimensionIndex,
-                        useMmUnit: useMm,
-                        interactionEnabled: selectorsInteractive,
-                      );
-                    }
-
-                    if (unitStore == null) {
-                      return pick(true);
-                    }
-                    return ListenableBuilder(
-                      listenable: unitStore,
-                      builder: (context, _) => pick(
-                        LengthUnitConvert.isMetric(unitStore.unitWire),
+                Align(
+                  alignment: Alignment.center,
+                  child: Transform.translate(
+                    offset: Offset(
+                      QuickModePickerDimens.gearPickCenterFromPageCenter(
+                        highlightR,
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Transform.translate(
-                offset: const Offset(
-                  0,
-                  ProcessModeDimens.materialVerticalOffset,
-                ),
-                child: LaserEnableRegionFrost(
-                  armed: laserEnable,
-                  child: QuickModeMaterialWheel(
-                    materials: selection.materials,
-                    selectedIndex: materialIndex < 0 ? 0 : materialIndex,
-                    onChanged: _onMaterialIndex,
+                      ProcessModeDimens.pickerVerticalFromPageCenter,
+                    ),
+                    child: QuickModeGearPick(
+                      processType: _processType,
+                      gears: selection.gears,
+                      selectedIndex: gearIndex < 0 ? 0 : gearIndex,
+                      onChanged: _onGearIndex,
+                      interactionEnabled: selectorsInteractive,
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
-          if (!isCnc &&
-              controller.initialized &&
-              selection != null &&
-              selection.materials.isEmpty)
-            Center(
-              child: Text(
-                AppLocalizations.of(context)!.processLibraryNotInstalled,
-                key: const ValueKey('quick-mode-empty-library'),
-                style: context.hmiTypography.supporting.copyWith(
-                  color: const Color(0xB3FFFFFF),
+                Align(
+                  alignment: Alignment.center,
+                  child: Transform.translate(
+                    offset: Offset(
+                      QuickModePickerDimens.thicknessPickCenterFromPageCenter(
+                        highlightR,
+                      ),
+                      ProcessModeDimens.pickerVerticalFromPageCenter,
+                    ),
+                    child: Builder(
+                      builder: (context) {
+                        final unitStore = CommonSettingsScope.maybeOf(context);
+                        Widget pick(bool useMm) {
+                          final unit = useMm ? 'mm' : 'in';
+                          final l10n = AppLocalizations.of(context)!;
+                          final label = selection.useSwingWidth
+                              ? l10n.swingWidthLabel
+                              : l10n.thicknessLabel;
+                          return QuickModeDimensionPick(
+                            processType: _processType,
+                            title: l10n.dimensionWithUnit(label, unit),
+                            dimensions: selection.dimensions,
+                            selectedIndex:
+                                dimensionIndex < 0 ? 0 : dimensionIndex,
+                            onChanged: _onDimensionIndex,
+                            useMmUnit: useMm,
+                            interactionEnabled: selectorsInteractive,
+                          );
+                        }
+
+                        if (unitStore == null) {
+                          return pick(true);
+                        }
+                        return ListenableBuilder(
+                          listenable: unitStore,
+                          builder: (context, _) => pick(
+                            LengthUnitConvert.isMetric(unitStore.unitWire),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          if (!isCnc && device != null)
-            Positioned.fill(
-              child: QuickModeDeviceControls(
-                controller: device,
-                processType: _processType,
-                laserPreflight: _laserPreflight,
-                onEnableConfirmed: _confirmAndEnableLaser,
-                onDisable: _disableLaser,
-              ),
-            ),
-          if (isCnc && cncSession != null && cncSession.runningOverlay)
-            Positioned.fill(
-              child: CncRunningOverlay(
-                onExitPressed: _onCncExitPressed,
-              ),
-            ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Transform.translate(
+                    offset: const Offset(
+                      0,
+                      ProcessModeDimens.materialVerticalOffset,
+                    ),
+                    child: LaserEnableRegionFrost(
+                      armed: laserEnable,
+                      child: QuickModeMaterialWheel(
+                        materials: selection.materials,
+                        selectedIndex: materialIndex < 0 ? 0 : materialIndex,
+                        onChanged: _onMaterialIndex,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (!isCnc &&
+                  controller.initialized &&
+                  selection != null &&
+                  selection.materials.isEmpty)
+                Center(
+                  child: Text(
+                    AppLocalizations.of(context)!.processLibraryNotInstalled,
+                    key: const ValueKey('quick-mode-empty-library'),
+                    style: context.hmiTypography.supporting.copyWith(
+                      color: const Color(0xB3FFFFFF),
+                    ),
+                  ),
+                ),
+              if (!isCnc && device != null)
+                Positioned.fill(
+                  child: QuickModeDeviceControls(
+                    controller: device,
+                    processType: _processType,
+                    laserPreflight: _laserPreflight,
+                    onEnableConfirmed: _confirmAndEnableLaser,
+                    onDisable: _disableLaser,
+                  ),
+                ),
+              if (isCnc && cncSession != null && cncSession.runningOverlay)
+                Positioned.fill(
+                  child: CncRunningOverlay(
+                    onExitPressed: _onCncExitPressed,
+                  ),
+                ),
             ],
           );
         },
@@ -1049,6 +1050,7 @@ final class _QuickModePageState extends State<QuickModePage> {
         appBar: WorkModeStatusBar(
           mode: WorkMode.quick,
           processType: _processType,
+          showHomeEdgeAccent: false,
           onBack: _onBack,
         ),
         body: ProcessModeToastLayer(

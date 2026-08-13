@@ -902,6 +902,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
           appBar: WorkModeStatusBar(
             mode: WorkMode.engineer,
             processType: _processType,
+            showHomeEdgeAccent: false,
             backLabel: widget.fromQuickHandoff
                 ? (AppLocalizations.of(context)?.equipmentStatusBack ?? 'Back')
                 : (AppLocalizations.of(context)?.equipmentStatusHome ?? 'Home'),

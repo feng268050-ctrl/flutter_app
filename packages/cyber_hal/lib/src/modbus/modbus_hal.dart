@@ -319,6 +319,7 @@ final class _LinuxModbusHal implements ModbusHal {
   Future<void> _exclusiveChain = Future<void>.value();
 
   /// Recent group-cycle outcomes for slide_window health (true = failure).
+  /// Unhealthy when the trailing streak of failures reaches [failureThreshold].
   final List<bool> _healthFailures = [];
 
   /// Runtime override for [ModbusHealthWindowConfig.mode] (App-supplied).
@@ -1200,13 +1201,24 @@ final class _LinuxModbusHal implements ModbusHal {
     }
   }
 
+  /// Trailing consecutive failures at the end of [_healthFailures].
+  int _trailingFailureStreak() {
+    var streak = 0;
+    for (var i = _healthFailures.length - 1; i >= 0; i--) {
+      if (!_healthFailures[i]) {
+        break;
+      }
+      streak++;
+    }
+    return streak;
+  }
+
   bool _isWindowUnhealthy(ModbusHealthWindowConfig window) {
     if (window.mode == 'immediate') {
       return _healthFailures.isNotEmpty && _healthFailures.last;
     }
-    if (_healthFailures.length < window.failureThreshold) return false;
-    final failures = _healthFailures.where((f) => f).length;
-    return failures >= window.failureThreshold;
+    // slide_window: consecutive failures (not any N failures in the window).
+    return _trailingFailureStreak() >= window.failureThreshold;
   }
 
   void _emitAggregateHealth({required bool anySample}) {
@@ -1215,13 +1227,13 @@ final class _LinuxModbusHal implements ModbusHal {
       return;
     }
     final unhealthy = _isWindowUnhealthy(window);
-    final failCount = _healthFailures.where((f) => f).length;
+    final streak = _trailingFailureStreak();
     _emitHealth(
       ModbusHealth(
         ok: !unhealthy,
         truncated: unhealthy,
         message: unhealthy
-            ? 'health window: $failCount/${window.windowSize} failures'
+            ? 'health window: $streak consecutive failures'
             : null,
       ),
     );

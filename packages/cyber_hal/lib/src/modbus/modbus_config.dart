@@ -254,6 +254,9 @@ final class ModbusHealthWindowConfig {
   });
 
   final int windowSize;
+
+  /// For `slide_window`: consecutive trailing failures required to mark
+  /// unhealthy. For `immediate`: unused (any latest failure trips).
   final int failureThreshold;
 
   /// `slide_window` (default) or `immediate`.

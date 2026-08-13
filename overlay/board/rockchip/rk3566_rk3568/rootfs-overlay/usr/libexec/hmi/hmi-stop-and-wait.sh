@@ -108,11 +108,11 @@ if [ -n "$live_pids" ] || [ -n "$weston_pids" ]; then
 	[ -z "$weston_pids" ] || kill -9 $weston_pids 2>/dev/null || true
 	sleep 1
 fi
+
 if [ -n "$(live_flutter_pids)" ] || [ -n "$(live_weston_pids)" ]; then
 	log "HMI embedder is still running; refusing to start a second instance"
 	exit 1
 fi
-
 rm -f "$PIDFILE" /var/lib/hmi/debug-app.vm-service
 # Let deferred DRM/Mali task_work complete before another instance opens DRM.
 sleep 1

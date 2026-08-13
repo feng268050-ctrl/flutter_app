@@ -55,7 +55,7 @@ done < "$WHITELIST"
 echo "--- size (excluding buildroot/dl, buildroot/output, output; soft-max excludes prebuilts) ---"
 total_kb=0
 prebuilts_kb=0
-for d in buildroot kernel-6.1 kernel device rkbin external tools u-boot innohi prebuilts; do
+for d in buildroot kernel device rkbin external tools u-boot innohi prebuilts; do
   [[ -e "$SDK/$d" ]] || continue
   if [[ "$d" == "buildroot" ]]; then
     br_total=$(du -sk "$SDK/buildroot" 2>/dev/null | awk '{print $1}')

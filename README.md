@@ -118,7 +118,7 @@ make build-platform-packages
 make build-mediamtx
 make build-opencv
 make build-umtprd
-make build-extract-video-frame
+make build-libexec-binaries
 make fetch-btop
 ```
 
@@ -233,7 +233,7 @@ make emulator-stop
 make emulator
 ```
 
-`make build-emulator` copies the 600M device `rootfs.img` and grows the **emulator-only** copy to **1536M** so `debug-app` / `push-app` have headroom (guest has no userdata partition).
+`make build-emulator` copies the 600M device `rootfs.img` and grows the **emulator-only** copy to **1536M** so `debug-app` / `push-app` have headroom (guest has no userdata partition). It **reuses** `output/firmware/emulator/provision.img` when present (identity + tunables); `FORCE=1 make build-emulator` recreates that disk.
 
 Useful once the guest is up:
 
@@ -402,7 +402,8 @@ make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= 
 make migrate-secrets            # re-seal software Wi‑Fi vault + cloud Ed25519 → OP-TEE (SCOPE=all|wifi|cloud)
 make migrate-seal-kek           # HUK-wrap OP-TEE seal KEK ↔ Vendor Storage ID 23 (cloud seed unchanged)
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/properties.ini (multi-key OK); restarts hmi
-# brand / model / sn → Vendor Storage: make write-identity (not set-prop / del-prop / OEM seed)
+# brand / model / sn → Rockchip Vendor Storage (or emulator provision/identity.env): make write-identity
+# tunables → provision-backed properties.ini: make set-prop
 make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphens stripped → LC001; SN=… FORCE=1 to overwrite
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
@@ -461,7 +462,8 @@ IP=192.168.1.50 make upgrade    # SSH stream-to-partition; not RockUSB / not onl
 make disconnect 192.168.1.50
 ```
 
-`IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** (`make devices` columns: MODE / SN / LocationID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is chip-ID fallback. USB-SSH/SSH/EMU **SN** prefers Vendor Storage SN, else chip serial. Android adb / RockUSB loader rows use the adb/SerialNo as SN. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade` / `make write-identity`. Product identity (`brand` / `model` / `sn`) lives in Rockchip **Vendor Storage** — provision with **`make write-identity BRAND=… MODEL=… PRODUCT_SN=…`** after flash (geometry frozen; `factory.img` must not package vendor payloads). Optional macOS RockUSB `upgrade_tool SN` / `RSN` is **SN-only**; brand/model still need `write-identity`. `make set-prop` / `del-prop` refuse identity keys.
+`IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** (`make devices` columns: MODE / SN / LocationID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is chip-ID fallback. USB-SSH/SSH/EMU **SN** prefers Vendor Storage SN, else chip serial. Android adb / RockUSB loader rows use the adb/SerialNo as SN. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app` / `make write-identity` (provision disk), not `make upgrade`. Product identity on Rockchip boards lives in **Vendor Storage**; on QEMU in per-developer **`provision.img`** (`identity.env`). Tunables (`properties.ini`) also live on **provision** — survive 返厂 `make flash` when omitted from `package-file` (same contract as vendor). Provision with **`make write-identity BRAND=… MODEL=… PRODUCT_SN=…`** after first GPT adoption flash. `make set-prop` / `del-prop` refuse identity keys. Optional macOS RockUSB `upgrade_tool SN` / `RSN` is **SN-only**; brand/model still need `write-identity`.
+
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
 `make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. **`make push-app`** (Debug) is an **unsigned** SSH hot-swap of the overlay app tree into `/opt/hmi` (+ companions) and restart of `hmi.service` — not an alias of **`make upgrade-app`**. Signed app shipping uses **`make upgrade-app`** (pack/sign `tar.gz`, host HTTP, device `download <url>` + Ed25519 verify). The flashed image must include the push-app apply helper and DRM GEM teardown fix. Host needs team SSH key at `keys/ssh/id_ed25519` (`make ssh-keys`); signed upgrade also needs `OTA_SIGNING_KEY`. `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) auto-selects **SSH stream** (inactive FIT + rootfs) when a Linux SSH target is up, or **RockUSB `di`** of OTA-equivalent images (`boot`/`boot_b`/both rootfs letters/optional oem) when the board is in Loader/Maskrom — **not** `upgrade_tool uf` / `factory.img` (use **`make flash`** for GPT / U-Boot / MiniLoader storage / misc) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Force with `UPGRADE_TRANSPORT=ssh|rockusb`. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / upgrade-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
@@ -548,7 +550,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | flutter-engine / eLinux | `prebuilt/flutter-*` | HMI 显示栈 |
 | mediamtx | `prebuilt/mediamtx/` → **`/opt/hmi/bin/mediamtx`** (`make build-app`) | RTSP 中继（产品 App 子进程；**相机就绪后**由 HMI 拉起） |
 | umtprd | `prebuilt/umtprd/` + fs-overlay `usr/bin/` | USB MTP gadget（`mode=mtp`；`make build-umtprd`） |
-| extract-video-frame | `prebuilt/extract_video_frame/` + fs-overlay `usr/libexec/hmi/` | MP4→JPEG cover/AI sample（GStreamer；`make build-extract-video-frame`） |
+| extract-video-frame | `prebuilt/extract_video_frame/` + fs-overlay `usr/libexec/hmi/` | MP4→JPEG cover/AI sample（GStreamer；`make build-libexec-binaries TOOL=extract-video-frame`） |
 | btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
 | OpenCV + ximgproc | `.cache/opencv/` sources → `make build-opencv` → `prebuilt/opencv/linux-arm64/` | 链进 `lws_ai_daemon` |
@@ -569,7 +571,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
 | `make fetch-btop` | aarch64 musl `btop` → prebuilt + fs-overlay |
 | `make build-umtprd` | aarch64 static `umtprd` → prebuilt + fs-overlay（MTP） |
-| `make build-extract-video-frame` | aarch64 `extract-video-frame` → prebuilt + `/usr/libexec/hmi/`（GStreamer JPEG） |
+| `make build-libexec-binaries` | aarch64 libexec C 二进制 → prebuilt + overlay（`TOOL=` 可选单项；含 reboot-loader、extract-video-frame、模拟器触摸桥） |
 | `make build-flutter-engine` / `build-eLinux` / `build-mediamtx` | 单项 |
 | `make check-prebuilt` | 校验 runtime（`build-rootfs` 自动） |
 | `make build-rootfs` | 装已接入 defconfig 的 prebuilt（Flutter 等） |

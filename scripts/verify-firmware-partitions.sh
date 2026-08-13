@@ -30,8 +30,12 @@ parts = []
 for m in re.finditer(r"0x([0-9a-fA-F]+)@0x([0-9a-fA-F]+)\(([^)]+)\)", cmd):
     size, off, name = int(m.group(1), 16), int(m.group(2), 16), m.group(3)
     parts.append((name.split(":")[0], off, size * 512))
+for m in re.finditer(r"-@0x([0-9a-fA-F]+)\(([^)]+)\)", cmd):
+    off, name = int(m.group(1), 16), m.group(2)
+    parts.append((name.split(":")[0], off, 0))
 
 limits = {name: size for name, _off, size in parts}
+offsets = {name: off for name, off, _size in parts}
 
 # Vendor U-Boot requires PARTNAME "boot" (letter A); letter B is boot_b.
 images = {
@@ -85,6 +89,32 @@ for vname in ("vendor0", "vendor1", "vendor2", "vendor3"):
             f"(expected {vendor_need} = 64 KiB); geometry is frozen ABI"
         )
         ok = False
+
+# provision GPT (flash-surviving tunables); 4 MiB (0x2000 sectors) @ 0x4BE200; userdata grow @ 0x4C0200.
+provision_need = 0x2000 * 512
+provision_start = 0x4BE200
+userdata_grow_start = 0x4C0200
+if "provision" not in limits:
+    print("FAIL: parameter missing provision (see docs/storage-layout.md)")
+    ok = False
+elif limits["provision"] != provision_need:
+    print(
+        f"FAIL: provision size {limits['provision']} bytes "
+        f"(expected {provision_need} = 4 MiB); geometry is frozen ABI"
+    )
+    ok = False
+elif offsets.get("provision") != provision_start:
+    print(
+        f"FAIL: provision start LBA 0x{offsets.get('provision', 0):X} "
+        f"(expected 0x{provision_start:X}); geometry is frozen ABI"
+    )
+    ok = False
+if "userdata" in offsets and offsets["userdata"] != userdata_grow_start:
+    print(
+        f"FAIL: userdata grow start LBA 0x{offsets.get('userdata', 0):X} "
+        f"(expected 0x{userdata_grow_start:X}); geometry is frozen ABI"
+    )
+    ok = False
 
 sys.exit(0 if ok else 1)
 PY

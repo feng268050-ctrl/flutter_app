@@ -150,8 +150,15 @@ void main() {
     test('now prefers date civil stamp over DateTime.now', () async {
       final c = controller(
         runProcess: (exe, args) async {
-          if (exe == 'date' && args.length == 1 && args.first.startsWith('+%')) {
+          if (exe == 'sh' &&
+              args.length >= 2 &&
+              args[1].contains('date +%Y-%m-%dT%H:%M:%S')) {
             return ProcessResult(0, 0, '2026-07-27T17:30:00\n', '');
+          }
+          if (exe == 'timedatectl' &&
+              args.isNotEmpty &&
+              args.first == 'set-timezone') {
+            return ProcessResult(0, 0, '', '');
           }
           return ProcessResult(0, 1, '', 'fail');
         },
@@ -162,6 +169,31 @@ void main() {
       expect(n.day, 27);
       expect(n.hour, 17);
       expect(n.minute, 30);
+    });
+
+    test('now passes pref timezone to date via TZ=', () async {
+      await File(confPath).writeAsString('timezone=Asia/Shanghai\n');
+      String? shCmd;
+      final c = controller(
+        runProcess: (exe, args) async {
+          if (exe == 'sh' && args.length >= 2) {
+            shCmd = args[1];
+            if (args[1].contains('date +%Y-%m-%dT%H:%M:%S')) {
+              return ProcessResult(0, 0, '2026-08-12T17:51:00\n', '');
+            }
+          }
+          if (exe == 'timedatectl' &&
+              args.isNotEmpty &&
+              args.first == 'set-timezone') {
+            return ProcessResult(0, 0, '', '');
+          }
+          return ProcessResult(0, 1, '', 'fail');
+        },
+      );
+      final n = await c.now();
+      expect(shCmd, contains("TZ='Asia/Shanghai'"));
+      expect(n.hour, 17);
+      expect(n.minute, 51);
     });
 
     test('setWallClock switches mode to manual on success', () async {

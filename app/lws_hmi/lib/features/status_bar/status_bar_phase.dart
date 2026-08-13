@@ -54,6 +54,11 @@ CyberCameraLinkStatus mapCameraLinkStatus(IpCameraUiPhase phase) {
 /// Maps product cloud UI phase (origin probe + WS) into CyberUI cloud status.
 CyberCloudLinkStatus mapCloudLinkStatus(CloudLinkUiPhase phase) {
   return switch (phase) {
+    CloudLinkUiPhase.disabled => throw ArgumentError.value(
+        phase,
+        'phase',
+        'disabled cloud is not shown in the status bar',
+      ),
     CloudLinkUiPhase.connecting => CyberCloudLinkStatus.connecting,
     CloudLinkUiPhase.connected => CyberCloudLinkStatus.connected,
     CloudLinkUiPhase.failed => CyberCloudLinkStatus.failed,
@@ -71,11 +76,15 @@ List<Widget> buildProductStatusIconItems({
   int? wifiSignalDbm,
   double iconSize = 28,
   bool remoteLocked = false,
-  CyberCloudLinkStatus cloudStatus = CyberCloudLinkStatus.connecting,
+  CloudLinkUiPhase? cloudPhase,
 }) {
   final wifiLinked = wifiPhase == CyberConnectivityIconPhase.connected;
+  final cloudStatus = cloudPhase == null ||
+          cloudPhase == CloudLinkUiPhase.disabled
+      ? null
+      : mapCloudLinkStatus(cloudPhase);
   return [
-    if (wifiLinked)
+    if (wifiLinked && cloudStatus != null)
       CyberCloudStatusIcon(
         key: const ValueKey('home-status-cloud'),
         status: cloudStatus,

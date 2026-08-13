@@ -49,16 +49,21 @@ ab_log "try-boot=$try_boot active=$active previous=$previous tries=$tries"
 
 root_dev="$(ab_current_root_dev 2>/dev/null || true)"
 root_letter="$(ab_current_root_letter 2>/dev/null || true)"
-root_matches_try=0
-if [ "$root_letter" = "$try_boot" ]; then
-	root_matches_try=1
-else
-	ab_log "ERROR: mounted root device=${root_dev:-unknown} letter=${root_letter:-unknown} expected try=$try_boot"
+if [ "$root_letter" != "$try_boot" ]; then
+	# Wrong FIT/root letter will not change across reboot retries — roll back now.
+	ab_log "ERROR: mounted root device=${root_dev:-unknown} letter=${root_letter:-unknown} expected try=$try_boot — immediate ROLLBACK (no retry)"
+	ab_swap_boot_partitions
+	ab_slot_write "$previous" "0" "$previous" 0
+	ab_log "ROLLBACK to letter=$previous (swapped boot; root letter mismatch)"
+	sync
+	sleep 1
+	ab_reboot
+	exit 0
 fi
 
 healthy=0
 i=0
-while [ "$root_matches_try" -eq 1 ] && [ "$i" -lt "$HMI_WAIT_SEC" ]; do
+while [ "$i" -lt "$HMI_WAIT_SEC" ]; do
 	if systemctl is-active --quiet hmi.service 2>/dev/null; then
 		healthy=1
 		break

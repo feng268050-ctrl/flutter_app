@@ -315,7 +315,7 @@ run_check() {
 		read-cloud-ed25519-sealed.sh write-cloud-ed25519-sealed.sh \
 		secrets-seal secrets-seal-ca paths.sh lws-hostname.sh device-mdns-advertise.sh \
 		serial-console-stty.sh reboot-loader boot-verify.sh env-verify.sh \
-		set-performance-mode.sh bind-prefs.sh; do
+		set-performance-mode.sh bind-prefs.sh apply-datetime-prefs.sh provision-mount.sh factory-reset.sh emulator-storage-init.sh; do
 		if [[ -x "$libexec_board/$f" ]] || [[ -f "$libexec_board/$f" && "$f" == paths.sh ]]; then
 			echo "OK:  board/$f"
 		else
@@ -378,6 +378,24 @@ run_check() {
 		echo "FAIL: oem/oem-compose.sh missing or not executable" >&2
 		missing=1
 	fi
+
+	echo ""
+	echo "--- oem screen pack default_ui_scale ---"
+	check_screen_default_ui_scale() {
+		local json="$1" expected="$2" label="$3"
+		local got
+		got="$(sed -n 's/.*"default_ui_scale"[[:space:]]*:[[:space:]]*\([0-9.][0-9.]*\).*/\1/p' "$json" | head -1)"
+		if [[ "$got" == "$expected" ]]; then
+			echo "OK:  $label default_ui_scale=$got"
+		else
+			echo "FAIL: $label default_ui_scale=$got (expected $expected) in $json" >&2
+			missing=1
+		fi
+	}
+	check_screen_default_ui_scale \
+		"$ROOT/oem/screens/panel-ynh960-800x1280/screen.json" "1.13" "ynh960 panel"
+	check_screen_default_ui_scale \
+		"$ROOT/oem/screens/virt/screen.json" "1.28" "virt"
 
 	echo ""
 	echo "--- usr/libexec/display ---"
@@ -1225,6 +1243,42 @@ EOF
 		echo "OK:  bind-prefs (four /var/lib/* → /userdata/*)"
 	else
 		echo "FAIL: missing bind-prefs.sh wired into display-init (stub or OEM helper)" >&2
+		missing=1
+	fi
+	if [[ -x "$libexec_board/provision-mount.sh" ]] && \
+		( grep -q 'provision-mount.sh' \
+			"$ROOT/oem/boards/ynh960/helpers/display-init.sh" 2>/dev/null || \
+		  grep -q 'provision-mount.sh' \
+			"$libexec_board/emulator-storage-init.sh" 2>/dev/null ); then
+		echo "OK:  provision-mount (properties.ini → /mnt/provision)"
+	else
+		echo "FAIL: missing provision-mount.sh wired into display-init or emulator-storage-init" >&2
+		missing=1
+	fi
+	if [[ -x "$libexec_board/apply-datetime-prefs.sh" ]] && \
+		( grep -q 'apply-datetime-prefs.sh' \
+			"$ROOT/oem/boards/ynh960/helpers/display-init.sh" 2>/dev/null || \
+		  grep -q 'apply-datetime-prefs.sh' \
+			"$libexec_board/emulator-storage-init.sh" 2>/dev/null ) && \
+		grep -q 'apply-datetime-prefs.sh' \
+			"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh" 2>/dev/null; then
+		echo "OK:  apply-datetime-prefs (datetime.conf → /etc/localtime)"
+	else
+		echo "FAIL: missing apply-datetime-prefs.sh wired into display-init, emulator-storage-init, or hmi-launch" >&2
+		missing=1
+	fi
+	if [[ -x "$libexec_board/factory-reset.sh" ]] && [[ -L "$target/usr/bin/factory-reset" ]]; then
+		echo "OK:  factory-reset helper + /usr/bin/factory-reset"
+	else
+		echo "FAIL: missing factory-reset.sh or /usr/bin/factory-reset symlink" >&2
+		missing=1
+	fi
+	if [[ -f "$target/etc/systemd/system/emulator-storage-init.service" ]] && \
+		grep -q 'enable emulator-storage-init.service' \
+			"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  emulator-storage-init preset (QEMU provision + bind-prefs)"
+	else
+		echo "FAIL: missing emulator-storage-init.service preset" >&2
 		missing=1
 	fi
 	if grep -q 'enable hmi.service' \

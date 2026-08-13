@@ -13,7 +13,8 @@ FORBID_TOP=innohi_board
 
 # --- Required top-level / roots (must exist after trim) ---
 REQUIRE_TOP=buildroot
-REQUIRE_TOP=kernel-6.1
+REQUIRE_TOP=kernel
+FORBID_TOP=kernel-6.1
 REQUIRE_TOP=device
 REQUIRE_TOP=rkbin
 REQUIRE_TOP=external

@@ -204,7 +204,7 @@ final class CloudLocalRuntime {
   Timer? _linkFollowUpTimer;
   /// Serializes LAN/cloud plane start/stop when toggles flip quickly.
   Future<void> _planeGate = Future<void>.value();
-  CloudLinkUiStatus _linkStatus = CloudLinkUiStatus.connecting;
+  CloudLinkUiStatus _linkStatus = CloudLinkUiStatus.disabled;
   final StreamController<CloudLinkUiStatus> _linkStatusCtrl =
       StreamController<CloudLinkUiStatus>.broadcast();
 
@@ -1025,9 +1025,8 @@ final class CloudLocalRuntime {
 
   CloudLinkUiStatus _computeLinkStatus() {
     if (!cloudSettings.cloudServicesEnabled) {
-      // Cloud plane off — Home must not show a perpetual "connecting" / fail
-      // nag; treat as idle failed (no enrollment prompts while gated).
-      return CloudLinkUiStatus.failed;
+      // Cloud plane off — no status-bar cloud glyph (not connecting / failed).
+      return CloudLinkUiStatus.disabled;
     }
     switch (ws.state) {
       case DeviceWsState.connected:

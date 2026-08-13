@@ -92,7 +92,7 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | **Profile** | `helpers.alsa_volume_controls` — preferred mixer control names (board codec order) |
 | **Profile** | `helpers.alsa_playback_path_control` + `alsa_playback_path_value` — **optional** enum route (e.g. Rockchip `Playback Path` / `RING_SPK_HP`). Omit on boards that have no such control; HAL skips routing when unset |
 | **Helper** | `change_backlight` / `change_volume` — **optional**; default is sysfs / amixer + `/var/lib/hal/` prefs |
-| **Prefs** | `/var/lib/hal/display.conf` — `backlight`, `auto_sleep`, `orientation` (`landscape` \| `portrait`), `wallpaper` / `wallpaper_id` (active image under `/var/lib/hal/wallpaper.*`; presets in `/usr/share/hal/wallpapers/`), **`ui_scale`** (operator UI scale multiplier; **`1.0` = physical 1:1 / no rematch**; non-integer OK e.g. `0.85`–`1.25`; **OS Settings** writes; both seats apply via `matchEmbedderDensity`; host/QEMU sim typically sets ~`1.13` to approximate ynh960); `/var/lib/hal/sound.conf` — `volume`, `button_feedback` (**absolute path** to click sample next to conf; product App `installAndSelect`s catalog bytes) |
+| **Prefs** | `/var/lib/hal/display.conf` — `backlight`, `auto_sleep`, `orientation` (`landscape` \| `portrait`), `wallpaper` / `wallpaper_id` (active image under `/var/lib/hal/wallpaper.*`; presets in `/usr/share/hal/wallpapers/`), **`ui_scale`** (operator UI scale multiplier; **`1.0` = physical 1:1 / no rematch**; non-integer OK e.g. `0.85`–`2.0`; **OS Settings** writes; both seats apply via `matchEmbedderDensity`; OEM screen pack seeds `default_ui_scale` on first boot when the key is absent — e.g. ynh960 ~`1.13`, QEMU `sim_virt` ~`1.28`; factory reset clears operator `display.conf` and re-seeds on next `hmi-launch`); `/var/lib/hal/sound.conf` — `volume`, `button_feedback` (**absolute path** to click sample next to conf; product App `installAndSelect`s catalog bytes) |
 | **Orientation** | Portable `Orientation` API; Linux calls `change-orientation` then `restart-flutter-seat.sh` (active HMI or OS Settings). Mapping stays in `hmi-launch.sh` (Weston transform). |
 | **Helper** | `bt_a2dp_volume` — optional A2DP soft-volume when BlueALSA sink is used |
 
@@ -214,5 +214,7 @@ OEM/compose profile **fails hard** (no App asset fallback). Host/desktop may
 still `loadAsset` `assets/hal/board_profile.json` for UI work without `/oem`.
 
 OEM owns board×screen SKU only (no properties.ini seed); tunables via
-`/var/lib/hal/properties.ini` + `make set-prop`. See
+`/var/lib/hal/properties.ini` (bind to `/mnt/provision/properties.ini` on device)
++ `make set-prop`. Identity: Rockchip Vendor Storage; non-Rockchip / emulator
+`provision/identity.env`. See
 [`docs/platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §3.5.

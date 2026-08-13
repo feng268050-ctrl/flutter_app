@@ -61,7 +61,8 @@ bool _isSystemMount(String mountPoint) => mountPoint == '/';
 ///
 /// Appliance accounting (not raw df Used):
 /// - **System (`/`)**: HAL synthetic entry = sum of GPT system partitions
-///   (rootfs A/B, oem, boot, …). Entire total counts as System.
+///   (rootfs A/B, oem, boot, provision, …). Full partition size each — not df
+///   used bytes. Entire total counts as System.
 /// - **Other mounts** (typically `/userdata`): file used = total − available.
 /// - **Available** (gray): free space on non-system mounts only.
 StorageCapacitySummary summarizeStorage(List<StorageInfo> storage) {

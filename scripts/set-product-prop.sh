@@ -33,7 +33,7 @@ Examples:
 
 Command-line keys use UPPERCASE; values are written to /var/lib/hal/properties.ini
 with lowercase keys. Multiple assignments are applied in one remote write.
-brand / model / sn live in Vendor Storage — use make write-identity (not set-prop).
+brand / model / sn live in Vendor Storage (Rockchip) or provision/identity.env — use make write-identity (not set-prop).
 hmi.service is restarted once after a successful write.
 EOF
 }

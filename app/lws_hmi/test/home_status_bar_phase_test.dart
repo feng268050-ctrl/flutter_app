@@ -112,7 +112,7 @@ void main() {
         wifiPhase: CyberConnectivityIconPhase.connected,
         bluetoothPhase: CyberConnectivityIconPhase.hidden,
         cameraStatus: CyberCameraLinkStatus.connecting,
-        cloudStatus: CyberCloudLinkStatus.connecting,
+        cloudPhase: CloudLinkUiPhase.connecting,
       );
       expect(linking.first.key, const ValueKey('home-status-cloud'));
       expect(
@@ -124,7 +124,7 @@ void main() {
         wifiPhase: CyberConnectivityIconPhase.connected,
         bluetoothPhase: CyberConnectivityIconPhase.hidden,
         cameraStatus: CyberCameraLinkStatus.connecting,
-        cloudStatus: CyberCloudLinkStatus.connected,
+        cloudPhase: CloudLinkUiPhase.connected,
       );
       expect(
         (online.first as CyberCloudStatusIcon).status,
@@ -135,11 +135,34 @@ void main() {
         wifiPhase: CyberConnectivityIconPhase.connected,
         bluetoothPhase: CyberConnectivityIconPhase.hidden,
         cameraStatus: CyberCameraLinkStatus.connecting,
-        cloudStatus: CyberCloudLinkStatus.failed,
+        cloudPhase: CloudLinkUiPhase.failed,
       );
       expect(
         (failed.first as CyberCloudStatusIcon).status,
         CyberCloudLinkStatus.failed,
+      );
+    });
+
+    test('cloud disabled or omitted hides glyph when wifi linked', () {
+      final disabled = buildProductStatusIconItems(
+        wifiPhase: CyberConnectivityIconPhase.connected,
+        bluetoothPhase: CyberConnectivityIconPhase.hidden,
+        cameraStatus: CyberCameraLinkStatus.connecting,
+        cloudPhase: CloudLinkUiPhase.disabled,
+      );
+      expect(
+        disabled.any((w) => w.key == const ValueKey('home-status-cloud')),
+        isFalse,
+      );
+
+      final omitted = buildProductStatusIconItems(
+        wifiPhase: CyberConnectivityIconPhase.connected,
+        bluetoothPhase: CyberConnectivityIconPhase.hidden,
+        cameraStatus: CyberCameraLinkStatus.connecting,
+      );
+      expect(
+        omitted.any((w) => w.key == const ValueKey('home-status-cloud')),
+        isFalse,
       );
     });
   });

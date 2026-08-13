@@ -2,9 +2,9 @@
 
 Goal: prove **one OS** (`Image` from `make build-kernel` + `rootfs.img` from `make build-rootfs`) works for multiple board×screen SKUs by swapping **OEM** only. Guest OEM = `sim_virt`. Device OEM = `ynh960_…`. Flutter still starts via `oem-compose` → `hmi.service` → `hmi-launch.sh`.
 
-**UI scale:** `display.conf` `ui_scale=1.0` is physical 1:1 (no App hard-coded rematch). To approximate the ynh960 panel on QEMU, set **~113%** in OS Settings → Display (or write `ui_scale=1.13` under `/var/lib/hal/display.conf`).
+**UI scale:** `display.conf` `ui_scale=1.0` is physical 1:1 (no App hard-coded rematch). The **sim_virt** OEM screen pack (`oem/screens/virt/screen.json`) carries **`default_ui_scale=1.28`** (~128%) for the 1536×960 virtio display — seeded into `display.conf` on first boot when the key is absent. Override in OS Settings → Display if needed (or write `ui_scale=1.28` under `/var/lib/hal/display.conf`). Physical **ynh960** panels use a separate OEM default (`1.13` / ~113%).
 
-**Host:** Apple Silicon **QEMU** (`make emulator` / qemu-virgl). An earlier plan used UTM; that path is deprecated — see [`p32-utm-guest.md`](p32-utm-guest.md) (redirect only).
+**Host:** Apple Silicon **QEMU** (`make emulator` / qemu-virgl). OpenSpec capability: **`p32-qemu-guest`**.
 
 OpenSpec: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`. Plan contract: platform plan §6.3 (three NICs + USB; no OTG).
 
@@ -67,6 +67,19 @@ Naming is via rootfs systemd `.link` files (`20-emulator-*.link`). Those MACs ne
 
 If sudo is refused / cancelled, QEMU exits — retry and approve, or use `EMULATOR_ETH0_BRIDGE=off`.
 
+### Input (`EMULATOR_INPUT`)
+
+Android Studio Emulator is also QEMU, but it converts host mouse → touch in **patched UI code** (`goldfish/events_device` / `android_virtio_touch_event`), not via stock `virtio-multitouch-pci`. Homebrew **qemu-virgl + cocoa** only delivers pointer events to absolute devices (tablet) — **not** MT events to `virtio-multitouch`.
+
+| Value | Host QEMU | Guest | UX |
+|-------|-----------|-------|-----|
+| `touch` (default) | `virtio-tablet-pci` | `emulator-tablet-to-touch`（触摸 + **REL_WHEEL** 透传） | Host 点击/拖动 → touch；**滚轮/触控板双指 → 真滚轮事件**（自然滚动）；Guest 光标隐藏；QEMU `show-cursor=on` 保留 Host 指针 |
+| `tablet` | `virtio-tablet-pci` | no bridge (`lws.emulator.input=tablet`) | Absolute pointer + visible guest cursor (debug) |
+
+Guest check: `libinput list-devices` should list **LWS Emulator Touch** in default mode.
+
+Build the bridge: `make build-libexec-binaries TOOL=emulator-tablet-to-touch` (then `make apply-overlay` → `make build-rootfs` → `make build-emulator`). Kernel needs `CONFIG_INPUT_UINPUT=y` (`overlay/kernel/rockchip/emulator-virtio.config`).
+
 ### USB (`EMULATOR_USB`)
 
 | Value | Behavior |
@@ -88,17 +101,19 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 | `output/firmware/emulator/Image` | Same build as FIT (`make build-kernel`); includes `emulator-virtio.config` (virtio for QEMU — not a ynh960 board feature) |
 | `output/firmware/emulator/rootfs.img` | Grown **copy** of device `rootfs.img` to **1536M** (fixed; not an env override) — device OTA stays 600M; emulator needs headroom for `debug-app` (no userdata partition) |
 | `output/firmware/emulator/oem.img` | `oem/out/sim_virt/oem.img` |
+| `output/firmware/emulator/provision.img` | Per-developer virtio disk (4 MiB ext4) — identity + tunables; **not** in OEM. **`make build-emulator` keeps an existing file; `FORCE=1` recreates it** |
 | `output/firmware/boot.img` | Device FIT (unchanged) |
 
 ## QEMU layout
 
 - virtio disk 0 (`/dev/vda`): rootfs.img  
 - virtio disk 1 (`/dev/vdb`): oem.img → mounted at `/oem`  
+- virtio disk 2 (`/dev/vdc`): provision.img → `/mnt/provision` (`properties.ini`, `identity.env`)  
 - cmdline: `root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 earlycon lws.emulator=1 systemd.ssh_auto=no systemd.getty_auto=no systemd.gpt_auto=no random.trust_cpu=on`  
 - Default **`EMULATOR_CPU=1`** (override with `EMULATOR_CPU=4`): systemd 256 `(sd-gens)` under Apple HVF can hang after Welcome with smp≥2; same OS image, virt form-factor quirk  
 - Three virtio-net NICs with fixed MACs (above); vmnet adds `ethssh` for SSH hostfwd  
 - virtio-sound (host CoreAudio / Pulse / ALSA; playback-only `streams=1`; guest `CONFIG_SND_VIRTIO`)  
-- virtio-gpu-gl 1536×960 + virtio keyboard + **virtio-tablet** (absolute pointer, no host mouse grab — Android Emulator–like) for Weston (`Virtual-1`, not board `DSI-1`); OEM `screens/virt` matches QEMU `xres/yres` defaults (~1.2× panel 1280×800 for MacBook HiDPI; panel remains 800×1280)
+- virtio-gpu-gl 1536×960 + virtio keyboard + **virtio-tablet** (default: guest touch bridge — Android Emulator–like) for Weston (`Virtual-1`, not board `DSI-1`); **`EMULATOR_INPUT=tablet`** skips bridge and keeps pointer cursor; OEM `screens/virt` matches QEMU `xres/yres` defaults (~1.2× panel 1280×800 for MacBook HiDPI; panel remains 800×1280)
 - Host VirGL: `-device virtio-gpu-gl-pci` + `-display cocoa,gl=es` (qemu-virgl / ANGLE→Metal)  
 - Guest Mesa: QEMU 9p tag `lws_gl` → host `prebuilt/emulator-swgl` (mounted at `/run/lws-gl`; **not** in `rootfs.img`)  
 
@@ -178,6 +193,17 @@ SSH: `ssh -p 2222 root@127.0.0.1` (password `rockchip`) → `journalctl -u hmi.s
 Acceptance is **QEMU + same OS artifacts** with the hardware map above.
 
 ## Troubleshooting
+
+### Guest OOM (`Out of memory: Killed process … flutter-wayland`)
+
+Steady-state guest RAM is usually **~400 MiB** — 2 GiB is enough. This OOM often means **stacked Weston** instances: on the emulator, `hmi-launch.sh` intentionally leaves Weston running when Flutter fails, while `hmi.service` has `Restart=on-failure`; each restart starts another compositor until memory is exhausted.
+
+Check: `pgrep -a weston | wc -l` (expect 1). After reproduction, collect `journalctl -u hmi.service -b` and `journalctl -k -b | grep -i oom` for root-cause triage.
+
+```bash
+journalctl -u hmi.service -b --no-pager | tail -40
+journalctl -k -b | grep -i oom
+```
 
 ### `Kernel panic … Attempted to kill init! exitcode=0x0000000b`
 

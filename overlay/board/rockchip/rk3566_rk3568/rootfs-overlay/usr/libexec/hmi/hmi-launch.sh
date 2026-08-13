@@ -125,6 +125,26 @@ portrait_down)
 esac
 echo "hmi-launch: orientation=$HMI_ORIENTATION (from $orient_src)" >&2
 
+# Seed ui_scale from OEM screen pack when operator has not set display.conf key.
+ui_scale_token="$(conf_get "$DISPLAY_CONF" ui_scale)"
+if [ -z "$ui_scale_token" ]; then
+	if [ -f "$SCREEN_ENV" ]; then
+		# shellcheck source=/dev/null
+		. "$SCREEN_ENV"
+	fi
+	oem_ui_scale="$(printf '%s' "${SCREEN_DEFAULT_UI_SCALE:-}" | tr -d '[:space:]')"
+	if [ -n "$oem_ui_scale" ]; then
+		clamped="$(printf '%s' "$oem_ui_scale" | awk '{
+			if ($1+0 != $1 || $1 == "") { exit 1 }
+			v=$1+0; if (v < 0.5) v=0.5; if (v > 2.0) v=2.0; printf "%.3f", v; exit 0
+		}' 2>/dev/null || true)"
+		if [ -n "$clamped" ]; then
+			upsert_conf_key "$DISPLAY_CONF" ui_scale "$clamped"
+			echo "hmi-launch: seeded ui_scale=$clamped (from ${SCREEN_ENV:-SCREEN_DEFAULT_UI_SCALE})" >&2
+		fi
+	fi
+fi
+
 if [ -f "$MODE_FILE" ]; then
 	MODE="$(read_json_field "$MODE_FILE" mode)"
 	MODE="${MODE:-release}"
@@ -200,6 +220,11 @@ export HOME="${HOME:-/root}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$XDG_CACHE_HOME"
 
+# libc localtime before reading prefs / launching Flutter (idempotent).
+if [ -x /usr/libexec/board/apply-datetime-prefs.sh ]; then
+	/usr/libexec/board/apply-datetime-prefs.sh || true
+fi
+
 # Dart/Flutter DateTime.now() follows TZ / libc localtime. Prefer product prefs,
 # then /etc/localtime, then Asia/Shanghai (ynh960 default). Without this, ICU may
 # stay on UTC and Settings/status clocks read eight hours behind CST.
@@ -236,6 +261,7 @@ if [ -f "${RUN_HMI:-/run/hmi}/oem.env" ]; then
 	. "${RUN_HMI:-/run/hmi}/oem.env" 2>/dev/null || true
 	BOARD_ID="${BOARD_ID:-}"
 fi
+export BOARD_ID
 case "$HMI_ORIENTATION" in
 portrait_up)
 	WESTON_TRANSFORM=normal
@@ -305,12 +331,13 @@ if [ "$is_emulator" -eq 1 ]; then
 	WESTON_RENDERER_ARGS="--renderer=gl"
 fi
 
-# Cache 9p Mesa → tmpfs; bind-mount Mesa over Mali stubs; LD_PRELOAD GBM shims.
+# Cache 9p Mesa on rootfs (not /run tmpfs — ~120 MiB there OOMs a 2 GiB guest).
+# Bind /run/lws-gl-cache for flutter-wayland-client RPATH from fetch-emulator-swgl.
 EMU_MESA_DRI=""
 EMU_EGL_VENDOR=""
 EMU_LD_PRELOAD=""
 if [ "$is_emulator" -eq 1 ]; then
-	EMU_MESA_CACHE=/run/lws-gl-cache
+	EMU_MESA_CACHE=/var/cache/lws-gl
 	if [ ! -f "$EMU_MESA_CACHE/lib/dri/virtio_gpu_dri.so" ]; then
 		echo "hmi-launch: emulator — caching Mesa $EMU_MESA_SRC → $EMU_MESA_CACHE" >&2
 		rm -rf "$EMU_MESA_CACHE"
@@ -322,6 +349,9 @@ if [ "$is_emulator" -eq 1 ]; then
 			cp -a "$EMU_MESA_SRC/share/glvnd" "$EMU_MESA_CACHE/share/"
 		fi
 	fi
+	mkdir -p /run/lws-gl-cache
+	umount /run/lws-gl-cache 2>/dev/null || true
+	mount --bind "$EMU_MESA_CACHE" /run/lws-gl-cache
 	GL_ROOT="$EMU_MESA_CACHE"
 	EMU_MESA_LIB="$GL_ROOT/lib"
 	EMU_MESA_DRI="$GL_ROOT/lib/dri"

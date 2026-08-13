@@ -34,6 +34,7 @@ void main() {
       'rootfs_b': 1000,
       'oem': 128,
       'boot': 64,
+      'provision': 4 * 1024 * 1024,
     };
     final info = LinuxSysInfo(
       deviceSnReader: const DeviceSnReader(readSerialPath: '/bin/false'),
@@ -44,7 +45,7 @@ void main() {
     );
     final snap = await info.snapshot();
     final system = snap.storage.where((s) => s.mountPoint == '/').single;
-    expect(system.totalBytes, 1000 + 1000 + 128 + 64);
+    expect(system.totalBytes, 1000 + 1000 + 128 + 64 + 4 * 1024 * 1024);
     expect(system.freeBytes, 0);
     await info.close();
   });

@@ -54,6 +54,36 @@ cp -Lf "$IMAGE" "$OUT/Image"
 cp -Lf "$ROOTFS" "$OUT/rootfs.img"
 cp -Lf "$OEM_IMG" "$OUT/oem.img"
 
+# Per-developer virtio provision disk (4 MiB ext4); identity + tunables survive
+# routine build-emulator. FORCE=1 recreates an empty disk (new SN on next boot).
+PROVISION_IMG="$OUT/provision.img"
+if [[ "${FORCE:-0}" == "1" ]]; then
+	rm -f "$PROVISION_IMG"
+	log "FORCE=1 — recreating $PROVISION_IMG"
+fi
+if [[ ! -f "$PROVISION_IMG" ]]; then
+	log "creating $PROVISION_IMG (4 MiB ext4)"
+	truncate -s 4194304 "$PROVISION_IMG"
+	if command -v docker >/dev/null 2>&1; then
+		docker run --rm --privileged --entrypoint /bin/sh \
+			-v "$PROVISION_IMG:/img" \
+			alpine:3.20 -c '
+				set -e
+				apk add --no-cache e2fsprogs >/dev/null
+				mkfs.ext4 -F -L provision /img >/dev/null
+			' || die "failed to mkfs provision.img"
+	else
+		if command -v mkfs.ext4 >/dev/null 2>&1; then
+			mkfs.ext4 -F -L provision "$PROVISION_IMG" >/dev/null \
+				|| die "failed to mkfs provision.img"
+		else
+			die "need docker or host mkfs.ext4 to create provision.img"
+		fi
+	fi
+else
+	log "reusing existing $PROVISION_IMG (per-developer identity/tunables; FORCE=1 to recreate)"
+fi
+
 log "growing emulator rootfs → $EMU_ROOTFS_SIZE (device artifact stays $(wc -c <"$ROOTFS" | tr -d '[:space:]') bytes)"
 bash "$ROOT/scripts/expand-ext4-image.sh" "$OUT/rootfs.img" "$EMU_ROOTFS_SIZE"
 
@@ -85,6 +115,7 @@ fi
 	echo "image=$OUT/Image"
 	echo "rootfs=$OUT/rootfs.img"
 	echo "oem_img=$OUT/oem.img"
+	echo "provision_img=$OUT/provision.img"
 	echo "rootfs_size=$EMU_ROOTFS_SIZE"
 	echo "contract=same-os-artifacts"
 	echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -95,4 +126,4 @@ cp -f "$ROOT/docs/p32-emulator.md" "$OUT/p32-emulator.md" 2>/dev/null || true
 
 log "done"
 cat "$OUT/manifest.txt"
-bash "$ROOT/scripts/artifact-size.sh" "$OUT/Image" "$OUT/rootfs.img" "$OUT/oem.img"
+bash "$ROOT/scripts/artifact-size.sh" "$OUT/Image" "$OUT/rootfs.img" "$OUT/oem.img" "$OUT/provision.img"

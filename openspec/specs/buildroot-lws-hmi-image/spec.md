@@ -328,7 +328,6 @@ The lws_hmi rootfs overlay SHALL include the board full-system apply/confirm hel
 - **WHEN** staged apply is invoked for host SSH upgrade with a `tar.gz` and no valid `.sig`
 - **THEN** the helper MUST refuse extract/write and exit non-zero
 
-
 ### Requirement: Rootfs embeds OTA Ed25519 public key
 
 The product rootfs SHALL install the OTA verification public key at the documented path (default `/etc/ota/ed25519.pub`) via overlay or package so on-device verify for **cloud and host HTTP** OTA can succeed. The private key MUST NOT be present in the rootfs.
@@ -337,7 +336,6 @@ The product rootfs SHALL install the OTA verification public key at the document
 
 - **WHEN** `make build-rootfs` (or overlay verify) runs after this change
 - **THEN** the staging/rootfs contains the documented OTA pubkey file and does not contain the OTA private key
-
 
 ### Requirement: Kernel/boot selection matches A/B letter pairs
 
@@ -552,7 +550,6 @@ After `gstreamer-frame-extract` is implemented, the product HMI image / App bund
 - **THEN** product cover and AI sample paths MUST work without installing ffmpeg into `/opt/hmi/bin`
 - **AND** host-only measurement scripts MAY still use a separate ffmpeg binary outside the product HMI contract
 
-
 ### Requirement: Product rootfs builds on pinned Buildroot 2025.02.x
 
 After this change, `make lunch` / `make build-rootfs` for the lws_hmi profile SHALL run against owned Buildroot whose `BR2_VERSION` matches the product **2025.02.x LTS** pin required by `buildroot-lts-baseline` (not **2024.02**). Existing defconfig composition, overlay verify, and platform package presence requirements remain in force on that baseline.
@@ -561,3 +558,19 @@ After this change, `make lunch` / `make build-rootfs` for the lws_hmi profile SH
 
 - **WHEN** a developer runs `make apply-overlay` then `make build-rootfs` after the Buildroot LTS upgrade
 - **THEN** the build uses the pinned 2025.02.x tree, completes without missing defconfig/package errors attributable to the old 2024.02 baseline, and `scripts/verify-rootfs-overlay.sh` reports PASS
+
+### Requirement: Factory image must not package provision payloads
+
+The ynh960 Linux A/B `package-file` used by `make build-img` SHALL NOT list a `provision` partition payload row, in addition to the existing prohibition on `vendor0`–`vendor3`. `scripts/verify-no-vendor-payload.sh` (or successor verify script) SHALL reject `provision` rows and `provision.img` in factory staging. `make build-img` SHALL invoke that verify step before producing `factory.img`.
+
+#### Scenario: build-img fails on provision.img in staging
+
+- **WHEN** `provision.img` is present in the firmware staging directory used for `update.img`
+- **THEN** `make build-img` SHALL exit non-zero
+
+#### Scenario: package-file documents provision omission
+
+- **WHEN** inspecting `board/package-file-ynh960-linux-ab`
+- **THEN** a comment SHALL state that `provision` is intentionally omitted so `make flash` preserves provision data
+- **AND** no `provision` payload row SHALL be present
+

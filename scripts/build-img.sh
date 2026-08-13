@@ -165,7 +165,10 @@ pack_in_sdk() {
   bash "$ROOT/scripts/sync-lunch-config.sh"
   sanitize_host_firmware_dir
 
-  rm -f "$firmware"/{vbmeta,dtbo,baseparameter}.img
+  rm -f "$firmware"/{vbmeta,dtbo,baseparameter,provision}.img
+  shopt -s nullglob
+  rm -f "$firmware"/vendor*.img
+  shopt -u nullglob
   install_file "$PARAM" "$firmware/parameter.txt"
   ensure_sdk_loader "$sdk" "$firmware"
   ensure_sdk_uboot "$sdk" "$firmware"
@@ -211,6 +214,7 @@ pack_in_sdk() {
 
   bash "$ROOT/scripts/verify-firmware-partitions.sh" "$firmware" "$PARAM" "$rootfs_img"
   # Vendor Storage must stay out of factory.img so make flash does not wipe identity.
+  # provision must stay out so make flash does not wipe factory tunables.
   bash "$ROOT/scripts/verify-no-vendor-payload.sh" \
     "$ROOT/board/package-file-ynh960-linux-ab" "$firmware"
 

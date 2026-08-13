@@ -60,7 +60,7 @@ Screen packs that require Innohi ParamUpdate / private1 LCD tables SHALL ship th
 
 ### Requirement: HMI launch consumes screen.env defaults
 
-`hmi-launch` SHALL use operator-persisted orientation from `display.conf` when set. When orientation is unset, it SHALL apply `SCREEN_DEFAULT_ORIENTATION` from `/run/hmi/screen.env` (written by oem-compose from `screen.json`). If neither source provides a value, `hmi-launch` SHALL exit non-zero (no hardcoded orientation fallback).
+`hmi-launch` SHALL use operator-persisted orientation from `display.conf` when set. When orientation is unset, it SHALL apply `SCREEN_DEFAULT_ORIENTATION` from `/run/hmi/screen.env` (written by oem-compose from `screen.json`). If neither source provides a value, `hmi-launch` SHALL exit non-zero (no hardcoded orientation fallback). Before starting the embedder, when `/var/lib/hal/display.conf` has no `ui_scale` key, `hmi-launch` SHALL seed `ui_scale` from `SCREEN_DEFAULT_UI_SCALE` in `/run/hmi/screen.env` when that variable is set and numerically valid (clamped to the same range as HAL `LinuxUiScale`). When `ui_scale` is already present in `display.conf`, `hmi-launch` MUST NOT overwrite it.
 
 #### Scenario: screen.env used when display.conf empty
 
@@ -77,9 +77,27 @@ Screen packs that require Innohi ParamUpdate / private1 LCD tables SHALL ship th
 - **WHEN** `display.conf` has no orientation and `screen.env` is missing or has an empty `SCREEN_DEFAULT_ORIENTATION`
 - **THEN** `hmi-launch` SHALL exit non-zero
 
+#### Scenario: ynh960 OEM ui_scale seeded on first boot
+
+- **WHEN** `display.conf` exists or is created without a `ui_scale` key
+- **AND** the active pack is ynh960 panel and `/run/hmi/screen.env` sets `SCREEN_DEFAULT_UI_SCALE=1.13`
+- **THEN** `hmi-launch` SHALL upsert `ui_scale=1.13` into `/var/lib/hal/display.conf` before starting the embedder
+
+#### Scenario: virt OEM ui_scale seeded on first boot
+
+- **WHEN** `display.conf` exists or is created without a `ui_scale` key
+- **AND** the active pack is `sim_virt` and `/run/hmi/screen.env` sets `SCREEN_DEFAULT_UI_SCALE=1.28`
+- **THEN** `hmi-launch` SHALL upsert `ui_scale=1.28` into `/var/lib/hal/display.conf` before starting the embedder
+
+#### Scenario: Operator ui_scale wins over OEM
+
+- **WHEN** `display.conf` already contains `ui_scale=1.05`
+- **AND** `screen.env` sets `SCREEN_DEFAULT_UI_SCALE=1.28` (or any other OEM default)
+- **THEN** `hmi-launch` SHALL leave `ui_scale=1.05` unchanged
+
 ### Requirement: Screen pack screen.json
 
-Each screen pack SHALL provide `screen.json` with at least logical `width` / `height` and `default_orientation`. When LCD param tables are required for the panel, `lcd_param_files` SHALL list paths relative to the screen pack (under `lcd/`), not repository `board/*.txt` paths alone. Compose SHALL continue to expose orientation (and related) values in `/run/hmi/screen.env`.
+Each screen pack SHALL provide `screen.json` with at least logical `width` / `height` and `default_orientation`. When LCD param tables are required for the panel, `lcd_param_files` SHALL list paths relative to the screen pack (under `lcd/`), not repository `board/*.txt` paths alone. Compose SHALL continue to expose orientation (and related) values in `/run/hmi/screen.env`. Screen packs MAY declare optional `default_ui_scale` (positive number, typically `0.5`–`2.0`) as the factory default UI scale multiplier for that panel; when omitted, runtime behavior SHALL treat the OEM default as absent (Apps fall back to `1.0` until seeded or operator-set).
 
 #### Scenario: ynh960 panel screen.json
 
@@ -90,6 +108,18 @@ Each screen pack SHALL provide `screen.json` with at least logical `width` / `he
 
 - **WHEN** inspecting `oem/screens/panel-ynh960-800x1280/screen.json`
 - **THEN** `lcd_param_files` entries SHALL refer to files under that screen pack's `lcd/` directory
+
+#### Scenario: ynh960 default_ui_scale exported
+
+- **WHEN** the ynh960 panel `screen.json` includes `"default_ui_scale": 1.13`
+- **AND** `oem-compose` succeeds
+- **THEN** `/run/hmi/screen.env` SHALL include `SCREEN_DEFAULT_UI_SCALE=1.13`
+
+#### Scenario: virt default_ui_scale exported
+
+- **WHEN** the virt `screen.json` includes `"default_ui_scale": 1.28`
+- **AND** `oem-compose` succeeds for `sim_virt`
+- **THEN** `/run/hmi/screen.env` SHALL include `SCREEN_DEFAULT_UI_SCALE=1.28`
 
 ### Requirement: oem-compose early boot
 
@@ -139,7 +169,7 @@ The build system SHALL provide `make build-oem` that resolves `FACTORY_SKU` / `O
 
 ### Requirement: sim_virt OEM pack
 
-The repository SHALL provide OEM pack `sim_virt` with `oem/packs/sim_virt/manifest.json` declaring `board_id` `sim`, `screen_id` `virt`, paths `boards/sim` and `screens/virt`, and `compat.soc_family` of `virt` (not `rk356x`). `OEM_ID=sim_virt make build-oem` SHALL produce `oem/out/sim_virt/oem.img`.
+The repository SHALL provide OEM pack `sim_virt` with `oem/packs/sim_virt/manifest.json` declaring `board_id` `sim`, `screen_id` `virt`, paths `boards/sim` and `screens/virt`, and `compat.soc_family` of `virt` (not `rk356x`). `OEM_ID=sim_virt make build-oem` SHALL produce `oem/out/sim_virt/oem.img`. The `boards/sim` tree MUST NOT ship `identity.env` or other per-unit identity seeds — emulator identity uses virtio `provision.img` per `gpt-provision-partition`.
 
 #### Scenario: sim_virt pack present
 
@@ -150,6 +180,11 @@ The repository SHALL provide OEM pack `sim_virt` with `oem/packs/sim_virt/manife
 
 - **WHEN** `OEM_ID=sim_virt make build-oem` succeeds
 - **THEN** `oem/out/sim_virt/oem.img` SHALL exist as an ext4 image containing the pack layout
+
+#### Scenario: sim board pack has no identity.env
+
+- **WHEN** a developer inspects `oem/boards/sim/` after this change
+- **THEN** `identity.env` SHALL NOT be present
 
 ### Requirement: sim board profile without OTG
 
@@ -207,4 +242,22 @@ OEM board packs MUST NOT include `product.ini` or `properties.ini`. Board profil
 
 - **WHEN** inspecting `oem/boards/ynh960/` after this change
 - **THEN** the directory MUST NOT contain `product.ini` or `properties.ini`
+
+### Requirement: ynh960 panel default UI scale
+
+The ynh960 800×1280 screen pack (`oem/screens/panel-ynh960-800x1280/screen.json`) SHALL declare `default_ui_scale` of approximately `1.13` so factory-flashed devices obtain panel-appropriate UI scale without manual OS Settings configuration.
+
+#### Scenario: ynh960 pack declares default_ui_scale
+
+- **WHEN** inspecting `oem/screens/panel-ynh960-800x1280/screen.json`
+- **THEN** `default_ui_scale` SHALL be present and approximately `1.13`
+
+### Requirement: virt screen default UI scale
+
+The virt emulator screen pack (`oem/screens/virt/screen.json`) SHALL declare `default_ui_scale` of `1.28` for the QEMU virtio display.
+
+#### Scenario: virt pack declares default_ui_scale
+
+- **WHEN** inspecting `oem/screens/virt/screen.json`
+- **THEN** `default_ui_scale` SHALL be present and `1.28`
 

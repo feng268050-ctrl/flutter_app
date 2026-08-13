@@ -19,7 +19,8 @@ Rockchip `parameter.txt` uses **512-byte sectors**.
 | | oem | ~128 MiB | Board×screen pack |
 | | private, private1 | unchanged | LCD/MIPI params / private data |
 | | **vendor0–vendor3** | each **64 KiB** (`0x80`) | Rockchip Vendor Storage (product **brand** / **model** / **sn** + sealed cloud Ed25519 blob ID 22); **geometry frozen ABI** |
-| | userdata | grow from `0x4BE200` | Operator prefs, models, OTA staging |
+| | **provision** | **4 MiB** (`0x2000`) | Factory tunables (`properties.ini`); non-Rockchip identity/sealed blobs; **never in factory.img** |
+| | userdata | grow from `0x4C0200` | Operator prefs, models, OTA staging |
 
 **Letter pair:** A = `boot` + `rootfs_a`; B = `boot_b` (storage) + `rootfs_b`. Never mix letters.
 
@@ -31,8 +32,13 @@ Rockchip `parameter.txt` uses **512-byte sectors**.
 | vendor1 | `0x80` | `0x4BE080` |
 | vendor2 | `0x80` | `0x4BE100` |
 | vendor3 | `0x80` | `0x4BE180` |
+| provision | `0x2000` (4 MiB) | `0x4BE200` |
 
-ID map: [`board/vendor-storage-ids.txt`](../board/vendor-storage-ids.txt) (SN=1, BRAND=20, MODEL=21, sealed cloud Ed25519 private-key blob=**22** / `VENDOR_CUSTOM_ID_16`); on-device copy at `/usr/libexec/board/vendor-storage-ids.txt`. ID 22 holds **Secrets-sealed ciphertext only** (never plaintext). Helpers: `read-cloud-ed25519-sealed` / `write-cloud-ed25519-sealed`. `package-file` / `factory.img` **must not** embed `vendor*.img` so `make flash` preserves identity (including cloud key). Factory order: **flash → `make write-identity` → verify**. Moving vendor LBAs is a breaking migration (identity data loss).
+**provision geometry (frozen after first GPT adoption):** tunables and (on non-Rockchip) identity live here. `package-file` / `factory.img` **must not** embed `provision.img` — same omission contract as vendor. Repeat compliant `make flash` preserves provision bytes when geometry is unchanged.
+
+**Rockchip dual persistence:** Vendor Storage holds identity + cloud sealed ID 22 + seal KEK wrap ID 23; **provision** holds `properties.ini` only. **Non-Rockchip / emulator:** all provision data on the partition (`identity.env`, `properties.ini`, sealed blobs).
+
+ID map: [`board/vendor-storage-ids.txt`](../board/vendor-storage-ids.txt) (SN=1, BRAND=20, MODEL=21, sealed cloud Ed25519 private-key blob=**22** / `VENDOR_CUSTOM_ID_16`); on-device copy at `/usr/libexec/board/vendor-storage-ids.txt`. ID 22 holds **Secrets-sealed ciphertext only** (never plaintext). Helpers: `read-cloud-ed25519-sealed` / `write-cloud-ed25519-sealed`. `package-file` / `factory.img` **must not** embed `vendor*.img` so `make flash` preserves identity (including cloud key). Factory order: **flash → `make write-identity` → verify**. Moving vendor or provision LBAs is a breaking migration (data loss).
 
 Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL over raw `/dev/mmcblk0pN`.
 
@@ -98,14 +104,17 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | **Alarm history SQLite** (`alarm_logs` table) | **`/var/lib/hmi/alarm-logs.db`** → `/userdata/hmi/alarm-logs.db` | userdata |
 | **Process library SQLite** (`process_presets`, `process_library_meta`) | **`/var/lib/hmi/process-library.db`** → `/userdata/hmi/process-library.db` | userdata |
 | **Subsystem state (P2.3+)** | **`/userdata/{wpa_supplicant,network,bluetooth,hmi}/`** (symlinked from `/var/lib/*`) | userdata |
+| **Factory tunables** | **`/var/lib/hal/properties.ini`** → **`/mnt/provision/properties.ini`** | **provision** |
+| **Non-Rockchip identity** | **`/mnt/provision/identity.env`** | **provision** |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
-`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `/usr/libexec/display/ynh960-display-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/display-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`bind-prefs.sh`** to symlink:
+`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `/usr/libexec/display/ynh960-display-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/display-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, runs **`provision-mount.sh`** (mount `PARTLABEL=provision` → `/mnt/provision`, bind `properties.ini`), then **`bind-prefs.sh`** to symlink:
 
 - `/var/lib/wpa_supplicant` → `/userdata/wpa_supplicant`
 - `/var/lib/network` → `/userdata/network`
 - `/var/lib/bluetooth` → `/userdata/bluetooth`
 - `/var/lib/hmi` → `/userdata/hmi`
+- `/var/lib/hal` → `/userdata/hal` (display/sound/mouse conf — **not** `properties.ini`, which is on provision)
 
 Notable files under `/var/lib/wpa_supplicant` (Wi‑Fi; persist across `make upgrade` / `push-app`):
 
@@ -125,7 +134,7 @@ Notable files under `/var/lib/hmi` (persist across `make upgrade` / `push-app`):
 | `process-library.db` | Versioned built-in and user process presets; WAL-enabled SQLite |
 | `misc-settings.json`, `mouse.conf`, … | Other HMI prefs |
 
-Factory **tunables** (`camera_ip`, `control_card_comm_alarm_mode`, …) live at `/var/lib/hal/properties.ini` → `/userdata/hal/properties.ini` (legacy `product.ini` renamed once by bind-prefs). Per-unit **brand** / **model** / **sn** live in Rockchip **Vendor Storage** (`make write-identity`); stale identity keys in `properties.ini` are ignored by HAL. OEM packs do **not** seed this file — use `make set-prop` to override. When the file or a key is absent, HAL returns empty and the **LWS HMI App** applies product defaults (`camera_ip=192.168.1.100`, `camera_type=1`, `focus_scale_ref=0`, `control_card_comm_alarm_mode=slide_window`).
+Factory **tunables** (`camera_ip`, `control_card_comm_alarm_mode`, …) live at `/var/lib/hal/properties.ini` → `/mnt/provision/properties.ini` (legacy userdata copy migrated once by `provision-mount.sh`). Per-unit **brand** / **model** / **sn** on Rockchip live in **Vendor Storage** (`make write-identity`); on emulator / non-Rockchip in **`/mnt/provision/identity.env`**. Stale identity keys in `properties.ini` are ignored by HAL. OEM packs do **not** seed this file — use `make set-prop` to override. When the file or a key is absent, HAL returns empty and the **LWS HMI App** applies product defaults (`camera_ip=192.168.1.100`, `camera_type=1`, `focus_scale_ref=0`, `control_card_comm_alarm_mode=slide_window`).
 
 ## Prefs: flash vs upgrade (P2.3 / P2.4)
 
@@ -136,11 +145,12 @@ Hardware settings are split by subsystem under the userdata trees above (Wi‑Fi
 | **Cold reboot** | nothing on disk | **Keep** — `settings-restore.service` re-applies |
 | **`make push-app` / `systemctl restart hmi`** | `/opt/hmi` or HMI process only | **Keep** — stacks are outside `hmi.service` cgroup |
 | **`make upgrade` (full-system)** | inactive letter **`boot_*` + `rootfs_*`** (optional oem) | **Keep** — must **not** wipe or rewrite userdata |
-| **`make flash`** (RockUSB `update.img`, factory / GPT) | full image path; product **factory reset** | **Must clear** — complete reset after flash |
+| **`make flash`** (RockUSB `update.img`, factory / GPT) | full image path; product **factory reset** | **Must clear userdata** — **provision + VS preserved** |
 
 Notes:
 
-- Rockchip `uf update.img` often **does not** rewrite the grow **userdata** partition by itself. Product policy still requires a **flash-time wipe of prefs** on factory flash. Until that lands, do not assume bare `make flash` already erased Wi‑Fi credentials.
+- Rockchip `uf update.img` does **not** rewrite **vendor**, **provision**, or grow **userdata** when omitted from `package-file`. Product policy still requires **userdata wipe** on factory flash (host hygiene or first-boot helper). **provision** and Vendor Storage survive repeat flash when geometry is unchanged.
+- **`/usr/bin/factory-reset`** (user 恢复出厂设置) wipes **entire userdata**; never formats provision or VS.
 - **`make upgrade`** must never format userdata or delete subsystem userdata trees; that is how OTA keeps operator settings while swapping firmware letters.
 - RTC clock time is hardware and is unrelated to this prefs tree.
 
@@ -156,7 +166,8 @@ Notes:
 | U-Boot / MiniLoader storage | **No** | **No** (Maskrom may `ul` MiniLoader into **RAM** only) | **No** | Yes |
 | GPT / `parameter` | **No** | **No** | **No** | Yes |
 | misc | **No** | **No** | **No** | Yes |
-| userdata / prefs | **Never wipe** | **Never wipe** | **Never wipe** | Factory reset |
+| userdata / prefs | **Never wipe** | **Never wipe** | **Never wipe** | **Wipe entire userdata**; **preserve provision + VS** |
+| provision / VS | **Never wipe** | **Never wipe** | **Never wipe** | **Never wipe** (omitted from package-file) |
 | Full images under `/userdata/ota/` | **Yes** (`tar.gz` only; **no** `.sig` required) | **N/A** (host `di`) | **Yes** (`tar.gz` + `.sig`, then extract) | N/A |
 | `factory.img` / `uf` | **No** | **No** | **No** | **Yes** |
 

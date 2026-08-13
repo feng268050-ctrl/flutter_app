@@ -223,12 +223,14 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **何时用：** 禁止裸 `fontSize: N` / 业务误用 `AppTypography.*Size`；本地或 CI。
 - **参数：** 无（不产固件）。
 
-### `make build-kernel`
+### `make build-kernel` / `make build-kernel-a` / `make build-kernel-b`
 
-- **怎么用：** `make build-kernel`
-- **何时用：** 改 kernel、DTS（`overlay/kernel/`）、boot logo、FIT 多 conf。
+- **怎么用：** `make build-kernel`（默认并行 A+B）；单槽 `make build-kernel-a` / `make build-kernel-b`
+- **何时用：** 改 kernel、DTS（`overlay/kernel/`）、boot logo、FIT 多 conf；仅重打 B 槽 FIT 时用 `build-kernel-b`。
+- **Image 何时重编：** SDK 里已有 `kernel/arch/arm64/boot/Image` 时默认**跳过** `./build.sh kernel`，只重编 DTB + 打 FIT（日志里有 `kernel Image present — skip`）。改 `*.config` 片段、驱动/补丁、`board/logo`、或首次构建 → `FORCE_KERNEL_IMAGE=1 make build-kernel`。仅改 DTS/dtsi、FIT 清单 →  plain `make build-kernel` 即可。详见 `AGENTS.md`「make build-kernel = Image + DTB/FIT」。
 - **产物：** `output/firmware/boot.img`（rootfs_a）、`boot_b.img`（rootfs_b）、裸 `Image`（模拟器用）。
-- **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`。
+- **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`；强制重编 Image：`FORCE_KERNEL_IMAGE=1 make build-kernel`。
+- **日志：** `output/logs/build-kernel-{ab|a|b}-*.log`
 - **后续：** 板端 `make upgrade`（不必 `build-img`）。
 
 ### `make prepare-rootfs`
@@ -312,8 +314,8 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make write-identity`
 
 - **怎么用：** `make write-identity BRAND=Innohi MODEL='L1 Pro' PRODUCT_SN=SN123`；覆盖已有 SN 加 `FORCE=1`
-- **何时用：** 产测/出厂写入 brand/model/产品 SN（Vendor Storage）。
-- **注意：** 选板用 `SN=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。
+- **何时用：** 产测/出厂写入 brand/model/产品 SN（Rockchip Vendor Storage；emulator / 无 VS 板写入 `provision/identity.env`）。
+- **注意：** 选板用 `SN=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。QEMU 需 `provision.img`（`make build-emulator`）。
 
 ### `make reset-process-library`
 
@@ -434,7 +436,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | `build-mediamtx` | MediaMTX 二进制 | → prebuilt；随 `build-app` 进 `/opt/hmi` |
 | `build-opencv` / `fetch-opencv` / `fetch-opencv-ximgproc` | AI 依赖 | OpenCV 源码/产物 |
 | `build-umtprd` | USB MTP | → prebuilt + overlay |
-| `build-extract-video-frame` | MP4→JPEG helper | → prebuilt + libexec |
+| `build-libexec-binaries` | `/usr/libexec/` 小型 C 二进制（`reboot-loader`、`extract-video-frame`、模拟器触摸桥） | `TOOL=<name>` 单项；`rebuild-libexec-binaries`；macOS 自动进 Docker |
 | `build-secrets-seal` | OP-TEE seal TA + CA | → prebuilt + overlay |
 | `fetch-btop` | btop 二进制 | → prebuilt + overlay |
 | `fetch-rknn-rt` | `librknnrt` | → `prebuilt/rknn-rt/` |
@@ -586,7 +588,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make flash`
 
 - **怎么用：** `make flash`；覆盖镜像 `IMAGE=/path/to.img make flash`；指定 SKU `FACTORY_SKU=… APP=… make flash`
-- **何时用：** USB 烧 `factory.img`（或 Maskrom `ul` 路径）。
+- **何时用：** USB 烧 `factory.img`（或 Maskrom `ul` 路径）。**返厂 flash** 擦除 **userdata**；**Vendor Storage + provision** 因未打入 `package-file` 而保留（见 `docs/storage-layout.md`）。
 - **默认镜像：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img`（或 `update.img` symlink）。
 - **参数：** `IMAGE`/`UPDATE_IMG`、`APP`、`FACTORY_SKU`、`SN`、`UPGRADE_NORESET=1`。
 
@@ -620,10 +622,10 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 ### `make build-emulator`
 
-- **怎么用：** `make build-emulator`
+- **怎么用：** `make build-emulator`；重置模拟器身份盘：`FORCE=1 make build-emulator`
 - **何时用：** 已有 `Image` + `rootfs.img` 后组装模拟器目录。
-- **参数：** `APP`（模拟器 rootfs 固定扩到 1536M，设备 OTA 仍为 ~600M）。
-- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim_virt` oem）。
+- **参数：** `APP`（模拟器 rootfs 固定扩到 1536M，设备 OTA 仍为 ~600M）；`FORCE=1` 仅重建 `provision.img`（清空 identity/tunables，下次启动 autogen 新 SN）。
+- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim_virt` oem；**默认保留**已有 `provision.img`）。
 
 ### `make emulator` / `make emulator-stop`
 
@@ -634,7 +636,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | 变量 | 默认 | 说明 |
 |------|------|------|
 | `EMULATOR_ETH0_BRIDGE` | `auto` | `off` = 无网桥（无 IP 相机时） |
-| `EMULATOR_MEM` / `EMULATOR_CPU` | `2048` / `4` | 内存 MiB / vCPU 核数 |
+| `EMULATOR_MEM` / `EMULATOR_CPU` | `1024` / `1` | 内存 MiB / vCPU 核数 |
 | `EMULATOR_CPU_MODEL` | `cortex-a55` | QEMU `-cpu` 型号 |
 | `EMULATOR_SSH_PORT` | `2222` | 主机 SSH 转发 |
 | `EMULATOR_XRES` / `EMULATOR_YRES` | `1536` / `960` | 显示 |
@@ -658,7 +660,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
 | `build-uboot` | **ynh960 勿用**（无 Innohi 指示） | 有砖机风险 | — |
 | `fetch-uboot` | 内部/少用 | 拉 uboot | — |
-| `build-reboot-rockusb-loader` | 内部工具构建 | — | `LWS_HMI_SKIP_OVERLAY=1` |
+| `build-libexec-binaries` | 交叉编译 libexec C 二进制 → prebuilt + overlay | `TOOL=`、`rebuild-libexec-binaries` | macOS 自动进 Docker |
 | `test-debug-app` | `make test-debug-app` | debug-app 脚本自测 | — |
 
 ---

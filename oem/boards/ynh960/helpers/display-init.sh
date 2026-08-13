@@ -120,9 +120,16 @@ mount_named_part private1 /mnt/private1
 mount_named_part private /mnt/private
 mount_named_part oem /oem
 mount_named_part userdata /userdata
+# Provision tunables (properties.ini) before prefs bind — userdata/hal no longer authoritative for ini.
+if [ -x /usr/libexec/board/provision-mount.sh ]; then
+	/usr/libexec/board/provision-mount.sh || log "provision-mount soft-fail"
+fi
 # Persist prefs across rootfs flash (P2.3): /var/lib/* → /userdata/{wpa_supplicant,network,bluetooth,hmi}
 if [ -x /usr/libexec/board/bind-prefs.sh ]; then
 	/usr/libexec/board/bind-prefs.sh || log "prefs-bind soft-fail"
+fi
+if [ -x /usr/libexec/board/apply-datetime-prefs.sh ]; then
+	/usr/libexec/board/apply-datetime-prefs.sh || log "apply-datetime-prefs soft-fail"
 fi
 seed_private1_params
 run_mountall

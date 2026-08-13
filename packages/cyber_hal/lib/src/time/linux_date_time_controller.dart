@@ -28,16 +28,57 @@ class LinuxDateTimeController implements DateTimeController {
   final DateTimeProcessRunner _run;
 
   bool _legacyImportAttempted = false;
+  bool _osTimezoneApplyAttempted = false;
+
+  static final RegExp _civilStampRe = RegExp(
+    r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$',
+  );
+
+  /// Parse `YYYY-MM-DDTHH:MM:SS` as display civil fields (not ICU/UTC).
+  static DateTime? parseCivilStamp(String raw) {
+    final m = _civilStampRe.firstMatch(raw.trim());
+    if (m == null) {
+      return null;
+    }
+    return DateTime(
+      int.parse(m.group(1)!),
+      int.parse(m.group(2)!),
+      int.parse(m.group(3)!),
+      int.parse(m.group(4)!),
+      int.parse(m.group(5)!),
+      int.parse(m.group(6)!),
+    );
+  }
+
+  static String _shellSingleQuote(String value) =>
+      "'${value.replaceAll("'", "'\\''")}'";
+
+  Future<void> _ensureOsTimezoneOnce() async {
+    if (_osTimezoneApplyAttempted) {
+      return;
+    }
+    _osTimezoneApplyAttempted = true;
+    try {
+      await applyPersistedTimezone();
+    } catch (e) {
+      lwsTrace('datetime: boot timezone apply: $e');
+    }
+  }
 
   @override
   Future<DateTime> now() async {
     // Prefer OS civil time via `date` so Settings matches timedatectl even when
     // the Dart/ICU default zone is still UTC (common on eLinux until TZ is set).
+    await _ensureOsTimezoneOnce();
+    final tz = await getTimezone();
     try {
-      final r = await _run('date', ['+%Y-%m-%dT%H:%M:%S']);
+      final r = await _run('sh', [
+        '-c',
+        'TZ=${_shellSingleQuote(tz)} date +%Y-%m-%dT%H:%M:%S',
+      ]);
       if (r.exitCode == 0) {
         final raw = (r.stdout as String?)?.trim() ?? '';
-        final parsed = DateTime.tryParse(raw);
+        final parsed = parseCivilStamp(raw);
         if (parsed != null) {
           return parsed;
         }

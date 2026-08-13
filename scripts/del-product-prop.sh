@@ -28,7 +28,7 @@ Examples:
   make del-prop FOCUS_SCALE_REF
 
 Command-line keys use UPPERCASE; the matching lowercase key is removed from
-/var/lib/hal/properties.ini. brand / model / sn live in Vendor Storage (write-identity).
+/var/lib/hal/properties.ini. brand / model / sn live in Vendor Storage or provision/identity.env (write-identity).
 hmi.service is restarted only when the file changes.
 EOF
 }

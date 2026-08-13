@@ -82,7 +82,40 @@ mouse_pointer_speed_to_accel() {
 	if [ "$p" -gt 100 ]; then
 		p=100
 	fi
-	awk -v p="$p" 'BEGIN { printf "%.3f\n", (p / 100.0) * 2.0 - 1.0 }'
+	awk -v p="$p" 'BEGIN { printf "%.3f\n", (p / 100.0) * 2.0 - 1.0 	}'
+}
+
+# USB / by-id pointer HID (excludes virtio tablet — touch bridge owns pointer path).
+emulator_usb_pointer_present() {
+	for pattern in /dev/input/by-id/*-mouse /dev/input/by-id/*event-mouse*; do
+		# shellcheck disable=SC2086
+		for f in $pattern; do
+			[ -e "$f" ] || continue
+			return 0
+		done
+	done
+	for pattern in /dev/input/by-path/*-mouse /dev/input/by-path/*event-mouse*; do
+		# shellcheck disable=SC2086
+		for f in $pattern; do
+			[ -e "$f" ] || continue
+			case "$f" in *usb*) return 0 ;; esac
+		done
+	done
+	return 1
+}
+
+# LWS uinput touch from emulator-tablet-to-touch (or board Goodix).
+emulator_touch_input_present() {
+	if grep -q 'Name="LWS Emulator Touch"' /proc/bus/input/devices 2>/dev/null; then
+		return 0
+	fi
+	for pattern in /dev/input/by-id/*-touch* /dev/input/by-path/*-touch*; do
+		# shellcheck disable=SC2086
+		for f in $pattern; do
+			[ -e "$f" ] && return 0
+		done
+	done
+	return 1
 }
 
 # Write runtime weston.ini for HMI (DRM + splash bridge + mouse prefs).
@@ -106,6 +139,14 @@ weston_write_hmi_ini() {
 
 	cursor_px="$(mouse_pointer_size_to_cursor_px "$pointer_size")"
 	accel="$(mouse_pointer_speed_to_accel "$pointer_speed")"
+
+	emulator_touch_only=0
+	if [ "${BOARD_ID:-}" = "sim" ] || grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null; then
+		if emulator_touch_input_present && ! emulator_usb_pointer_present; then
+			emulator_touch_only=1
+			cursor_px=0
+		fi
+	fi
 
 	case "$natural" in
 	1 | true | TRUE | yes | YES) natural_ini=true ;;
@@ -139,26 +180,12 @@ weston_write_hmi_ini() {
 			esac
 			[ "$(cat "$card/status" 2>/dev/null || true)" = "connected" ] || continue
 			output_name="$(basename "$card" | sed 's/^card[0-9]*-//')"
-			# If OEM/requested mode is missing from EDID, prefer QEMU 1080p then common modes.
+			# virtio-gpu modes sysfs can be empty/stale on first boot after cold
+			# start. Falling back to 1920x1080 widens the host QEMU window until
+			# the next restart — trust OEM/QEMU xres/yres instead.
 			modes_file="$card/modes"
-			if [ -f "$modes_file" ]; then
-				# Exact line match (modes are "WxH" per line).
-				if ! grep -qx "${output_mode}" "$modes_file" 2>/dev/null; then
-					for try in 1536x960 1280x800 1920x1080 1280x720 1280x768 1024x768 800x600; do
-						if grep -qx "$try" "$modes_file" 2>/dev/null; then
-							echo "weston-hmi-config: mode $output_mode not in EDID — using $try" >&2
-							output_mode="$try"
-							break
-						fi
-					done
-					if ! grep -qx "${output_mode}" "$modes_file" 2>/dev/null; then
-						try="$(head -1 "$modes_file" | tr -d '\r')"
-						if [ -n "$try" ]; then
-							echo "weston-hmi-config: mode fallback — using EDID first $try" >&2
-							output_mode="$try"
-						fi
-					fi
-				fi
+			if [ -f "$modes_file" ] && ! grep -qx "${output_mode}" "$modes_file" 2>/dev/null; then
+				echo "weston-hmi-config: emulator — keeping mode $output_mode (EDID/sysfs not ready: $(tr '\n' ' ' <"$modes_file" 2>/dev/null | sed 's/ $//'))" >&2
 			fi
 			break
 		done
@@ -200,5 +227,8 @@ mode=$output_mode
 transform=$transform
 EOF
 	export XCURSOR_SIZE="$cursor_px"
+	if [ "$emulator_touch_only" -eq 1 ]; then
+		echo "weston-hmi-config: emulator touch-only — cursor hidden (no USB pointer HID)" >&2
+	fi
 	echo "weston-hmi-config: output=$output_name mode=$output_mode transform=$transform shell=desktop-shell splash=$splash cursor-size=$cursor_px pointer_size=${pointer_size}% accel=$accel natural=$natural_ini left_handed=$left_handed" >&2
 }

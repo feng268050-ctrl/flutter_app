@@ -3,6 +3,10 @@
   "display_name": "P3.2 QEMU guest (sim)",
   "model_hint": "virt-aarch64",
   "secrets_backend": "software",
+  "identity_backend": "provision-file",
+  "provision": {
+    "backend": "virtio"
+  },
   "capabilities": [
     "ethernet",
     "wifi",

@@ -54,7 +54,7 @@ verify_volume_sdk() {
     bash -c 'test -x /work/sdk/build.sh \
       && test -d /work/sdk/buildroot \
       && test -d /work/sdk/device/rockchip \
-      && test -d /work/sdk/kernel-6.1'
+      && test -d /work/sdk/kernel'
 }
 
 volume_has_sdk_tree() {

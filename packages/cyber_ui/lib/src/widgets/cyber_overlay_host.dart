@@ -124,13 +124,22 @@ class CyberPromptContent extends StatelessWidget {
   const CyberPromptContent({
     super.key,
     required this.title,
+    this.titleStyle,
     this.body,
+    this.bodyStyle,
     this.actions = const <Widget>[],
     this.tone = CyberTone.dark,
   });
 
   final String title;
+
+  /// When set, merged over the default tip title (color still follows [tone]
+  /// unless [titleStyle] sets color).
+  final TextStyle? titleStyle;
   final Widget? body;
+
+  /// When set, merged over the default tip body style.
+  final TextStyle? bodyStyle;
   final List<Widget> actions;
 
   /// [CyberTone.light] uses dark ink on cream success tips.
@@ -150,6 +159,22 @@ class CyberPromptContent extends StatelessWidget {
     final light = tone == CyberTone.light;
     final titleColor = light ? _titleDark : CyberColors.textPrimary;
     final bodyColor = light ? _bodyDark : CyberColors.textSecondary;
+    final resolvedTitleSize = titleStyle?.fontSize ?? titleSize;
+    final titleResolved = TextStyle(
+      color: titleColor,
+      fontSize: titleSize,
+      fontWeight: FontWeight.w700,
+      height: 1.15,
+      letterSpacing: 0.02 * resolvedTitleSize,
+      decoration: TextDecoration.none,
+    ).merge(titleStyle);
+    final bodyResolved = TextStyle(
+      color: bodyColor,
+      fontSize: bodySize,
+      height: 1.2,
+      fontWeight: FontWeight.w400,
+      decoration: TextDecoration.none,
+    ).merge(bodyStyle);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -159,27 +184,14 @@ class CyberPromptContent extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: titleColor,
-            fontSize: titleSize,
-            fontWeight: FontWeight.w700,
-            height: 1.15,
-            letterSpacing: 0.02 * titleSize,
-            decoration: TextDecoration.none,
-          ),
+          style: titleResolved,
         ),
         if (body != null) ...[
           const SizedBox(height: CyberDimens.contentPadding),
           const _CyberPromptDivider(),
           const SizedBox(height: CyberDimens.contentPadding),
           DefaultTextStyle(
-            style: TextStyle(
-              color: bodyColor,
-              fontSize: bodySize,
-              height: 1.2,
-              fontWeight: FontWeight.w400,
-              decoration: TextDecoration.none,
-            ),
+            style: bodyResolved,
             child: body!,
           ),
         ],

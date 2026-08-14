@@ -31,13 +31,9 @@ typedef HomeQuickActionCallback = FutureOr<void> Function();
 /// those labels retain exactly the same font size instead of being resized to
 /// their own (wider or narrower) label boxes.
 ///
-/// Pass the same [textScaler] that will paint the caption (use
-/// [HmiTextScale.quickActionTextScalerOf]) so fit is not undone by a second
-/// MediaQuery scale.
-double homeQuickActionLabelFontSize(
-  double cardWidth, {
-  TextScaler textScaler = TextScaler.noScaling,
-}) {
+/// Fit at Medium ([TextScaler.noScaling]); Home Quick Action captions do not
+/// follow Small / Large.
+double homeQuickActionLabelFontSize(double cardWidth) {
   const weight = FontWeight.w500;
   final targetWidth = cardWidth;
   var lo = 12.0;
@@ -51,7 +47,7 @@ double homeQuickActionLabelFontSize(
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
-      textScaler: textScaler,
+      textScaler: TextScaler.noScaling,
     )..layout();
     if (probe.width > targetWidth) {
       hi = mid;
@@ -191,13 +187,10 @@ class _HomeQuickActionState extends State<HomeQuickAction>
   Widget build(BuildContext context) {
     final captionWidth = widget.labelWidth ?? widget.cardWidth;
     final radius = BorderRadius.circular(widget.cornerRadius);
-    // Clamp reading scale (max 1.05) for fit + paint — avoid double bump.
-    final qaScaler = HmiTextScale.quickActionTextScalerOf(context);
+    // Product rule: Monitor / Settings / Process Library / AI Vision captions
+    // stay at Medium for every user text-size tier.
     final fontSize = widget.labelFontSize ??
-        homeQuickActionLabelFontSize(
-          widget.cardWidth,
-          textScaler: qaScaler,
-        );
+        homeQuickActionLabelFontSize(widget.cardWidth);
     // Balanced: Theme uses CyberPressInkSplash — skip QA scale, overlay only.
     final scaleOnPress = !MediaQuery.disableAnimationsOf(context) &&
         !identical(
@@ -266,8 +259,7 @@ class _HomeQuickActionState extends State<HomeQuickAction>
               SizedBox(height: widget.labelMarginTop),
               SizedBox(
                 width: captionWidth,
-                child: MediaQuery(
-                  data: MediaQuery.of(context).copyWith(textScaler: qaScaler),
+                child: HmiFixedTextScale(
                   child: Text(
                     widget.label,
                     textAlign: TextAlign.center,

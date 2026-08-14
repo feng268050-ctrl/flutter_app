@@ -24,11 +24,29 @@ void main() {
     expect(HmiTextScale.tabHeightForReading(1.12), 76);
   });
 
-  test('quickAction scaler clamps at 1.05', () {
-    expect(
-      HmiTextScale.factorOf(TextScaler.linear(1.12)).clamp(0, 1.05),
-      HmiTextScale.quickActionMax,
+  testWidgets('Home Quick Action captions stay at Medium under Large',
+      (tester) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(1.12)),
+        child: MaterialApp(
+          home: Scaffold(
+            body: HomeQuickAction(
+              cardWidth: 108,
+              cardHeight: 108,
+              label: 'Settings',
+              onPressed: () {},
+              child: const SizedBox.shrink(),
+            ),
+          ),
+        ),
+      ),
     );
+    await tester.pump();
+
+    final label = find.text('Settings');
+    expect(label, findsOneWidget);
+    expect(MediaQuery.textScalerOf(tester.element(label)).scale(100), 100);
   });
 
   test('WordBoundary packLines follows TextScaler', () {
@@ -82,18 +100,6 @@ void main() {
     expect(find.text('Weld'), findsNothing);
     expect(find.text('ing'), findsNothing);
     expect(find.text('Continuous Weld'), findsNothing);
-  });
-
-  test('homeQuickActionLabelFontSize shrinks when TextScaler grows', () {
-    // Wide enough that Medium is above the 12sp floor.
-    const card = 280.0;
-    final at1 = homeQuickActionLabelFontSize(card);
-    final atLarge = homeQuickActionLabelFontSize(
-      card,
-      textScaler: const TextScaler.linear(1.12),
-    );
-    expect(at1, greaterThan(12));
-    expect(atLarge, lessThan(at1));
   });
 
   test('homeQuickActionLabelFontSize fits Settings to the full card width', () {

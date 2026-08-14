@@ -398,11 +398,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
           final sx = w / _kDesignW;
           final sy = h / _kDesignH;
           final qaScale = (sx + sy) / 2;
-          final qaScaler = HmiTextScale.quickActionTextScalerOf(context);
-          final qaLabelSize = homeQuickActionLabelFontSize(
-            _kQaInner * qaScale,
-            textScaler: qaScaler,
-          );
+          // Product rule: four Home Quick Action captions stay at Medium.
+          final qaLabelSize = homeQuickActionLabelFontSize(_kQaInner * qaScale);
           final displayFactor = HmiTextScale.displayFactorForReading(
             HmiTextScale.readingFactorOf(context),
           );

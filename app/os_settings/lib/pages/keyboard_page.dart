@@ -68,25 +68,17 @@ class _KeyboardPageState extends State<KeyboardPage> {
   Future<void> _apply() async {
     if (_busy) return;
     final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showCyberDialog<bool>(
+    final confirmed = await CyberOverlayHost.show<bool>(
       context: context,
+      barrierDismissible: true,
       builder: (ctx) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.keyboardApplyConfirmTitle,
-              style: SettingsTextStyles.title.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.keyboardApplyConfirmOsBody,
-              style: SettingsTextStyles.supporting,
-            ),
-            const SizedBox(height: 20),
+        return CyberPromptContent(
+          title: l10n.keyboardApplyConfirmTitle,
+          body: Text(
+            l10n.keyboardApplyConfirmOsBody,
+            textAlign: TextAlign.center,
+          ),
+          actions: [
             CyberButton(
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx, true),
@@ -110,6 +102,9 @@ class _KeyboardPageState extends State<KeyboardPage> {
       if (regional is CyberImeMutableRegionalLayoutProvider) {
         regional.profile = _selected.imeProfile;
       }
+      if (!mounted) return;
+      await _showApplySuccessTip();
+      if (!mounted) return;
       await _keyboard.restartToApply();
     } catch (e) {
       if (mounted) {
@@ -118,6 +113,41 @@ class _KeyboardPageState extends State<KeyboardPage> {
         );
         setState(() => _busy = false);
       }
+    }
+  }
+
+  Future<void> _showApplySuccessTip() async {
+    final l10n = AppLocalizations.of(context)!;
+    Timer? autoDismiss;
+    try {
+      await CyberOverlayHost.show<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          autoDismiss ??= Timer(const Duration(milliseconds: 1500), () {
+            if (dialogContext.mounted &&
+                ModalRoute.of(dialogContext)?.isCurrent == true) {
+              Navigator.of(dialogContext).pop();
+            }
+          });
+          return CyberPromptContent(
+            title: l10n.keyboardApplySuccessTitle,
+            body: Text(
+              l10n.keyboardApplySuccessBody,
+              textAlign: TextAlign.center,
+            ),
+            actions: [
+              CyberButton(
+                variant: CyberButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(l10n.confirmText),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      autoDismiss?.cancel();
     }
   }
 

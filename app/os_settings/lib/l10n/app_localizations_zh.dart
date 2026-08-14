@@ -414,6 +414,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyboardApplyConfirmOsBody => '将保存键盘布局，并重启设置，以便匹配的实体键盘正常工作。';
 
   @override
+  String get keyboardApplySuccessTitle => '布局已切换';
+
+  @override
+  String get keyboardApplySuccessBody => '完成';
+
+  @override
   String get keyboardLayoutHelpOs => '预览显示屏幕键盘布局。点「应用」保存后，设置会重启，以便匹配的实体键盘正常工作。';
 
   @override
@@ -816,6 +822,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get keyboardApplyConfirmOsBody => '將儲存鍵盤配置，並重新啟動設定，以便匹配的實體鍵盤正常運作。';
+
+  @override
+  String get keyboardApplySuccessTitle => '佈局已切換';
+
+  @override
+  String get keyboardApplySuccessBody => '完成';
 
   @override
   String get keyboardLayoutHelpOs =>

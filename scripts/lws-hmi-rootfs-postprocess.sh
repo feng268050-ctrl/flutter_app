@@ -57,6 +57,18 @@ case "$wrapper_out" in
 	;;
 esac
 
+REFRESH="$ROOT/overlay/board/rockchip/rk3566_rk3568/refresh-plan-a-systemd-wants.sh"
+SDK_REFRESH="$SDK/buildroot/board/rockchip/rk3566_rk3568/refresh-plan-a-systemd-wants.sh"
+if [[ -x "$SDK_REFRESH" ]]; then
+	REFRESH="$SDK_REFRESH"
+fi
+if [[ -f "$REFRESH" ]]; then
+	sh "$REFRESH" "$TARGET"
+	echo "rootfs-postprocess: refreshed Plan A systemd wants (multi-user + sysinit)"
+else
+	echo "rootfs-postprocess: WARN refresh-plan-a-systemd-wants.sh missing — run make apply-overlay" >&2
+fi
+
 if [[ "$NEED_REPACK" -eq 1 ]]; then
 	echo "rootfs-postprocess: repacking rootfs.ext2 (target/ mutated after build.sh)"
 	make -C "$SDK/buildroot" "O=$OUT_DIR" rootfs-ext2

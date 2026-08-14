@@ -1,0 +1,28 @@
+# Full override of /usr/lib/systemd/system/auditd.service.
+# Drop-in Before= reset does not clear stock Before=sysinit.target on this
+# systemd (256) — After=hmi alone created a cycle and systemd deleted the job.
+[Unit]
+Description=Security Auditing Service
+DefaultDependencies=no
+After=hmi.service local-fs.target systemd-tmpfiles-setup.service
+Before=shutdown.target
+Conflicts=shutdown.target
+RefuseManualStop=yes
+ConditionKernelCommandLine=!audit=0
+ConditionKernelCommandLine=!audit=off
+Documentation=man:auditd(8) https://github.com/linux-audit/audit-documentation
+
+[Service]
+Type=forking
+PIDFile=/run/auditd.pid
+ExecStart=/sbin/auditd
+ExecStartPost=-/sbin/augenrules --load
+Restart=on-failure
+RestartPreventExitStatus=2 4 6
+MemoryDenyWriteExecute=true
+LockPersonality=true
+ProtectKernelModules=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

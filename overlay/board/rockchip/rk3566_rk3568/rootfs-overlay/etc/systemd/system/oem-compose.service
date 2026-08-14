@@ -16,4 +16,5 @@ StandardOutput=journal+console
 StandardError=journal+console
 
 [Install]
-WantedBy=multi-user.target
+# Run during sysinit right after param-update (not after basic via multi-user).
+WantedBy=sysinit.target multi-user.target

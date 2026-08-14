@@ -55,7 +55,7 @@ migrate_hal_from_hmi() {
 	[ -d "$src_root" ] || return 0
 	mkdir -p "$dst_root"
 
-	for name in display.conf sound.conf mouse.conf keyboard.conf datetime.conf \
+	for name in display.conf sound.conf mouse.conf keyboard.conf input.conf datetime.conf \
 		power.conf usb-otg.conf product.ini time-sync-mode timezone; do
 		src="$src_root/$name"
 		dst="$dst_root/$name"

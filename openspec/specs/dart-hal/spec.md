@@ -385,7 +385,6 @@ Dart HAL Stub backends SHALL be selected only when the environment variable `HAL
 - **THEN** the selected backend MAY be the software fallback
 - **AND** the concrete TEE client type is not required in product App imports for Wi‑Fi-only UI
 
-
 ### Requirement: Platform version and SELinux probes for OS Settings
 
 The HAL SHALL expose read-only platform inventory fields usable by the OS Settings Operating System page, including at least: `/etc/os-release` name/version summary; Linux kernel release (existing); SELinux mode as `Disabled` \| `Permissive` \| `Enforcing` (or unavailable); BusyBox version; Glibc version; WPA Supplicant version; BlueZ version; OpenSSL version; OpenSSH version; GStreamer version; Flutter engine/SDK pin string consistent with the image; Buildroot version stamp when baked. Each probe MUST soft-fail independently (null/unavailable) without failing the whole `SysInfo` / platform-versions snapshot. Apps MUST NOT be required to shell out from the UI isolate for these strings when HAL provides them.
@@ -408,3 +407,13 @@ Callers SHALL be able to read the active Secrets / KEK backend identifier as `so
 
 - **WHEN** the active Secrets backend is software
 - **THEN** a status query reports `software` (or equivalent identifier) without sealing data
+
+### Requirement: Physical input policy HAL module
+
+`hal/input` SHALL export `PhysicalInputPolicy` reading and writing `/var/lib/hal/input.conf` keys `physical_keyboard_enabled` and `physical_mouse_enabled`. Missing keys SHALL default to enabled. `LinuxKeyboard.isPresent` and `LinuxMouseSettingsController.isPresent` SHALL consult policy before HID probes.
+
+#### Scenario: Default enabled without conf
+
+- **WHEN** `input.conf` is absent and pack seed did not run
+- **THEN** policy reports keyboard and mouse enabled
+

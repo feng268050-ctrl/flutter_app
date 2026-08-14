@@ -29,6 +29,7 @@ class CustomHomeStatisticsPanel extends StatefulWidget {
     required this.cardGap,
     this.layoutStore,
     this.repository,
+    this.deferFrost = false,
   });
 
   final double cardWidth;
@@ -36,6 +37,9 @@ class CustomHomeStatisticsPanel extends StatefulWidget {
   final double cardGap;
   final CustomHomeLayoutStore? layoutStore;
   final StatsAggregateRepository? repository;
+
+  /// When true, skip frost capture + SQLite until cleared (boot KPI).
+  final bool deferFrost;
 
   @override
   State<CustomHomeStatisticsPanel> createState() =>
@@ -55,7 +59,17 @@ class CustomHomeStatisticsPanelState extends State<CustomHomeStatisticsPanel> {
   @override
   void initState() {
     super.initState();
-    unawaited(refresh());
+    if (!widget.deferFrost) {
+      unawaited(refresh());
+    }
+  }
+
+  @override
+  void didUpdateWidget(CustomHomeStatisticsPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.deferFrost && !widget.deferFrost) {
+      unawaited(refresh());
+    }
   }
 
   /// Re-reads the saved layout and aggregate after Settings is popped.
@@ -97,6 +111,7 @@ class CustomHomeStatisticsPanelState extends State<CustomHomeStatisticsPanel> {
               value: _displayValue(l10n, metric, _aggregate, unitWire),
               width: widget.cardWidth,
               height: widget.cardHeight,
+              deferFrost: widget.deferFrost,
             ))
         .toList(growable: false);
     return Row(
@@ -261,12 +276,14 @@ final class _HomeStatisticCard extends StatelessWidget {
     required this.value,
     required this.width,
     required this.height,
+    this.deferFrost = false,
   });
 
   final CustomHomeMetric metric;
   final _HomeStatisticDisplay value;
   final double width;
   final double height;
+  final bool deferFrost;
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +302,9 @@ final class _HomeStatisticCard extends StatelessWidget {
         // firstFrame: capture + bake Gaussian once; paint is RawImage only
         // (cyber_ui bake-in). Safe over looping WebP plates.
         sampleMode: CyberBlurSampleMode.firstFrame,
-        intensity: CyberBlurIntensity.low,
+        intensity: deferFrost
+            ? CyberBlurIntensity.transparent
+            : CyberBlurIntensity.low,
         blurTint: CyberBlurTint.dark,
         borderRadius: BorderRadius.circular(18),
         borderColor: const Color(0x99CBD3F3),

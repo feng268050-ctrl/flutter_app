@@ -63,6 +63,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with RouteAware {
   bool _homeBootstrapped = false;
+  /// Frost capture on quick-action / stat cards waits until after first present.
+  bool _heavyHomeChrome = false;
   IpCameraUiStatus _cameraStatus = IpCameraUiStatus.connecting;
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
   final _customHomeStatisticsKey = GlobalKey<CustomHomeStatisticsPanelState>();
@@ -121,8 +123,12 @@ class _HomePageState extends State<HomePage> with RouteAware {
   void initState() {
     super.initState();
     homeWebpCoverageGate.addListener(_syncHomeWebpToCoverage);
-    unawaited(_homeWebp.start());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrapHome());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => _heavyHomeChrome = true);
+      }
+      _bootstrapHome();
+    });
   }
 
   @override
@@ -241,6 +247,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
       return;
     }
     _homeBootstrapped = true;
+    unawaited(_homeWebp.start());
     final services = AppScope.maybeOf(context);
     // #region agent log
     WarnAlarmDebugLog.log(
@@ -555,6 +562,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                           cardWidth: 200 * sx,
                           cardHeight: _kStatCardH * sy,
                           cardGap: _kStatCardGap * sx,
+                          deferFrost: !_heavyHomeChrome,
                         ),
                       ),
                       SizedBox(height: _kStatToQaGap * sy),
@@ -567,6 +575,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             iconAsset: HomeAssets.monitorIcon,
                             label: l10n.homeMonitorLabel,
                             labelFontSize: qaLabelSize,
+                            deferFrost: !_heavyHomeChrome,
                             onPressed: () async {
                               await Navigator.of(context)
                                   .pushNamed(AppRoutes.monitor);
@@ -579,6 +588,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             iconAsset: HomeAssets.settingsIcon,
                             label: l10n.homeSettingsLabel,
                             labelFontSize: qaLabelSize,
+                            deferFrost: !_heavyHomeChrome,
                             onPressed: () async {
                               await Navigator.of(context)
                                   .pushNamed(AppRoutes.settings);
@@ -590,6 +600,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             scaleY: sy,
                             labelFontSize: qaLabelSize,
                             l10n: l10n,
+                            deferFrost: !_heavyHomeChrome,
                             onPressed: () async {
                               await Navigator.of(context).pushNamed(
                                 AppRoutes.monitor,
@@ -775,6 +786,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
     required this.label,
     required this.labelFontSize,
     required this.onPressed,
+    this.deferFrost = false,
   });
 
   final double scaleX;
@@ -783,6 +795,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
   final String label;
   final double labelFontSize;
   final HomeQuickActionCallback onPressed;
+  final bool deferFrost;
 
   @override
   Widget build(BuildContext context) {
@@ -798,6 +811,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
       labelFontSize: labelFontSize,
       sampleMode: CyberBlurSampleMode.firstFrame,
       blurIntensity: CyberBlurIntensity.extreme,
+      deferFrost: deferFrost,
       label: label,
       onPressed: onPressed,
       child: Center(
@@ -826,6 +840,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
     required this.labelFontSize,
     required this.l10n,
     required this.onPressed,
+    this.deferFrost = false,
   });
 
   final double scaleX;
@@ -833,6 +848,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
   final double labelFontSize;
   final AppLocalizations l10n;
   final HomeQuickActionCallback onPressed;
+  final bool deferFrost;
 
   @override
   Widget build(BuildContext context) {
@@ -856,6 +872,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
       labelMarginTop: _kQaLabelMarginTop * scaleY,
       sampleMode: CyberBlurSampleMode.firstFrame,
       blurIntensity: CyberBlurIntensity.extreme,
+      deferFrost: deferFrost,
       label: l10n.homeAiVisionLabel,
       onPressed: onPressed,
       child: Row(

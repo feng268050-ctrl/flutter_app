@@ -59,6 +59,14 @@ check_systemd_wants() {
 				echo "OK:  $unit not in $label sysinit.target.wants"
 			fi
 		done
+		for unit in hmi.service oem-compose.service cpu-performance.service; do
+			if [[ -L "$sysinit_wants/$unit" || -f "$sysinit_wants/$unit" ]]; then
+				echo "OK:  $unit in $label sysinit.target.wants (boot KPI)"
+			else
+				echo "FAIL: $unit missing from $label sysinit.target.wants (boot KPI)" >&2
+				missing=1
+			fi
+		done
 	fi
 
 	return "$missing"
@@ -300,7 +308,7 @@ run_check() {
 		usb-plug-ssh-recover.sh usb-plug-ssh-diag.sh usb-plug-ssh-vbus-check.sh \
 		usb-mtp-start.sh usb-mtp-stop.sh ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh ab-ota-verify.sh \
 		ab-preflight.sh ab-boot-confirm.sh oem-compose.sh ynh960-display-init.sh weston-hmi-config.sh \
-		change-orientation.sh apply-wallpaper.sh apply-mouse-settings.sh set-performance-mode.sh bind-prefs.sh \
+		change-orientation.sh apply-wallpaper.sh apply-mouse-settings.sh apply-physical-input-policy.sh set-performance-mode.sh bind-prefs.sh \
 		pre-poweroff.sh shutdown.sh pwrkey-poweroff.sh systemctl-poweroff-wrapper.sh \
 		enable-ssh-debug.sh disable-ssh-debug.sh lan-ssh-run.sh ensure-sshd-hostkeys.sh; do
 		if [[ -e "$libexec_hmi/$stale" ]]; then
@@ -315,7 +323,7 @@ run_check() {
 		read-cloud-ed25519-sealed.sh write-cloud-ed25519-sealed.sh \
 		secrets-seal secrets-seal-ca paths.sh lws-hostname.sh device-mdns-advertise.sh \
 		serial-console-stty.sh reboot-loader boot-verify.sh env-verify.sh \
-		set-performance-mode.sh bind-prefs.sh apply-datetime-prefs.sh provision-mount.sh factory-reset.sh emulator-storage-init.sh; do
+		set-performance-mode.sh bind-prefs.sh apply-datetime-prefs.sh apply-physical-input-policy.sh provision-mount.sh factory-reset.sh emulator-storage-init.sh; do
 		if [[ -x "$libexec_board/$f" ]] || [[ -f "$libexec_board/$f" && "$f" == paths.sh ]]; then
 			echo "OK:  board/$f"
 		else
@@ -609,6 +617,7 @@ usb-otg-mode /usr/libexec/usb/usb-otg-mode.sh
 set-performance-mode /usr/libexec/board/set-performance-mode.sh
 set-power-mode /usr/libexec/board/set-performance-mode.sh
 apply-mouse-settings /usr/libexec/display/apply-mouse-settings.sh
+apply-physical-input-policy /usr/libexec/board/apply-physical-input-policy.sh
 EOF
 	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply change-backlight change-volume apply-proxy sync-time; do
 		if [[ -e "$target/usr/bin/$retired" || -L "$target/usr/bin/$retired" ]]; then

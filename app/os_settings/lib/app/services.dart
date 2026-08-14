@@ -134,6 +134,9 @@ final class OsSettingsServices {
 
   LinuxMouseSettingsController mouse() => _mouse ??= bindings.mouse();
 
+  PhysicalInputPolicy physicalInputPolicy() =>
+      bindings.physicalInputPolicy();
+
   LinuxUsbOtg usbOtg() => _usbOtg ??= bindings.usbOtg();
 
   LinuxLoadProfile loadProfile() =>

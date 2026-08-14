@@ -198,12 +198,23 @@ final class BoardBindings {
     );
   }
 
-  LinuxKeyboard keyboard() => LinuxKeyboard();
+  LinuxKeyboard keyboard({PhysicalInputPolicy? inputPolicy}) {
+    return LinuxKeyboard(inputPolicy: inputPolicy ?? physicalInputPolicy());
+  }
 
-  LinuxMouseSettingsController mouse() {
+  PhysicalInputPolicy physicalInputPolicy() {
+    final cmd = profile.helperArgv(BoardHelperKeys.applyPhysicalInputPolicy);
+    return PhysicalInputPolicy(
+      applyPolicyCommand: cmd ?? const <String>[],
+    );
+  }
+
+  LinuxMouseSettingsController mouse({PhysicalInputPolicy? inputPolicy}) {
+    final policy = inputPolicy ?? physicalInputPolicy();
     final cmd = profile.helperArgv(BoardHelperKeys.applyMouseSettings);
     return LinuxMouseSettingsController(
       applyMouseSettingsCommand: cmd ?? const <String>[],
+      inputPolicy: policy,
     );
   }
 
@@ -348,7 +359,6 @@ final class BoardBindings {
   }) async {
     final bl = backlight ?? this.backlight();
     final audio = mediaAudio ?? this.mediaAudio();
-    final ms = mouse ?? this.mouse();
     final px = proxy ?? this.proxy();
     final dt = dateTime ?? this.dateTime();
     final wifiS = wifi ?? wifiSession();
@@ -365,12 +375,8 @@ final class BoardBindings {
     } catch (e) {
       debugPrint('restore: volume: $e');
     }
-    try {
-      final s = await ms.getSettings();
-      await ms.setSettings(s); // re-touch mouse.conf for compositor apply
-    } catch (e) {
-      debugPrint('restore: mouse: $e');
-    }
+    // mouse.conf → weston.ini is applied in hmi-launch before Flutter starts;
+    // skip apply-mouse-settings re-touch on boot (Settings UI still sets via helper).
     try {
       await px.restoreFromDisk();
     } catch (e) {

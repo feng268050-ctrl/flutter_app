@@ -11,6 +11,16 @@ WESTON_CFG=/usr/libexec/display/weston-hmi-config.sh
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}"
 WESTON_INI="$RUNTIME_DIR/weston.ini"
 
+if [ -f /usr/libexec/display/weston-hmi-config.sh ]; then
+	# shellcheck source=/dev/null
+	. /usr/libexec/display/weston-hmi-config.sh
+	if ! input_policy_enabled physical_mouse_enabled; then
+		echo "apply-mouse-settings: physical mouse disabled — skip" >&2
+		cat >/dev/null
+		exit 0
+	fi
+fi
+
 mkdir -p "$PREF_DIR"
 tmp="$PREF.tmp.$$"
 cat >"$tmp"

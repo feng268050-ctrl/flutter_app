@@ -187,6 +187,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyboardPhysicalSection => 'Physical Keyboard';
 
   @override
+  String get keyboardTestSection => 'Test Input';
+
+  @override
+  String get keyboardTestHint =>
+      'Tap to type with on-screen or physical keyboard';
+
+  @override
   String get keyboardLayoutHelp =>
       'Attach a physical keyboard that matches the selected specification. A mismatch may make some keys produce unexpected characters.';
 
@@ -203,6 +210,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keyboardNotDetected => 'Not Detected';
+
+  @override
+  String get physicalKeyboardEnableLabel => 'Enable Physical Keyboard';
+
+  @override
+  String get physicalMouseEnableLabel => 'Enable Physical Mouse';
+
+  @override
+  String get physicalKeyboardPolicyOffHelp =>
+      'Physical keyboard policy is off. libinput ignores USB and Bluetooth keyboards. Turning this on or off restarts Settings to apply the policy.';
+
+  @override
+  String get physicalMousePolicyOffHelp =>
+      'Physical mouse policy is off. libinput ignores USB and Bluetooth mice and hides the pointer cursor. Turning this on or off restarts Settings to apply the policy.';
 
   @override
   String get cameraStatus => 'Status';

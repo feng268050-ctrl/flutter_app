@@ -3,8 +3,8 @@
 # shellcheck shell=sh
 
 MOUSE_CONF_DEFAULT=/var/lib/hal/mouse.conf
+INPUT_CONF_DEFAULT=/var/lib/hal/input.conf
 DISPLAY_CONF_DEFAULT=/var/lib/hal/display.conf
-WALLPAPER_PRESETS_DEFAULT=/usr/share/hal/wallpapers
 BOOT_SPLASH_DEFAULT=/usr/share/hmi/boot-splash.png
 
 mouse_conf_get() {
@@ -24,12 +24,26 @@ mouse_conf_get() {
 	printf '%s\n' "$raw"
 }
 
-# Active system wallpaper for desktop-shell background-image.
-# Prefer display.conf wallpaper= → /var/lib/hal/wallpaper.* → packaged
-# home_back preset → boot splash (logo bridge).
+# physical_*_enabled in input.conf — missing → enabled (1).
+input_policy_enabled() {
+	key="$1"
+	conf="${INPUT_CONF:-$INPUT_CONF_DEFAULT}"
+	if [ ! -f "$conf" ]; then
+		return 0
+	fi
+	raw="$(grep -E "^${key}=" "$conf" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '[:space:]')"
+	case "$raw" in
+	0 | false | FALSE | no | NO | off | OFF) return 1 ;;
+	*) return 0 ;;
+	esac
+}
+
+# Desktop-shell background until Flutter's first frame (logo bridge).
+# Prefer the small boot-splash for cold-start KPI; operator wallpaper from
+# display.conf / /var/lib/hal/wallpaper.* still wins when set. Do not use the
+# full Home backdrop (home_back.png) here — Flutter paints that itself.
 weston_resolve_background_image() {
 	display_conf="${DISPLAY_CONF:-$DISPLAY_CONF_DEFAULT}"
-	presets="${HAL_WALLPAPER_PRESETS:-$WALLPAPER_PRESETS_DEFAULT}"
 	splash="${HMI_BOOT_SPLASH:-$BOOT_SPLASH_DEFAULT}"
 	pref_dir="$(dirname "$display_conf")"
 
@@ -46,11 +60,6 @@ weston_resolve_background_image() {
 			return 0
 		fi
 	done
-
-	if [ -f "$presets/home_back.png" ]; then
-		printf '%s\n' "$presets/home_back.png"
-		return 0
-	fi
 
 	printf '%s\n' "$splash"
 }
@@ -146,6 +155,10 @@ weston_write_hmi_ini() {
 			emulator_touch_only=1
 			cursor_px=0
 		fi
+	fi
+
+	if ! input_policy_enabled physical_mouse_enabled; then
+		cursor_px=0
 	fi
 
 	case "$natural" in

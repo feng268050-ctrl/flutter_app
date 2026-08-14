@@ -22,13 +22,31 @@ class _KeyboardPageState extends State<KeyboardPage> {
   KeyboardProfile _applied = KeyboardProfile.qwerty;
   String _presence = '…';
   bool _busy = false;
+  bool _physicalEnabled = true;
   Timer? _poll;
+  final _testCtrl = TextEditingController();
+  final _testFocus = FocusNode(debugLabel: 'KeyboardTestField');
+  final _testFieldKey = GlobalKey();
+  final _scrollCtrl = ScrollController();
+  final _ime = CyberImeSession.shared;
 
   Keyboard get _keyboard => OsSettingsScope.of(context).keyboard();
+
+  PhysicalInputPolicy get _inputPolicy =>
+      OsSettingsScope.of(context).physicalInputPolicy();
+
+  void _syncSoftKeyboardLayout(CyberImeRegionalProfile profile) {
+    final regional = CyberImeRegionalLayoutRegistry.provider;
+    if (regional is CyberImeMutableRegionalLayoutProvider) {
+      regional.profile = profile;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _testFocus.addListener(_ensureTestFieldVisible);
+    _ime.keyboardHeightListenable.addListener(_ensureTestFieldVisible);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_load());
       unawaited(_refreshPresence());
@@ -38,15 +56,83 @@ class _KeyboardPageState extends State<KeyboardPage> {
     });
   }
 
+  Widget _buildTestInputField(AppLocalizations l10n) {
+    return SettingsRowFrame(
+      key: _testFieldKey,
+      clickSoundEnabled: false,
+      child: CyberImeTextField(
+        fieldType: CyberImeFieldType.text,
+        controller: _testCtrl,
+        focusNode: _testFocus,
+        style: SettingsTextStyles.title,
+        decoration: InputDecoration(
+          hintText: l10n.keyboardTestHint,
+          hintStyle: SettingsTextStyles.supporting,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTestInputCard(AppLocalizations l10n) {
+    final row = _buildTestInputField(l10n);
+    final radius =
+        BorderRadius.circular(CyberGlassTheme.of(context).cornerRadius);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        SettingsDimens.inset,
+        0,
+        SettingsDimens.inset,
+        SettingsDimens.inset,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          color: const Color(0xFF101012),
+          border: Border.all(color: SettingsDimens.cardBorder),
+          boxShadow: SettingsPerspectiveChrome.cardShadow,
+        ),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: row,
+        ),
+      ),
+    );
+  }
+
+  void _ensureTestFieldVisible() {
+    if (!_testFocus.hasFocus && _ime.keyboardHeight <= 0) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ctx = _testFieldKey.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        alignment: 0.2,
+      );
+    });
+  }
+
   Future<void> _load() async {
     try {
+      final flags = await _inputPolicy.readFlags();
       final layout = await _keyboard.getLayout();
       final profile = KeyboardProfile.fromLayout(layout);
       if (!mounted) return;
       setState(() {
+        _physicalEnabled = flags.keyboardEnabled;
         _selected = profile;
         _applied = profile;
       });
+      _syncSoftKeyboardLayout(profile.imeProfile);
     } catch (e) {
       debugPrint('keyboard: load failed: $e');
     }
@@ -55,6 +141,12 @@ class _KeyboardPageState extends State<KeyboardPage> {
   Future<void> _refreshPresence() async {
     final l10n = AppLocalizations.of(context);
     final notDetected = l10n?.keyboardNotDetected ?? 'Not detected';
+    final offLabel = l10n?.offLabel ?? 'Off';
+    if (!_physicalEnabled) {
+      if (!mounted) return;
+      setState(() => _presence = offLabel);
+      return;
+    }
     try {
       final line = await const UsbHidKeyboardProbe().statusLine();
       if (!mounted) return;
@@ -62,6 +154,28 @@ class _KeyboardPageState extends State<KeyboardPage> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _presence = notDetected);
+    }
+  }
+
+  Future<void> _setPhysicalEnabled(bool enabled) async {
+    if (_busy) return;
+
+    setState(() => _busy = true);
+    try {
+      final flags = await _inputPolicy.readFlags();
+      await _inputPolicy.applyFlags(
+        flags.copyWith(keyboardEnabled: enabled),
+      );
+      if (!mounted) return;
+      setState(() => _physicalEnabled = enabled);
+      await _keyboard.restartToApply();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e')),
+        );
+        setState(() => _busy = false);
+      }
     }
   }
 
@@ -106,10 +220,7 @@ class _KeyboardPageState extends State<KeyboardPage> {
     setState(() => _busy = true);
     try {
       await _keyboard.setLayout(_selected.xkbLayout, restart: false);
-      final regional = CyberImeRegionalLayoutRegistry.provider;
-      if (regional is CyberImeMutableRegionalLayoutProvider) {
-        regional.profile = _selected.imeProfile;
-      }
+      _syncSoftKeyboardLayout(_selected.imeProfile);
       await _keyboard.restartToApply();
     } catch (e) {
       if (mounted) {
@@ -123,7 +234,12 @@ class _KeyboardPageState extends State<KeyboardPage> {
 
   @override
   void dispose() {
+    _testFocus.removeListener(_ensureTestFieldVisible);
+    _ime.keyboardHeightListenable.removeListener(_ensureTestFieldVisible);
     _poll?.cancel();
+    _testFocus.dispose();
+    _scrollCtrl.dispose();
+    _testCtrl.dispose();
     super.dispose();
   }
 
@@ -134,6 +250,7 @@ class _KeyboardPageState extends State<KeyboardPage> {
     return SettingsScaffold(
       title: l10n.keyboardText,
       body: SettingsScrollView(
+        controller: _scrollCtrl,
         children: [
           SettingsGroup(
             bottomInset: SettingsDimens.inset,
@@ -148,9 +265,9 @@ class _KeyboardPageState extends State<KeyboardPage> {
                 segmentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                 onSelected: (p) {
                   CyberClickSoundRegistry.playClick();
-                  setState(() {
-                    _selected = KeyboardProfile.fromConfProfile(p.confId);
-                  });
+                  final profile = KeyboardProfile.fromConfProfile(p.confId);
+                  setState(() => _selected = profile);
+                  _syncSoftKeyboardLayout(profile.imeProfile);
                 },
               ),
             ],
@@ -166,17 +283,32 @@ class _KeyboardPageState extends State<KeyboardPage> {
             l10n.keyboardLayoutHelpOs,
             bottomInset: 0,
           ),
+          SettingsSectionHeader(l10n.keyboardTestSection),
+          CyberKeyboardAvoidingLift(
+            keyboardHeight: _ime.keyboardHeightListenable,
+            child: _buildTestInputCard(l10n),
+          ),
           SettingsSectionHeader(l10n.keyboardPhysicalSection),
           SettingsGroup(
             bottomInset: 0,
             borderGradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
-              SettingsValueRow(
-                title: l10n.cameraStatus,
-                value: _presence,
+              SettingsSwitchRow(
+                title: l10n.physicalKeyboardEnableLabel,
+                value: _physicalEnabled,
+                onChanged: _busy
+                    ? null
+                    : (v) => unawaited(_setPhysicalEnabled(v)),
               ),
+              if (_physicalEnabled)
+                SettingsValueRow(
+                  title: l10n.cameraStatus,
+                  value: _presence,
+                ),
             ],
           ),
+          if (!_physicalEnabled)
+            SettingsHelpFooter(l10n.physicalKeyboardPolicyOffHelp),
         ],
       ),
     );

@@ -64,6 +64,16 @@ for unit in hmi.service oem-compose.service mainserver.service cpu-performance.s
 done
 
 echo ""
+echo "--- sysinit early HMI path (boot KPI) ---"
+for unit in hmi.service oem-compose.service cpu-performance.service; do
+	if [ -e /etc/systemd/system/sysinit.target.wants/$unit ]; then
+		pass "$unit in sysinit.target.wants"
+	else
+		fail "$unit missing from sysinit.target.wants (first-frame KPI)"
+	fi
+done
+
+echo ""
 echo "--- other *.wants (sshd.socket etc.) ---"
 for unit in lws-hmi-debug-boot.service ssh-debug-usb.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 	found=""

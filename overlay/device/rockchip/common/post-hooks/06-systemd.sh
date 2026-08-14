@@ -43,6 +43,13 @@ link_unit() {
 	ln -sf "$path" "$WANTS/$unit"
 }
 
+# Pull onto sysinit so the unit is not gated on multi-user → After=basic.
+link_unit_sysinit() {
+	local unit="$1"
+	local path="/etc/systemd/system/$unit"
+	ln -sf "$path" "$SYSINIT_WANTS/$unit"
+}
+
 disable_boot_unit() {
 	local unit="$1"
 	local wants_dir link
@@ -72,7 +79,8 @@ fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/cpu-performance.service" ]; then
 	link_unit cpu-performance.service
-	echo "post-systemd: enabled cpu-performance.service"
+	link_unit_sysinit cpu-performance.service
+	echo "post-systemd: enabled cpu-performance.service (multi-user+sysinit)"
 fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/serial-stty.service" ]; then
@@ -87,12 +95,14 @@ fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/oem-compose.service" ]; then
 	link_unit oem-compose.service
-	echo "post-systemd: enabled oem-compose.service"
+	link_unit_sysinit oem-compose.service
+	echo "post-systemd: enabled oem-compose.service (multi-user+sysinit)"
 fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/hmi.service" ]; then
 	link_unit hmi.service
-	echo "post-systemd: enabled hmi.service"
+	link_unit_sysinit hmi.service
+	echo "post-systemd: enabled hmi.service (multi-user+sysinit)"
 fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/ab-boot-confirm.service" ]; then

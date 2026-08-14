@@ -9,8 +9,8 @@ ConditionPathExists=/dev/tee0
 # Condition* is evaluated, stalling boards without a userdata partition.
 ConditionPathIsDirectory=/userdata
 After=local-fs.target
-# Outside HMI cgroup — available before / with Secrets consumers.
-Before=hmi.service
+# Outside HMI cgroup; parallel with HMI (Secrets consumers connect lazily).
+# Do not Before=hmi — blocks first-frame KPI for no gain.
 
 [Service]
 Type=simple

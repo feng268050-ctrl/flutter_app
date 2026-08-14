@@ -3,5 +3,6 @@ library;
 
 export 'input/keyboard.dart';
 export 'input/mouse.dart';
+export 'input/physical_input.dart';
 export 'package:cyber_hal/src/input/linux_mouse_settings.dart';
 export 'package:cyber_hal/src/input/linux_keyboard.dart';

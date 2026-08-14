@@ -912,7 +912,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CyberImeKeyboardPanel), findsOneWidget);
-    expect(tester.widget<TextField>(find.byType(TextField)).showCursor, isTrue);
+    expect(tester.widget<TextField>(find.byType(TextField)).showCursor, isFalse);
+    expect(
+      tester.widget<CyberImeTrackpadCaretHost>(
+        find.byType(CyberImeTrackpadCaretHost),
+      ).active,
+      isTrue,
+    );
 
     final spaceFinder = find.byWidgetPredicate(
       (w) => w is CyberImeKeyCap && w.keyDef.id == CyberImeKeyId.space,
@@ -944,12 +950,12 @@ void main() {
 
     await gesture.up();
     await tester.pump();
-    expect(tester.widget<TextField>(find.byType(TextField)).showCursor, isTrue);
+    expect(tester.widget<TextField>(find.byType(TextField)).showCursor, isFalse);
     expect(
       tester.widget<CyberImeTrackpadCaretHost>(
         find.byType(CyberImeTrackpadCaretHost),
       ).active,
-      isFalse,
+      isTrue,
     );
   });
 }

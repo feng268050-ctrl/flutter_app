@@ -35,6 +35,7 @@ abstract final class BoardHelperKeys {
   static const changeBacklight = 'change_backlight';
   static const changeVolume = 'change_volume';
   static const applyMouseSettings = 'apply_mouse_settings';
+  static const applyPhysicalInputPolicy = 'apply_physical_input_policy';
   /// Comma-separated preferred `/sys/class/backlight` basenames.
   static const backlightPreferredNames = 'backlight_preferred_names';
   /// Comma-separated preferred ALSA simple mixer volume controls.

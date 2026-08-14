@@ -21,18 +21,20 @@ ELINUX_CLIENT=/usr/bin/flutter-wayland-client
 HMI_ORIENTATION=
 SCREEN_ENV="${RUN_HMI:-/run/hmi}/screen.env"
 
-# RK809 speaker path (ParamUpdate also sets this; re-assert before HMI audio smoke).
-if command -v amixer >/dev/null 2>&1; then
-	amixer -q sset 'Playback Path' 'RING_SPK_HP' 2>/dev/null || true
-fi
-
-# Align lock LEDs with a fresh xkb_state (all clear) before embedder opens input.
-# Stale LED-on + Mod2-off looks like an inverted keypad.
-for led in /sys/class/leds/input*::numlock /sys/class/leds/input*::capslock \
-	/sys/class/leds/input*::scrolllock; do
-	[ -w "$led/brightness" ] || continue
-	echo 0 >"$led/brightness" 2>/dev/null || true
-done
+# RK809 speaker path (ParamUpdate also sets this; re-assert before audio smoke).
+# Boot KPI: defer until Weston is up — amixer/LED are not needed for first present.
+hmi_prepare_audio_leds() {
+	if command -v amixer >/dev/null 2>&1; then
+		amixer -q sset 'Playback Path' 'RING_SPK_HP' 2>/dev/null || true
+	fi
+	# Align lock LEDs with a fresh xkb_state (all clear) before embedder opens input.
+	# Stale LED-on + Mod2-off looks like an inverted keypad.
+	for led in /sys/class/leds/input*::numlock /sys/class/leds/input*::capslock \
+		/sys/class/leds/input*::scrolllock; do
+		[ -w "$led/brightness" ] || continue
+		echo 0 >"$led/brightness" 2>/dev/null || true
+	done
+}
 
 # curl/OpenSSL tools. Dart HttpClient loads the same path explicitly in-app.
 if [ -s /etc/ssl/certs/ca-certificates.crt ]; then
@@ -280,6 +282,10 @@ esac
 # shellcheck source=/dev/null
 . /usr/libexec/display/weston-hmi-config.sh
 WESTON_INI="$XDG_RUNTIME_DIR/weston.ini"
+if [ -x /usr/libexec/board/apply-physical-input-policy.sh ]; then
+	INPUT_UDEV_ONLY=1 INPUT_SKIP_SEAT_RESTART=1 \
+		/usr/libexec/board/apply-physical-input-policy.sh || true
+fi
 weston_write_hmi_ini "$WESTON_INI" "$WESTON_TRANSFORM"
 
 is_emulator=0
@@ -434,49 +440,12 @@ if [ ! -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
 	exit 1
 fi
 
-# Socket ready ≠ splash painted: desktop-shell client loads background-image
-# asynchronously. Starting Flutter earlier covers DRM with an opaque black
-# surface before boot-splash.png appears.
-# Note: /proc/*/comm is TASK_COMM_LEN (15 chars) → "weston-desktop" only.
-desktop_shell_ready=0
-i=0
-while [ "$i" -lt 20 ]; do
-	if pidof weston-desktop-shell >/dev/null 2>&1 \
-		|| pgrep -x weston-desktop-shell >/dev/null 2>&1; then
-		desktop_shell_ready=1
-		break
-	fi
-	# BusyBox without pidof/pgrep: match truncated comm or cmdline.
-	for proc in /proc/[0-9]*; do
-		[ -r "$proc/comm" ] || continue
-		comm="$(cat "$proc/comm" 2>/dev/null || true)"
-		case "$comm" in
-		weston-desktop*)
-			desktop_shell_ready=1
-			break
-			;;
-		esac
-		if [ -r "$proc/cmdline" ] \
-			&& tr '\0' ' ' <"$proc/cmdline" 2>/dev/null | grep -q 'weston-desktop-shell'; then
-			desktop_shell_ready=1
-			break
-		fi
-	done
-	[ "$desktop_shell_ready" -eq 1 ] && break
-	if ! kill -0 "$WESTON_PID" 2>/dev/null; then
-		echo "hmi-launch: ERROR: weston exited before desktop-shell ready" >&2
-		exit 1
-	fi
-	sleep 0.1 2>/dev/null || sleep 1
-	i=$((i + 1))
-done
-if [ "$desktop_shell_ready" -eq 1 ]; then
-	# Brief settle so the first background buffer can commit.
-	sleep 0.15 2>/dev/null || sleep 1
-	echo "hmi-launch: desktop-shell ready splash=$HMI_BOOT_SPLASH" >&2
-else
-	echo "hmi-launch: WARNING: weston-desktop-shell not seen within timeout; starting Flutter anyway" >&2
-fi
+# Boot KPI: start Flutter as soon as the Wayland socket exists. Waiting for
+# weston-desktop-shell + settle (~0.3–0.5s) delayed first present; desktop-shell
+# still paints boot-splash in parallel. Brief black risk if Flutter presents
+# before the splash buffer commits — acceptable vs ≤10s KPI.
+echo "hmi-launch: wayland socket ready; starting Flutter (splash=$HMI_BOOT_SPLASH)" >&2
+hmi_prepare_audio_leds
 
 if [ "$is_emulator" -eq 1 ]; then
 	echo "hmi-launch: emulator — weston=gl dri=virtio_gpu" >&2

@@ -194,6 +194,10 @@ if [ -f "$TARGET_DIR/usr/libexec/display/apply-mouse-settings.sh" ]; then
 	ln -sf /usr/libexec/display/apply-mouse-settings.sh \
 		"$TARGET_DIR/usr/bin/apply-mouse-settings"
 fi
+if [ -f "$TARGET_DIR/usr/libexec/board/apply-physical-input-policy.sh" ]; then
+	ln -sf /usr/libexec/board/apply-physical-input-policy.sh \
+		"$TARGET_DIR/usr/bin/apply-physical-input-policy"
+fi
 
 # Product image is Weston + flutter-wayland-client only. Purge any leftover
 # flutter-pi binary from a previous Buildroot output reuse.
@@ -307,28 +311,18 @@ fi
 
 sh "$(dirname "$0")/install-systemctl-wrapper.sh" "$TARGET_DIR" post-build
 
-# Plan A boot enables (same set as 06-systemd.sh / post-fakeroot.sh).
-# Rebuilding systemd via br-make-packages reinstalls units and can wipe
-# multi-user.target.wants on staging target/ while fakeroot still fixes the
-# image copy — refresh links here so verify-rootfs-overlay staging checks pass.
-SYSTEMD_DIR="$TARGET_DIR/etc/systemd/system"
-WANTS="$SYSTEMD_DIR/multi-user.target.wants"
-mkdir -p "$WANTS"
-link_boot_unit() {
-	unit="$1"
-	[ -f "$SYSTEMD_DIR/$unit" ] || return 0
-	ln -sfn "/etc/systemd/system/$unit" "$WANTS/$unit"
-	echo "post-build: enabled $unit"
-}
-for unit in mainserver.service cpu-performance.service serial-stty.service \
-	pwrkey-poweroff.service ab-boot-confirm.service oem-compose.service \
-	tee-supplicant.service usb-otg-role-boot.service hmi.service; do
-	link_boot_unit "$unit"
-done
+REFRESH="$(dirname "$0")/refresh-plan-a-systemd-wants.sh"
+if [ -f "$REFRESH" ]; then
+	sh "$REFRESH" "$TARGET_DIR"
+	echo "post-build: refreshed Plan A systemd wants (multi-user + sysinit)"
+else
+	echo "post-build: WARN refresh-plan-a-systemd-wants.sh missing" >&2
+fi
 
 # Rockchip usbdevice competes for the same UDC as plug-ssh g_ether.
 # 08-systemd-finalize / post-fakeroot strip the image copy; also purge staging
 # here so verify-rootfs-overlay and incremental package rebuilds stay clean.
+SYSTEMD_DIR="$TARGET_DIR/etc/systemd/system"
 mkdir -p "$SYSTEMD_DIR"
 ln -sfn /dev/null "$SYSTEMD_DIR/usbdevice.service"
 rm -f \

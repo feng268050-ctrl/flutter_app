@@ -3,7 +3,7 @@ Description=Serial console geometry (ttyFIQ0)
 DefaultDependencies=yes
 # Multi-board: only motherboards with Rockchip FIQ console (ynh960+).
 ConditionPathExists=/dev/ttyFIQ0
-Before=mainserver.service hmi.service
+# Not Before=hmi — console geometry must not gate first-frame KPI.
 
 [Service]
 Type=oneshot

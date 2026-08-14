@@ -185,6 +185,17 @@ sync_post_build_script() {
   echo "overlay: $dest"
 }
 
+sync_refresh_plan_a_systemd_wants_script() {
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/refresh-plan-a-systemd-wants.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/refresh-plan-a-systemd-wants.sh"
+  if [[ ! -f "$src" ]]; then
+    echo "WARNING: $src missing; skip refresh-plan-a-systemd-wants script" >&2
+    return 0
+  fi
+  install -m 0755 "$src" "$dest"
+  echo "overlay: $dest"
+}
+
 sync_post_fakeroot_script() {
   local src="$OVERLAY/board/rockchip/rk3566_rk3568/post-fakeroot.sh"
   local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/post-fakeroot.sh"
@@ -1324,6 +1335,7 @@ sync_fs_overlay
 sync_purge_retired_script
 sync_install_systemctl_wrapper_script
 sync_post_build_script
+sync_refresh_plan_a_systemd_wants_script
 sync_post_fakeroot_script
 sync_strip_fstab_script
 sync_flutter_engine_script

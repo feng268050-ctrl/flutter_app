@@ -330,6 +330,15 @@ class _OsSettingsShellState extends State<OsSettingsShell> {
 
   Future<void> _refreshMouse(OsSettingsServices services) async {
     try {
+      final l10n = AppLocalizations.of(context);
+      final flags = await services.physicalInputPolicy().readFlags();
+      if (!flags.mouseEnabled) {
+        if (!mounted) return;
+        setState(() {
+          _mouseSummary = l10n?.offLabel ?? 'Off';
+        });
+        return;
+      }
       final s = await services.mouse().getSettings();
       if (!mounted) return;
       setState(() {

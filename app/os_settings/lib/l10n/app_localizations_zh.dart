@@ -186,6 +186,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyboardPhysicalSection => '实体键盘';
 
   @override
+  String get keyboardTestSection => '输入测试';
+
+  @override
+  String get keyboardTestHint => '点击输入，可使用软键盘或物理键盘';
+
+  @override
   String get keyboardLayoutHelp => '请连接与所选规格匹配的实体键盘。规格不匹配可能导致部分按键输出异常字符。';
 
   @override
@@ -200,6 +206,20 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get keyboardNotDetected => '未检测到';
+
+  @override
+  String get physicalKeyboardEnableLabel => '启用物理键盘';
+
+  @override
+  String get physicalMouseEnableLabel => '启用物理鼠标';
+
+  @override
+  String get physicalKeyboardPolicyOffHelp =>
+      '物理键盘策略已关闭。libinput 将忽略 USB 与蓝牙键盘。开关变更后会重启 Settings 以应用策略。';
+
+  @override
+  String get physicalMousePolicyOffHelp =>
+      '物理鼠标策略已关闭。libinput 将忽略 USB 与蓝牙鼠标，并隐藏指针光标。开关变更后会重启 Settings 以应用策略。';
 
   @override
   String get cameraStatus => '状态';
@@ -590,6 +610,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get keyboardPhysicalSection => '實體鍵盤';
 
   @override
+  String get keyboardTestSection => '輸入測試';
+
+  @override
+  String get keyboardTestHint => '點擊輸入，可使用軟鍵盤或實體鍵盤';
+
+  @override
   String get keyboardLayoutHelp => '請連接與所選規格匹配的實體鍵盤。規格不匹配可能導致部分按鍵輸出異常字符。';
 
   @override
@@ -604,6 +630,20 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get keyboardNotDetected => '未檢測到';
+
+  @override
+  String get physicalKeyboardEnableLabel => '啟用實體鍵盤';
+
+  @override
+  String get physicalMouseEnableLabel => '啟用實體滑鼠';
+
+  @override
+  String get physicalKeyboardPolicyOffHelp =>
+      '實體鍵盤策略已關閉。libinput 將忽略 USB 與藍牙鍵盤。開關變更後會重新啟動 Settings 以套用策略。';
+
+  @override
+  String get physicalMousePolicyOffHelp =>
+      '實體滑鼠策略已關閉。libinput 將忽略 USB 與藍牙滑鼠，並隱藏指標游標。開關變更後會重新啟動 Settings 以套用策略。';
 
   @override
   String get cameraStatus => '狀態';

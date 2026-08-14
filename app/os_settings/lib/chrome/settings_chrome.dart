@@ -746,14 +746,21 @@ class SettingsOptionTile extends StatelessWidget {
 
 /// Settings list — top inset only; L/R/bottom come from [SettingsGroup].
 class SettingsScrollView extends StatelessWidget {
-  const SettingsScrollView({super.key, required this.children, this.padding});
+  const SettingsScrollView({
+    super.key,
+    required this.children,
+    this.padding,
+    this.controller,
+  });
 
   final List<Widget> children;
   final EdgeInsetsGeometry? padding;
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
+      controller: controller,
       clipBehavior: Clip.none,
       physics: const BouncingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),

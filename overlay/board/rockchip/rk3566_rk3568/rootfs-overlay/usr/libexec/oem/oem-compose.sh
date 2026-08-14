@@ -45,6 +45,34 @@ ensure_oem_mount() {
 		|| die "mount $dev -> $OEM_ROOT failed"
 }
 
+seed_input_conf_from_pack() {
+	local root="$1"
+	local defaults="$root/input_defaults.json"
+	local pref="${VAR_HAL:-/var/lib/hal}/input.conf"
+	. /usr/libexec/board/paths.sh 2>/dev/null || true
+	pref="${VAR_HAL:-/var/lib/hal}/input.conf"
+	if [ -f "$pref" ]; then
+		return 0
+	fi
+	if [ ! -f "$defaults" ]; then
+		return 0
+	fi
+	kb=1
+	mouse=1
+	if grep -qE '"physical_keyboard_enabled"[[:space:]]*:[[:space:]]*false' "$defaults" 2>/dev/null; then
+		kb=0
+	fi
+	if grep -qE '"physical_mouse_enabled"[[:space:]]*:[[:space:]]*false' "$defaults" 2>/dev/null; then
+		mouse=0
+	fi
+	mkdir -p "$(dirname "$pref")"
+	{
+		echo "physical_keyboard_enabled=$kb"
+		echo "physical_mouse_enabled=$mouse"
+	} >"$pref"
+	log "seeded $pref from pack input_defaults (keyboard=$kb mouse=$mouse)"
+}
+
 write_screen_env() {
 	local screen_json="$1"
 	local orient width height ui_scale ui_scale_valid
@@ -120,6 +148,8 @@ compose_from_root() {
 	if [ -n "$gpio_sim" ] && [ -x "$gpio_sim" ]; then
 		"$gpio_sim" || warn "gpio_sim_leds helper failed"
 	fi
+
+	seed_input_conf_from_pack "$root"
 
 	log "composed pack=${pack_id:-?} board=${board_id:-?} screen=${screen_id:-?} source=partition"
 	return 0

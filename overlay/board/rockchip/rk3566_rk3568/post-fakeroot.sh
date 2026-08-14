@@ -7,6 +7,7 @@ set -eu
 TARGET_DIR="${1:?TARGET_DIR required}"
 SYSTEMD_DIR="$TARGET_DIR/etc/systemd/system"
 WANTS="$SYSTEMD_DIR/multi-user.target.wants"
+SYSINIT_WANTS="$SYSTEMD_DIR/sysinit.target.wants"
 
 PURGE="$(dirname "$0")/purge-retired-rootfs-artifacts.sh"
 if [ -f "$PURGE" ]; then
@@ -32,6 +33,13 @@ link_unit() {
 	[ -f "$SYSTEMD_DIR/$unit" ] || return 0
 	mkdir -p "$WANTS"
 	ln -sf "/etc/systemd/system/$unit" "$WANTS/$unit"
+}
+
+link_unit_sysinit() {
+	unit="$1"
+	[ -f "$SYSTEMD_DIR/$unit" ] || return 0
+	mkdir -p "$SYSINIT_WANTS"
+	ln -sf "/etc/systemd/system/$unit" "$SYSINIT_WANTS/$unit"
 }
 
 for unit in input-event-daemon.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
@@ -84,13 +92,22 @@ rmdir \
 
 link_unit mainserver.service
 link_unit cpu-performance.service
+link_unit_sysinit cpu-performance.service
 link_unit serial-stty.service
 link_unit pwrkey-poweroff.service
 link_unit ab-boot-confirm.service
 link_unit oem-compose.service
+link_unit_sysinit oem-compose.service
 link_unit tee-supplicant.service
 link_unit usb-otg-role-boot.service
 link_unit hmi.service
+link_unit_sysinit hmi.service
+# Display init stays sysinit-only (already linked by 06-systemd / unit Install).
+if [ -f "$SYSTEMD_DIR/param-update.service" ]; then
+	mkdir -p "$SYSINIT_WANTS"
+	ln -sf "/etc/systemd/system/param-update.service" \
+		"$SYSINIT_WANTS/param-update.service"
+fi
 
 ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"
 

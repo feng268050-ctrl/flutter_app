@@ -311,14 +311,10 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   bool _restoreScheduled = false;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
+  /// Disk-backed prefs for Settings — warmed after first frame (boot KPI).
+  void _warmPersistedStoresAfterFirstFrame() {
     _soundEffectStore.warmRead();
     _services.wallpaper.warmRead();
-    _services.uiScale.warmRead();
-    _services.uiScaleNotifier.value = _services.uiScale.scale;
     _miscSettingsStore.warmRead();
     _commonSettingsStore.warmRead();
     _textSizeSettingsStore.warmRead();
@@ -329,6 +325,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     _cloudSettingsStore.warmRead();
     _remoteLockStore.warmRead();
     unawaited(_processLibrary.initialize());
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Layout scale only — keep sync read before first frame.
+    _services.uiScale.warmRead();
+    _services.uiScaleNotifier.value = _services.uiScale.scale;
     final alarmLog = _warnAlarm.log;
     if (alarmLog is SqliteAlarmLogRepository) {
       _cloudLocalRuntime.attachAlarmLog(alarmLog);
@@ -355,54 +360,60 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_services.audio.warmClickSession());
     unawaited(_bootstrapKeyboardProfile());
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Settings restore only. Modbus live poll + warn alarm start from Home
-      // after boot self-check finishes (or immediately when self-check is skipped).
-      unawaited(_services.restorePersistedSettingsOnce());
+      _warmPersistedStoresAfterFirstFrame();
       unawaited(
         _services.regionSettings.applyAfterWarmRead(_commonSettingsStore),
       );
-      unawaited(_maybeRestoreRoute());
-      _services.autoSleep.arm(backlight: _services.backlight);
-      SystemOtaCoordinator.instance.configure(
-        navigatorKey: _navKey,
-        services: _services,
-        manifestUrlResolver: () => OtaManifestUrl.resolve(),
-        progressSink: (progress) {
-          unawaited(
-            _cloudLocalRuntime.emitOtaProgress(progress.toJson()),
-          );
-        },
-      );
-      ControlBoardUpgradeCoordinator.instance.configure(
-        navigatorKey: _navKey,
-        services: _services,
-        cloudManifestUrlResolver: () =>
-            PeripheralFirmwareManifestUrl.resolveControlBoard(),
-      );
-      CameraProgramUpgradeCoordinator.instance.configure(
-        navigatorKey: _navKey,
-        services: _services,
-        deviceInfoCache: _cameraDeviceInfoCache,
-        warnAlarm: _warnAlarm,
-        cloudManifestUrlResolver: () =>
-            PeripheralFirmwareManifestUrl.resolveCamera(),
-      );
-      HmiAppUpgradeCoordinator.instance.configure(
-        navigatorKey: _navKey,
-        services: _services,
-        manifestUrlResolver: () => HmiAppManifestUrl.resolve(),
-      );
-      _syncFirmwareCommandWatcher.start();
-      _upgradeCameraCommandWatcher.start();
-      _upgradeAppCommandWatcher.start();
-      _upgradeProcessLibraryCommandWatcher.start();
-      _upgradeOtaCommandWatcher.start();
-      _migrateSecretsCommandWatcher.start();
-      _captureCommandWatcher.start();
-      unawaited(_startCloudLocalRuntime());
-      unawaited(_liveWeldStreamDetect.start());
-      _jobRuntimeStatistics.resume();
+      // HAL restore + command watchers after first present (boot KPI).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_services.restorePersistedSettingsOnce());
+        unawaited(_maybeRestoreRoute());
+        _services.autoSleep.arm(backlight: _services.backlight);
+        _configurePostFirstFrameServices();
+      });
     });
+  }
+
+  void _configurePostFirstFrameServices() {
+    SystemOtaCoordinator.instance.configure(
+      navigatorKey: _navKey,
+      services: _services,
+      manifestUrlResolver: () => OtaManifestUrl.resolve(),
+      progressSink: (progress) {
+        unawaited(
+          _cloudLocalRuntime.emitOtaProgress(progress.toJson()),
+        );
+      },
+    );
+    ControlBoardUpgradeCoordinator.instance.configure(
+      navigatorKey: _navKey,
+      services: _services,
+      cloudManifestUrlResolver: () =>
+          PeripheralFirmwareManifestUrl.resolveControlBoard(),
+    );
+    CameraProgramUpgradeCoordinator.instance.configure(
+      navigatorKey: _navKey,
+      services: _services,
+      deviceInfoCache: _cameraDeviceInfoCache,
+      warnAlarm: _warnAlarm,
+      cloudManifestUrlResolver: () =>
+          PeripheralFirmwareManifestUrl.resolveCamera(),
+    );
+    HmiAppUpgradeCoordinator.instance.configure(
+      navigatorKey: _navKey,
+      services: _services,
+      manifestUrlResolver: () => HmiAppManifestUrl.resolve(),
+    );
+    _syncFirmwareCommandWatcher.start();
+    _upgradeCameraCommandWatcher.start();
+    _upgradeAppCommandWatcher.start();
+    _upgradeProcessLibraryCommandWatcher.start();
+    _upgradeOtaCommandWatcher.start();
+    _migrateSecretsCommandWatcher.start();
+    _captureCommandWatcher.start();
+    unawaited(_startCloudLocalRuntime());
+    unawaited(_liveWeldStreamDetect.start());
+    _jobRuntimeStatistics.resume();
   }
 
   Future<void> _startCloudLocalRuntime() async {
@@ -500,6 +511,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   Future<void> _bootstrapKeyboardProfile() async {
     try {
+      if (!await _services.bindings
+          .physicalInputPolicy()
+          .isPhysicalKeyboardEnabled()) {
+        return;
+      }
       final layout = await _services.keyboard.getLayout();
       final profile = ProductKeyboardProfile.fromLayout(layout);
       _regionalLayout.profile = profile.imeProfile;

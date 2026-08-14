@@ -68,6 +68,9 @@ trap cleanup EXIT
 
 mkdir -p "$STAGE/$board_path" "$STAGE/$screen_path"
 cp -f "$PACK_DIR/manifest.json" "$STAGE/manifest.json"
+if [[ -f "$PACK_DIR/input_defaults.json" ]]; then
+  cp -f "$PACK_DIR/input_defaults.json" "$STAGE/input_defaults.json"
+fi
 cp -a "$OEM_SRC/$board_path"/. "$STAGE/$board_path"/
 cp -a "$OEM_SRC/$screen_path"/. "$STAGE/$screen_path"/
 

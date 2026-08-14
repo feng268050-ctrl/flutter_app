@@ -184,9 +184,26 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
     setState(() => _obscure = !_obscure);
   }
 
+  void _ensureCollapsedSelection() {
+    final text = widget.controller.text;
+    final sel = widget.controller.selection;
+    if (!sel.isValid || sel.start < 0 || sel.start > text.length) {
+      widget.controller.selection = TextSelection.collapsed(offset: text.length);
+      return;
+    }
+    if (!sel.isCollapsed) {
+      widget.controller.selection = TextSelection.collapsed(offset: sel.end);
+    }
+  }
+
+  bool get _solidCaret =>
+      _spaceTrackpadActive || (_focus.hasFocus && !_preferPhysical);
+
   void _onFocusChange() {
     if (_focus.hasFocus) {
       _preferPhysical = false;
+      _ensureCollapsedSelection();
+      setState(() {});
       unawaited(_showImeIfNeeded());
       return;
     }
@@ -195,6 +212,7 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
       if (!mounted) return;
       if (!_focus.hasFocus && !_imeInteracting) {
         _hideIme();
+        setState(() {});
       }
     });
   }
@@ -256,11 +274,13 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
     if (physical) {
       _preferPhysical = true;
       _hideIme();
+      if (mounted) setState(() {});
       // Keep TextInput client alive for embedders that route chars through it.
       return;
     }
     SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
     _showIme();
+    if (mounted) setState(() {});
   }
 
   void _showIme() {
@@ -310,7 +330,7 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
     );
 
     return CyberImeTrackpadCaretHost(
-      active: _spaceTrackpadActive,
+      active: _solidCaret,
       controller: widget.controller,
       child: TextField(
         controller: widget.controller,
@@ -320,9 +340,10 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
         // Avoid connecting a system soft-IME client that can fight CyberIME
         // commits on flutter-elinux (composing / selection resets).
         keyboardType: TextInputType.none,
-        // During Space trackpad, suppress framework blink; solid caret is
-        // painted by [CyberImeTrackpadCaretHost] and tracks selection live.
-        showCursor: !_spaceTrackpadActive,
+        // Soft IME path calls TextInput.hide; flutter-elinux often omits the
+        // framework caret on empty fields — paint a solid overlay instead.
+        showCursor: !_solidCaret,
+        cursorColor: CyberColors.textPrimary,
         // Soft keys drive the caret via [CyberImeControllerCommit]. Interactive
         // selection lets obscureText/elinux spuriously select-all between taps.
         enableInteractiveSelection: false,

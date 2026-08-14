@@ -52,8 +52,8 @@ Legend: **Copy** = implemented in both apps (HMI keeps a shortcut); **Migrate** 
 | Bluetooth | Adapter + alias = Brand + Model |
 | LAN SSH debug | On-demand SSH |
 | Cloud Environment | Production (default) or test API tier; `/var/lib/network/cloud.conf`; HAL `CloudApiOriginProber` picks Worker/hyurl origin |
-| Keyboard | Layout + Apply (restarts `os-settings.service`) |
-| Mouse | Natural scroll, tracking, pointer size |
+| Keyboard | Layout + Apply (restarts `os-settings.service`); **Enable physical keyboard** toggle (`input.conf`) |
+| Mouse | Natural scroll, tracking, pointer size; **Enable physical mouse** toggle (`input.conf`) |
 | USB OTG | debug / MTP / host |
 | Operating System | Platform versions (no Platform section title) + Security (incl. Secrets Seal) + Runtime + Connectivity |
 | About (platform) | Brand / model / SN (identity) |

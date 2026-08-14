@@ -1,9 +1,11 @@
 [Unit]
 Description=Flutter HMI
-DefaultDependencies=yes
-After=local-fs.target cpu-performance.service oem-compose.service
-Wants=oem-compose.service
-Conflicts=os-settings.service
+DefaultDependencies=no
+# Boot KPI: do not inherit After=basic.target. Pulled from sysinit so we are
+# not gated on multi-user → basic (dbus/avahi/seatd/rngd).
+After=local-fs.target oem-compose.service cpu-performance.service systemd-journald.socket
+Wants=oem-compose.service cpu-performance.service
+Conflicts=shutdown.target os-settings.service
 # Optional on lws_hmi images: param-update.service / mainserver.service
 # Panel init is in kernel DTS (panel-init-sequence).
 # Do not wait for network or MediaMTX (KPI = first home frame).
@@ -23,4 +25,5 @@ StandardOutput=journal
 StandardError=journal
 
 [Install]
-WantedBy=multi-user.target
+# sysinit: earliest appliance path; multi-user: Plan A verify-boot wants link.
+WantedBy=sysinit.target multi-user.target

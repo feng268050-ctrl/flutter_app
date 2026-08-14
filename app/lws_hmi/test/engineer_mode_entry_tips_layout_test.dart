@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -76,5 +78,54 @@ void main() {
       checkboxRect.center.dx,
       moreOrLessEquals(cardRect.center.dx, epsilon: 2),
     );
+  });
+
+  testWidgets('entry tile press chrome releases while the tip is open',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: CyberPressable(
+                overlay: CyberPressFeedback.tileRipple,
+                onPressed: () {
+                  unawaited(showEngineerModeEntryTipsDialog(context));
+                },
+                child: const SizedBox(
+                  width: 200,
+                  height: 120,
+                  child: Text('Engineer Mode'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Engineer Mode'));
+    await tester.pump();
+    await tester.pump(CyberPressFeedback.pressIn);
+    await tester.pump(CyberPressFeedback.pressHold);
+    await tester.pump();
+    await tester.pump(CyberPressFeedback.pressIn);
+    await tester.pump(const Duration(milliseconds: 180));
+
+    expect(find.text('Engineer Mode Notice'), findsOneWidget);
+    final overlay = tester.widget<ColoredBox>(
+      find.descendant(
+        of: find.byType(CyberPressable),
+        matching: find.byType(ColoredBox),
+      ),
+    );
+    expect(overlay.color, CyberPressFeedback.overlayIdle);
   });
 }

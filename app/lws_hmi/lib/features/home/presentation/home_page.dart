@@ -522,7 +522,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                   heroSize: 280 * sx,
                   labelWidth: 440 * sx,
                   labelHeight: 150 * sy,
-                  onPressed: () async {
+                  onPressed: () {
                     if (!hasSignedProcessLibrary) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -531,7 +531,10 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       );
                       return;
                     }
-                    await _openEngineerMode();
+                    // Entry tip (and lock dialog) sit over Home. Do not await
+                    // or CyberPressable keeps press chrome until Engineer Mode
+                    // pops — the tile would stay pressed behind the tip.
+                    unawaited(_openEngineerMode());
                   },
                 ),
                 // Stats row + fixed gap + quick actions (gap must be exact

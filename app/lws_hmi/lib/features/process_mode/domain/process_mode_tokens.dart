@@ -41,20 +41,14 @@ abstract final class ProcessModeTokens {
     return tabWeldActive;
   }
 
-  /// Quick Mode selection band shared by process, material, gear and thickness.
-  /// The active point is product orange and fades symmetrically to transparent.
-  static const LinearGradient quickSelectionHighlightGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [
-      Color(0x00F46E01),
-      Color(0xFFF46E01),
-      Color(0x00F46E01),
-    ],
-    stops: [0.0, 0.5, 1.0],
-  );
+  /// Quick Mode selection band (process / material / gear / thickness).
+  ///
+  /// Matches lws-ui `quick_mode_wheel_active_{orange,green,blue}` — weld orange,
+  /// clean teal, cut blue — transparent → mid → transparent.
+  static LinearGradient quickSelectionHighlight(ProcessType type) =>
+      sideOperationHighlight(type);
 
-  /// Side-op highlight mid color (lws-ui `quick_mode_wheel_active_*`).
+  /// Side-op / selection highlight mid (lws-ui `quick_mode_wheel_active_*`).
   static Color sideOperationHighlightMid(ProcessType type) {
     if (type.isCleaning) {
       return const Color(0x8037F3D2);

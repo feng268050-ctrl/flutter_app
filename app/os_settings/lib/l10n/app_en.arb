@@ -144,6 +144,8 @@
   "selinuxHelp": "SELinux is the Linux security policy layer. Disabled means it is off. Permissive means policy violations are logged but not blocked. Enforcing means the policy is enforced.",
   "wallpaperSectionHelp": "Wallpaper is used for the desktop background and in apps. Changing it briefly restarts Settings so the new image can load.",
   "keyboardApplyConfirmOsBody": "The keyboard layout will be saved, and Settings will restart so a matching physical keyboard works correctly.",
+  "keyboardApplySuccessTitle": "Layout Applied",
+  "keyboardApplySuccessBody": "Done",
   "keyboardLayoutHelpOs": "The preview shows the on-screen keyboard layout. Tap Apply to save; Settings will restart so a matching physical keyboard works correctly.",
   "mousePointerHelp": "Changing the pointer size briefly restarts the app you are using.",
   "wifiConfigureDns": "Configure DNS",

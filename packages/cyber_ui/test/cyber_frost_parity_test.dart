@@ -90,6 +90,43 @@ void main() {
     expect(value, 6);
   });
 
+  test('CyberPromptContent uses product tip title/body sizes', () {
+    expect(CyberPromptContent.titleSize, 40);
+    expect(CyberPromptContent.bodySize, 32);
+  });
+
+  testWidgets('CyberPromptContent merges optional title/body styles',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CyberPromptContent(
+            title: 'Connect',
+            titleStyle: TextStyle(fontSize: 28),
+            body: Text('Body'),
+            bodyStyle: TextStyle(fontSize: 24),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.widget<Text>(find.text('Connect')).style?.fontSize, 28);
+    expect(
+      tester
+          .widget<DefaultTextStyle>(
+            find
+                .ancestor(
+                  of: find.text('Body'),
+                  matching: find.byType(DefaultTextStyle),
+                )
+                .first,
+          )
+          .style
+          .fontSize,
+      24,
+    );
+  });
+
   testWidgets('CyberOverlayHost show/dismiss', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

@@ -927,6 +927,18 @@ abstract class AppLocalizations {
   /// **'The keyboard layout will be saved, and Settings will restart so a matching physical keyboard works correctly.'**
   String get keyboardApplyConfirmOsBody;
 
+  /// No description provided for @keyboardApplySuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout Applied'**
+  String get keyboardApplySuccessTitle;
+
+  /// No description provided for @keyboardApplySuccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get keyboardApplySuccessBody;
+
   /// No description provided for @keyboardLayoutHelpOs.
   ///
   /// In en, this message translates to:

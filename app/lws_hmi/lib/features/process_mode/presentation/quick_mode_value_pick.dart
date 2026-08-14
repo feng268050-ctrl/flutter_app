@@ -285,7 +285,7 @@ final class QuickModeValuePick extends StatelessWidget {
                       offAxisFraction: 0,
                       enabled: interactionEnabled,
                       onChanged: onChanged,
-                      fixedAccent: const _ValueAccentChip(),
+                      fixedAccent: _ValueAccentChip(processType: processType),
                       itemBuilder: (context, index, distance) {
                         return _ValuePickItem(
                           label: labelOf(values[index]),
@@ -309,8 +309,12 @@ final class QuickModeValuePick extends StatelessWidget {
 }
 
 /// Accent chip locked to the value-wheel viewport center.
+///
+/// Color follows [processType] (lws-ui `quick_mode_wheel_active_*`).
 final class _ValueAccentChip extends StatelessWidget {
-  const _ValueAccentChip();
+  const _ValueAccentChip({required this.processType});
+
+  final ProcessType processType;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +324,7 @@ final class _ValueAccentChip extends StatelessWidget {
       height: QuickModePickerDimens.itemHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: ProcessModeTokens.quickSelectionHighlightGradient,
+          gradient: ProcessModeTokens.quickSelectionHighlight(processType),
         ),
       ),
     );

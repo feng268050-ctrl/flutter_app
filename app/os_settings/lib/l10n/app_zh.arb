@@ -138,6 +138,8 @@
   "selinuxHelp": "SELinux 是 Linux 的安全策略层。Disabled 表示关闭；Permissive 表示违规只记录不拦截；Enforcing 表示按策略强制执行。",
   "wallpaperSectionHelp": "壁纸用于桌面背景及应用界面。更改后会短暂重启设置，以加载新壁纸。",
   "keyboardApplyConfirmOsBody": "将保存键盘布局，并重启设置，以便匹配的实体键盘正常工作。",
+  "keyboardApplySuccessTitle": "布局已切换",
+  "keyboardApplySuccessBody": "完成",
   "keyboardLayoutHelpOs": "预览显示屏幕键盘布局。点「应用」保存后，设置会重启，以便匹配的实体键盘正常工作。",
   "mousePointerHelp": "更改指针大小后，当前使用的应用会短暂重启。",
   "wifiConfigureDns": "配置 DNS",

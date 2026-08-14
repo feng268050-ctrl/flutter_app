@@ -473,6 +473,7 @@
   "deviceInformation": "Device Info",
   "deviceInformationText": "Device Info",
   "deviceModel": "Model",
+  "deviceMonitorDeviceHealthTitle": "Device Health",
   "deviceMonitorHomeTitle": "Monitor",
   "deviceMonitorMachineStatusTitle": "Machine Status",
   "deviceMonitorTitle": "Device Monitor",

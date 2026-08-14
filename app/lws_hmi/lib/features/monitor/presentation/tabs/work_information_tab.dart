@@ -304,6 +304,7 @@ class _PercentCard extends StatelessWidget {
                     strokeWidth: 18,
                     progressColor: color,
                     trackColor: const Color(0xFF5A5A5A),
+                    animationDuration: const Duration(milliseconds: 700),
                   ),
                 );
               },

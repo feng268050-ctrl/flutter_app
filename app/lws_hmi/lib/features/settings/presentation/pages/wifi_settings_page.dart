@@ -34,6 +34,11 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
   String? _busy;
   String? _error;
   Timer? _scanTimer;
+  bool _scanInFlight = false;
+
+  /// Pull-to-refresh / list drag starting on the WLAN switch must not
+  /// toggle the radio (same issue as DemoScrollInteraction).
+  bool _listDragging = false;
 
   StreamSubscription<WifiRadioState>? _radioSub;
   StreamSubscription<WifiConnectionState>? _connSub;
@@ -112,7 +117,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     _scanTimer = null;
     if (!_radioOn) return;
     _scanTimer = Timer.periodic(_scanInterval, (_) {
-      if (mounted && _busy == null) unawaited(_scan());
+      if (mounted && _busy == null && !_scanInFlight) unawaited(_scan());
     });
   }
 
@@ -131,11 +136,18 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
   }
 
   Future<void> _scan({int retries = 1, bool managed = true}) async {
-    if (managed) {
-      if (_busy != null) return;
-      await _guard(() => _scanBody(retries: retries));
-    } else {
+    // Scans must not take [_busy] — that disables the WLAN switch for the
+    // whole Scan() wait (up to ~24s on pull-to-refresh) so it looks off and
+    // cannot be turned back on until the route is rebuilt.
+    if (_scanInFlight) return;
+    if (managed && _busy != null) return;
+    _scanInFlight = true;
+    if (mounted) setState(() {});
+    try {
       await _scanBody(retries: retries);
+    } finally {
+      _scanInFlight = false;
+      if (mounted) setState(() {});
     }
   }
 
@@ -364,13 +376,22 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     return SettingsScaffold(
       // lws-ui `wifi_network_text` (activity_wifi title)
       title: l10n.wifiNetworkText,
-      body: RefreshIndicator(
-        color: CyberColors.buttonPrimaryAccent,
-        onRefresh: () async {
-          if (!_radioOn) return;
-          await _scan(retries: 3);
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n is ScrollStartNotification) {
+            _listDragging = true;
+          } else if (n is ScrollEndNotification) {
+            _listDragging = false;
+          }
+          return false;
         },
-        child: SettingsScrollView(
+        child: RefreshIndicator(
+          color: CyberColors.buttonPrimaryAccent,
+          onRefresh: () async {
+            if (!_radioOn) return;
+            await _scan(retries: 3);
+          },
+          child: SettingsScrollView(
           children: [
             SettingsGroup(
               borderGradientCenter:
@@ -381,12 +402,15 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                   value: _radioOn,
                   onChanged: _busy != null
                       ? null
-                      : (v) => unawaited(
+                      : (v) {
+                          if (_listDragging) return;
+                          unawaited(
                             _guard(() async {
                               await _wifi.setRadioEnabled(v);
                               if (v) await _scan(retries: 3, managed: false);
                             }),
-                          ),
+                          );
+                        },
                 ),
                 if (connected)
                   _WifiNetworkRow(
@@ -445,7 +469,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
               SettingsGroup(
                 borderGradientCenter: CyberBorderGradientCenter.topBottom,
                 children: [
-                  if (_busy != null && other.isEmpty)
+                  if (_scanInFlight && other.isEmpty)
                     SettingsRowFrame(
                       child: Text(
                         l10n.wifiScanning,
@@ -497,6 +521,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
               ),
             ],
           ],
+        ),
         ),
       ),
     );

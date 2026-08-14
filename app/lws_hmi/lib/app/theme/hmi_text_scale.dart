@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// Reading UI uses the ambient [MediaQuery.textScaler] (0.90 / 1.00 / 1.12 when
 /// wired). Geometry-bound chrome uses a clamped display scaler so Large does
-/// not blow Home clock / gauges; Quick Action captions clamp at 1.05.
+/// not blow Home clock / gauges. Home Quick Action captions stay at Medium.
 abstract final class HmiTextScale {
   static const readingSmall = 0.90;
   static const readingMedium = 1.00;
@@ -13,9 +13,6 @@ abstract final class HmiTextScale {
   static const displaySmall = 0.95;
   static const displayMedium = 1.00;
   static const displayLarge = 1.05;
-
-  /// Home Quick Action captions — never above this factor.
-  static const quickActionMax = 1.05;
 
   /// Class B settings row minHeight multipliers (vs Medium baseline).
   static const settingsRowSmall = 0.95;
@@ -49,12 +46,6 @@ abstract final class HmiTextScale {
     return TextScaler.linear(
       displayFactorForReading(readingFactorOf(context)),
     );
-  }
-
-  /// Clamped reading scaler for Home Quick Action fit + paint (max 1.05).
-  static TextScaler quickActionTextScalerOf(BuildContext context) {
-    final reading = readingFactorOf(context);
-    return TextScaler.linear(reading.clamp(readingSmall, quickActionMax));
   }
 
   /// Settings row minHeight multiplier for the current reading scale.

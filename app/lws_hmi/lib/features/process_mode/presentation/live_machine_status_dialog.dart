@@ -111,6 +111,7 @@ final class _LiveMachineStatusBody extends StatefulWidget {
 final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   static const _titleOnFrost = CyberColors.textPrimary;
   static const _liveGaugeSidePad = 12.0;
+
   /// Equal: above gauges and below status tiles.
   static const _liveEdgeGap = 12.0;
   static const _liveStatusGap = 8.0;
@@ -199,8 +200,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     // lws-ui `real_time_machine_status_text` (not Monitor tab title).
-    final liveTitle =
-        l10n?.liveMachineStatusTitle ?? 'Live Machine Status';
+    final liveTitle = l10n?.liveMachineStatusTitle ?? 'Live Machine Status';
 
     final session = _session;
     // lws-ui LaserLiveMonitorOverlayFragment uses PR1; fall back to PR0.
@@ -237,7 +237,6 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
           ),
         ),
         const SizedBox(height: 12),
-
         Expanded(
           child: ColoredBox(
             color: Colors.black,
@@ -266,8 +265,8 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                           rtspUrl: rtsp,
                           linkPhase: _status.phase,
                           relayReady: relayReady,
-                          playerFactory:
-                              widget.playerFactory ?? createIpCameraPreviewPlayer,
+                          playerFactory: widget.playerFactory ??
+                              createIpCameraPreviewPlayer,
                         ),
                       // Top gap == status bottom gap; temps fill middle remainder.
                       Column(
@@ -283,35 +282,39 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                               children: [
                                 _GaugePanel(
                                   child: CurrentArcGauge(
+                                    visualStyle:
+                                        GaugeVisualStyle.integratedRing,
                                     value: machine?.gasPressureKpa ?? 0,
                                     min: 0,
                                     max: 1500,
                                     majorTickEvery: 150,
                                     unit: 'kPa',
-                                    titleLine1:
-                                        l10n?.machineBlowTitle ?? 'Blow',
-                                    titleLine2:
-                                        l10n?.machineBlowContent ?? 'Pressure',
+                                    title:
+                                        '${l10n?.machineBlowTitle ?? 'Blow'}\n'
+                                        '${l10n?.machineBlowContent ?? 'Pressure'}',
                                     size: _LiveGaugeDimens.gaugeSide,
-                                    trackWidth: _LiveGaugeDimens.trackWidth,
+                                    progressColor: const Color(0xFFD18846),
+                                    animationDuration:
+                                        const Duration(milliseconds: 700),
                                   ),
                                 ),
                                 const Spacer(),
                                 _GaugePanel(
                                   child: CurrentArcGauge(
+                                    visualStyle:
+                                        GaugeVisualStyle.integratedRing,
                                     value: machine?.laserCurrentA ?? 0,
                                     min: 0,
                                     max: 100,
                                     majorTickEvery: 10,
                                     unit: 'A',
-                                    titleLine1:
-                                        l10n?.machineLaserCurrentTitle ??
-                                            'Laser',
-                                    titleLine2:
-                                        l10n?.machineLaserCurrentContent ??
-                                            'Current',
+                                    title:
+                                        '${l10n?.machineLaserCurrentTitle ?? 'Laser'}\n'
+                                        '${l10n?.machineLaserCurrentContent ?? 'Current'}',
                                     size: _LiveGaugeDimens.gaugeSide,
-                                    trackWidth: _LiveGaugeDimens.trackWidth,
+                                    progressColor: const Color(0xFFD18846),
+                                    animationDuration:
+                                        const Duration(milliseconds: 700),
                                   ),
                                 ),
                               ],
@@ -596,8 +599,6 @@ abstract final class _LiveGaugeDimens {
 
   static double get padH => (panelW - gaugeSide) / 2;
   static double get padV => (panelH - gaugeSide) / 2;
-
-  static const trackWidth = 18.0;
 }
 
 final class _GaugePanel extends StatelessWidget {

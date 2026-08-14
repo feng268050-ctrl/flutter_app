@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/hmi/word_boundary_label.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
@@ -83,11 +82,11 @@ final class _EngineerModeEntryTipsBodyState
   /// TipFrostDivider chrome was added.
   static const _iconSize = 140.0;
 
-  /// `frost_dialog_prompt_title_text_size` → [HmiTypography.engineerTipTitle].
-  static const _titleSize = HmiTypography.criticalTitleSize;
+  /// `frost_dialog_prompt_title_text_size` → [HmiTypography.tipPromptTitleSize].
+  static const _titleSize = HmiTypography.tipPromptTitleSize;
 
-  /// `dialog_frost_body_prompt` content → [HmiTypography.engineerTipBody].
-  static const _bodySize = HmiTypography.largeDialogTitleSize;
+  /// `dialog_frost_body_prompt` content → [HmiTypography.tipPromptBodySize].
+  static const _bodySize = HmiTypography.tipPromptBodySize;
 
   /// `frost_dialog_prompt_content_inset` / `engineer_mode_entry_dialog_content_padding`.
   static const _contentInset = 36.0;
@@ -203,13 +202,9 @@ final class _EngineerModeEntryTipsBodyState
               ),
               child: SizedBox(
                 width: double.infinity,
-                child: HmiButton(
+                height: HmiButtonMetrics.heroHeight,
+                child: CyberButton(
                   key: const ValueKey('engineer-mode-entry-confirm'),
-                  label: l10n.engineerModeEntryConfirm,
-                  size: HmiButtonSize.hero,
-                  widthPolicy: HmiButtonWidthPolicy.fill,
-                  variant: CyberButtonVariant.primary,
-                  shape: CyberButtonShape.rounded,
                   onPressed: () {
                     Navigator.of(context).pop(
                       EngineerModeEntryTipsResult(
@@ -217,6 +212,22 @@ final class _EngineerModeEntryTipsBodyState
                       ),
                     );
                   },
+                  variant: CyberButtonVariant.primary,
+                  shape: CyberButtonShape.rounded,
+                  size: CyberButtonSize.large,
+                  height: HmiButtonMetrics.heroHeight,
+                  stretch: true,
+                  child: Text(
+                    l10n.engineerModeEntryConfirm,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: HmiTypography.dialogConfirmLabelSize,
+                      fontWeight: FontWeight.w700,
+                      height: 1.0,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -232,7 +243,6 @@ final class _EngineerModeEntryTipsBodyState
               },
               label: Text(
                 l10n.dontShowAgainThisSession,
-                textAlign: TextAlign.center,
                 style: context.hmiTypography.dialogOptionLabel.copyWith(
                   height: 1.0,
                   color: _labelMuted,

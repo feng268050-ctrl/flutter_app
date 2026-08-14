@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
@@ -117,7 +118,9 @@ abstract final class WifiConnectTipPrompt {
       builder: (ctx) {
         return CyberPromptContent(
           title: l10n.wifiConnectTipTitle,
+          titleStyle: ctx.hmiTypography.pageTitle,
           body: Text(l10n.wifiConnectTipBody),
+          bodyStyle: ctx.hmiTypography.buttonLarge,
           actions: [
             HmiButton(
               label: l10n.closeText,

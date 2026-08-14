@@ -1,8 +1,5 @@
-# product-monitor-ui Specification
+## ADDED Requirements
 
-## Purpose
-Product Monitor screen: four tabs (Work Info, Machine Status, Videos, AI Vision). Machine Status is a single scroll of Live Status (gauges/tiles), Device Health (communication and temperatures), and Alarm Logs (historical rows). Local process Videos list/detail (no upload in this capability slice).
-## Requirements
 ### Requirement: Monitor top-level navigation has four tabs
 
 The product Monitor screen SHALL present exactly four top-level tabs, in this order: Work Info, Machine Status, Videos, AI Vision. The screen MUST NOT present a standalone Alarms / Alarm Information / Warn Info tab. Named tab indices SHALL be Work Info = 0, Machine Status = 1, Videos = 2, AI Vision = 3. Deep links that open AI Vision SHALL use the named AI Vision index (not a hardcoded former index of 4).
@@ -77,6 +74,8 @@ Machine Status MUST NOT present a dedicated Active Alarms (live episode list) se
 - **WHEN** the operator scrolls Machine Status
 - **THEN** the page MUST NOT show an Active Alarms section heading or a live-episode list distinct from Alarm Logs
 
+## MODIFIED Requirements
+
 ### Requirement: Monitor Machine Status shows live Modbus and camera state
 
 The Monitor → Machine Status Live Status section SHALL present dual gauges and **four** run tiles:
@@ -133,29 +132,6 @@ The product Monitor screen SHALL present four welding-gun temperature rows on **
 - **WHEN** Machine Status Device Health needs live temperatures and communication bits
 - **THEN** it subscribes via HAL watch APIs / the App warn façade and does not start a Timer-based `readAttribute` poll loop for those continuous groups
 
-### Requirement: Monitor uses Material stand-in UI
-
-Monitor MAY use Flutter Material for page layout and tabs. Frost / status glass chrome SHALL use CyberUI when the capability is migrated; Monitor MUST NOT require a second in-app glass kit parallel to `packages/cyber_ui`.
-
-#### Scenario: Monitor opens with Material shell
-
-- **WHEN** the user navigates to Monitor on the current Flutter pin
-- **THEN** the Monitor screen renders with Material-based layout/tabs and remains usable
-
-#### Scenario: Glass chrome not forked in Monitor
-
-- **WHEN** Monitor needs frosted or Cyber status chrome after CyberUI adoption
-- **THEN** it depends on `packages/cyber_ui` rather than maintaining a separate Monitor-only glass implementation
-
-### Requirement: Monitor respects Modbus health soft-fail
-
-Monitor MAY observe `ModbusHal.watchHealth` (or AppServices equivalent) to indicate communication problems. Health indication MUST NOT crash the UI. HAL-owned Warn dialog presentation is out of scope; a simple non-blocking banner or text is sufficient.
-
-#### Scenario: Health fault does not crash Monitor
-
-- **WHEN** continuous group health reports failure while Monitor is open
-- **THEN** the Monitor screen remains open and continues to show last-good or `-` values without crashing
-
 ### Requirement: Monitor prefers CyberUI for status and glass chrome
 
 Where Monitor shows Cyber status lights or frosted panels, it SHALL use CyberUI components (`CyberStatusIndicator` or successors) once `packages/cyber_ui` is adopted. Layout shells MAY remain Material.
@@ -164,15 +140,6 @@ Where Monitor shows Cyber status lights or frosted panels, it SHALL use CyberUI 
 
 - **WHEN** Machine Status Device Health shows status lights after CyberUI migration
 - **THEN** those lights are built from CyberUI status APIs rather than a one-off feature-local indicator fork
-
-### Requirement: Monitor may adopt Cyber borders and controls
-
-Monitor chrome that needs frosted panels or interactive Cyber controls SHALL prefer `packages/cyber_ui` components when available. Status indicators already using Cyber MUST remain on the package API.
-
-#### Scenario: Status stays on CyberStatusIndicator
-
-- **WHEN** Monitor renders machine/alarm status lights
-- **THEN** they continue to use `CyberStatusIndicator` (or successor) from cyber_ui
 
 ### Requirement: Monitor Alarm Logs use historical repository
 
@@ -226,16 +193,6 @@ Machine Status Device Health and Alarm Logs SHALL subscribe to HAL (or App faça
 - **THEN** `WarnAlarmController` SHALL continue running
 - **AND** subsequent rising edges SHALL still present via the App warn host
 
-### Requirement: Monitor shell uses the CyberUI page status bar
-
-The Monitor screen shell SHALL use the CyberUI **page status bar** (leading back, centered title, trailing extensible `CyberHomeStatusBar` + compact clock) rather than a bare back-and-title AppBar or an App-local status-bar fork. For this product’s current icon set the trailing bar SHALL include Wi‑Fi · Bluetooth · camera. Monitor tab content and `AppBar.bottom` tab strip behavior remain as specified elsewhere in this capability; the page status bar applies to the top chrome row only.
-
-#### Scenario: Monitor top chrome includes status and clock
-
-- **WHEN** the operator opens Monitor
-- **THEN** the Monitor top chrome is the CyberUI page status bar showing back, the Monitor title, this product’s current status icons, and a compact clock
-- **AND** Monitor tabs remain available beneath that chrome as today
-
 ### Requirement: Monitor chrome and labels use App localization
 
 Monitor shell title, tab labels, and migrated operator-visible row/tile labels SHALL use `AppLocalizations` for the active UI locale. Alarm Logs list labels for catalogued codes SHALL follow the same localization resolution as warn presentation (`cyber-alarm` / App catalog keys). New Machine Status section titles (Device Health, and Live Status if shown) SHALL be localized.
@@ -250,61 +207,10 @@ Monitor shell title, tab labels, and migrated operator-visible row/tile labels S
 - **WHEN** Language is `zh-CN` and the operator opens Machine Status
 - **THEN** migrated gauge, run-tile, Device Health, and Alarm Logs labels render in Simplified Chinese via App localization
 
-### Requirement: Monitor Videos tab lists local process recordings
+## REMOVED Requirements
 
-Monitor → Videos SHALL present a table aligned with lws-ui `fragment_process_video` columns: Recording Time, Work Mode, Material, Duration, and Operations. Rows SHALL come from the process-video repository (newest first), not from a directory scan alone. An empty library SHALL show a clear empty state (no crash). Operations SHALL include **Upload**, Details (row open), and Delete. Upload MUST be disabled when `uploadStatus == 3` or when an upload for that row is already in flight. Upload MUST show progress feedback (metadata/cover phase then percent) consistent with lws-ui.
+### Requirement: Monitor presents active alarms from HAL attributes
 
-#### Scenario: List shows indexed rows
+**Reason:** A dedicated Monitor active-alarm list duplicates Alarm Logs (history) and the App-wide warn frost (live episodes). The product page is Live Status → Device Health → Alarm Logs only.
 
-- **WHEN** at least one process-video row exists and the operator opens Monitor → Videos
-- **THEN** the table shows that row's recording time, work mode, material, and duration
-
-#### Scenario: Upload control present
-
-- **WHEN** a row has `uploadStatus` other than `3` and no upload is in flight for it
-- **THEN** Videos MUST show an active Upload control for that row
-
-#### Scenario: Empty state
-
-- **WHEN** the process-video library is empty
-- **THEN** Videos tab shows an empty-state message instead of a stuck loading spinner
-
-#### Scenario: List refreshes after new save
-
-- **WHEN** the operator returns to Videos after a new Record Work save
-- **THEN** the new row appears without requiring an App restart
-
-### Requirement: Videos row opens local detail with playback and parameters
-
-Tapping a Videos row (outside Delete) SHALL open a detail view for that recording. Detail SHALL play the local MP4 when the file is valid, show a parameter panel driven by `process_parameters_json` (with process type / material fallbacks), and provide Back plus Delete. Detail MUST NOT require cloud URLs or upload.
-
-#### Scenario: Local playback
-
-- **WHEN** the operator opens detail for a row whose `video_path` exists and is playable
-- **THEN** the detail view presents transport controls and plays the local file
-
-#### Scenario: Parameter panel
-
-- **WHEN** detail opens for a row with a process parameter snapshot
-- **THEN** the parameter panel shows at least functional mode and material (when applicable)
-- **AND** mode-relevant numeric parameters from the snapshot are visible according to process type
-
-#### Scenario: Missing file soft-fails
-
-- **WHEN** detail opens but the MP4 is missing or unreadable
-- **THEN** the UI shows an error/placeholder and remains dismissible without crashing
-
-### Requirement: Monitor Videos supports local delete with confirmation
-
-From the Videos list or detail, Delete SHALL ask for confirmation, then remove the index row and best-effort delete the file, and refresh the list (or pop detail with a result that refreshes).
-
-#### Scenario: Confirm delete from list
-
-- **WHEN** the operator confirms Delete on a list row
-- **THEN** that row disappears from Videos
-- **AND** the corresponding process-video repository entry is gone
-
-#### Scenario: Cancel delete
-
-- **WHEN** the operator cancels the delete confirmation
-- **THEN** the row and file remain unchanged
+**Migration:** Live episodes remain on the App `cyber_alarm` presentation host. Communication and over-temperature health remain on Machine Status Device Health. Historical onsets remain on Machine Status Alarm Logs. HAL `watchAttributes` / no App Timer poll is required by Device Health and Live Status requirements above. C002 history is covered by Alarm Logs.

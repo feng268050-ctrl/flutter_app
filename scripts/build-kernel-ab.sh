@@ -274,11 +274,18 @@ build_kernel_image() {
 	fi
 	echo "=== A/B kernel FIT: build shared Image + resource ==="
 	ensure_kernel_config_fresh
+	# Rockchip ./build.sh kernel can exit 0 even when 10-kernel.sh fails, then we
+	# would pack the previous Image. Capture the log and refuse that path.
+	mkdir -p "$ROOT/output/logs"
+	local klog="$ROOT/output/logs/build-sh-kernel.log"
 	if ! (
 		cd "$SDK"
 		./build.sh kernel
-	); then
+	) 2>&1 | tee "$klog"; then
 		die "./build.sh kernel failed — try: bash scripts/docker-run.sh bash -lc 'make -C /work/sdk/kernel mrproper && ./build.sh kernel'"
+	fi
+	if grep -q 'ERROR: Running .*/10-kernel.sh' "$klog"; then
+		die "./build.sh kernel reported 10-kernel.sh failure (Image not rebuilt); see $klog"
 	fi
 	run_kernel_olddefconfig
 	image="$(kernel_source_dir)/arch/arm64/boot/Image"

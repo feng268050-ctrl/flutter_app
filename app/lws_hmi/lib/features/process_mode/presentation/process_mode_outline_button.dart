@@ -5,6 +5,7 @@ import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
+import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
@@ -12,7 +13,7 @@ import 'package:lws_hmi/ui/hmi/hmi_adaptive_icon_label.dart';
 
 /// Engineer Retract/Feed outline chrome — reused by Quick Mode side ops.
 ///
-/// Visual: orange rim, dark fill; filled orange + white label when active.
+/// Visual: accent rim, dark fill; filled accent + white label when active.
 /// Face size / type / icon tokens alias [HmiButtonMetrics] + [HmiTypography]
 /// (not a second ladder of magic numbers).
 abstract final class ProcessModeOutlineChrome {
@@ -43,6 +44,15 @@ abstract final class ProcessModeOutlineChrome {
 
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;
+
+  /// Idle plate under the rim — weld keeps the product brown; other modes
+  /// mix a dark wash of [accent].
+  static Color idleFillFor(Color accent) {
+    if (accent == actionOrange) {
+      return idleFill;
+    }
+    return Color.alphaBlend(accent.withOpacity(0.22), const Color(0xFF14141C));
+  }
 }
 
 /// Tap outline button (Quick Manual Gas / Auto Wire).
@@ -56,6 +66,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
     required this.onPressed,
     this.height = ProcessModeOutlineChrome.defaultHeight,
     this.iconLabelClearance = ProcessModeOutlineChrome.iconLabelClearance,
+    this.accent,
   });
 
   final String label;
@@ -65,6 +76,10 @@ final class ProcessModeOutlineButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final double height;
   final double iconLabelClearance;
+
+  /// When set, idle label / rim / selected fill follow this color (Quick
+  /// Manual Gas). Null keeps Engineer orange chrome.
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +107,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
               leading: leading,
               label: label,
               iconLabelClearance: iconLabelClearance,
+              accent: accent ?? ProcessModeOutlineChrome.actionOrange,
             ),
           ),
         ),
@@ -195,12 +211,18 @@ final class _ProcessModeOutlineWireButtonState
   }
 
   void _pointerDown() {
+    final l10n = AppLocalizations.of(context)!;
+    // Toast mutex (Engineer parity) — keep peers at full opacity while a
+    // sibling Modbus write holds [DeviceControlController.busy].
+    if (widget.controller.busy) {
+      widget.onMessage(LaserEnableBlockReason.busy.localizedMessage(l10n));
+      return;
+    }
     if (!widget.enabled) {
       return;
     }
     if (widget.laserBlocked) {
-      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(
-          AppLocalizations.of(context)!));
+      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(l10n));
       return;
     }
     CyberClickSoundRegistry.playClick();
@@ -213,7 +235,7 @@ final class _ProcessModeOutlineWireButtonState
   }
 
   void _pointerUp() {
-    if (!widget.enabled || widget.laserBlocked) {
+    if (widget.controller.busy || !widget.enabled || widget.laserBlocked) {
       return;
     }
     final wasLatched = _gesture.latched;
@@ -290,6 +312,7 @@ final class _OutlineFace extends StatelessWidget {
     this.continuousRipple = false,
     this.showLeading = true,
     this.iconLabelClearance = ProcessModeOutlineChrome.iconLabelClearance,
+    this.accent = ProcessModeOutlineChrome.actionOrange,
   });
 
   final double height;
@@ -302,13 +325,14 @@ final class _OutlineFace extends StatelessWidget {
   final bool continuousRipple;
   final bool showLeading;
   final double iconLabelClearance;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
     final onFill = highlight || progressForcesReadableLabel;
     final foreground = !enabled
         ? ProcessModeOutlineChrome.disabledForeground
-        : (onFill ? Colors.white : ProcessModeOutlineChrome.actionOrange);
+        : (onFill ? Colors.white : accent);
     final style = TextStyle(
       color: foreground,
       fontSize: ProcessModeOutlineChrome.labelSize,
@@ -326,13 +350,15 @@ final class _OutlineFace extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(ProcessModeOutlineChrome.radius),
-        color: highlight
-            ? ProcessModeOutlineChrome.actionOrange
-            : ProcessModeOutlineChrome.idleFill,
-        border: Border.all(
-          color: ProcessModeOutlineChrome.actionOrange,
-          width: ProcessModeOutlineChrome.strokeWidth,
-        ),
+        color:
+            highlight ? accent : ProcessModeOutlineChrome.idleFillFor(accent),
+        // Same as Engineer Feed: no orange rim when the side key is unavailable.
+        border: enabled
+            ? Border.all(
+                color: accent,
+                width: ProcessModeOutlineChrome.strokeWidth,
+              )
+            : null,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(ProcessModeOutlineChrome.radius),

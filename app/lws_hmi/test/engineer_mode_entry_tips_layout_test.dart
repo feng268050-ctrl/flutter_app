@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,10 +56,76 @@ void main() {
           )
           .first,
     );
-    // Title-based width (≥700, ≤95% screen) so 53sp title fits.
-    expect(card.width, greaterThanOrEqualTo(700));
+    // Title-based width (≥600 floor, ≤95% screen) so tip title fits.
+    expect(card.width, greaterThanOrEqualTo(600));
     expect(card.width, lessThanOrEqualTo(1280 * 0.95));
     // cardH = (800 + 600) / 2 → 700; margins ~50 each (half of former ~100).
     expect(card.height, moreOrLessEquals(700, epsilon: 1));
+
+    // Checkbox + label group is horizontally centered in the card.
+    final cardRect = tester.getRect(
+      find
+          .ancestor(
+            of: find.byKey(const ValueKey('engineer-mode-entry-tips')),
+            matching: find.byType(ConstrainedBox),
+          )
+          .first,
+    );
+    final checkboxRect = tester.getRect(
+      find.byKey(const ValueKey('engineer-mode-entry-dont-show-again')),
+    );
+    expect(
+      checkboxRect.center.dx,
+      moreOrLessEquals(cardRect.center.dx, epsilon: 2),
+    );
+  });
+
+  testWidgets('entry tile press chrome releases while the tip is open',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: CyberPressable(
+                overlay: CyberPressFeedback.tileRipple,
+                onPressed: () {
+                  unawaited(showEngineerModeEntryTipsDialog(context));
+                },
+                child: const SizedBox(
+                  width: 200,
+                  height: 120,
+                  child: Text('Engineer Mode'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Engineer Mode'));
+    await tester.pump();
+    await tester.pump(CyberPressFeedback.pressIn);
+    await tester.pump(CyberPressFeedback.pressHold);
+    await tester.pump();
+    await tester.pump(CyberPressFeedback.pressIn);
+    await tester.pump(const Duration(milliseconds: 180));
+
+    expect(find.text('Engineer Mode Notice'), findsOneWidget);
+    final overlay = tester.widget<ColoredBox>(
+      find.descendant(
+        of: find.byType(CyberPressable),
+        matching: find.byType(ColoredBox),
+      ),
+    );
+    expect(overlay.color, CyberPressFeedback.overlayIdle);
   });
 }

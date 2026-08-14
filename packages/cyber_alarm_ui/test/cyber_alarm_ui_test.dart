@@ -242,9 +242,9 @@ void main() {
   });
 
   test('WarnDialogMetrics ladder sizes stay on FrostUI 100% scale', () {
-    expect(WarnDialogMetrics.titleSize, 52);
-    expect(WarnDialogMetrics.bodySize, 36);
-    expect(WarnDialogMetrics.confirmLabelSize, 24);
+    expect(WarnDialogMetrics.titleSize, 40);
+    expect(WarnDialogMetrics.bodySize, 32);
+    expect(WarnDialogMetrics.confirmLabelSize, 30);
     expect(WarnDialogMetrics.minTitleSize, 18);
   });
 

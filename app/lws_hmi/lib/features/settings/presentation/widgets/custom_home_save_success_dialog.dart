@@ -11,7 +11,7 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 enum _CustomHomeSaveStatus { success, failure }
 
-/// Custom Home save tip — LIGHT cream glass (pass / fail content icons).
+/// Custom Home save tip — dark frost like boot self-check (pass / fail icons).
 Future<void> showCustomHomeSaveSuccessDialog(BuildContext context) =>
     _showCustomHomeSaveStatusDialog(
       context,
@@ -71,8 +71,8 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
   static const _iconSize = 80.0;
   static const _confirmMinWidth = 500.0;
 
-  static const _titleInk = Color(0xFF1A1A1A);
-  static const _bodyInk = Color(0xCC1A1A1A);
+  static const _titleInk = CyberColors.textPrimary;
+  static const _bodyInk = CyberColors.textPrimary;
 
   @override
   Widget build(BuildContext context) {

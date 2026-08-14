@@ -172,6 +172,7 @@ final class QuickModeProcessWheel extends StatelessWidget {
                 width: leftAccentWidth,
                 height: ProcessModeDimens.wheelItemHeight,
                 child: _WheelAccentBand(
+                  processType: processType,
                   alignEnd: false,
                   showFillTail: !hideSideAccent,
                 ),
@@ -186,6 +187,7 @@ final class QuickModeProcessWheel extends StatelessWidget {
                   width: ProcessModeDimens.wheelAccentBandWidth,
                   height: ProcessModeDimens.wheelItemHeight,
                   child: _WheelAccentBand(
+                    processType: processType,
                     alignEnd: true,
                     showFillTail: true,
                   ),
@@ -205,32 +207,31 @@ final class QuickModeProcessWheel extends StatelessWidget {
 }
 
 /// Left or right accent strip under the selected wheel row
-/// (lws-ui `quick_mode_wheel_active_*`).
+/// (lws-ui `quick_mode_wheel_active_*` / `materials_wheel_active_highlight`).
 final class _WheelAccentBand extends StatelessWidget {
   const _WheelAccentBand({
+    required this.processType,
     required this.alignEnd,
     required this.showFillTail,
   });
 
+  final ProcessType processType;
   final bool alignEnd;
   final bool showFillTail;
 
   @override
   Widget build(BuildContext context) {
+    final gradient = ProcessModeTokens.quickSelectionHighlight(processType);
     final solid = SizedBox(
       width: ProcessModeDimens.wheelAccentSolidWidth,
       height: double.infinity,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: ProcessModeTokens.quickSelectionHighlightGradient,
-        ),
+        decoration: BoxDecoration(gradient: gradient),
       ),
     );
     final fill = Expanded(
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: ProcessModeTokens.quickSelectionHighlightGradient,
-        ),
+        decoration: BoxDecoration(gradient: gradient),
       ),
     );
 

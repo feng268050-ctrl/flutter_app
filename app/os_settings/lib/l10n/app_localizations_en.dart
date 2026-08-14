@@ -445,6 +445,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'The keyboard layout will be saved, and Settings will restart so a matching physical keyboard works correctly.';
 
   @override
+  String get keyboardApplySuccessTitle => 'Layout Applied';
+
+  @override
+  String get keyboardApplySuccessBody => 'Done';
+
+  @override
   String get keyboardLayoutHelpOs =>
       'The preview shows the on-screen keyboard layout. Tap Apply to save; Settings will restart so a matching physical keyboard works correctly.';
 

@@ -56,8 +56,8 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     this.dialogOptionLabel = _dialogOptionLabel,
     this.criticalTitle = AppTypography.criticalTitle,
     this.criticalBody = AppTypography.pageTitle,
-    this.engineerTipTitle = AppTypography.criticalTitle,
-    this.engineerTipBody = AppTypography.largeDialogTitle,
+    this.engineerTipTitle = _tipPromptTitle,
+    this.engineerTipBody = _tipPromptBody,
     this.safetyTipTitle = AppTypography.largeDialogTitle,
     this.safetyTipBody = AppTypography.navigation,
     this.reminderTitle = AppTypography.navigation,
@@ -71,7 +71,7 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     // Legacy aliases (map onto semantic roles)
     this.cardTitle = AppTypography.sectionTitle,
     this.button = AppTypography.control,
-    this.alarmTitle = AppTypography.criticalTitle,
+    this.alarmTitle = _tipPromptTitle,
     this.navigation = AppTypography.navigation,
   });
 
@@ -85,6 +85,15 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
   /// Frozen Medium 100% Hero label size (product baseline).
   static const buttonHeroFontSize = 24.0;
   static const buttonJumboFontSize = 32.0;
+
+  /// Engineer-entry / warn-alarm / register / tip prompt title.
+  static const tipPromptTitleSize = 40.0;
+
+  /// Engineer-entry / warn-alarm / register / tip prompt body.
+  static const tipPromptBodySize = 32.0;
+
+  /// Engineer-entry / warn-alarm Confirm label — not [buttonHeroFontSize].
+  static const dialogConfirmLabelSize = 30.0;
 
   /// Reading ladder sizes — alias [AppTypography] for feature token files.
   static const pageTitleSize = AppTypography.pageTitleSize;
@@ -153,6 +162,16 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
     fontSize: dialogOptionLabelSize,
     fontWeight: FontWeight.w400,
     height: 1.0,
+  );
+  static const _tipPromptTitle = TextStyle(
+    fontSize: tipPromptTitleSize,
+    fontWeight: FontWeight.w700,
+    height: 1.0,
+  );
+  static const _tipPromptBody = TextStyle(
+    fontSize: tipPromptBodySize,
+    fontWeight: FontWeight.w400,
+    height: (tipPromptBodySize + 6) / tipPromptBodySize,
   );
   static const _formDialogTitle = TextStyle(
     fontSize: formDialogTitleSize,

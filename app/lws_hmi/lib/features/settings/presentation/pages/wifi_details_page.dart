@@ -9,8 +9,9 @@ import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.d
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
-import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/ui/hmi/hmi_dialog_actions.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Wi‑Fi Details — Auto Join / IPv4 / DNS / others (inline edit).
 class WifiDetailsPage extends StatefulWidget {
@@ -336,38 +337,22 @@ class _WifiDetailsPageState extends State<WifiDetailsPage> {
   Future<void> _forget(AppLocalizations l10n) async {
     final ssid = _conn.ssid;
     if (ssid == null || ssid.isEmpty) return;
-    final ok = await showCyberDialog<bool>(
+    final ok = await TipDialogHost.showDarkPrompt<bool>(
       context: context,
+      barrierDismissible: true,
       builder: (ctx) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.wifiForgetNetwork,
-              style: context.hmiTypography.settingsRowTitle.copyWith(
-                color: CyberColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.wifiForgetConfirmMessage,
-              style: const TextStyle(color: CyberColors.textSecondary),
-            ),
-            const SizedBox(height: 20),
-            HmiButton(
-              label: l10n.wifiForgetNetwork,
-              size: HmiButtonSize.medium,
-              widthPolicy: HmiButtonWidthPolicy.fill,
-              variant: CyberButtonVariant.secondary,
-              onPressed: () => Navigator.of(ctx).pop(true),
-            ),
-            const SizedBox(height: 8),
-            HmiButton(
-              label: l10n.cancelText,
-              size: HmiButtonSize.medium,
-              widthPolicy: HmiButtonWidthPolicy.fill,
-              onPressed: () => Navigator.of(ctx).pop(false),
+        return CyberPromptContent(
+          title: l10n.wifiForgetNetwork,
+          body: Text(
+            l10n.wifiForgetConfirmMessage,
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            HmiDialogActions(
+              cancelLabel: l10n.cancelText,
+              confirmLabel: l10n.wifiForgetNetwork,
+              onCancel: () => Navigator.of(ctx).pop(false),
+              onConfirm: () => Navigator.of(ctx).pop(true),
             ),
           ],
         );

@@ -1011,6 +1011,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceModel => 'Model';
 
   @override
+  String get deviceMonitorDeviceHealthTitle => 'Device Health';
+
+  @override
   String get deviceMonitorHomeTitle => 'Monitor';
 
   @override

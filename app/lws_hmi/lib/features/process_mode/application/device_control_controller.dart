@@ -116,9 +116,9 @@ final class DeviceControlController extends ChangeNotifier {
         ids: DeviceControlIds.watchIds,
       );
       _sub = stream.listen(applyChanges);
-      // Soft entry defaults: never hold [busy] (Quick side keys share
-      // enabled:!busy). Defer writes so concurrent ProcessApply modeSwitch
-      // can claim the RTU first (avoids FC16 overlap on 0x58/0x98).
+      // Soft entry defaults: never hold [busy] (Quick side keys stay fully
+      // opaque; busy is toast-mutex only). Defer writes so concurrent
+      // ProcessApply modeSwitch can claim the RTU first.
       await ensureAutoWireFeedDefault(
         defer: const Duration(milliseconds: 200),
       );
@@ -136,7 +136,7 @@ final class DeviceControlController extends ChangeNotifier {
 
   /// Match lws-ui Quick `initData`: always force Auto Wire Feed ON when safe.
   ///
-  /// Soft write: does not toggle [busy] (avoids Quick side-key opacity flash).
+  /// Soft write: does not toggle [busy] (entry sync must not block taps).
   /// [defer] yields before Modbus so ProcessApply can enqueue first on entry.
   Future<void> ensureAutoWireFeedDefault({
     Duration defer = Duration.zero,
@@ -669,8 +669,8 @@ final class DeviceControlController extends ChangeNotifier {
 
   /// Toggle automatic wire-feed enable, first stopping any manual movement.
   ///
-  /// [holdBusy] false for entry/default sync so Quick side keys (enabled when
-  /// `!busy`) do not dim/flicker while ProcessApply shares the RTU.
+  /// [holdBusy] false for entry/default sync so init writes do not trip the
+  /// toast-mutex while ProcessApply shares the RTU.
   Future<LaserEnableBlockReason?> setAutoWireFeed(
     bool enabled, {
     bool holdBusy = true,

@@ -42,8 +42,8 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
   static const _maxWidth = 560.0;
   static const _iconSize = 80.0;
 
-  static const _titleInk = Color(0xFF1A1A1A);
-  static const _bodyInk = Color(0xCC1A1A1A);
+  static const _titleInk = CyberColors.textPrimary;
+  static const _bodyInk = CyberColors.textPrimary;
 
   @override
   Widget build(BuildContext context) {

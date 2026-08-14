@@ -83,14 +83,20 @@ final class QuickModeDeviceControls extends StatelessWidget {
                           children: [
                             if (_wireCapable)
                               const SizedBox(
-                                height: ProcessModeDimens.feedHoldHintSlotHeight,
+                                height:
+                                    ProcessModeDimens.feedHoldHintSlotHeight,
                               ),
+                            // Toast mutex only — do not dim peers for [busy]
+                            // (Engineer parity; shared busy was flashing all
+                            // four Quick side keys on every Modbus write).
                             ProcessModeOutlineButton(
                               key: const ValueKey('device-control-manual-gas'),
                               label: l10n.manualGas,
                               leading: _materialIcon(Icons.air),
                               selected: controller.manualGas,
-                              enabled: !controller.busy,
+                              enabled: true,
+                              accent: ProcessModeTokens.accentFor(processType)
+                                  .solid,
                               onPressed: () =>
                                   unawaited(_toggleManualGas(context, l10n)),
                             ),
@@ -100,9 +106,8 @@ final class QuickModeDeviceControls extends StatelessWidget {
                                   'device-control-auto-wire-feed'),
                               label: l10n.autoWireFeed,
                               leading: _materialIcon(Icons.sync),
-                              selected:
-                                  controller.autoWireFeed && _wireCapable,
-                              enabled: _wireCapable && !controller.busy,
+                              selected: controller.autoWireFeed && _wireCapable,
+                              enabled: _wireCapable,
                               iconLabelClearance:
                                   ProcessModeOutlineChrome.noIconLabelClearance,
                               onPressed: () =>
@@ -149,28 +154,26 @@ final class QuickModeDeviceControls extends StatelessWidget {
                                 l10n,
                               ),
                               leading: _wireIcon(retract: false),
-                              enabled: _wireCapable && !controller.busy,
+                              enabled: _wireCapable,
                               laserBlocked: laserOpen,
                               retract: false,
                               active: controller.wireWork &&
                                   !controller.wireRetracting,
                               controller: controller,
-                              onMessage: (message) =>
-                                  _toast(context, message),
+                              onMessage: (message) => _toast(context, message),
                             ),
                             const SizedBox(height: _sideButtonGap),
                             ProcessModeOutlineWireButton(
                               key: const ValueKey('device-control-retract'),
                               label: l10n.retract,
                               leading: _wireIcon(retract: true),
-                              enabled: _wireCapable && !controller.busy,
+                              enabled: _wireCapable,
                               laserBlocked: laserOpen,
                               retract: true,
                               active: controller.wireWork &&
                                   controller.wireRetracting,
                               controller: controller,
-                              onMessage: (message) =>
-                                  _toast(context, message),
+                              onMessage: (message) => _toast(context, message),
                             ),
                           ],
                         ),
@@ -244,6 +247,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
     AppLocalizations l10n,
   ) async {
     if (controller.busy) {
+      _toast(context, LaserEnableBlockReason.busy.localizedMessage(l10n));
       return;
     }
     if (_laserOpen) {
@@ -278,6 +282,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
       return;
     }
     if (controller.busy) {
+      _toast(context, LaserEnableBlockReason.busy.localizedMessage(l10n));
       return;
     }
     if (_laserOpen) {

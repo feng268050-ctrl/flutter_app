@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/ai_vision_tab.dart';
-import 'package:lws_hmi/features/monitor/presentation/tabs/alarm_information_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/machine_status_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/work_information_tab.dart';
@@ -13,7 +12,7 @@ import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Product Monitor — five tabs aligned with lws-ui DeviceMonitoring (Material).
+/// Product Monitor — four tabs (Work Info / Machine Status / Videos / AI Vision).
 ///
 /// Tab changes animate L/R on tap (finger swipe disabled — anti-mis-touch).
 /// Tab leading icons use Material Icons (replacing lws-ui WebP mipmaps).
@@ -26,9 +25,8 @@ class MonitorPage extends StatefulWidget {
 
   static const tabWorkInformation = 0;
   static const tabMachineStatus = 1;
-  static const tabAlarmInformation = 2;
-  static const tabVideos = 3;
-  static const tabAiVision = 4;
+  static const tabVideos = 2;
+  static const tabAiVision = 3;
 
   /// Selected tab when the route opens (clamped to valid range).
   final int initialTabIndex;
@@ -43,10 +41,6 @@ class MonitorPage extends StatefulWidget {
       icon: Icons.account_tree_outlined,
     ),
     (
-      key: ValueKey('monitor-tab-alarm-information'),
-      icon: Icons.warning_amber_rounded,
-    ),
-    (
       key: ValueKey('monitor-tab-videos'),
       icon: Icons.movie_outlined,
     ),
@@ -56,10 +50,12 @@ class MonitorPage extends StatefulWidget {
     ),
   ];
 
+  /// Number of top-level Monitor tabs (Work Info … AI Vision).
+  static int get tabCount => _tabs.length;
+
   static List<String> _tabLabels(AppLocalizations l10n) => [
         l10n.deviceMonitorWorkInfoTitle,
         l10n.deviceMonitorMachineStatusTitle,
-        l10n.deviceMonitorWarnInfoTitle,
         l10n.videosTitle,
         l10n.aiVisionTitle,
       ];
@@ -91,7 +87,8 @@ class _MonitorPageState extends State<MonitorPage> {
       0,
       MonitorPage._tabs.length - 1,
     );
-    // Route-level ensure: Alarm tab is lazy and must not be the only starter.
+    // Route-level ensure: Machine Status Device Health is lazy and must not
+    // be the only Modbus starter.
     scheduleEnsureModbusLive(context);
   }
 
@@ -156,7 +153,6 @@ class _MonitorPageState extends State<MonitorPage> {
               MachineStatusTab(
                 visible: _currentTabIndex == MonitorPage.tabMachineStatus,
               ),
-              const AlarmInformationTab(),
               const VideosTab(),
               AiVisionTab(
                 visible: _currentTabIndex == MonitorPage.tabAiVision,

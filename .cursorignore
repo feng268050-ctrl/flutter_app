@@ -12,8 +12,9 @@ linux-sdk/
 output/
 .cache/
 
-# Generated Flutter bundle in fs-overlay
-overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/
+# Generated Flutter release bundles (make build-app)
+app/*/build/bundle/release/
+app/*/build/bundle/.assemble/
 
 # Local tooling venv
 .venv-tools/

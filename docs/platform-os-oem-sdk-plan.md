@@ -32,7 +32,7 @@
 | HAL | P3.1 ✅：`BoardProfile` + `BoardBindings`；合同见 `hal-portability.md` |
 | 板级 JSON | **W1 ✅**：OEM `board_profile`；`gpio.json` / `modbus.json` 仍在 App assets |
 | 屏参 | **W2 ✅**：screen pack `lcd/` → private1（OEM 权威）；无 `/system/etc` 回退 |
-| 板脚本 | **W2 ✅**：modem / OTG / display-init 在 `oem/boards/ynh960/helpers/`；rootfs 为 thin stub |
+| 板脚本 | **W2 ✅**：modem / OTG / storage-init 在 `oem/boards/ynh960/helpers/`；rootfs 为 thin stub |
 | GPT `oem` | ✅ ~128 MiB `/oem`；`build-oem` + `upgrade`（含 `OEM_ONLY=1`）已通；ynh960 pack 有内容 |
 | `properties.ini` | ✅ 运行时 `/var/lib/hal/properties.ini`（无 OEM 种子）；`set-prop`/`del-prop`；identity → Vendor Storage |
 | `linux-sdk/` | ✅ W3：白名单/trim/squash/薄 overlay 已归档；**暂不进仓**；DT git 真相源仍为 `overlay/kernel/`（见 `docs/linux-sdk-vendor-import.md`） |
@@ -234,7 +234,7 @@ LWS HMI App product_property_defaults
 
 早启（在 HMI 前）服务，例如 `oem-compose.service`：
 
-1. 确保 `PARTLABEL=oem` → `/oem`（已有 display-init 可拆出通用 mount）。  
+1. 确保 `PARTLABEL=oem` → `/oem`（`storage-init.service` 通用 mount）。  
 2. 读 `/oem/manifest.json`；校验 `board_path` / `screen_path` 存在。  
 3. 导出环境或生成：  
    - `/run/hmi/oem.env`（`BOARD_ID` `SCREEN_ID` `OEM_BOARD_ROOT` …）  
@@ -260,7 +260,7 @@ LWS HMI App product_property_defaults
 |------|------|------|
 | O1 | 定义 manifest / screen.json schema；`oem/boards/ynh960` 从 App `board_profile.json` **剥掉** gpio/modbus 指针后迁入；**迁入 `product.ini` 种子** | ✅ W1 |
 | O2 | App 改为「OEM profile + 本地 gpio/modbus」；单测用 fixture | ✅ W1 |
-| O3 | 板脚本：modem / OTG / display-init 迁到 `oem/boards/.../helpers`，profile helpers 改路径 | ✅ W2 |
+| O3 | 板脚本：modem / OTG / storage-init 迁到 `oem/boards/.../helpers`，profile helpers 改路径 | ✅ W2 |
 | O4 | 屏参：仅 OEM screen pack `lcd/` 种子 private1（无 `/system/etc` 回退） | ✅ W2 |
 | O5 | `make build-oem`（ext4）+ flash/upgrade 路径打通；清空 oem-fallback | ✅ W1+W2 |
 
@@ -544,7 +544,7 @@ gpio/modbus = App assets            同；Modbus←USB-serial 透传
 ### 6.4 virt screen pack
 
 - `screen.json`：逻辑分辨率（如 1536×960）、默认 landscape；**无** lcd_param / ParamUpdate。  
-- Weston：virtio-gpu / 帧缓冲；`desktop-shell`；启动链 **跳过** ynh960 display-init。
+- Weston：virtio-gpu / 帧缓冲；`desktop-shell`；启动链 **跳过** 设备 `storage-init`（用 `emulator-storage-init`）。
 
 ### 6.5 镜像与开发路径
 

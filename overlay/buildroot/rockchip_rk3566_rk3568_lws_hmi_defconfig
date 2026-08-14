@@ -12,6 +12,7 @@
 #include "wifibt/bt.config"
 #include "chips/lws_hmi_bt.config"
 #include "chips/lws_hmi_network.config"
+#include "chips/lws_hmi_wifi_rtw88.config"
 #include "chips/lws_hmi_font.config"
 #include "powermanager.config"
 # Default rootfs (make build-rootfs): Weston + eLinux + Mali wayland-gbm.

@@ -28,6 +28,8 @@ disable_unit() {
 	done
 }
 
+disable_unit mainserver.service
+
 link_unit() {
 	unit="$1"
 	[ -f "$SYSTEMD_DIR/$unit" ] || return 0
@@ -90,7 +92,6 @@ rmdir \
 	"$TARGET_DIR/etc/systemd/system/systemd-reboot.service.d" \
 	2>/dev/null || true
 
-link_unit mainserver.service
 link_unit cpu-performance.service
 link_unit_sysinit cpu-performance.service
 link_unit serial-stty.service
@@ -103,10 +104,10 @@ link_unit usb-otg-role-boot.service
 link_unit hmi.service
 link_unit_sysinit hmi.service
 # Display init stays sysinit-only (already linked by 06-systemd / unit Install).
-if [ -f "$SYSTEMD_DIR/param-update.service" ]; then
+if [ -f "$SYSTEMD_DIR/storage-init.service" ]; then
 	mkdir -p "$SYSINIT_WANTS"
-	ln -sf "/etc/systemd/system/param-update.service" \
-		"$SYSINIT_WANTS/param-update.service"
+	ln -sf "/etc/systemd/system/storage-init.service" \
+		"$SYSINIT_WANTS/storage-init.service"
 fi
 
 ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"

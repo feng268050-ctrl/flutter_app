@@ -144,6 +144,18 @@ compose_from_root() {
 	} >"$RUN_HMI/oem.env"
 	write_screen_env "$screen_json"
 
+# Runtime board stamp for systemd ConditionPathExists (board-specific units).
+	if [ -z "$board_id" ]; then
+		die "manifest missing board_id"
+	fi
+	case "$board_id" in
+	*[!A-Za-z0-9._-]*) die "invalid board_id '$board_id'" ;;
+	esac
+	printf '%s\n' "$board_id" >"$RUN_HMI/board_id"
+	mkdir -p "$RUN_HMI/boards.d"
+	rm -f "$RUN_HMI/boards.d"/* 2>/dev/null || true
+	touch "$RUN_HMI/boards.d/$board_id"
+
 	gpio_sim="$(sed -n 's/.*"gpio_sim_leds"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$board_profile" | head -1)"
 	if [ -n "$gpio_sim" ] && [ -x "$gpio_sim" ]; then
 		"$gpio_sim" || warn "gpio_sim_leds helper failed"

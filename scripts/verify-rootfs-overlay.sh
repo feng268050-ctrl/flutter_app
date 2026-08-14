@@ -43,7 +43,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service oem-compose.service mainserver.service cpu-performance.service pwrkey-poweroff.service usb-otg-role-boot.service ab-boot-confirm.service tee-supplicant.service; do
+	for unit in hmi.service oem-compose.service cpu-performance.service pwrkey-poweroff.service usb-otg-role-boot.service ab-boot-confirm.service tee-supplicant.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else
@@ -62,7 +62,7 @@ check_systemd_wants() {
 				echo "OK:  $unit not in $label sysinit.target.wants"
 			fi
 		done
-		for unit in hmi.service oem-compose.service cpu-performance.service; do
+		for unit in hmi.service oem-compose.service cpu-performance.service storage-init.service; do
 			if [[ -L "$sysinit_wants/$unit" || -f "$sysinit_wants/$unit" ]]; then
 				echo "OK:  $unit in $label sysinit.target.wants (boot KPI)"
 			else
@@ -324,9 +324,10 @@ run_check() {
 	echo "--- usr/libexec/board ---"
 	for f in read-device-serial.sh read-product-identity.sh write-product-identity.sh \
 		read-cloud-ed25519-sealed.sh write-cloud-ed25519-sealed.sh \
+		board-id.sh board-match.sh \
 		secrets-seal secrets-seal-ca paths.sh lws-hostname.sh device-mdns-advertise.sh \
 		serial-console-stty.sh reboot-loader boot-verify.sh env-verify.sh \
-		set-performance-mode.sh bind-prefs.sh apply-datetime-prefs.sh apply-physical-input-policy.sh provision-mount.sh factory-reset.sh emulator-storage-init.sh; do
+		set-performance-mode.sh bind-prefs.sh apply-datetime-prefs.sh apply-physical-input-policy.sh provision-mount.sh factory-reset.sh emulator-storage-init.sh storage-init.sh; do
 		if [[ -x "$libexec_board/$f" ]] || [[ -f "$libexec_board/$f" && "$f" == paths.sh ]]; then
 			echo "OK:  board/$f"
 		else
@@ -410,7 +411,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/display ---"
-	for f in display-init.sh weston-hmi-config.sh change-orientation.sh apply-wallpaper.sh \
+	for f in weston-hmi-config.sh change-orientation.sh apply-wallpaper.sh \
 		apply-mouse-settings.sh; do
 		if [[ -x "$libexec_display/$f" ]]; then
 			echo "OK:  display/$f"
@@ -570,10 +571,11 @@ run_check() {
 		echo "OK:  bcmdhd*.ko absent"
 	fi
 	unset _fw_hit _fw_dir _fw_real
-	if [[ -x "$target/usr/bin/rk_wifi_init" ]]; then
-		echo "OK:  usr/bin/rk_wifi_init"
+	if [[ -f "$target/usr/lib/udev/rules.d/61-partition-init.rules" ]]; then
+		echo "OK:  usr/lib/udev/rules.d/61-partition-init.rules"
 	else
-		echo "WARN: usr/bin/rk_wifi_init missing (optional Innohi helper)" >&2
+		echo "FAIL: usr/lib/udev/rules.d/61-partition-init.rules missing" >&2
+		missing=1
 	fi
 	if [[ -s "$target/etc/ssl/certs/ca-certificates.crt" ]]; then
 		echo "OK:  etc/ssl/certs/ca-certificates.crt"
@@ -605,6 +607,7 @@ diagnose-hmi /usr/libexec/hmi/diagnose-hmi.sh
 diagnose-usb-ssh /usr/libexec/usb/usb-plug-ssh-diag.sh
 read-serial /usr/libexec/board/read-device-serial.sh
 read-identity /usr/libexec/board/read-product-identity.sh
+read-board-id /usr/libexec/board/board-id.sh
 write-identity /usr/libexec/board/write-product-identity.sh
 read-cloud-ed25519-sealed /usr/libexec/board/read-cloud-ed25519-sealed.sh
 write-cloud-ed25519-sealed /usr/libexec/board/write-cloud-ed25519-sealed.sh
@@ -641,11 +644,18 @@ EOF
 		echo "FAIL: hmi.service missing from target/etc/systemd/system" >&2
 		missing=1
 	fi
-	if [[ -f "$target/etc/systemd/system/oem-compose.service" ]]; then
-		echo "OK:  oem-compose.service in target"
+	if [[ -f "$target/etc/systemd/system/storage-init.service" ]]; then
+		echo "OK:  storage-init.service in target"
 	else
-		echo "FAIL: oem-compose.service missing from target/etc/systemd/system" >&2
+		echo "FAIL: storage-init.service missing from target/etc/systemd/system" >&2
 		missing=1
+	fi
+	if [[ -f "$target/etc/systemd/system/param-update.service" ]] || \
+		[[ -f "$target/etc/systemd/system/display-init.service" ]]; then
+		echo "FAIL: retired param-update.service / display-init.service still present" >&2
+		missing=1
+	else
+		echo "OK:  retired param-update/display-init units absent"
 	fi
 	if [[ ! -f "$target/usr/share/hal/wallpapers/home_back.png" ]]; then
 		echo "FAIL: usr/share/hal/wallpapers/home_back.png missing (system wallpaper preset)" >&2
@@ -744,11 +754,11 @@ EOF
 	fi
 
 	echo ""
-	echo "--- /etc/fstab (extra parts via display-init, not local-fs) ---"
+	echo "--- /etc/fstab (extra parts via storage-init, not local-fs) ---"
 	if [[ -f "$target/etc/fstab" ]]; then
 		if grep -qE '[[:space:]]/userdata[[:space:]]' "$target/etc/fstab" || \
 			grep -qE '^PARTLABEL=userdata[[:space:]]' "$target/etc/fstab"; then
-			echo "FAIL: /etc/fstab must not mount /userdata (display-init mounts PARTLABEL=userdata with auto-mkfs)" >&2
+			echo "FAIL: /etc/fstab must not mount /userdata (storage-init mounts PARTLABEL=userdata with auto-mkfs)" >&2
 			missing=1
 		else
 			echo "OK:  /userdata not in fstab"
@@ -1256,34 +1266,38 @@ EOF
 	fi
 	if [[ -x "$libexec_board/bind-prefs.sh" ]] && \
 		( grep -q 'bind-prefs.sh' \
-			"$libexec_display/display-init.sh" 2>/dev/null || \
+			"$ROOT/oem/boards/ynh960/helpers/storage-init.sh" 2>/dev/null || \
 		  grep -q 'bind-prefs.sh' \
-			"$ROOT/oem/boards/ynh960/helpers/display-init.sh" 2>/dev/null ); then
+			"$ROOT/oem/boards/ek3562/helpers/storage-init.sh" 2>/dev/null ); then
 		echo "OK:  bind-prefs (four /var/lib/* → /userdata/*)"
 	else
-		echo "FAIL: missing bind-prefs.sh wired into display-init (stub or OEM helper)" >&2
+		echo "FAIL: missing bind-prefs.sh wired into storage-init OEM helper" >&2
 		missing=1
 	fi
 	if [[ -x "$libexec_board/provision-mount.sh" ]] && \
 		( grep -q 'provision-mount.sh' \
-			"$ROOT/oem/boards/ynh960/helpers/display-init.sh" 2>/dev/null || \
+			"$ROOT/oem/boards/ynh960/helpers/storage-init.sh" 2>/dev/null || \
+		  grep -q 'provision-mount.sh' \
+			"$ROOT/oem/boards/ek3562/helpers/storage-init.sh" 2>/dev/null || \
 		  grep -q 'provision-mount.sh' \
 			"$libexec_board/emulator-storage-init.sh" 2>/dev/null ); then
 		echo "OK:  provision-mount (properties.ini → /mnt/provision)"
 	else
-		echo "FAIL: missing provision-mount.sh wired into display-init or emulator-storage-init" >&2
+		echo "FAIL: missing provision-mount.sh wired into storage-init or emulator-storage-init" >&2
 		missing=1
 	fi
 	if [[ -x "$libexec_board/apply-datetime-prefs.sh" ]] && \
 		( grep -q 'apply-datetime-prefs.sh' \
-			"$ROOT/oem/boards/ynh960/helpers/display-init.sh" 2>/dev/null || \
+			"$ROOT/oem/boards/ynh960/helpers/storage-init.sh" 2>/dev/null || \
+		  grep -q 'apply-datetime-prefs.sh' \
+			"$ROOT/oem/boards/ek3562/helpers/storage-init.sh" 2>/dev/null || \
 		  grep -q 'apply-datetime-prefs.sh' \
 			"$libexec_board/emulator-storage-init.sh" 2>/dev/null ) && \
 		grep -q 'apply-datetime-prefs.sh' \
 			"$OVERLAY_FS/usr/libexec/hmi/hmi-launch.sh" 2>/dev/null; then
 		echo "OK:  apply-datetime-prefs (datetime.conf → /etc/localtime)"
 	else
-		echo "FAIL: missing apply-datetime-prefs.sh wired into display-init, emulator-storage-init, or hmi-launch" >&2
+		echo "FAIL: missing apply-datetime-prefs.sh wired into storage-init, emulator-storage-init, or hmi-launch" >&2
 		missing=1
 	fi
 	if [[ -x "$libexec_board/factory-reset.sh" ]] && [[ -L "$target/usr/bin/factory-reset" ]]; then

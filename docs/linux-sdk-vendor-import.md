@@ -152,10 +152,26 @@ once) so the owned `patch-mk-kernel.sh` lands in the SDK’s `mk-kernel.sh`.
 
 | Layer | Role |
 |-------|------|
-| **`overlay/kernel/`** | **Git source of truth** for product board DTS/DTSI fragments (ynh960 today; later ynh961/ynh962), kconfig fragments, and kernel patches |
+| **`overlay/kernel/rockchip/`** | **Git source of truth** for product board trees: `ynh960.dts`, `customer_board_ynh960.dtsi`, `ynh960-*.dtsi` (future `ek3562.*`), plus `*.config` fragments and kernel patches under `overlay/kernel/` |
 | **`board/rk356x-fit-boards.txt`** | SoC-family **FIT board inventory** — one `board_id` per line; drives multi-conf ITS generation (`scripts/generate-boot-fit-its.sh`) |
-| **`linux-sdk/.../dts/rockchip/`** | Local build tree after squash / `FORCE_PLATFORM_OVERLAY=1`; not a sync channel |
+| **`linux-sdk/.../dts/rockchip/`** | **Build mirror only** — `make apply-overlay` copies `overlay/kernel/rockchip/*.dts*` here; do not edit product DTS only in the SDK |
 | **`oem/`** | **Not** for boot DTBs. U-Boot loads FIT (kernel+DT) before `/oem` is mounted. OEM may carry runtime LCD params (`screens/.../lcd/`), profile identity, helpers — never the startup device tree |
+
+**Vendor baseline:** the owned `linux-sdk/` tree is already customized (not a live
+vendor tracking branch). Product DTS, drivers, and helpers move into **`overlay/`**
+as git SoT. Do **not** plan on merging future Innohi SDK drops into `linux-sdk/` —
+when something new is needed, copy the specific component into `overlay/` (same model
+as ek3562 and selective Wi‑Fi/driver imports).
+
+| Git path | Synced to SDK by `apply-overlay` | Used for |
+|----------|----------------------------------|----------|
+| `overlay/kernel/rockchip/*.dts*` | `kernel/arch/arm64/boot/dts/rockchip/` | FIT DTBs |
+| `overlay/kernel/innohi/` | `kernel/innohi/` | leftover `gpio_innohi` only |
+| `overlay/kernel/drivers/net/wireless/aic8800/` | `kernel/drivers/net/wireless/aic8800/` | ynh960 AIC8800 SDIO |
+| `overlay/board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules` | rootfs overlay | `/dev/block/by-name`, `/dev/disk/by-partlabel` |
+
+`innohi/net/wireless/*` (250MB+ Realtek/QCA trees) is **not** in git; `CONFIG_INNOHI_NET=n`.
+ek3562 Wi‑Fi uses mainline `rtw88` + `linux-firmware`, not vendor RTL8821CU.
 
 ### Multi-configuration boot FIT (platform W5)
 

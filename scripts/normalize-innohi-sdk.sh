@@ -10,7 +10,7 @@ INNOHI_ROOTFS="$SDK/innohi/rootfs"
 BOARD="$SDK/innohi_board"
 
 if [[ ! -d "$INNOHI_ROOTFS" ]]; then
-  echo "WARNING: normalize-innohi-sdk: missing $INNOHI_ROOTFS — skip" >&2
+  echo "normalize-innohi-sdk: no $INNOHI_ROOTFS (product uses overlay/ — OK)" >&2
   exit 0
 fi
 

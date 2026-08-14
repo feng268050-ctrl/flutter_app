@@ -56,7 +56,7 @@ dump_sdio() {
 	done
 }
 
-# Innohi rk_wifi_init: AIC8800 / AIC8800DC / AIC8800D80 → c8a1:*
+# AIC8800 / AIC8800DC / AIC8800D80 → SDIO vendor c8a1:*
 is_aic_sdio() {
 	for d in /sys/bus/sdio/devices/*; do
 		[ -e "$d/vendor" ] || continue
@@ -185,7 +185,7 @@ start_aic_bt() {
 		return 1
 	}
 	log "AIC BT tty=$tty"
-	# Match Innohi rk_wifi_init: hciattach -s 1500000 <tty> any 1500000 flow nosleep
+	# AIC8800 BT UART: hciattach -s 1500000 <tty> any 1500000 flow nosleep
 	if command -v hciattach >/dev/null 2>&1; then
 		killall -q -9 hciattach 2>/dev/null || true
 		hciattach -s 1500000 "$tty" any 1500000 flow nosleep &
@@ -254,27 +254,7 @@ rescan_aic_sdio() {
 }
 
 bringup_aic_once() {
-	# Prefer vendor rk_wifi_init when present (same binary as Innohi rootfs).
-	# Run under timeout in foreground — a background job can segfault and leave
-	# bsp/fdrv half-initialized, which then hangs a later insmod.
-	if [ -x /usr/bin/rk_wifi_init ]; then
-		tty="$(bt_tty 2>/dev/null || echo /dev/ttyS1)"
-		log "rk_wifi_init $tty"
-		if command -v timeout >/dev/null 2>&1; then
-			timeout 20 /usr/bin/rk_wifi_init "$tty" >/dev/null 2>&1 || true
-		else
-			/usr/bin/rk_wifi_init "$tty" >/dev/null 2>&1 || true
-		fi
-		if iface="$(wait_wlan)"; then
-			log "wlan ready via rk_wifi_init: $iface"
-			start_aic_bt || true
-			return 0
-		fi
-		log "rk_wifi_init did not bring wlan; falling back to manual insmod"
-		unload_aic_modules
-	fi
-
-	# Innohi order: bsp → fdrv → btlpm
+	# Load order: bsp → fdrv → btlpm
 	# custregd=0: use cfg80211 regulatory.db (not AIC permissive test domain)
 	insmod_one aic8800_bsp || return 1
 	insmod_one aic8800_fdrv custregd=0 || return 1

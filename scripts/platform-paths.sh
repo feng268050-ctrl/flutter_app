@@ -6,7 +6,7 @@
 #
 # Overlay layout:
 #   overlay/board/rockchip/common/     — generic OS (rootfs-overlay + post-build hooks)
-#   overlay/board/rockchip/$CHIP/      — SoC-thin extras (e.g. Innohi MainServer)
+#   overlay/board/rockchip/$CHIP/      — SoC-thin extras (lunch / optional SoC overlay)
 #
 # Usage:
 #   platform_paths_init "$ROOT" "$SDK"
@@ -39,7 +39,7 @@ platform_paths_init() {
   BR_OVERLAY_ROOT="$BR_COMMON/rootfs-overlay"
   BR_BOARD="$sdk/buildroot/board/$LWS_BOARD_VENDOR/$LWS_CHIP"
   BR_CHIP_OVERLAY_ROOT="$BR_BOARD/rootfs-overlay"
-  # Innohi LCD param dest (chip overlay /system/etc), not generic OS.
+  # Chip overlay /system/etc (LCD ParamUpdate tables no longer staged here).
   BR_OVERLAY="$BR_CHIP_OVERLAY_ROOT/system/etc"
 
   BR_CONFIG="$sdk/buildroot/configs/rockchip/chips/${LWS_CHIP}.config"

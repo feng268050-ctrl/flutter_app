@@ -1,0 +1,1 @@
+# gpio_innohi is always obj-y. No remaining optional Innohi Kconfig symbols.

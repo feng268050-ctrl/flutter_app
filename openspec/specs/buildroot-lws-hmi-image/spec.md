@@ -108,14 +108,14 @@ Buildroot overlay packages for flutter-embedded-linux and flutter-engine SHALL c
 - **WHEN** developer inspects version pins
 - **THEN** `overlay/buildroot/flutter-engine.version`, `overlay/buildroot/flutter-sdk.version`, and `overlay/buildroot/flutter-embedded-linux.version` document the active P5.1 pins (Flutter **3.41.9** / eLinux **42d3d75a56**)
 
-### Requirement: Rootfs overlay and LCD display params are applied
+### Requirement: Rootfs overlay is applied
 
-Buildroot SHALL mount `rootfs-overlay` via `BR2_ROOTFS_OVERLAY` and install ynh960 LCD/MIPI parameter files under `/system/etc/` per existing lws-hmi display hooks.
+Buildroot SHALL mount `rootfs-overlay` via `BR2_ROOTFS_OVERLAY`. ynh960 panel timing SHALL come from kernel device tree. The image MUST NOT install Innohi ParamUpdate LCD tables under `/system/etc/`.
 
-#### Scenario: LCD params on target
+#### Scenario: LCD params not on target rootfs
 
-- **WHEN** P1 device boots
-- **THEN** `/system/etc/960_lcd_param_rk356x.txt` and `/system/etc/lcd_mipi_param.txt` exist
+- **WHEN** a current rootfs is produced
+- **THEN** `/system/etc/960_lcd_param_rk356x.txt` and `/system/etc/lcd_mipi_param.txt` are absent
 
 ### Requirement: P1 rootfs size target
 

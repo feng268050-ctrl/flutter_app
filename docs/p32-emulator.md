@@ -123,7 +123,7 @@ Same OS image as device; sim/virt is another motherboard (`lws.emulator=1` / `bo
 
 - `usb-otg-role-boot.service` — skipped (`ConditionKernelCommandLine=!lws.emulator=1`; sim has no OTG)  
 - `ab-boot-confirm.service` — skipped (no GPT A/B on virtio rootfs)  
-- `mainserver.service` / `param-update.service` — skipped (ynh960 MIPI/ParamUpdate)  
+- `mainserver.service` / Innohi `ParamUpdate` — retired; `storage-init.service` skipped on emulator (`ConditionKernelCommandLine=!lws.emulator=1`)  
 - `async-commit` / `pwrkey-poweroff` / `cpu-performance` — skipped via drop-ins (`!lws.emulator=1`)  
 - `serial-stty.service` — skipped (`ConditionPathExists=/dev/ttyFIQ0`; Rockchip FIQ console)  
 - `tee-supplicant.service` — skipped (`ConditionPathExists=/dev/tee0`); must **not** use `RequiresMountsFor=/userdata` (that waits for the mount *before* Conditions, stalling boards without userdata)  

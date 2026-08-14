@@ -1,8 +1,13 @@
 # Kernel overlay (platform)
 
-Stable board DTS / Kconfig fragments and patches under this tree are **squashed**
-into the local owned `linux-sdk/` by `make squash-linux-sdk-platform` /
-`make trim-linux-sdk` (W3).
+**Board device trees:** git source of truth is [`rockchip/`](rockchip/) (`ynh960.dts`,
+`customer_board_*.dtsi`, …). **Drivers:** AIC8800 combo under
+[`drivers/net/wireless/aic8800/`](drivers/net/wireless/aic8800/); leftover
+board helpers under [`innohi/`](innohi/) (`gpio_innohi` only).
+`make apply-overlay` copies kernel trees into `linux-sdk/kernel/`.
+
+Kernel **patches** and stable device script patches are squashed into owned
+`linux-sdk/` by `make squash-linux-sdk-platform` / `make trim-linux-sdk` (W3).
 
 **FIT inventory:** product `board_id` values that ship in the family boot FIT are
 listed in [`board/rk356x-fit-boards.txt`](../../board/rk356x-fit-boards.txt)
@@ -10,9 +15,8 @@ listed in [`board/rk356x-fit-boards.txt`](../../board/rk356x-fit-boards.txt)
 `board_id` to the inventory; regenerate ITS via `scripts/generate-boot-fit-its.sh`
 (or `make apply-overlay`). Emulator/`sim` is not a FIT conf.
 
-**Policy:** delete-only for new platform work. Prefer editing the owned kernel
-tree (or re-run squash after an intentional change here). Do not keep growing
-this directory as a long-term patch queue.
+**Policy:** kernel C patches → squash / owned tree. **DTS / `*.config` / firmware /
+logo** → edit here and `make apply-overlay` every time.
 
-Third-party Buildroot packages are **not** part of this squash — they stay under
-`overlay/buildroot/package/` and `overlay/third-party/`.
+Third-party Buildroot packages stay under `overlay/buildroot/package/` and
+`overlay/third-party/`.

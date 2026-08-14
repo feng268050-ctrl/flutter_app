@@ -292,28 +292,35 @@ sync_buildroot_version_script() {
   echo "overlay: $dest"
 }
 
-sync_kernel_display_dts() {
+sync_kernel_board_dts() {
   local kernel_dts="$SDK/kernel/arch/arm64/boot/dts/rockchip"
-  local customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
-  local display_dtsi="$OVERLAY/kernel/rockchip/ynh960-display.dtsi"
-  local panel_init_dtsi="$OVERLAY/kernel/rockchip/ynh960-panel-init.dtsi"
+  local overlay_dts="$OVERLAY/kernel/rockchip"
   local gen_script="$ROOT/scripts/gen-ynh960-panel-init-dtsi.sh"
-  local linux_root_dtsi="$OVERLAY/kernel/rockchip/ynh960-linux-root.dtsi"
-  local patch_script="$OVERLAY/device/rockchip/common/scripts/patch-ynh960-dts.sh"
+  local f base
 
   if [[ ! -d "$kernel_dts" ]]; then
-    echo "WARNING: $kernel_dts missing; skip ynh960 display DTS patch" >&2
+    echo "WARNING: $kernel_dts missing; skip board DTS sync" >&2
     return 0
   fi
-  if [[ ! -f "$customer_dtsi" ]]; then
-    echo "WARNING: $customer_dtsi missing; skip ynh960 display DTS patch" >&2
+  if [[ ! -d "$overlay_dts" ]]; then
+    echo "WARNING: $overlay_dts missing; skip board DTS sync" >&2
     return 0
   fi
-  if [[ ! -f "$display_dtsi" || ! -f "$linux_root_dtsi" || ! -f "$patch_script" ]]; then
-    echo "WARNING: ynh960 DTS overlay missing; skip" >&2
-    return 0
-  fi
+
+  [[ -x "$gen_script" ]] || chmod +x "$gen_script"
+  bash "$gen_script"
+
+  for f in "$overlay_dts"/*.dts "$overlay_dts"/*.dtsi; do
+    [[ -f "$f" ]] || continue
+    base="$(basename "$f")"
+    case "$base" in
+    ek3562.md|*.md) continue ;;
+    esac
+    install_file "$f" "$kernel_dts/$base"
+  done
+
   rm -f \
+    "$kernel_dts/customer_board_ynh960.dtsi.orig" \
     "$kernel_dts/lws-hmi-ynh960-display.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi" \
@@ -329,28 +336,43 @@ sync_kernel_display_dts() {
     "$kernel_dts/lws-hmi-ynh960-mpp-dmc.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-rtc.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-optee.dtsi"
-  [[ -x "$gen_script" ]] || chmod +x "$gen_script"
-  bash "$gen_script"
-  if [[ ! -f "$customer_dtsi.orig" ]]; then
-    cp -a "$customer_dtsi" "$customer_dtsi.orig"
+  echo "overlay: synced board DTS/DTSI from $overlay_dts → $kernel_dts"
+}
+
+# Product vendor kernel drivers (git SoT under overlay/kernel/{innohi,drivers/...}).
+sync_kernel_vendor_drivers() {
+  local kernel src_innohi src_aic dst_aic
+  kernel="$(kernel_source_dir)"
+  src_innohi="$OVERLAY/kernel/innohi"
+  src_aic="$OVERLAY/kernel/drivers/net/wireless/aic8800"
+
+  if [[ ! -d "$kernel" ]]; then
+    echo "WARNING: $kernel missing; skip vendor driver sync" >&2
+    return 0
   fi
-  cp -a "$customer_dtsi.orig" "$customer_dtsi"
-  bash "$patch_script" "$customer_dtsi" \
-    "$display_dtsi" "ynh960-display.dtsi" \
-    "$panel_init_dtsi" "ynh960-panel-init.dtsi" \
-    "$linux_root_dtsi" "ynh960-linux-root.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-usb-gadget.dtsi" "ynh960-usb-gadget.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-usb-host.dtsi" "ynh960-usb-host.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-evb-trim.dtsi" "ynh960-evb-trim.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-touch.dtsi" "ynh960-touch.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-own-gpio.dtsi" "ynh960-own-gpio.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-uart5-gmac.dtsi" "ynh960-uart5-gmac.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-uart7-pwm.dtsi" "ynh960-uart7-pwm.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-uart-dma.dtsi" "ynh960-uart-dma.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-npu-vop.dtsi" "ynh960-npu-vop.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-mpp-dmc.dtsi" "ynh960-mpp-dmc.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-rtc.dtsi" "ynh960-rtc.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-optee.dtsi" "ynh960-optee.dtsi"
+
+  if [[ -d "$src_innohi" ]]; then
+    mkdir -p "$kernel/innohi"
+    rsync -a --delete \
+      --exclude='*.o' --exclude='*.ko' --exclude='*.mod' --exclude='*.mod.c' \
+      "$src_innohi/" "$kernel/innohi/"
+    # Kitchen-sink Wi-Fi trees are not in git (CONFIG_INNOHI_NET=n).
+    rm -rf "$kernel/innohi/net"
+    echo "overlay: synced innohi kernel drivers → $kernel/innohi"
+  else
+    echo "WARNING: $src_innohi missing; skip innohi driver sync" >&2
+  fi
+
+  if [[ -d "$src_aic" ]]; then
+    dst_aic="$kernel/drivers/net/wireless/aic8800"
+    mkdir -p "$kernel/drivers/net/wireless"
+    rsync -a --delete \
+      --exclude='*.o' --exclude='*.ko' --exclude='*.mod' --exclude='*.mod.c' \
+      "$src_aic/" "$dst_aic/"
+    echo "overlay: synced aic8800 driver → $dst_aic"
+  else
+    echo "WARNING: $src_aic missing; skip aic8800 driver sync" >&2
+  fi
 }
 
 sync_kernel_config_fragments() {
@@ -981,15 +1003,13 @@ sync_boot_logo() {
 }
 
 sync_display_params() {
+  # Do not stage ParamUpdate LCD tables into chip overlay /system/etc.
   mkdir -p "$BR_OVERLAY"
-  install_file "$BOARD_DIR/960_lcd_param_rk356x.txt" \
-    "$BR_OVERLAY/960_lcd_param_rk356x.txt"
-  install_file "$BOARD_DIR/960_lcd_param_rk356x.txt" \
+  rm -f \
+    "$BR_OVERLAY/960_lcd_param_rk356x.txt" \
+    "$BR_OVERLAY/lcd_mipi_param.txt" \
     "$BR_OVERLAY/LCD_PARAM_RK356X_V11_0.txt"
-  if [[ -f "$BOARD_DIR/lcd_mipi_param.txt" ]]; then
-    install_file "$BOARD_DIR/lcd_mipi_param.txt" \
-      "$BR_OVERLAY/lcd_mipi_param.txt"
-  fi
+  echo "overlay: skip /system/etc LCD params (panel timing is kernel DT)"
 }
 
 patch_mk_loader() {
@@ -1039,7 +1059,7 @@ patch_mk_rootfs() {
   backup_sdk_script "$target"
   bash "$OVERLAY/device/rockchip/common/scripts/patch-mk-rootfs.sh" \
     "$(sdk_realpath "$target")"
-  echo "overlay: patched $(basename "$(sdk_realpath "$target")") (CROOT / defconfig / lws_hmi Innohi skip)"
+  echo "overlay: patched $(basename "$(sdk_realpath "$target")") (CROOT / defconfig)"
 }
 
 patch_30_rootfs() {
@@ -1052,13 +1072,10 @@ patch_30_rootfs() {
   mk_real="$(sdk_realpath "$SCRIPTS_DIR/mk-rootfs.sh")"
   hook_real="$(sdk_realpath "$target")"
   if [[ "$mk_real" == "$hook_real" ]]; then
-    echo "overlay: 30-rootfs.sh → mk-rootfs.sh (same file; Innohi skip via patch_mk_rootfs)"
+    echo "overlay: 30-rootfs.sh → mk-rootfs.sh (same file; skip retired MainServer patch)"
     return 0
   fi
-  backup_sdk_script "$target"
-  bash "$OVERLAY/device/rockchip/common/scripts/patch-30-rootfs.sh" \
-    "$hook_real"
-  echo "overlay: patched 30-rootfs.sh (lws_hmi Innohi MainServer skip)"
+  echo "overlay: skip 30-rootfs MainServer patch (retired)"
 }
 
 patch_post_wifibt() {
@@ -1121,7 +1138,8 @@ if [[ "$platform_squash_only" != "1" \
 fi
 
 run_platform_overlay() {
-  sync_kernel_display_dts
+  sync_kernel_board_dts
+  sync_kernel_vendor_drivers
   sync_kernel_config_fragments
   sync_kernel_firmware
   apply_kernel_patches
@@ -1135,7 +1153,8 @@ run_platform_overlay() {
 
 # Always refresh overlay/kernel SoT into the SDK (safe on owned tree).
 sync_kernel_overlay_sources() {
-  sync_kernel_display_dts
+  sync_kernel_board_dts
+  sync_kernel_vendor_drivers
   sync_kernel_config_fragments
   sync_kernel_firmware
 }
@@ -1235,12 +1254,8 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     fi
     rm -f "$SDK/kernel/logo.bmp" "$SDK/kernel/logo_kernel.bmp"
     for kernel_dts in "$SDK/kernel/arch/arm64/boot/dts/rockchip"; do
-      if [[ -f "$kernel_dts/customer_board_ynh960.dtsi.orig" ]]; then
-        mv -f "$kernel_dts/customer_board_ynh960.dtsi.orig" \
-          "$kernel_dts/customer_board_ynh960.dtsi"
-        echo "restored upstream customer_board_ynh960.dtsi"
-      fi
       rm -f \
+        "$kernel_dts/customer_board_ynh960.dtsi.orig" \
         "$kernel_dts/lws-hmi-ynh960-display.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi" \
@@ -1254,6 +1269,10 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$kernel_dts/lws-hmi-ynh960-npu-vop.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-mpp-dmc.dtsi" \
         "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-rtc.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-optee.dtsi" \
+        "$kernel_dts/ynh960.dts" \
+        "$kernel_dts/customer_board_ynh960.dtsi" \
         "$kernel_dts/ynh960-display.dtsi" \
         "$kernel_dts/ynh960-linux-root.dtsi" \
         "$kernel_dts/ynh960-usb-gadget.dtsi" \
@@ -1266,7 +1285,10 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$kernel_dts/ynh960-uart-dma.dtsi" \
         "$kernel_dts/ynh960-npu-vop.dtsi" \
         "$kernel_dts/ynh960-mpp-dmc.dtsi" \
-        "$kernel_dts/ynh960-panel-init.dtsi"
+        "$kernel_dts/ynh960-panel-init.dtsi" \
+        "$kernel_dts/ynh960-rtc.dtsi" \
+        "$kernel_dts/ynh960-optee.dtsi"
+      echo "removed overlay-synced board DTS from $kernel_dts"
     done
     rm -f "$SDK/kernel/firmware/regulatory.db" "$SDK/kernel/firmware/regulatory.db.p7s"
     restore_kernel_patches

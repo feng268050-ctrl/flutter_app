@@ -32,7 +32,7 @@ if [ -z "$tz" ]; then
 fi
 
 # Boot KPI: skip D-Bus timedatectl when libc TZ is already correct
-# (param-update often applied this moments earlier).
+# (storage-init often applied this moments earlier).
 if [ "$current_tz" = "$tz" ]; then
 	log "already $tz"
 	exit 0

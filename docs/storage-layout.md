@@ -108,7 +108,7 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | **Non-Rockchip identity** | **`/mnt/provision/identity.env`** | **provision** |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
-`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `/usr/libexec/display/display-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/display-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, runs **`provision-mount.sh`** (mount `PARTLABEL=provision` → `/mnt/provision`, bind `properties.ini`), then **`bind-prefs.sh`** to symlink:
+`/userdata` is **not** in `/etc/fstab`. `storage-init.service` runs `/usr/libexec/board/storage-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/storage-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, runs **`provision-mount.sh`** (mount `PARTLABEL=provision` → `/mnt/provision`, bind `properties.ini`), then **`bind-prefs.sh`** to symlink:
 
 - `/var/lib/wpa_supplicant` → `/userdata/wpa_supplicant`
 - `/var/lib/network` → `/userdata/network`

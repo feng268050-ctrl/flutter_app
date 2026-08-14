@@ -38,7 +38,20 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 - App：`assets/hal/gpio.json`（Status LED `chassis_rgb` + 可选 `panel_buzzer`）；勿在 Dart 写死 SoC 号。
 - 开机默认：**关**（overlay 将 `GPIO_4/5/7` 的 `default-value` 设为 `"0"`）。
 
-经典 `/sys/class/gpio/export` 仅作工程兜底；`gpio_innohi` 已占用同脚时 export 失败是预期行为。
+经典 `/sys/class/gpio/export` 仅作工程兜底；`gpio_innohi` 已占用同脚时 export 失败是预期行为。切到 gpiod 见 OpenSpec change `gpio-innohi-to-gpiod`。
+
+---
+
+## 2.1 丝印 WG_D0 / WG_D1 ≠ 韦根字符设备
+
+板子丝印仍标 **WG_D0 / WG_D1**（或 D0/D1）。Linux 产品用途是 **GPIO_7 / GPIO_8**（绿灯用 GPIO_7；GPIO_8 预留）。
+
+| 丝印 | `gpio_innohi` 标签 | SoC pad | 产品用途 |
+|------|-------------------|---------|----------|
+| WG_D0 / D0 | **`GPIO_7`** | gpio4 RK_PC5 | 绿指示灯 |
+| WG_D1 / D1 | **`GPIO_8`** | gpio4 RK_PC6 | GPIO（非门禁） |
+
+韦根 `/dev/wiegand_{input,output}` 驱动与 DTS 节点已去掉，勿再按门禁协议使用这两脚。`gpio_innohi` 仍 hog 这两条线。
 
 ---
 
@@ -171,6 +184,7 @@ dmesg | grep -iE 'goodix|focal|sitronix'
 
 | Date | Change |
 |------|--------|
+| 2026-08-14 | 去掉韦根字符设备；丝印 WG_D0/D1 = GPIO_7/8（§2.1）。MCU / 未启用 innohi 子树从 Image 试验性去掉 |
 | 2026-07-16 | P2.1 USB 鼠标：光标可移动区按 display_size clamp（`0008`；landscape 下对齐面板分辨率） |
 | 2026-07-15 | P2.1 USB 鼠标：可见指针（cursor stride pad）+ `mouse.conf` / Demo 设置；台账 §4.1.2 |
 | 2026-07-15 | P2.1：Micro-USB OTG ID dual-role（`dr_mode=otg`；plug-ssh 门控 `USB-HOST=0`） |

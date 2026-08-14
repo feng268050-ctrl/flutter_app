@@ -55,7 +55,7 @@ else
 	pass "no rockchip configfs gadget"
 fi
 
-for unit in hmi.service oem-compose.service mainserver.service cpu-performance.service pwrkey-poweroff.service ; do
+for unit in hmi.service oem-compose.service cpu-performance.service pwrkey-poweroff.service ; do
 	if [ -e "$WANTS/$unit" ]; then
 		pass "$unit enabled"
 	else
@@ -64,8 +64,28 @@ for unit in hmi.service oem-compose.service mainserver.service cpu-performance.s
 done
 
 echo ""
+echo "--- Innohi MainServer (retired) ---"
+if [ -e "$WANTS/mainserver.service" ] || [ -f /etc/systemd/system/mainserver.service ]; then
+	fail "mainserver.service still present (ParamUpdate/MainServer experiment removed)"
+else
+	pass "mainserver.service absent"
+fi
+
+echo ""
+echo "--- OEM board_id ---"
+board_id=""
+if [ -x /usr/libexec/board/board-id.sh ]; then
+	board_id="$(/usr/libexec/board/board-id.sh 2>/dev/null || true)"
+fi
+if [ -n "$board_id" ]; then
+	pass "board_id=$board_id"
+else
+	fail "board_id unknown (oem-compose / read-board-id)"
+fi
+
+echo ""
 echo "--- sysinit early HMI path (boot KPI) ---"
-for unit in hmi.service oem-compose.service cpu-performance.service; do
+for unit in storage-init.service hmi.service oem-compose.service cpu-performance.service; do
 	if [ -e /etc/systemd/system/sysinit.target.wants/$unit ]; then
 		pass "$unit in sysinit.target.wants"
 	else

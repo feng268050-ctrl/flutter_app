@@ -66,15 +66,10 @@ disable_boot_unit() {
 }
 
 # KPI path: display init early; HMI after local-fs.
-if [ -f "$TARGET_DIR/etc/systemd/system/param-update.service" ]; then
-	ln -sf "/etc/systemd/system/param-update.service" \
-		"$SYSINIT_WANTS/param-update.service"
-	echo "post-systemd: enabled param-update.service (sysinit.target)"
-fi
-
-if [ -f "$TARGET_DIR/etc/systemd/system/mainserver.service" ]; then
-	link_unit mainserver.service
-	echo "post-systemd: enabled mainserver.service"
+if [ -f "$TARGET_DIR/etc/systemd/system/storage-init.service" ]; then
+	ln -sf "/etc/systemd/system/storage-init.service" \
+		"$SYSINIT_WANTS/storage-init.service"
+	echo "post-systemd: enabled storage-init.service (sysinit.target)"
 fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/cpu-performance.service" ]; then

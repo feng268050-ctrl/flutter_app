@@ -323,7 +323,7 @@ for helper in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.s
 		fail "helper $helper missing or not executable (/usr/libexec/bluetooth/)"
 	fi
 done
-# W2: board modem/OTG/display-init live under OEM; rootfs keeps thin stubs.
+# W2: board modem/OTG/storage-init live under OEM; rootfs keeps thin stubs.
 # No oem-fallback — missing OEM helpers is a hard fail when /oem is mounted.
 if [ -f /run/hmi/oem.env ]; then
 	# shellcheck source=/dev/null
@@ -343,7 +343,7 @@ fi
 for oem_helper in \
 	"${WIFI_MODEM_HELPER:-/oem/boards/ynh960/helpers/wifibt-bringup.sh}" \
 	"${USB_OTG_MODE_HELPER:-/oem/boards/ynh960/helpers/usb-otg-mode.sh}" \
-	"/oem/boards/ynh960/helpers/display-init.sh"; do
+	"/oem/boards/ynh960/helpers/storage-init.sh"; do
 	if [ -x "$oem_helper" ]; then
 		pass "OEM helper $(basename "$oem_helper")"
 	elif [ -d /oem/boards ]; then
@@ -352,10 +352,10 @@ for oem_helper in \
 		fail "OEM not mounted — cannot verify $oem_helper (flash/upgrade oem.img)"
 	fi
 done
-if [ -x /usr/libexec/usb/usb-otg-mode.sh ] && [ -x /usr/libexec/display/display-init.sh ]; then
-	pass "rootfs OEM helper stubs (usb-otg-mode / display-init)"
+if [ -x /usr/libexec/usb/usb-otg-mode.sh ] && [ -x /usr/libexec/board/storage-init.sh ]; then
+	pass "rootfs OEM helper stubs (usb-otg-mode / storage-init)"
 else
-	fail "rootfs OEM helper stubs missing under /usr/libexec/usb/ or /usr/libexec/display/"
+	fail "rootfs OEM helper stubs missing under /usr/libexec/usb/ or /usr/libexec/board/"
 fi
 for helper_path in \
 	/usr/libexec/display/change-orientation.sh \
@@ -393,11 +393,6 @@ if [ -n "$aic_ko" ]; then
 	pass "aic8800_*.ko present"
 else
 	fail "aic8800_fdrv.ko missing (enable ynh960 wifibt kernel config, rebuild kernel+rootfs)"
-fi
-if [ -x /usr/bin/rk_wifi_init ]; then
-	pass "rk_wifi_init installed"
-else
-	warn "rk_wifi_init missing (manual aic8800 insmod still used)"
 fi
 if command -v hciattach >/dev/null 2>&1; then
 	pass "hciattach installed"
@@ -642,11 +637,16 @@ else
 		fi
 	done
 fi
-for f in /system/etc/960_lcd_param_rk356x.txt /system/etc/lcd_mipi_param.txt; do
+for f in /system/etc/960_lcd_param_rk356x.txt /system/etc/lcd_mipi_param.txt \
+	/system/etc/LCD_PARAM_RK356X_V11_0.txt; do
 	if [ -f "$f" ]; then
-		warn "$(basename "$f") still in /system/etc (unused at runtime; OEM lcd is authority)"
+		warn "$(basename "$f") still in /system/etc (rebuild rootfs to drop ParamUpdate residue)"
 	fi
 done
+if [ ! -f /system/etc/960_lcd_param_rk356x.txt ] && \
+	[ ! -f /system/etc/lcd_mipi_param.txt ]; then
+	pass "no ParamUpdate LCD tables under /system/etc"
+fi
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then

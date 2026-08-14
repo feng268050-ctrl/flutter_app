@@ -1,0 +1,17 @@
+[Unit]
+Description=Early OEM storage (mount /oem, userdata, prefs)
+DefaultDependencies=no
+After=systemd-remount-fs.service
+Before=hmi.service sysinit.target
+# Mount PARTLABEL=oem then exec OEM helpers/storage-init.sh. P3.2 QEMU: oem-compose mounts /dev/vdb.
+ConditionKernelCommandLine=!lws.emulator=1
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/board/storage-init.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target

@@ -59,12 +59,13 @@ The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/us
 
 ### Requirement: Boot-supporting services enabled at image build
 
-Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display daemon), `cpu-performance.service` (CPU/DMC/GPU **power profile** restore from `/var/lib/hal/power.conf`, default `performance`), and `pwrkey-poweroff.service` in `multi-user.target.wants`. `param-update.service` SHALL be enabled in `sysinit.target.wants` for early display init.
+Post-build hook SHALL enable `hmi.service`, `cpu-performance.service` (CPU/DMC/GPU **power profile** restore from `/var/lib/hal/power.conf`, default `performance`), and `pwrkey-poweroff.service` in `multi-user.target.wants`. `storage-init.service` SHALL be enabled in `sysinit.target.wants` for early OEM mount and storage init. Innohi `mainserver.service` and `ParamUpdate` binary SHALL NOT be shipped.
 
-#### Scenario: mainserver enabled
+#### Scenario: storage-init enabled in sysinit
 
 - **WHEN** P1 rootfs is produced
-- **THEN** symlink exists at `etc/systemd/system/multi-user.target.wants/mainserver.service`
+- **THEN** symlink exists at `etc/systemd/system/sysinit.target.wants/storage-init.service`
+- **AND** Innohi `mainserver.service` and `/usr/bin/ParamUpdate` are absent
 
 #### Scenario: performance service runs before hmi
 

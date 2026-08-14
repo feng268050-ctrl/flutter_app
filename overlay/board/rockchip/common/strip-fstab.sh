@@ -1,5 +1,5 @@
 #!/bin/bash
-# /userdata, /oem, private* are mounted by display-init.sh (OEM helper; auto-mkfs).
+# /userdata, /oem, private* are mounted by storage-init.sh (OEM helper; auto-mkfs).
 # Rockchip 30-fstab.sh adds PARTLABEL=userdata → /userdata; must not stay in fstab.
 set -euo pipefail
 

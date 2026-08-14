@@ -1,0 +1,11 @@
+{
+  "display_name": "ek3562 panel (vendor TBD)",
+  "width": 0,
+  "height": 0,
+  "default_orientation": "landscape_left",
+  "default_ui_scale": 1.0,
+  "splash": {
+    "notes": "Fill width/height/orientation when the vendor panel is known. No Innohi ParamUpdate / private1 LCD tables."
+  },
+  "touch_notes": "Touch via board DT (pending vendor DTS); not configured from this pack"
+}

@@ -22,7 +22,7 @@ Docker：仓库 → `/work/lws-hmi`，SDK → `/work/sdk`（与是否在容器�
 
 ### Overlay：common vs SoC
 
-通用 OS 用户态在 **`overlay/board/rockchip/common/`**（`rootfs-overlay/` + post-build 钩子 + GStreamer/platform prebuilt）。**`$CHIP` 目录只承载 SoC 薄层**（当前 `rk3566_rk3568/`：Innohi `mainserver.service` 等）以及 SDK **lunch** 布局。`make apply-overlay` 同步到 SDK `buildroot/board/rockchip/common/` 与 `$CHIP/`；Buildroot 多层 overlay 后者覆盖前者：`common/base` → **`common/rootfs-overlay`** → **`$CHIP/rootfs-overlay`**（不要覆盖 SDK 已有的 `common/base`）。产品 App `opt/` 暂存在 **SDK common** overlay。新 SoC 有真实差异再加薄层目录，**不**为 RK3562 复制整棵 overlay / kernel。
+通用 OS 用户态在 **`overlay/board/rockchip/common/`**（`rootfs-overlay/` + post-build 钩子 + GStreamer/platform prebuilt）。**`$CHIP` 目录**（当前 `rk3566_rk3568/`）仅承载 SoC 薄层占位以及 SDK **lunch** 布局（Innohi MainServer 已移除）。`make apply-overlay` 同步到 SDK `buildroot/board/rockchip/common/` 与 `$CHIP/`；Buildroot 多层 overlay 后者覆盖前者：`common/base` → **`common/rootfs-overlay`** → **`$CHIP/rootfs-overlay`**（不要覆盖 SDK 已有的 `common/base`）。产品 App `opt/` 暂存在 **SDK common** overlay。新 SoC 有真实差异再加薄层目录，**不**为 RK3562 复制整棵 overlay / kernel。
 
 ### Kernel：通用 Image + Device Tree（ARM 标准模型）
 
@@ -60,7 +60,16 @@ Linux on ARM64 的常规做法是：**一份 `Image`（内核二进制）+ 每�
 
 **产品仍用 `APP=lws_hmi`（或未来 `APP=`）** — 换 SoC/主板 **不** fork App；用户态 rootfs 复用 **同一套 overlay/Buildroot 配方**（必要时按平台重编 `rootfs.img`，不是按主板 fork）。
 
-**示例（RK3562 新批次，与 RK3566 在产并存）：** 在 `overlay/kernel/` 并入 3562 DTS + 将 3562 所需驱动纳入 **同一次** 通用 Image 的 Kconfig → `FORCE_KERNEL_IMAGE=1 make build-kernel` → FIT 内同时挂 ynh960 与 3562 的 DTB conf → 3562 板厂 U-Boot 进 `prebuilt/bootloader/` → 新 `FACTORY_SKU`。**3566 在产板继续用同一 FIT 里的各自 conf**，不是各 SoC 各维护一套 SDK。
+**当前在产 + 接入中：**
+
+| SKU | board_id | U-Boot 目录 | OEM pack | 状态 |
+|-----|----------|-------------|----------|------|
+| `ynh960-p800`（默认） | `ynh960` | `prebuilt/bootloader/rockchip-ynh960/` | `ynh960_panel-800x1280` | 在产 |
+| `ek3562-dev` | `ek3562` | `prebuilt/bootloader/vendor-ek3562/` | `ek3562_panel-tbd` | 占位：补 U-Boot/MiniLoader、DTS、屏参；`compat.fit_dt=pending` 期间**不要**把 `ek3562` 写入 FIT 清单 |
+
+运行时识别：`oem-compose` 写 `/run/hmi/board_id` 与 `/run/hmi/boards.d/<board_id>`。板端 `read-board-id`。Innohi **MainServer / ParamUpdate 已实验性移除**（面板时序靠 kernel DT）。
+
+**示例（ek3562，与 ynh960 在产并存）：** 供应商 DTS 进 `overlay/kernel/rockchip/`（见 `ek3562.md`）+ 主线 `rtw_8821cu`（`ek3562-wifibt.config` + `lws_hmi_wifi_rtw88.config`）→ `FORCE_KERNEL_IMAGE=1 make build-kernel` + `bash scripts/br-make-packages.sh wifi linux-firmware` → 清单加 `ek3562` 并去掉 OEM `fit_dt: pending` → U-Boot 放进 `prebuilt/bootloader/vendor-ek3562/` → `FACTORY_SKU=ek3562-dev make build-oem` / `build-img`。**ynh960 继续用同一 FIT 里的 `ynh960` conf**，不是各 SoC 各维护一套 SDK。
 
 ---
 

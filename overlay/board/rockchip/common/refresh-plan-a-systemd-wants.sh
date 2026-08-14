@@ -23,12 +23,12 @@ link_boot_unit_sysinit() {
 	ln -sfn "/etc/systemd/system/$unit" "$SYSINIT_WANTS/$unit"
 }
 
-if [ -f "$SYSTEMD_DIR/param-update.service" ]; then
-	ln -sfn "/etc/systemd/system/param-update.service" \
-		"$SYSINIT_WANTS/param-update.service"
+if [ -f "$SYSTEMD_DIR/storage-init.service" ]; then
+	ln -sfn "/etc/systemd/system/storage-init.service" \
+		"$SYSINIT_WANTS/storage-init.service"
 fi
 
-for unit in mainserver.service cpu-performance.service serial-stty.service \
+for unit in cpu-performance.service serial-stty.service \
 	pwrkey-poweroff.service ab-boot-confirm.service oem-compose.service \
 	tee-supplicant.service usb-otg-role-boot.service hmi.service; do
 	link_boot_unit "$unit"

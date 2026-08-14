@@ -1,0 +1,43 @@
+{
+  "board_id": "ek3562",
+  "display_name": "ek3562 (RK3562)",
+  "model_hint": "RK3562",
+  "secrets_backend": "optee",
+  "capabilities": [
+    "ethernet",
+    "wifi",
+    "proxy",
+    "bluetooth",
+    "backlight",
+    "volume",
+    "keyboard",
+    "mouse",
+    "gpio",
+    "modbus",
+    "sysInfo",
+    "datetime",
+    "sshDebug"
+  ],
+  "net_roles": {
+    "ethernet.primary": "eth0",
+    "wifi.station": "wlan0"
+  },
+  "storage_mounts": [
+    "/",
+    "/userdata"
+  ],
+  "route_metrics": {
+    "wlan0": 100,
+    "eth0": 2000
+  },
+  "helpers": {
+    "ssh_debug": "/usr/libexec/ssh/enable-ssh-debug.sh",
+    "wifi_modem": "/oem/boards/ek3562/helpers/wifibt-bringup.sh",
+    "bt_modem": "/oem/boards/ek3562/helpers/wifibt-bringup.sh",
+    "backlight_preferred_names": "backlight,backlight1,backlight2",
+    "alsa_volume_controls": "DAC Playback Volume,Speaker Playback Volume,Headphone Playback Volume,Playback Volume,Master Playback Volume,Master,PCM,Speaker,Playback",
+    "apply_mouse_settings": "/usr/bin/apply-mouse-settings",
+    "apply_physical_input_policy": "/usr/bin/apply-physical-input-policy"
+  },
+  "notes": "USB OTG / GPIO / panel helpers pending vendor. GPU same Mali as RK3566. Wi-Fi = onboard RTL8821CU (SoC USB, rtw_8821cu)."
+}

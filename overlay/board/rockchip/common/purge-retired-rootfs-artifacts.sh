@@ -135,6 +135,28 @@ rm -rf "$TARGET_DIR/etc/systemd/system/hmi-audio-loopback.service" \
 	"$TARGET_DIR/usr/lib/systemd/system/hmi-audio-loopback.service"
 disable_unit "hmi-audio-loopback.service"
 
+# Innohi display daemons retired (DTS-only panel). Old unit names from ParamUpdate era.
+disable_unit "mainserver.service"
+disable_unit "param-update.service"
+disable_unit "display-init.service"
+rm -f \
+	"$SYSTEMD_DIR/mainserver.service" \
+	"$SYSTEMD_DIR/param-update.service" \
+	"$SYSTEMD_DIR/display-init.service" \
+	"$TARGET_DIR/usr/bin/MainServer" \
+	"$TARGET_DIR/usr/bin/ParamUpdate" \
+	"$TARGET_DIR/usr/bin/MountAll" \
+	"$TARGET_DIR/system/bin/MainServer" \
+	"$TARGET_DIR/system/bin/ParamUpdate" \
+	"$TARGET_DIR/system/bin/MountAll"
+
+# ParamUpdate LCD tables retired (panel timing is kernel DT).
+rm -f \
+	"$TARGET_DIR/system/etc/960_lcd_param_rk356x.txt" \
+	"$TARGET_DIR/system/etc/lcd_mipi_param.txt" \
+	"$TARGET_DIR/system/etc/LCD_PARAM_RK356X_V11_0.txt"
+echo "post-build: purged /system/etc LCD param files (if leftover)"
+
 # libexec-board: helpers moved out of /usr/libexec/hmi/. Buildroot overlay into
 # incremental target/ has no --delete for moved files — purge stale copies here.
 rm -f \
@@ -170,6 +192,7 @@ rm -f \
 	"$TARGET_DIR/usr/libexec/hmi/oem-compose.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/ynh960-display-init.sh" \
 	"$TARGET_DIR/usr/libexec/display/ynh960-display-init.sh" \
+	"$TARGET_DIR/usr/libexec/display/display-init.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/weston-hmi-config.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/change-orientation.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/apply-mouse-settings.sh" \
@@ -236,3 +259,7 @@ for _ko_dir in \
 	find "$_ko_dir" -maxdepth 3 -type f -name 'bcmdhd*.ko' -delete 2>/dev/null || true
 done
 echo "post-build: purged Wi-Fi/BT kitchen-sink firmware + bcmdhd*.ko (if leftover)"
+
+# rk_wifi_init retired — wifibt-bringup uses manual aic8800 insmod.
+rm -f "$TARGET_DIR/usr/bin/rk_wifi_init"
+echo "post-build: purged rk_wifi_init (if leftover)"

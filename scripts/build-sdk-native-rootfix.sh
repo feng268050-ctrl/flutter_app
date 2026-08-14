@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Rebuild SDK-native ynh960 kernel with root=/dev/mmcblk0p6 (PARTUUID often missing after uf flash).
+# Rebuild SDK-native ynh960 kernel with root=/dev/mmcblk0p6 (legacy MaskROM path).
+# Requires: make apply-overlay first (board DTS synced from overlay/kernel/rockchip/).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -11,15 +12,9 @@ MARKER='lws-hmi: sdk-native root=mmcblk0p6'
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 [[ -d "$SDK" ]] || die "SDK missing"
+[[ -f "$DTSI" ]] || die "missing $DTSI — run make apply-overlay first"
 
 bash "$ROOT/scripts/prepare-sdk-native.sh"
-
-if [[ ! -f "$DTSI.orig" && -f "$DTSI" ]]; then
-  cp -a "$DTSI" "$DTSI.orig"
-fi
-[[ -f "$DTSI.orig" ]] || die "missing $DTSI.orig"
-
-cp -a "$DTSI.orig" "$DTSI"
 
 if ! grep -q "$MARKER" "$DTSI"; then
   cat >>"$DTSI" <<'EOF'

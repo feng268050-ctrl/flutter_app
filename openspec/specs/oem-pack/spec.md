@@ -46,17 +46,18 @@ OEM board packs SHALL place board-specific bringup scripts under `boards/<board_
 
 ### Requirement: Screen pack LCD seed files
 
-Screen packs that require Innohi ParamUpdate / private1 LCD tables SHALL ship those files under `screens/<screen_id>/lcd/` and reference them from `screen.json`. Early display-init SHALL seed private1 **only** from the active OEM screen `lcd/` directory (resolved via `/oem/manifest.json` without requiring `/run/hmi`). Missing OEM lcd files SHALL fail visibly; the init MUST NOT seed from `/system/etc` as a fallback.
+Screen packs that require private1 LCD tables SHALL ship those files under `screens/<screen_id>/lcd/` and reference them from `screen.json`. Panel timing SHALL come from kernel device tree. Early `storage-init` SHALL NOT copy LCD tables from `/system/etc`. Innohi ParamUpdate SHALL NOT run.
 
 #### Scenario: OEM lcd seeds private1
 
 - **WHEN** `/oem/manifest.json` is valid and the resolved screen `lcd/` directory contains the required LCD param files
-- **THEN** display-init SHALL copy those OEM files into private1
+- **THEN** compose or a dedicated LCD helper MAY copy those OEM files into private1
+- **AND** MUST NOT use `/usr/libexec/board/storage-init.sh` as a display-bringup path
 
 #### Scenario: Missing OEM lcd fails hard
 
 - **WHEN** OEM is missing `manifest.json` or screen `lcd/` lacks required param files
-- **THEN** display-init SHALL exit non-zero without copying `/system/etc` LCD tables into private1
+- **THEN** LCD seeding SHALL fail without copying `/system/etc` LCD tables into private1
 
 ### Requirement: HMI launch consumes screen.env defaults
 

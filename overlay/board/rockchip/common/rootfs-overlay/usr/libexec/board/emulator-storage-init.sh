@@ -1,5 +1,5 @@
 #!/bin/sh
-# Emulator early storage: provision mount + userdata prefs bind (param-update is skipped).
+# Emulator early storage: provision mount + userdata prefs bind (storage-init is skipped).
 set -eu
 
 log() {

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "pack_id": "ek3562_panel-tbd",
+  "board_id": "ek3562",
+  "screen_id": "panel-ek3562-tbd",
+  "board_path": "boards/ek3562",
+  "screen_path": "screens/panel-ek3562-tbd",
+  "compat": {
+    "os_min": "1.0.0",
+    "soc_family": "rk356x",
+    "fit_dt": "pending"
+  },
+  "notes": "board_id will equal boot FIT conf name once vendor DTS is in overlay/kernel/ and listed in board/rk356x-fit-boards.txt. GPU = same Mali as RK3566. Wi-Fi = RTL8821CU. Do not copy Innohi MainServer/ParamUpdate."
+}

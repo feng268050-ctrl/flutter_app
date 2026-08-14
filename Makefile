@@ -267,7 +267,7 @@ help:
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
 	@echo "  - Kernel FIT shared (no APP=). Rootfs product = APP= only. Factory hardware = FACTORY_SKU= + OEM."
 	@echo "  - APP= selects product HMI: *_hmi→/opt/hmi; rootfs under output/firmware/<APP>/ (+ R2 publish prefix)."
-	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
+	@echo "  - FACTORY_SKU=ynh960-p800 (default) or ek3562-dev; override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
 	@echo "  - Emulator: README Make commands → P3.2 emulator (setup → deps → kernel/rootfs → setup-emulator-qemu → fetch-emulator-swgl → build-emulator → emulator)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
 

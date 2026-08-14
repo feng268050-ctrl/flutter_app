@@ -610,7 +610,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 
 权威阶段表与旧号映射：[`docs/flutter-linux-hmi-plan.md` §1](docs/flutter-linux-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
 
-Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`display-init.sh`、`set-performance-mode.sh`（`set-power-mode`：`performance` / `balanced` load profile）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
+Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`storage-init.sh`、`set-performance-mode.sh`（`set-power-mode`：`performance` / `balanced` load profile）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
 
 仍待移植：lensinspector / AI daemon、`probe-dual-stream.sh`、IPC 专链 eth0 配网细节（**P4.1**）。
 
@@ -672,9 +672,9 @@ On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under
 
 ### `innohi/` / WiFi-BT firmware errors
 
-Rockchip Innohi board binaries and Wi‑Fi/BT firmware live under **`linux-sdk/innohi/`** (vendor drop; not in git). `make apply-overlay` runs `normalize-innohi-sdk` to drop any legacy `innohi_board/` mirror and retarget scripts to `innohi/rootfs`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on missing `rk_wifi_init` / firmware, re-extract the SDK (ensure `linux-sdk/innohi/rootfs` exists) and run `make apply-overlay` again (macOS Docker builds no longer auto-apply; use `make apply-overlay` explicitly).
+**Git SoT:** ynh960 kernel drivers → `overlay/kernel/innohi/` + `overlay/kernel/drivers/net/wireless/aic8800/`; partition udev → `overlay/board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules`. `make apply-overlay` syncs kernel trees into `linux-sdk/kernel/`. Combo **firmware** → OEM radio pack (`oem/boards/ynh960/radio/`). If `aic8800_*.ko` is missing after rebuild, run `make apply-overlay` then `FORCE_KERNEL_IMAGE=1 make build-kernel` / `make build-rootfs`. Legacy `linux-sdk/innohi/` is optional (normalize hook retargets old scripts if present).
 
-**ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`). `RK_WIFIBT_CHIP="AIC8800D80"` keeps `post-wifibt` running for kernel `*.ko` → `/vendor/lib/modules` without Broadcom `AP6256`/`bcmdhd`/`fw_bcm*` dumps. Combo firmware ships in the OEM radio pack (`oem/boards/ynh960/radio/`); runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
+**ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`). `RK_WIFIBT_CHIP="AIC8800D80"` keeps `post-wifibt` running for kernel `*.ko` → `/vendor/lib/modules` without Broadcom `AP6256`/`bcmdhd`/`fw_bcm*` dumps. Combo firmware ships in the OEM radio pack (`oem/boards/ynh960/radio/`); runtime uses `wifibt-bringup.sh` manual `insmod` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
 
 ### Serial console & board login
 
@@ -775,41 +775,23 @@ make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001  # Vendor 
 - If builds still crash, use a native Linux VM instead of Docker Desktop.
 - Force the old bind-mount path (not recommended): `BUILD_BIND_MOUNT=1 make build-rootfs`
 
-## Display parameters (ynh960 @ 10.0.0.239)
+## Display parameters (ynh960)
 
-Production Android stores **two** files (not the Ubuntu-style `LCD_PARAM_RK356X_V11_0.txt` name alone):
-
-| File on device | Role |
-|----------------|------|
-| `/system/etc/960_lcd_param_rk356x.txt` | Timing, rotation, backlight, `mipi_lcd_index=-1` |
-| `/system/etc/lcd_mipi_param.txt` | MIPI panel init command table (`###lcd_mipi_param_start###`) |
-
-`ParamUpdate` reads `/system/etc/` and mirrors to `/mnt/private1/` (`/dev/block/by-name/private1`).
-
-When `mipi_lcd_index = -1`, the kernel **does not** use built-in tables from `mipi_lcd_sequence.h`; it uses **`lcd_mipi_param.txt`** instead.
-
-### Refresh from a live device
+Panel timing is **kernel DT** (`overlay/kernel/rockchip/ynh960-display.dtsi`, `ynh960-panel-init.dtsi`). Generate the init sequence from `board/lcd_mipi_param.txt`:
 
 ```bash
-make pull-display-params    # adb pull → board/ → re-apply SDK overlay
+bash scripts/gen-ynh960-panel-init-dtsi.sh
 ```
 
-### What lws-hmi installs into Buildroot
+Then `make apply-overlay` and `make build-kernel`. Innohi `ParamUpdate` / `/system/etc` LCD copies are retired.
 
-Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Buildroot. We add (paths under current Rockchip **platform** tree in SDK — not a per-product build switch):
+Refresh the source tables from a live Android device (optional):
 
-1. **Buildroot fs-overlay** — `apply-overlay` 把通用 OS 注入 SDK `buildroot/board/rockchip/common/rootfs-overlay/`，SoC 薄层注入 `$CHIP/rootfs-overlay/`。Innohi LCD 参数写到 **芯片** overlay 的 `system/etc/`：
-   - `960_lcd_param_rk356x.txt`
-   - `lcd_mipi_param.txt`
-   - `LCD_PARAM_RK356X_V11_0.txt` (same content as 960 file; legacy name for ParamUpdate)
+```bash
+make pull-display-params    # adb pull → board/*.txt
+```
 
-2. **post-rootfs hook** — `device/rockchip/common/post-hooks/05-display.sh` (re-copy from `lws-hmi/board/` during `./build.sh rootfs`).
-
-3. **BR2_ROOTFS_OVERLAY** — wired in platform chip config during `apply-overlay`.
-
-Per-**SKU** LCD/MIPI runtime tables for shipping boards live in **OEM** packs where applicable; rootfs carries platform defaults + ParamUpdate hooks.
-
-`MainServer` / `ParamUpdate` (from Innohi) expect paths under **`/system/etc/`**; the overlay creates that tree on Buildroot. **P1** also installs `MountAll` + `param-update.service` to apply MIPI params before `hmi.service` (ynh960 DTS leaves `lcd0_x/y=0` until ParamUpdate runs).
+Per-SKU runtime extras (if any) live in **OEM** packs. Early boot storage is **`storage-init.service`** → `/usr/libexec/board/storage-init.sh`.
 
 ## What this repo adds
 
@@ -827,7 +809,7 @@ Per-**SKU** LCD/MIPI runtime tables for shipping boards live in **OEM** packs wh
 | `scripts/build-{boot-logo,flutter-app}.sh` | Logo / App 构建脚本 |
 | `overlay/board/rockchip/common/rootfs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |
 | `overlay/.../06-systemd.sh` | 镜像构建时 enable hmi / disable sshd 等 |
-| `overlay/.../05-display.sh` | Buildroot post-rootfs install hook |
+| `overlay/.../05-display.sh` | no-op: does **not** install `/system/etc` LCD tables |
 | `overlay/.../check-sdk.sh` | Skip ext4/WSL guards when `DOCKER=1` |
 | `docker/Dockerfile` | Ubuntu 22.04 + Rockchip build dependencies |
 

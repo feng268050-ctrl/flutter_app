@@ -86,7 +86,7 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 | A-3 | 裁内核无用驱动 | **repo** | `ynh960-kernel-trim.config`：裁 CAN/PCIe/NVMe/SATA/UFS、本地 CSI/RKISP/CIF/HDMIRX/DVB/tuner、DP/LVDS/RGB/TVE、heavy debug/test；保留 HDMI/USB/音频/文件系统/BT/Wi‑Fi/eth0/RKNPU/MPP/debugfs；**DTS** `ynh960-evb-trim.dtsi` 关 EVB 残留节点 — 见 [`docs/kernel-evb-dts-deferred.md`](kernel-evb-dts-deferred.md) |
 | A-4 | RKNPU / Wi‑Fi / BT 延迟至首屏后 | **done** | disable `wifibt-init`/`wpa_supplicant`/`network.service`；板端已验证 |
 | A-5 | 确认无 `After=systemd-udev-settle`（尤其 `hmi`） | **done** | `hmi.service` 设计已禁止；板端 `critical-chain` 已验证。**勿**再加开机 oneshot 挂 `udev-settle`（已撤 `ab-rootfs-identity.service`：LABEL/UUID 在写分区时打标） |
-| A-6 | eMMC `noatime` / HS200/HS400 | **done** | fstab + display-init；**勿**用 `rootflags=noatime`；HS400 沿用 SDK DTS |
+| A-6 | eMMC `noatime` / HS200/HS400 | **done** | fstab + storage-init；**勿**用 `rootflags=noatime`；HS400 沿用 SDK DTS |
 | A-7 | 默认去掉 `ynh960-usb-gadget.config` | **done** | `ynh960_defconfig` |
 
 ### D0 — Boot splash（P1 必需，与 KPI 分开测）
@@ -107,7 +107,7 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 | B-4 | `lws_hmi_network` 关 dhcpcd/dropbear 等 | **done** |
 | B-5 | 仅 enable `hmi` + `mainserver`；disable mediamtx/sshd/bt | **done** | post-hook + post-fakeroot |
 | B-6 | `hmi.service` `Nice=-5` | **done** | 板端已验证；首帧 ~1s 未缩短（见 §5 注） |
-| B-7 | sysinit 仅 `param-update`（显示） | **done** |
+| B-7 | sysinit 仅 `storage-init`（OEM/分区/prefs） | **done** |
 | B-8 | `cpu-performance.service`：CPU + DMC/GPU devfreq `performance` | **done** | governors 已生效；首帧 ~1s 未缩短（见 §5 注） |
 | B-9 | disable `log-guardian.service` @ boot | **done** | 刷机验证通过；`08-systemd-finalize.sh` 防止 SDK `07-log-guardian.sh` 重新 enable |
 | B-10 | `lws-hmi-settings-restore` **`After=hmi`**（非并行）；Nice/idle；Demo 对 `*-wanted` 显示 starting | **repo** | UI 绝对优先；网/BT 在首帧后恢复 |

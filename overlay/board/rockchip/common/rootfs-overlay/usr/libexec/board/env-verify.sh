@@ -1,5 +1,5 @@
 #!/bin/sh
-# §3.4 platform stack verification on ynh960 device (excludes HMI boot KPI).
+# §3.4 platform stack verification on device (excludes HMI boot KPI).
 # Run after flash: verify-env
 # Canonical copy: overlay/.../rootfs-overlay/usr/libexec/board/env-verify.sh
 set -u
@@ -323,7 +323,7 @@ for helper in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.s
 		fail "helper $helper missing or not executable (/usr/libexec/bluetooth/)"
 	fi
 done
-# W2: board modem/OTG/display-init live under OEM; rootfs keeps thin stubs.
+# W2: board modem/OTG/storage-init live under OEM; rootfs keeps thin stubs.
 # No oem-fallback — missing OEM helpers is a hard fail when /oem is mounted.
 if [ -f /run/hmi/oem.env ]; then
 	# shellcheck source=/dev/null
@@ -340,22 +340,33 @@ if [ -f /run/hmi/oem.env ]; then
 		fail "OEM_SOURCE expected partition (got '${src:-empty}')"
 	fi
 fi
+oem_board_root="${OEM_BOARD_ROOT:-}"
+if [ -z "$oem_board_root" ] && [ -n "${BOARD_ID:-}" ]; then
+	oem_board_root="/oem/boards/${BOARD_ID}"
+fi
+storage_init="${oem_board_root:+$oem_board_root/helpers/storage-init.sh}"
 for oem_helper in \
-	"${WIFI_MODEM_HELPER:-/oem/boards/ynh960/helpers/wifibt-bringup.sh}" \
-	"${USB_OTG_MODE_HELPER:-/oem/boards/ynh960/helpers/usb-otg-mode.sh}" \
-	"/oem/boards/ynh960/helpers/display-init.sh"; do
+	${WIFI_MODEM_HELPER:+"$WIFI_MODEM_HELPER"} \
+	${USB_OTG_MODE_HELPER:+"$USB_OTG_MODE_HELPER"} \
+	${storage_init:+"$storage_init"}; do
 	if [ -x "$oem_helper" ]; then
-		pass "OEM helper $(basename "$oem_helper")"
+		pass "OEM helper $(basename "$oem_helper") ($oem_helper)"
 	elif [ -d /oem/boards ]; then
 		fail "OEM helper missing or not executable ($oem_helper)"
 	else
 		fail "OEM not mounted — cannot verify $oem_helper (flash/upgrade oem.img)"
 	fi
 done
-if [ -x /usr/libexec/usb/usb-otg-mode.sh ] && [ -x /usr/libexec/display/display-init.sh ]; then
-	pass "rootfs OEM helper stubs (usb-otg-mode / display-init)"
+if [ -z "${WIFI_MODEM_HELPER:-}" ]; then
+	warn "WIFI_MODEM_HELPER unset in oem.env"
+fi
+if [ -z "${USB_OTG_MODE_HELPER:-}" ]; then
+	warn "USB_OTG_MODE_HELPER unset (optional until vendor USB OTG helper lands)"
+fi
+if [ -x /usr/libexec/usb/usb-otg-mode.sh ] && [ -x /usr/libexec/board/storage-init.sh ]; then
+	pass "rootfs OEM helper stubs (usb-otg-mode / storage-init)"
 else
-	fail "rootfs OEM helper stubs missing under /usr/libexec/usb/ or /usr/libexec/display/"
+	fail "rootfs OEM helper stubs missing under /usr/libexec/usb/ or /usr/libexec/board/"
 fi
 for helper_path in \
 	/usr/libexec/display/change-orientation.sh \
@@ -376,6 +387,13 @@ case "$year" in
 	warn "wall clock year=$year (HTTPS certs may fail until HAL time sync after network)"
 	;;
 esac
+# Radio: ynh960 = AIC8800D80 OEM pack; ek3562 = onboard RTL8821CU (rtw_8821cu + rtw88 fw).
+board_id="${BOARD_ID:-}"
+if [ -z "$board_id" ] && [ -x /usr/libexec/board/board-id.sh ]; then
+	board_id="$(/usr/libexec/board/board-id.sh 2>/dev/null || true)"
+fi
+echo "board_id=${board_id:-unknown}"
+
 # AIC8800D80 modules (kernel + post-wifibt copy into /vendor/lib/modules)
 aic_ko=""
 for dir in /vendor/lib/modules /system/lib/modules /lib/modules /usr/lib/modules; do
@@ -389,15 +407,18 @@ for dir in /vendor/lib/modules /system/lib/modules /lib/modules /usr/lib/modules
 		break
 	fi
 done
-if [ -n "$aic_ko" ]; then
-	pass "aic8800_*.ko present"
+if [ "$board_id" = "ynh960" ]; then
+	if [ -n "$aic_ko" ]; then
+		pass "aic8800_*.ko present"
+	else
+		fail "aic8800_fdrv.ko missing (enable ynh960 wifibt kernel config, rebuild kernel+rootfs)"
+	fi
 else
-	fail "aic8800_fdrv.ko missing (enable ynh960 wifibt kernel config, rebuild kernel+rootfs)"
-fi
-if [ -x /usr/bin/rk_wifi_init ]; then
-	pass "rk_wifi_init installed"
-else
-	warn "rk_wifi_init missing (manual aic8800 insmod still used)"
+	if [ -n "$aic_ko" ]; then
+		pass "aic8800_*.ko present on shared Image (unused on board_id=$board_id)"
+	else
+		warn "aic8800_*.ko absent (ok on non-ynh960)"
+	fi
 fi
 if command -v hciattach >/dev/null 2>&1; then
 	pass "hciattach installed"
@@ -405,27 +426,52 @@ else
 	warn "hciattach missing (AIC BT UART attach may fail)"
 fi
 # Combo firmware: OEM radio pack (not rootfs kitchen sink /lib/firmware/brcm).
-OEM_RADIO_FW="${OEM_RADIO_FW:-/oem/boards/ynh960/radio/firmware}"
-if [ -f "$OEM_RADIO_FW/fmacfw_8800d80_u02.bin" ]; then
-	pass "OEM radio AIC8800D80 firmware ($OEM_RADIO_FW)"
-elif [ -f /vendor/etc/firmware/fmacfw_8800d80_u02.bin ] || \
-	[ -f /system/etc/firmware/fmacfw_8800d80_u02.bin ] || \
-	[ -f /lib/firmware/fmacfw_8800d80_u02.bin ]; then
-	# Symlink from bringup into AIC_FW_PATH still OK if target is OEM.
-	_fw=""
-	for cand in /vendor/etc/firmware /system/etc/firmware /lib/firmware; do
-		[ -f "$cand/fmacfw_8800d80_u02.bin" ] || continue
-		_fw="$cand/fmacfw_8800d80_u02.bin"
-		break
-	done
-	if [ -n "$_fw" ] && [ -L "$_fw" ]; then
-		pass "AIC8800D80 firmware linked at $_fw → $(readlink "$_fw")"
+OEM_RADIO_FW="${OEM_RADIO_FW:-${oem_board_root:+$oem_board_root/radio/firmware}}"
+OEM_RADIO_FW="${OEM_RADIO_FW:-/oem/boards/${board_id:-ynh960}/radio/firmware}"
+if [ "$board_id" = "ynh960" ]; then
+	if [ -f "$OEM_RADIO_FW/fmacfw_8800d80_u02.bin" ]; then
+		pass "OEM radio AIC8800D80 firmware ($OEM_RADIO_FW)"
+	elif [ -f /vendor/etc/firmware/fmacfw_8800d80_u02.bin ] || \
+		[ -f /system/etc/firmware/fmacfw_8800d80_u02.bin ] || \
+		[ -f /lib/firmware/fmacfw_8800d80_u02.bin ]; then
+		# Symlink from bringup into AIC_FW_PATH still OK if target is OEM.
+		_fw=""
+		for cand in /vendor/etc/firmware /system/etc/firmware /lib/firmware; do
+			[ -f "$cand/fmacfw_8800d80_u02.bin" ] || continue
+			_fw="$cand/fmacfw_8800d80_u02.bin"
+			break
+		done
+		if [ -n "$_fw" ] && [ -L "$_fw" ]; then
+			pass "AIC8800D80 firmware linked at $_fw → $(readlink "$_fw")"
+		else
+			warn "fmacfw_8800d80_u02.bin under firmware dirs but OEM radio pack missing ($OEM_RADIO_FW)"
+		fi
+		unset _fw
 	else
-		warn "fmacfw_8800d80_u02.bin under firmware dirs but OEM radio pack missing ($OEM_RADIO_FW)"
+		fail "OEM radio firmware missing ($OEM_RADIO_FW/fmacfw_8800d80_u02.bin) — make build-oem && OEM_ONLY=1 make upgrade"
 	fi
-	unset _fw
 else
-	fail "OEM radio firmware missing ($OEM_RADIO_FW/fmacfw_8800d80_u02.bin) — make build-oem && OEM_ONLY=1 make upgrade"
+	if [ -f /lib/firmware/rtw88/rtw8821c_fw.bin ]; then
+		pass "rtw88 firmware rtw8821c_fw.bin present"
+	else
+		warn "rtw8821c_fw.bin missing (BR2_PACKAGE_LINUX_FIRMWARE_RTL_RTW88 + rebuild rootfs)"
+	fi
+	rtw_ko=""
+	for dir in /vendor/lib/modules /system/lib/modules /lib/modules /usr/lib/modules; do
+		[ -d "$dir" ] || continue
+		if [ -f "$dir/rtw_8821cu.ko" ] || find "$dir" -maxdepth 3 -name 'rtw_8821cu.ko' 2>/dev/null | grep -q .; then
+			rtw_ko=1
+			break
+		fi
+	done
+	if [ -n "$rtw_ko" ]; then
+		pass "rtw_8821cu.ko present"
+	else
+		warn "rtw_8821cu.ko missing (ek3562-wifibt.config + FORCE_KERNEL_IMAGE=1 make build-kernel)"
+	fi
+	if [ -d "$OEM_RADIO_FW" ] && ls "$OEM_RADIO_FW"/* >/dev/null 2>&1; then
+		pass "optional OEM radio dir $OEM_RADIO_FW"
+	fi
 fi
 if [ -f /var/lib/wpa_supplicant/wpa_supplicant.conf ]; then
 	pass "wpa_supplicant.conf seed present"
@@ -642,11 +688,16 @@ else
 		fi
 	done
 fi
-for f in /system/etc/960_lcd_param_rk356x.txt /system/etc/lcd_mipi_param.txt; do
+for f in /system/etc/960_lcd_param_rk356x.txt /system/etc/lcd_mipi_param.txt \
+	/system/etc/LCD_PARAM_RK356X_V11_0.txt; do
 	if [ -f "$f" ]; then
-		warn "$(basename "$f") still in /system/etc (unused at runtime; OEM lcd is authority)"
+		warn "$(basename "$f") still in /system/etc (rebuild rootfs to drop ParamUpdate residue)"
 	fi
 done
+if [ ! -f /system/etc/960_lcd_param_rk356x.txt ] && \
+	[ ! -f /system/etc/lcd_mipi_param.txt ]; then
+	pass "no ParamUpdate LCD tables under /system/etc"
+fi
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then

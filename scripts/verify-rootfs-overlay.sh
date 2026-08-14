@@ -6,6 +6,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="${SDK_DIR:-$ROOT/linux-sdk}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 source "$ROOT/scripts/prebuilt-common.sh"
+# shellcheck source=platform-paths.sh
+source "$ROOT/scripts/platform-paths.sh"
+platform_paths_init "$ROOT" "$SDK"
 
 if [[ "$(uname -s)" == Darwin && "${1:-}" != "--inside-docker" ]]; then
 	exec bash "$ROOT/scripts/docker-run.sh" bash -lc \
@@ -307,7 +310,7 @@ run_check() {
 		usb-otg-mode.sh usb-gadget-usb-state.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh \
 		usb-plug-ssh-recover.sh usb-plug-ssh-diag.sh usb-plug-ssh-vbus-check.sh \
 		usb-mtp-start.sh usb-mtp-stop.sh ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh ab-ota-verify.sh \
-		ab-preflight.sh ab-boot-confirm.sh oem-compose.sh ynh960-display-init.sh weston-hmi-config.sh \
+		ab-preflight.sh ab-boot-confirm.sh oem-compose.sh ynh960-display-init.sh display-init.sh weston-hmi-config.sh \
 		change-orientation.sh apply-wallpaper.sh apply-mouse-settings.sh apply-physical-input-policy.sh set-performance-mode.sh bind-prefs.sh \
 		pre-poweroff.sh shutdown.sh pwrkey-poweroff.sh systemctl-poweroff-wrapper.sh \
 		enable-ssh-debug.sh disable-ssh-debug.sh lan-ssh-run.sh ensure-sshd-hostkeys.sh; do
@@ -407,7 +410,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/display ---"
-	for f in ynh960-display-init.sh weston-hmi-config.sh change-orientation.sh apply-wallpaper.sh \
+	for f in display-init.sh weston-hmi-config.sh change-orientation.sh apply-wallpaper.sh \
 		apply-mouse-settings.sh; do
 		if [[ -x "$libexec_display/$f" ]]; then
 			echo "OK:  display/$f"
@@ -741,11 +744,11 @@ EOF
 	fi
 
 	echo ""
-	echo "--- /etc/fstab (extra parts via ynh960-display-init, not local-fs) ---"
+	echo "--- /etc/fstab (extra parts via display-init, not local-fs) ---"
 	if [[ -f "$target/etc/fstab" ]]; then
 		if grep -qE '[[:space:]]/userdata[[:space:]]' "$target/etc/fstab" || \
 			grep -qE '^PARTLABEL=userdata[[:space:]]' "$target/etc/fstab"; then
-			echo "FAIL: /etc/fstab must not mount /userdata (ynh960-display-init mounts PARTLABEL=userdata with auto-mkfs)" >&2
+			echo "FAIL: /etc/fstab must not mount /userdata (display-init mounts PARTLABEL=userdata with auto-mkfs)" >&2
 			missing=1
 		else
 			echo "OK:  /userdata not in fstab"
@@ -762,7 +765,7 @@ EOF
 		if [[ -e "$f" ]]; then
 			echo "OK:  ${f#$target/}"
 		else
-			echo "FAIL: missing ${f#$target/} (run: make build-app && make apply-overlay && make build-rootfs)" >&2
+			echo "FAIL: missing ${f#$target/} (run: make build-app && make build-rootfs)" >&2
 			missing=1
 		fi
 	done
@@ -1253,7 +1256,7 @@ EOF
 	fi
 	if [[ -x "$libexec_board/bind-prefs.sh" ]] && \
 		( grep -q 'bind-prefs.sh' \
-			"$libexec_display/ynh960-display-init.sh" 2>/dev/null || \
+			"$libexec_display/display-init.sh" 2>/dev/null || \
 		  grep -q 'bind-prefs.sh' \
 			"$ROOT/oem/boards/ynh960/helpers/display-init.sh" 2>/dev/null ); then
 		echo "OK:  bind-prefs (four /var/lib/* → /userdata/*)"
@@ -1277,7 +1280,7 @@ EOF
 		  grep -q 'apply-datetime-prefs.sh' \
 			"$libexec_board/emulator-storage-init.sh" 2>/dev/null ) && \
 		grep -q 'apply-datetime-prefs.sh' \
-			"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh" 2>/dev/null; then
+			"$OVERLAY_FS/usr/libexec/hmi/hmi-launch.sh" 2>/dev/null; then
 		echo "OK:  apply-datetime-prefs (datetime.conf → /etc/localtime)"
 	else
 		echo "FAIL: missing apply-datetime-prefs.sh wired into display-init, emulator-storage-init, or hmi-launch" >&2
@@ -1481,8 +1484,8 @@ EOF
 	check_systemd_wants "$target" "staging target" || missing=1
 	check_poweroff_hook "$target" "staging target" || missing=1
 
-	def="$ROOT/overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig"
-	gen="$ROOT/overlay/buildroot/.generated/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+	def="$LWS_BR_DEFCONFIG"
+	gen="$LWS_BR_DEFCONFIG_GEN"
 	[[ -f "$gen" ]] && def="$gen"
 	if grep -qF '#include "chips/lws_hmi_bt.config"' "$def" 2>/dev/null; then
 		echo ""

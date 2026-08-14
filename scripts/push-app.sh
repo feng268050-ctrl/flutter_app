@@ -8,17 +8,20 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/usb-ssh-session.sh"
 # shellcheck source=scripts/app-select.sh
 source "$ROOT/scripts/app-select.sh"
+# shellcheck source=scripts/platform-paths.sh
+source "$ROOT/scripts/platform-paths.sh"
+platform_paths_init "$ROOT" "${SDK_DIR:-$ROOT/linux-sdk}"
 
 app_select_resolve
 
 STAGING="/var/lib/hmi/push-app-staging"
 APPLY_SCRIPT="/usr/libexec/hmi/push-app-apply-and-restart.sh"
-APPLY_SCRIPT_HOST="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/push-app-apply-and-restart.sh"
+APPLY_SCRIPT_HOST="$OVERLAY_FS/usr/libexec/hmi/push-app-apply-and-restart.sh"
 APPLY_LOG="/var/lib/hmi/push-app-restart.log"
 APPLY_STATUS="/var/lib/hmi/push-app-apply.status"
-OVERLAY_APP_TREE="$OVERLAY_APP"
-LIBAPP="$OVERLAY_APP_TREE/lib/libapp.so"
-ASSETS="$OVERLAY_APP_TREE/data/flutter_assets"
+APP_BUNDLE_TREE="$APP_BUNDLE_RELEASE"
+LIBAPP="$APP_BUNDLE_TREE/lib/libapp.so"
+ASSETS="$APP_BUNDLE_TREE/data/flutter_assets"
 # Detach apply: LAN SSH over Wi-Fi must not hold the session through hmi stop
 # (legacy images killed wpa/dhcp in the hmi cgroup). Same poll path for USB/LAN.
 APPLY_WAIT_SEC=120
@@ -44,7 +47,7 @@ Env:
   IP                         registered SSH only (make connect <ip>)
   LWS_SSH_IDENTITY           host private key (default: keys/ssh/id_ed25519)
 
-Prereq: APP=\$APP make build-app (artifacts in overlay $DEVICE_APP)
+Prereq: APP=\$APP make build-app (artifacts in app/<APP>/build/bundle/release)
 Host: team SSH key required (see error message if missing)
 
 The board must include the DRM GEM teardown fix before using in-place HMI restart.
@@ -99,8 +102,8 @@ render_wait_line() {
 	wait_line_rendered=1
 }
 
-# Stage overlay release tree onto the board under $1 (remote staging dir).
-stage_overlay_tree() {
+# Stage release bundle tree onto the board under $1 (remote staging dir).
+stage_bundle_tree() {
 	local staging="$1"
 
 	# Avoid macOS AppleDouble junk in streamed tarballs.
@@ -110,18 +113,18 @@ stage_overlay_tree() {
 	remote "rm -rf $staging && mkdir -p $staging/lib $staging/bin $staging/data/flutter_assets"
 	upload_with_progress "$LIBAPP" "$staging/lib/libapp.so"
 
-	if [[ -d "$OVERLAY_APP_TREE/bin" ]]; then
+	if [[ -d "$APP_BUNDLE_TREE/bin" ]]; then
 		echo "Transferring $DEVICE_APP/bin companions..."
 		BIN_TAR="$STAGE/app-bin.tar"
-		tar --exclude='._*' --exclude='.DS_Store' -C "$OVERLAY_APP_TREE/bin" -cf "$BIN_TAR" .
+		tar --exclude='._*' --exclude='.DS_Store' -C "$APP_BUNDLE_TREE/bin" -cf "$BIN_TAR" .
 		upload_with_progress "$BIN_TAR" "$staging/app-bin.tar"
 		remote "tar -xf '$staging/app-bin.tar' -C '$staging/bin' && rm -f '$staging/app-bin.tar' && chmod 0755 '$staging/bin'/* 2>/dev/null || true"
 	fi
-	if [[ -d "$OVERLAY_APP_TREE/lib" ]]; then
+	if [[ -d "$APP_BUNDLE_TREE/lib" ]]; then
 		echo "Transferring $DEVICE_APP/lib companions (excl. libapp.so)..."
 		LIB_TAR="$STAGE/app-lib.tar"
 		tar --exclude='._*' --exclude='.DS_Store' --exclude='libapp.so' \
-			-C "$OVERLAY_APP_TREE/lib" -cf "$LIB_TAR" .
+			-C "$APP_BUNDLE_TREE/lib" -cf "$LIB_TAR" .
 		upload_with_progress "$LIB_TAR" "$staging/app-lib.tar"
 		remote "tar -xf '$staging/app-lib.tar' -C '$staging/lib' && rm -f '$staging/app-lib.tar'"
 	fi
@@ -132,8 +135,8 @@ stage_overlay_tree() {
 	upload_with_progress "$ASSETS_TAR" "$staging/flutter_assets.tar"
 	remote "tar -xf '$staging/flutter_assets.tar' -C '$staging/data/flutter_assets' && rm -f '$staging/flutter_assets.tar'"
 
-	if [[ -f "$OVERLAY_APP_TREE/runtime-mode.json" ]]; then
-		upload_with_progress "$OVERLAY_APP_TREE/runtime-mode.json" "$staging/runtime-mode.json"
+	if [[ -f "$APP_BUNDLE_TREE/runtime-mode.json" ]]; then
+		upload_with_progress "$APP_BUNDLE_TREE/runtime-mode.json" "$staging/runtime-mode.json"
 	fi
 }
 
@@ -157,7 +160,7 @@ STAGE="$(mktemp -d "${TMPDIR:-/tmp}/hmi-push-app.XXXXXX")"
 cleanup() { rm -rf "$STAGE"; }
 trap cleanup EXIT
 
-# --- Non-HMI apps: tar overlay tree → DEVICE_APP; restart mapped unit if active ---
+# --- Non-HMI apps: tar bundle tree → DEVICE_APP; restart mapped unit if active ---
 if [[ "$APP_IS_HMI" != "1" ]]; then
 	unit="${APP_PUSH_UNIT:-}"
 	if [[ -n "$unit" ]]; then
@@ -167,7 +170,7 @@ if [[ "$APP_IS_HMI" != "1" ]]; then
 	fi
 	APP_TAR="$STAGE/app-tree.tar"
 	export COPYFILE_DISABLE=1
-	tar --exclude='._*' --exclude='.DS_Store' -C "$OVERLAY_APP_TREE" -cf "$APP_TAR" .
+	tar --exclude='._*' --exclude='.DS_Store' -C "$APP_BUNDLE_TREE" -cf "$APP_TAR" .
 	if [[ -n "$unit" ]]; then
 		remote "systemctl stop '$unit' 2>/dev/null || true"
 	fi
@@ -192,7 +195,7 @@ if [[ "$APP_IS_HMI" != "1" ]]; then
 fi
 
 # --- Product HMI: existing apply helper + hmi.service restart ---
-stage_overlay_tree "$STAGING"
+stage_bundle_tree "$STAGING"
 
 echo "Installing staged app and restarting hmi.service..."
 if [[ ! -f "$APPLY_SCRIPT_HOST" ]]; then

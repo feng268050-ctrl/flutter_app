@@ -1,5 +1,5 @@
 #!/bin/bash
-# ynh960: /userdata, /oem, private* are mounted by ynh960-display-init.sh (auto-mkfs).
+# /userdata, /oem, private* are mounted by display-init.sh (OEM helper; auto-mkfs).
 # Rockchip 30-fstab.sh adds PARTLABEL=userdata → /userdata; must not stay in fstab.
 set -euo pipefail
 

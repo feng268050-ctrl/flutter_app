@@ -27,11 +27,11 @@ for bin in MountAll ParamUpdate MainServer; do
 done
 
 DOCKER_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
-DISPLAY_INIT="$DOCKER_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/display/ynh960-display-init.sh"
+DISPLAY_INIT="$DOCKER_ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/display/display-init.sh"
 if [[ -f "$DISPLAY_INIT" ]]; then
-	install -d "$TARGET_DIR/usr/libexec/hmi"
-	install -m 0755 "$DISPLAY_INIT" "$TARGET_DIR/usr/libexec/display/ynh960-display-init.sh"
-	echo "post-innohi: installed /usr/libexec/display/ynh960-display-init.sh"
+	install -d "$TARGET_DIR/usr/libexec/display"
+	install -m 0755 "$DISPLAY_INIT" "$TARGET_DIR/usr/libexec/display/display-init.sh"
+	echo "post-innohi: installed /usr/libexec/display/display-init.sh"
 fi
 
 install -d "$TARGET_DIR/system/bin"

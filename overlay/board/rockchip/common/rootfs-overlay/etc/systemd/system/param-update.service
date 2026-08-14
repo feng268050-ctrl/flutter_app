@@ -1,15 +1,15 @@
 [Unit]
-Description=ynh960 MIPI display init (Innohi MountAll/ParamUpdate)
+Description=OEM display-init (mount /oem then board helper)
 DefaultDependencies=no
 After=systemd-remount-fs.service
 Before=mainserver.service hmi.service sysinit.target
-# Board-only ParamUpdate/MountAll. P3.2 QEMU: oem-compose mounts /dev/vdb; no MIPI.
+# Mount PARTLABEL=oem then exec OEM helpers/display-init.sh. P3.2 QEMU: oem-compose mounts /dev/vdb.
 ConditionKernelCommandLine=!lws.emulator=1
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/libexec/display/ynh960-display-init.sh
+ExecStart=/usr/libexec/display/display-init.sh
 StandardOutput=journal
 StandardError=journal
 

@@ -183,7 +183,7 @@ EOF
 hmi_bundle_assemble() {
 	local mode="$1"
 	shift
-	local out_dir="$APP_DIR/build/hmi_bundle/${mode}"
+	local out_dir="$APP_DIR/build/bundle/.assemble/${mode}"
 	local track_widgets=false
 	local tree_shake=true
 	if [[ "$mode" == "debug" ]]; then
@@ -208,7 +208,7 @@ hmi_bundle_assemble() {
 		"$@"
 }
 
-# Install product MediaMTX into App tree ($1 = DEST root, e.g. overlay /opt/hmi).
+# Install product MediaMTX into App bundle tree ($1 = bundle root, e.g. app/lws_hmi/build/bundle/release).
 hmi_bundle_install_mediamtx() {
 	local dest="$1"
 	local src="$ROOT/prebuilt/mediamtx/linux-arm64/mediamtx"
@@ -255,9 +255,10 @@ hmi_bundle_install_ai() {
 	echo "hmi-bundle: installed $dest/bin/lws_ai_daemon"
 }
 
-# Install release layout into DEST (/opt/hmi overlay): lib/libapp.so + data/flutter_assets.
+# Install release layout into app/<APP>/build/bundle/release: lib/libapp.so + data/flutter_assets.
 hmi_bundle_install_release() {
-	local assets_src="$APP_DIR/build/hmi_bundle/release"
+	local assets_src="$APP_DIR/build/bundle/.assemble/release"
+	local dest="${APP_BUNDLE_RELEASE:-$APP_DIR/build/bundle/release}"
 	local app_so build_root
 
 	build_root="$APP_DIR/.dart_tool/flutter_build"
@@ -266,9 +267,9 @@ hmi_bundle_install_release() {
 	[[ -f "$assets_src/AssetManifest.bin" || -f "$assets_src/AssetManifest.json" ]] \
 		|| die "missing Flutter assets under $assets_src"
 
-	rm -rf "$DEST"
-	mkdir -p "$DEST/lib" "$DEST/data/flutter_assets"
-	cp -f "$app_so" "$DEST/lib/libapp.so"
+	rm -rf "$dest"
+	mkdir -p "$dest/lib" "$dest/data/flutter_assets"
+	cp -f "$app_so" "$dest/lib/libapp.so"
 
 	# Assets only — engine + icudtl live on rootfs.
 	local item base
@@ -278,31 +279,31 @@ hmi_bundle_install_release() {
 		case "$base" in
 		.last_build_id | app.so | libapp.so | libflutter_engine.so | icudtl.dat | flutter-pi) continue ;;
 		esac
-		cp -a "$item" "$DEST/data/flutter_assets/"
+		cp -a "$item" "$dest/data/flutter_assets/"
 	done
 
 	rm -f \
-		"$DEST/lib/libflutter_engine.so" \
-		"$DEST/data/icudtl.dat" \
-		"$DEST/data/flutter_assets/libflutter_engine.so" \
-		"$DEST/data/flutter_assets/icudtl.dat" \
-		"$DEST/data/flutter_assets/app.so" \
-		"$DEST/data/flutter_assets/kernel_blob.bin"
+		"$dest/lib/libflutter_engine.so" \
+		"$dest/data/icudtl.dat" \
+		"$dest/data/flutter_assets/libflutter_engine.so" \
+		"$dest/data/flutter_assets/icudtl.dat" \
+		"$dest/data/flutter_assets/app.so" \
+		"$dest/data/flutter_assets/kernel_blob.bin"
 
 	# Product companions (MediaMTX / AI) for HMI apps (*_hmi → /opt/hmi).
 	# Frame extract uses rootfs /usr/libexec/hmi/extract-video-frame (GStreamer).
 	if [[ "${APP_IS_HMI:-${APP_IS_PRODUCT_HMI:-0}}" == "1" ]]; then
-		hmi_bundle_install_mediamtx "$DEST"
-		hmi_bundle_install_ai "$DEST"
+		hmi_bundle_install_mediamtx "$dest"
+		hmi_bundle_install_ai "$dest"
 	fi
 
-	printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >"$DEST/runtime-mode.json"
+	printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >"$dest/runtime-mode.json"
 }
 
 # Stage debug JIT assets + debug-runtime engine/icu for make debug-app.
 # Uses prebuilt arm64-debug (or prior staging) — not flutterpi_tool cache.
 hmi_bundle_install_debug_staging() {
-	local assets_src="$APP_DIR/build/hmi_bundle/debug"
+	local assets_src="$APP_DIR/build/bundle/.assemble/debug"
 	local staging hmi_staging runtime_staging engine_src icu_src
 
 	[[ -f "$assets_src/kernel_blob.bin" ]] \

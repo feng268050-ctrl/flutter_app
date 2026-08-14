@@ -11,13 +11,10 @@ if [[ ! -d "$SDK" ]]; then
   exit 1
 fi
 
-CHIP_DIR="$SDK/device/rockchip/rk3566_rk3568"
-CHIPS_DIR="$SDK/device/rockchip/.chips/rk3566_rk3568"
-SCRIPTS_DIR="$SDK/device/rockchip/common/scripts"
-POST_HOOKS_DIR="$SDK/device/rockchip/common/post-hooks"
-HOOKS_DIR="$SDK/device/rockchip/common/build-hooks"
-BR_CONFIG="$SDK/buildroot/configs/rockchip/chips/rk3566_rk3568.config"
-BR_CHIPS_DIR="$SDK/buildroot/configs/rockchip/chips"
+# shellcheck source=platform-paths.sh
+source "$ROOT/scripts/platform-paths.sh"
+platform_paths_init "$ROOT" "$SDK"
+
 BR_DEFCONFIGS="$SDK/buildroot/configs"
 BR_PKG_FLUTTER_ENGINE="$SDK/buildroot/package/flutter-engine"
 BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
@@ -34,9 +31,6 @@ LWS_ROCKCHIP_BLUEZ_PATCH_STASH=".lws-rockchip-bluez-patch-disabled"
 LWS_ROCKCHIP_GST_PATCH_STASH=".lws-rockchip-gst-patches-disabled"
 LWS_ROCKCHIP_MESON_PATCH_STASH=".lws-rockchip-meson-patches-disabled"
 LWS_ROCKCHIP_OPENSSL_PATCH_STASH=".lws-rockchip-openssl-patches-disabled"
-BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
-BR_OVERLAY="$BR_OVERLAY_ROOT/system/etc"
-OVERLAY_FS="$OVERLAY/board/rockchip/rk3566_rk3568/rootfs-overlay"
 
 install_file() {
   local src="$1"
@@ -86,7 +80,7 @@ restore_br_package_patches() {
 }
 
 purge_legacy_fs_overlay() {
-  local legacy="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
+  local legacy="$BR_BOARD/lws-hmi-fs-overlay"
   if [[ -d "$legacy" ]]; then
     rm -rf "$legacy"
     echo "overlay: removed legacy $legacy (superseded by rootfs-overlay/)"
@@ -94,8 +88,8 @@ purge_legacy_fs_overlay() {
   local cfg
   for cfg in \
     "$BR_CONFIG" \
-    "$BR_CHIPS_DIR/rk3566_rk3568_lws.config" \
-    "$OVERLAY/buildroot/rk3566_rk3568_lws.config"; do
+    "$BR_CHIPS_DIR/${LWS_CHIP}_lws.config" \
+    "$OVERLAY/buildroot/${LWS_CHIP}_lws.config"; do
     [[ -f "$cfg" ]] || continue
     if grep -q 'lws-hmi-fs-overlay' "$cfg" 2>/dev/null; then
       sed -i.bak '/lws-hmi-fs-overlay/d' "$cfg"
@@ -105,18 +99,37 @@ purge_legacy_fs_overlay() {
   done
 }
 
+purge_stale_fs_overlay_opt() {
+  # App bundles belong in app/<APP>/build/bundle/release — never repo fs-overlay.
+  # SDK rootfs-overlay/opt/ is staged only by make build-rootfs (sync-opt-app-overlay).
+  local removed=0
+
+  if [[ -d "$OVERLAY_FS/opt" ]]; then
+    rm -rf "$OVERLAY_FS/opt"
+    echo "overlay: purged stale app bundle $OVERLAY_FS/opt"
+    removed=1
+  fi
+  if [[ -d "$BR_OVERLAY_ROOT/opt" ]]; then
+    rm -rf "$BR_OVERLAY_ROOT/opt"
+    echo "overlay: purged stale app bundle $BR_OVERLAY_ROOT/opt (re-stage: make build-rootfs)"
+    removed=1
+  fi
+  if [[ "$removed" == 0 ]]; then
+    echo "overlay: no stale fs-overlay opt/ app bundles"
+  fi
+}
+
 sync_fs_overlay() {
+  purge_stale_fs_overlay_opt
   purge_legacy_fs_overlay
   if [[ ! -d "$OVERLAY_FS" ]]; then
     echo "WARNING: $OVERLAY_FS missing; skip fs-overlay sync" >&2
     return 0
   fi
   mkdir -p "$BR_OVERLAY_ROOT"
-  # Plan A: etc/ (systemd) + usr/ (scripts, merged-usr libs) + var/ (prefs).
-  # Do NOT sync a top-level lib/ — Buildroot merged-/usr rejects overlay /lib.
-  # OP-TEE TAs live under usr/lib/optee_armtz/ (→ /lib/optee_armtz on target).
-  # system/etc from sync_display_params; opt/{hmi,os_settings} from sync_hmi_app_overlay.
-  # Use rsync --delete so removed overlay files (e.g. lws-hmi-debug-boot.service) do not linger in the SDK tree.
+  # Generic OS: etc/ + usr/ + var/. Do NOT sync top-level lib/ (merged-/usr).
+  # opt/{hmi,os_settings} staged by build-rootfs into this common overlay.
+  # --delete so removed overlay files do not linger in the SDK tree.
   for sub in etc usr var; do
     if [[ -d "$OVERLAY_FS/$sub" ]]; then
       mkdir -p "$BR_OVERLAY_ROOT/$sub"
@@ -127,10 +140,9 @@ sync_fs_overlay() {
         mkdir -p "$BR_OVERLAY_ROOT/$sub"
         cp -a "$OVERLAY_FS/$sub/." "$BR_OVERLAY_ROOT/$sub/"
       fi
-      echo "overlay: synced $BR_OVERLAY_ROOT/$sub"
+      echo "overlay: synced common $BR_OVERLAY_ROOT/$sub"
     fi
   done
-  # Drop any stale non-merged /lib from earlier mistaken syncs.
   if [[ -d "$BR_OVERLAY_ROOT/lib" ]]; then
     rm -rf "$BR_OVERLAY_ROOT/lib"
     echo "overlay: removed non-merged $BR_OVERLAY_ROOT/lib (use usr/lib/)"
@@ -138,12 +150,41 @@ sync_fs_overlay() {
   if [[ -d "$OVERLAY_FS/lib" ]]; then
     echo "WARNING: $OVERLAY_FS/lib present but ignored (merged /usr); move to usr/lib/" >&2
   fi
-  local purge_src="$OVERLAY/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
+
+  # SoC-thin overlay (e.g. mainserver.service) → SDK $CHIP/rootfs-overlay.
+  # Separate BR2_ROOTFS_OVERLAY layer; chip last so it can override common.
+  if [[ -d "$OVERLAY_CHIP_FS" ]]; then
+    mkdir -p "$BR_CHIP_OVERLAY_ROOT"
+    for sub in etc usr var; do
+      if [[ -d "$OVERLAY_CHIP_FS/$sub" ]]; then
+        mkdir -p "$BR_CHIP_OVERLAY_ROOT/$sub"
+        if command -v rsync >/dev/null 2>&1; then
+          rsync -a --delete "$OVERLAY_CHIP_FS/$sub/" "$BR_CHIP_OVERLAY_ROOT/$sub/"
+        else
+          rm -rf "$BR_CHIP_OVERLAY_ROOT/$sub"
+          mkdir -p "$BR_CHIP_OVERLAY_ROOT/$sub"
+          cp -a "$OVERLAY_CHIP_FS/$sub/." "$BR_CHIP_OVERLAY_ROOT/$sub/"
+        fi
+        echo "overlay: synced chip $BR_CHIP_OVERLAY_ROOT/$sub"
+      fi
+    done
+    # Drop leftover OS trees from the pre-split chip overlay so they cannot
+    # shadow common (chip layer is last). Keep system/ (LCD params).
+    for sub in etc usr var opt lib; do
+      if [[ ! -d "$OVERLAY_CHIP_FS/$sub" && -d "$BR_CHIP_OVERLAY_ROOT/$sub" ]]; then
+        rm -rf "$BR_CHIP_OVERLAY_ROOT/$sub"
+        echo "overlay: removed stale chip $BR_CHIP_OVERLAY_ROOT/$sub"
+      fi
+    done
+  else
+    echo "overlay: no SoC-thin overlay at $OVERLAY_CHIP_FS"
+  fi
+
+  local purge_src="$OVERLAY_COMMON/purge-retired-rootfs-artifacts.sh"
   if [[ -f "$purge_src" ]]; then
     sh "$purge_src" "$BR_OVERLAY_ROOT"
     echo "overlay: purged retired rootfs artifacts under $BR_OVERLAY_ROOT"
   fi
-  # Single-image policy: ensure retired debug/kpi artifacts are gone.
   rm -f \
     "$BR_OVERLAY_ROOT/usr/libexec/hmi/debug-boot.sh" \
     "$BR_OVERLAY_ROOT/usr/libexec/hmi/boot-kpi-watch.sh" \
@@ -153,8 +194,8 @@ sync_fs_overlay() {
 }
 
 sync_purge_retired_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
+  local src="$LWS_OVERLAY_BOARD/purge-retired-rootfs-artifacts.sh"
+  local dest="$BR_COMMON/lws-hmi/purge-retired-rootfs-artifacts.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip purge script sync" >&2
     return 0
@@ -164,8 +205,8 @@ sync_purge_retired_script() {
 }
 
 sync_install_systemctl_wrapper_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh"
+  local src="$LWS_OVERLAY_BOARD/install-systemctl-wrapper.sh"
+  local dest="$BR_COMMON/lws-hmi/install-systemctl-wrapper.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip install-systemctl-wrapper sync" >&2
     return 0
@@ -175,8 +216,8 @@ sync_install_systemctl_wrapper_script() {
 }
 
 sync_post_build_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/post-build.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/post-build.sh"
+  local src="$LWS_OVERLAY_BOARD/post-build.sh"
+  local dest="$BR_COMMON/lws-hmi/post-build.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip post-build script" >&2
     return 0
@@ -186,8 +227,8 @@ sync_post_build_script() {
 }
 
 sync_refresh_plan_a_systemd_wants_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/refresh-plan-a-systemd-wants.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/refresh-plan-a-systemd-wants.sh"
+  local src="$LWS_OVERLAY_BOARD/refresh-plan-a-systemd-wants.sh"
+  local dest="$BR_COMMON/lws-hmi/refresh-plan-a-systemd-wants.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip refresh-plan-a-systemd-wants script" >&2
     return 0
@@ -197,8 +238,8 @@ sync_refresh_plan_a_systemd_wants_script() {
 }
 
 sync_post_fakeroot_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/post-fakeroot.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/post-fakeroot.sh"
+  local src="$LWS_OVERLAY_BOARD/post-fakeroot.sh"
+  local dest="$BR_COMMON/lws-hmi/post-fakeroot.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip post-fakeroot script" >&2
     return 0
@@ -208,8 +249,8 @@ sync_post_fakeroot_script() {
 }
 
 sync_strip_fstab_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/strip-fstab.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/strip-fstab.sh"
+  local src="$LWS_OVERLAY_BOARD/strip-fstab.sh"
+  local dest="$BR_COMMON/lws-hmi/strip-fstab.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip strip-fstab script" >&2
     return 0
@@ -219,8 +260,8 @@ sync_strip_fstab_script() {
 }
 
 sync_flutter_engine_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/sync-flutter-engine.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/sync-flutter-engine.sh"
+  local src="$LWS_OVERLAY_BOARD/sync-flutter-engine.sh"
+  local dest="$BR_COMMON/lws-hmi/sync-flutter-engine.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip flutter engine sync script" >&2
     return 0
@@ -230,8 +271,8 @@ sync_flutter_engine_script() {
 }
 
 sync_flutter_elinux_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/sync-flutter-embedded-linux.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/sync-flutter-embedded-linux.sh"
+  local src="$LWS_OVERLAY_BOARD/sync-flutter-embedded-linux.sh"
+  local dest="$BR_COMMON/lws-hmi/sync-flutter-embedded-linux.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip flutter-elinux sync script" >&2
     return 0
@@ -241,8 +282,8 @@ sync_flutter_elinux_script() {
 }
 
 sync_buildroot_version_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/sync-buildroot-version.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/sync-buildroot-version.sh"
+  local src="$LWS_OVERLAY_BOARD/sync-buildroot-version.sh"
+  local dest="$BR_COMMON/lws-hmi/sync-buildroot-version.sh"
   if [[ ! -f "$src" ]]; then
     echo "ERROR: $src missing (required by post-build)" >&2
     return 1
@@ -451,10 +492,14 @@ sync_buildroot_chip_configs() {
     [[ -f "$f" ]] || continue
     install_file "$f" "$BR_CHIPS_DIR/$(basename "$f")"
   done
+  local lws_overlay_cfg="$OVERLAY/buildroot/${LWS_CHIP}_lws.config"
+  if [[ -f "$lws_overlay_cfg" ]]; then
+    install_file "$lws_overlay_cfg" "$BR_CHIPS_DIR/${LWS_CHIP}_lws.config"
+  fi
   bash "$ROOT/scripts/generate-lws-hmi-defconfig.sh"
-  local gen="$OVERLAY/buildroot/.generated/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+  local gen="$LWS_BR_DEFCONFIG_GEN"
   if [[ -f "$gen" ]]; then
-    install_file "$gen" "$BR_DEFCONFIGS/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+    install_file "$gen" "$BR_DEFCONFIGS/$(basename "$LWS_BR_DEFCONFIG")"
   fi
 }
 
@@ -922,39 +967,17 @@ sync_gstreamer1_rockchip_package() {
 }
 
 sync_boot_logo() {
-  bash "$ROOT/scripts/build-boot-logo.sh"
   local kernel_dir="$SDK/kernel"
   if [[ ! -d "$kernel_dir" ]]; then
     echo "WARNING: $kernel_dir missing; skip boot logo install" >&2
     return 0
   fi
-  install_file "$BOARD_DIR/logo/logo.bmp" "$kernel_dir/logo.bmp"
-  install_file "$BOARD_DIR/logo/logo_kernel.bmp" "$kernel_dir/logo_kernel.bmp"
-}
-
-# Sync one Flutter app tree under opt/<name> into the Buildroot fs-overlay.
-# Host overlay is the SoT (ensure-rootfs-apps / build-app); BR overlay is a copy.
-sync_opt_app_overlay() {
-  local name="$1"
-  local src="$OVERLAY_FS/opt/$name"
-  if [[ ! -d "$src" ]]; then
+  if [[ ! -f "$BOARD_DIR/logo/logo.bmp" || ! -f "$BOARD_DIR/logo/logo_kernel.bmp" ]]; then
+    echo "overlay: skip boot logo install (run make build-boot-logo first)" >&2
     return 0
   fi
-  mkdir -p "$BR_OVERLAY_ROOT/opt/$name"
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$src/" "$BR_OVERLAY_ROOT/opt/$name/"
-  else
-    rm -rf "$BR_OVERLAY_ROOT/opt/$name"
-    mkdir -p "$BR_OVERLAY_ROOT/opt/$name"
-    cp -a "$src/." "$BR_OVERLAY_ROOT/opt/$name/"
-  fi
-  echo "overlay: synced $BR_OVERLAY_ROOT/opt/$name"
-}
-
-sync_hmi_app_overlay() {
-  sync_opt_app_overlay hmi
-  # Optional second app (auto-included by ensure-rootfs-apps when source exists).
-  sync_opt_app_overlay os_settings
+  install_file "$BOARD_DIR/logo/logo.bmp" "$kernel_dir/logo.bmp"
+  install_file "$BOARD_DIR/logo/logo_kernel.bmp" "$kernel_dir/logo_kernel.bmp"
 }
 
 sync_display_params() {
@@ -1055,15 +1078,25 @@ patch_post_wifibt() {
 
 patch_buildroot_config() {
   purge_legacy_fs_overlay
-  if grep -q 'rootfs-overlay' "$BR_CONFIG" 2>/dev/null; then
+  local common_line='BR2_ROOTFS_OVERLAY+="board/rockchip/common/rootfs-overlay/"'
+  local chip_line="BR2_ROOTFS_OVERLAY+=\"board/rockchip/${LWS_CHIP}/rootfs-overlay/\""
+  if [[ ! -f "$BR_CONFIG" ]]; then
+    echo "WARNING: $BR_CONFIG missing; skip BR2_ROOTFS_OVERLAY patch" >&2
     return 0
   fi
   if [[ ! -f "$BR_CONFIG.orig" ]]; then
     cp -a "$BR_CONFIG" "$BR_CONFIG.orig"
   fi
-  echo 'BR2_ROOTFS_OVERLAY+="board/rockchip/rk3566_rk3568/rootfs-overlay/"' \
-    >> "$BR_CONFIG"
-  echo "overlay: appended rootfs-overlay BR2_ROOTFS_OVERLAY to $BR_CONFIG"
+  # Rewrite our += lines in order (common then chip). Exact-match only so a
+  # vendor BR2_ROOTFS_OVERLAY="…base …fs-overlay…" assignment is left intact.
+  sed -i.bak \
+    -e '/^BR2_ROOTFS_OVERLAY+="board\/rockchip\/common\/rootfs-overlay\/"$/d' \
+    -e "/^BR2_ROOTFS_OVERLAY+=\"board\/rockchip\/${LWS_CHIP}\/rootfs-overlay\/\"$/d" \
+    "$BR_CONFIG"
+  rm -f "$BR_CONFIG.bak"
+  echo "$common_line" >> "$BR_CONFIG"
+  echo "$chip_line" >> "$BR_CONFIG"
+  echo "overlay: set common then chip BR2_ROOTFS_OVERLAY in $BR_CONFIG"
 }
 
 restore_check_sdk=0
@@ -1162,11 +1195,15 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     rm -f "$POST_HOOKS_DIR/09-wifibt-innohi.sh"
     rm -f "$POST_HOOKS_DIR/31-strip-fstab.sh"
     rm -f "$POST_HOOKS_DIR/91-weston-ini.sh"
-    rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
+    rm -rf "$BR_BOARD/rootfs-overlay"
+    rm -rf "$BR_COMMON/rootfs-overlay"
+    rm -rf "$BR_COMMON/lws-hmi"
+    rm -rf "$BR_COMMON/lws-hmi-prebuilt-gstreamer" "$BR_COMMON/lws-hmi-prebuilt-platform"
     for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter_weston.config lws_hmi_wayland.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_optee.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
     done
-    for f in rockchip_rk3566_rk3568_lws_hmi_defconfig; do
+    rm -f "$BR_CHIPS_DIR/${LWS_CHIP}_lws.config"
+    for f in "$(basename "$LWS_BR_DEFCONFIG")"; do
       rm -f "$BR_DEFCONFIGS/$f"
     done
     if [[ -f "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig" ]]; then
@@ -1238,14 +1275,17 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
   exit 0
 fi
 
+# Drop mistaken app bundles before syncing etc/usr/var (never part of git fs-overlay).
+purge_stale_fs_overlay_opt
+
 install_file "$BOARD_DIR/ynh960_defconfig" "$CHIP_DIR/ynh960_defconfig"
 install_file "$BOARD_DIR/ynh960_defconfig" "$CHIPS_DIR/ynh960_defconfig"
 
 # Avahi users table for prebuilt platform path.
 # BR2_ROOTFS_USERS_TABLES paths are relative to the Buildroot topdir (buildroot/),
 # same as BR2_ROOTFS_OVERLAY — not device/rockchip/.
-AVAHI_USERS_SRC="$OVERLAY/board/rockchip/rk3566_rk3568/avahi.users"
-AVAHI_USERS_DST="$SDK/buildroot/board/rockchip/rk3566_rk3568/avahi.users"
+AVAHI_USERS_SRC="$OVERLAY_COMMON/avahi.users"
+AVAHI_USERS_DST="$BR_COMMON/lws-hmi/avahi.users"
 if [[ -f "$AVAHI_USERS_SRC" ]]; then
   install_file "$AVAHI_USERS_SRC" "$AVAHI_USERS_DST"
 fi
@@ -1332,6 +1372,7 @@ if [[ -f "$WESTON_INI_SRC" && -d "$(dirname "$WESTON_INI_RK")" ]]; then
 fi
 
 sync_fs_overlay
+mkdir -p "$BR_COMMON/lws-hmi"
 sync_purge_retired_script
 sync_install_systemctl_wrapper_script
 sync_post_build_script
@@ -1350,7 +1391,6 @@ else
 fi
 sync_display_params
 sync_boot_logo
-sync_hmi_app_overlay
 sync_buildroot_chip_configs
 sync_flutter_engine_package
 sync_flutter_sdk_package

@@ -9,7 +9,7 @@ source "$ROOT/scripts/prebuilt-common.sh"
 VERSION_FILE="$ROOT/overlay/third-party/btop.version"
 SRC_ROOT="$ROOT/.cache/btop"
 OUT_DIR="$ROOT/prebuilt/btop/aarch64"
-OVERLAY_BIN="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/bin/btop"
+OVERLAY_BIN="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/bin/btop"
 FORCE="${FORCE:-0}"
 
 read_tag() {

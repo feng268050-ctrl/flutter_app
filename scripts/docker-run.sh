@@ -43,6 +43,7 @@ if [[ "$USE_VOLUME" == "1" ]]; then
     docker run --rm --platform "$PLATFORM" \
       -v "$ROOT:/work/lws-hmi" \
       -v "$VOLUME:/work/sdk" \
+      -e "CHIP=${CHIP:-rk3566_rk3568}" \
       -e DOCKER=1 \
       -e SDK_DIR=/work/sdk \
       -e "FORCE_PLATFORM_OVERLAY=${FORCE_PLATFORM_OVERLAY:-0}" \
@@ -70,7 +71,9 @@ docker_args=(
   -e "FORCE_KERNEL_IMAGE=${FORCE_KERNEL_IMAGE:-0}"
   -e "OPTEE_OS_VER=${OPTEE_OS_VER:-}"
   -e "TA_SIGN_KEY=${TA_SIGN_KEY:-}"
-  -e "SKIP_OVERLAY=${SKIP_OVERLAY}"
+  -e "CHIP=${CHIP:-rk3566_rk3568}"
+  -e "BOARD=${BOARD:-ynh960}"
+  -e "DEFCONFIG=${DEFCONFIG:-ynh960_defconfig}"
   -v "$ROOT:/work/lws-hmi"
   -v lws-hmi-ccache:/ccache
   -e CCACHE_DIR=/ccache

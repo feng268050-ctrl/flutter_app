@@ -4,14 +4,17 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/prebuilt-common.sh"
+# shellcheck source=platform-paths.sh
+source "$ROOT/scripts/platform-paths.sh"
+platform_paths_init "$ROOT" "${SDK_DIR:-$ROOT/linux-sdk}"
 
-BR_BOARD="$ROOT/overlay/board/rockchip/rk3566_rk3568"
+BR_BOARD_REPO="$LWS_OVERLAY_BOARD"
 SDK_DIR="${SDK_DIR:-$ROOT/linux-sdk}"
-SDK_BR_BOARD="$SDK_DIR/buildroot/board/rockchip/rk3566_rk3568"
+SDK_BR_BOARD="$BR_COMMON"
 GST_SRC="$ROOT/prebuilt/gstreamer/target"
 PLAT_SRC="$ROOT/prebuilt/platform-packages/target"
-GST_DEST="$BR_BOARD/lws-hmi-prebuilt-gstreamer"
-PLAT_DEST="$BR_BOARD/lws-hmi-prebuilt-platform"
+GST_DEST="$BR_BOARD_REPO/lws-hmi-prebuilt-gstreamer"
+PLAT_DEST="$BR_BOARD_REPO/lws-hmi-prebuilt-platform"
 
 sync_tree() {
   local label="$1" src="$2" dest="$3"

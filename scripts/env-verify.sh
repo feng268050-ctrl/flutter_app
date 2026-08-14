@@ -352,8 +352,8 @@ for oem_helper in \
 		fail "OEM not mounted — cannot verify $oem_helper (flash/upgrade oem.img)"
 	fi
 done
-if [ -x /usr/libexec/usb/usb-otg-mode.sh ] && [ -x /usr/libexec/display/ynh960-display-init.sh ]; then
-	pass "rootfs OEM helper stubs (usb-otg-mode / ynh960-display-init)"
+if [ -x /usr/libexec/usb/usb-otg-mode.sh ] && [ -x /usr/libexec/display/display-init.sh ]; then
+	pass "rootfs OEM helper stubs (usb-otg-mode / display-init)"
 else
 	fail "rootfs OEM helper stubs missing under /usr/libexec/usb/ or /usr/libexec/display/"
 fi

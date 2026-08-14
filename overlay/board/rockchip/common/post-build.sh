@@ -16,7 +16,7 @@ fi
 
 ensure_script="$TARGET_DIR/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 if [ ! -f "$ensure_script" ]; then
-	ensure_script="$DOCKER_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
+	ensure_script="$DOCKER_ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 fi
 
 if [ ! -f "$ensure_script" ]; then

@@ -1,8 +1,8 @@
 # lws-hmi
 
-Buildroot + **ynh960** (Innohi **RK3566**) on the Rockchip Linux 6.1 SDK.
+Buildroot + **通用嵌入式 OS**（Weston + eLinux + CyberUI）与 **ynh960** 产品线（Innohi / Rockchip RK356x 当前平台）。
 
-**Product line:** ynh960 → RK3566 (entry), ynh962 → RK3568B2 (mid, cut-down 3568), ynh961 → RK3568 (high) — three tiers of the **same product line** (minor chip/interface differences, largely similar hardware). **One Linux firmware image** across the line is the design goal (aligned with lws-ui Android). **P1–P5 develop and validate on ynh960**; no per-SKU defconfig fork yet. SDK path `rk3566_rk3568` is Rockchip’s 3566/3568 family tooling profile.
+**产品线：** ynh960 / ynh961 / ynh962 为同系列三档硬件；**目标是一张通用 Linux 固件**（与 lws-ui Android 对齐）：**共享 kernel Image + 多 DTB FIT + 共享 rootfs 用户态**，产品差异仅 **`APP=`**（`/opt/hmi` 里哪个 HMI），屏/板/radio 差异走 **OEM**。新板靠 **Device Tree + OEM**，不为每块板单独编 Image；新 SoC 驱动并进 **同一次通用 Image** 构建（见 [`docs/make-commands.md`](docs/make-commands.md) → **构建模型**）。P1–P5 在 ynh960 上验收。`linux-sdk/buildroot/board/rockchip/rk3566_rk3568/` 等为 Rockchip SDK **平台目录名**（`make lunch` 一次配置），**不是**日常 `build-kernel` / `build-rootfs` 的「选芯片」参数。
 
 - **Linux (Ubuntu x64):** native build in repo-root `linux-sdk/` (no Docker).
 - **macOS:** Docker `linux/amd64` builder + Docker volume for the SDK tree.
@@ -58,13 +58,13 @@ make flash
 
 1. `make docker-volume-init` — copy host SDK → volume (once)
 2. `make apply-overlay` / `make build-*` — repo bind-mounted into container; build in volume
-3. `make build-kernel` / `make build-rootfs` / `make build-oem` / `make build-img` — each publishes artifacts to host `output/firmware/` (FITs, `rootfs.img`, `oem.img`, and per-SKU `factory.img` with `update.img` symlink). Daily `make upgrade` needs kernel/rootfs (+ optional oem) — not `build-img` or a manual export.
+3. `make build-kernel` / `make build-rootfs` / `make build-oem` / `make build-img` — kernel FIT 全线共享；rootfs 按 **`APP=`**；factory 再按 **`FACTORY_SKU=`** 组合 OEM+U-Boot。产物发布到 host `output/firmware/`。日常 `make upgrade` 用 kernel/rootfs（+ 可选 oem），不必 `build-img`。
 
 ---
 
 ## Make commands
 
-**Per-target reference** (怎么用 / 何时用 / 环境变量与参数): [`docs/make-commands.md`](docs/make-commands.md).
+**Per-target reference** (怎么用 / 何时用 / 构建模型): [`docs/make-commands.md`](docs/make-commands.md)（含 **构建模型：通用 OS / APP / OEM**）。
 
 Run `make help` for the short target list. Workflow stages below are **one command per line** — run in order.
 
@@ -283,7 +283,7 @@ make build-rootfs
 make upgrade
 ```
 
-**Rootfs overlay** — systemd units, `usr/lib/lws-hmi/*`, LCD params, anything under `overlay/.../rootfs-overlay/` except the app bundle:
+**Rootfs overlay** — generic OS: systemd units, `usr/libexec/*` under `overlay/board/rockchip/common/rootfs-overlay/` (**不含** App bundle；产品 App 在 `app/<APP>/build/bundle/release/`)。SoC 薄层（如 Innohi MainServer）在 `overlay/board/rockchip/$CHIP/rootfs-overlay/`。LCD 参数仍由 `apply-overlay` 写到 SDK **芯片** overlay 的 `system/etc/`（源在 `board/`）:
 
 ```bash
 make apply-overlay
@@ -390,7 +390,7 @@ After one firmware flash with USB plug-ssh support:
 make shell                      # interactive root shell; SN=... when multiple boards
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL_ONLY=1
 make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
-make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=os_settings → /opt/os_settings
+make build-app                  # release AOT → app/<APP>/build/bundle/release; device /opt/hmi or /opt/<APP>
 make upgrade-app                # signed app ship; full list under Cloud + Upgrade
 make push-app                   # debug hot-swap; *_hmi→hmi.service; APP=os_settings→os-settings.service
 APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/firmware/<APP>/; factory→…/<APP>/<sku>/
@@ -422,7 +422,7 @@ make login                          # api-server login → output/cloud/credenti
 make register-device                # SN=/IP= select board; SSH read-identity → admin register (needs make login)
 make sign-keys                      # release Ed25519 keys → keys/ota/ + overlay /etc/ota/ed25519.pub
 make pack-ota                       # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig]
-make pack-app                       # tar.gz overlay APP → output/app/<APP>/v*.tar.gz
+make pack-app                       # tar.gz from app/<APP>/build/bundle/release → output/app/<APP>/v*.tar.gz
 make upgrade                        # pack-ota + host HTTP; device downloads tar.gz+.sig → verify/apply; or RockUSB di
 UPGRADE_TRANSPORT=rockusb make upgrade  # force RockUSB path after make reboot-loader / Maskrom
 make upgrade-app                    # SN=… when multiple boards; signed app upgrade
@@ -468,7 +468,7 @@ make disconnect 192.168.1.50
 
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. **`make push-app`** (Debug) is an **unsigned** SSH hot-swap of the overlay app tree into `/opt/hmi` (+ companions) and restart of `hmi.service` — not an alias of **`make upgrade-app`**. Signed app shipping uses **`make upgrade-app`** (pack/sign `tar.gz`, host HTTP, device `download <url>` + Ed25519 verify). The flashed image must include the push-app apply helper and DRM GEM teardown fix. Host needs team SSH key at `keys/ssh/id_ed25519` (`make ssh-keys`); signed upgrade also needs `OTA_SIGNING_KEY`. `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) auto-selects **SSH stream** (inactive FIT + rootfs) when a Linux SSH target is up, or **RockUSB `di`** of OTA-equivalent images (`boot`/`boot_b`/both rootfs letters/optional oem) when the board is in Loader/Maskrom — **not** `upgrade_tool uf` / `factory.img` (use **`make flash`** for GPT / U-Boot / MiniLoader storage / misc) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Force with `UPGRADE_TRANSPORT=ssh|rockusb`. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / upgrade-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
+`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. **`make push-app`** (Debug) is an **unsigned** SSH hot-swap from **`app/<APP>/build/bundle/release`** into `/opt/hmi` (+ companions) and restart of `hmi.service` — not an alias of **`make upgrade-app`**. Signed app shipping uses **`make upgrade-app`** (pack/sign `tar.gz`, host HTTP, device `download <url>` + Ed25519 verify). The flashed image must include the push-app apply helper and DRM GEM teardown fix. Host needs team SSH key at `keys/ssh/id_ed25519` (`make ssh-keys`); signed upgrade also needs `OTA_SIGNING_KEY`. `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) auto-selects **SSH stream** (inactive FIT + rootfs) when a Linux SSH target is up, or **RockUSB `di`** of OTA-equivalent images (`boot`/`boot_b`/both rootfs letters/optional oem) when the board is in Loader/Maskrom — **not** `upgrade_tool uf` / `factory.img` (use **`make flash`** for GPT / U-Boot / MiniLoader storage / misc) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Force with `UPGRADE_TRANSPORT=ssh|rockusb`. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / upgrade-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
 
 ### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 
@@ -606,7 +606,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 
 权威阶段表与旧号映射：[`docs/flutter-linux-hmi-plan.md` §1](docs/flutter-linux-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
 
-Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`（`set-power-mode`：`performance` / `balanced` load profile）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
+Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`display-init.sh`、`set-performance-mode.sh`（`set-power-mode`：`performance` / `balanced` load profile）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
 
 仍待移植：lensinspector / AI daemon、`probe-dual-stream.sh`、IPC 专链 eth0 配网细节（**P4.1**）。
 
@@ -792,16 +792,18 @@ make pull-display-params    # adb pull → board/ → re-apply SDK overlay
 
 ### What lws-hmi installs into Buildroot
 
-Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Buildroot. We add:
+Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Buildroot. We add (paths under current Rockchip **platform** tree in SDK — not a per-product build switch):
 
-1. **Buildroot fs-overlay** — `buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay/system/etc/`:
+1. **Buildroot fs-overlay** — `apply-overlay` 把通用 OS 注入 SDK `buildroot/board/rockchip/common/rootfs-overlay/`，SoC 薄层注入 `$CHIP/rootfs-overlay/`。Innohi LCD 参数写到 **芯片** overlay 的 `system/etc/`：
    - `960_lcd_param_rk356x.txt`
    - `lcd_mipi_param.txt`
    - `LCD_PARAM_RK356X_V11_0.txt` (same content as 960 file; legacy name for ParamUpdate)
 
 2. **post-rootfs hook** — `device/rockchip/common/post-hooks/05-display.sh` (re-copy from `lws-hmi/board/` during `./build.sh rootfs`).
 
-3. **BR2_ROOTFS_OVERLAY** line appended to `buildroot/configs/rockchip/chips/rk3566_rk3568.config`.
+3. **BR2_ROOTFS_OVERLAY** — wired in platform chip config during `apply-overlay`.
+
+Per-**SKU** LCD/MIPI runtime tables for shipping boards live in **OEM** packs where applicable; rootfs carries platform defaults + ParamUpdate hooks.
 
 `MainServer` / `ParamUpdate` (from Innohi) expect paths under **`/system/etc/`**; the overlay creates that tree on Buildroot. **P1** also installs `MountAll` + `param-update.service` to apply MIPI params before `hmi.service` (ynh960 DTS leaves `lcd0_x/y=0` until ParamUpdate runs).
 
@@ -809,7 +811,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 
 | Path | Purpose |
 |------|---------|
-| `board/ynh960_defconfig` | Innohi ynh960 board selection (DTS + FIT + LCD param) |
+| `board/ynh960_defconfig` | Reference **lunch** defconfig (DTS + FIT + platform LCD hooks) — not a per-SKU rootfs fork |
 | `board/960_lcd_param_rk356x.txt` | From production ynh960 Android |
 | `board/lcd_mipi_param.txt` | MIPI init table from production Android |
 | `board/from-device/` | adb pull backups |
@@ -819,13 +821,13 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `app/lws_hmi/` | P1 Hello World Flutter 工程 |
 | `AGENTS.md` | AI agent 工作流 + 改动后的重新构建指引 |
 | `scripts/build-{boot-logo,flutter-app}.sh` | Logo / App 构建脚本 |
-| `overlay/.../rootfs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |
+| `overlay/board/rockchip/common/rootfs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |
 | `overlay/.../06-systemd.sh` | 镜像构建时 enable hmi / disable sshd 等 |
 | `overlay/.../05-display.sh` | Buildroot post-rootfs install hook |
 | `overlay/.../check-sdk.sh` | Skip ext4/WSL guards when `DOCKER=1` |
 | `docker/Dockerfile` | Ubuntu 22.04 + Rockchip build dependencies |
 
-The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; this overlay adds the missing **`ynh960_defconfig`** for our RK3566 target. (SDK `ynh962` naming ≠ product ynh962 / RK3568B2 SKU — see [`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md) §3.0.)
+The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; this overlay adds **`ynh960_defconfig`** for lunch on the current platform line. (SDK `ynh962` naming ≠ product SKU — hardware packs use **OEM** + **FACTORY_SKU**.)
 
 ## Environment
 

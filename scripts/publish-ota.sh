@@ -69,7 +69,7 @@ fi
 [[ -f "$ARCHIVE" ]] || die "OTA archive missing: $ARCHIVE (run: make pack-ota)"
 [[ -f "$SIG" ]] || die "OTA signature missing: $SIG (run: OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make pack-ota)"
 
-OS_RELEASE_SOT="${OS_RELEASE_SOT:-$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/os-release}"
+OS_RELEASE_SOT="${OS_RELEASE_SOT:-$ROOT/overlay/board/rockchip/common/rootfs-overlay/etc/os-release}"
 [[ -f "$OS_RELEASE_SOT" ]] || die "missing OS release SoT: $OS_RELEASE_SOT"
 VERSION_LINE="$(grep -E '^VERSION=' "$OS_RELEASE_SOT" | grep -v '^VERSION_ID=' | head -n1 || true)"
 [[ -n "$VERSION_LINE" ]] || die "missing VERSION= in $OS_RELEASE_SOT"

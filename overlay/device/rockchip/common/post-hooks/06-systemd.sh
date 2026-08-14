@@ -136,7 +136,7 @@ purge_retired_rootfs_artifacts() {
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
-	purge_script="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
+	purge_script="$sdk_dir/buildroot/board/rockchip/common/lws-hmi/purge-retired-rootfs-artifacts.sh"
 	if [ -f "$purge_script" ]; then
 		sh "$purge_script" "$TARGET_DIR"
 		echo "post-systemd: purged retired rootfs artifacts"
@@ -193,7 +193,7 @@ install_lws_hmi_helper_scripts() {
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
-	overlay_scripts="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi"
+	overlay_scripts="$sdk_dir/buildroot/board/rockchip/common/rootfs-overlay/usr/libexec/hmi"
 	if [ ! -d "$overlay_scripts" ]; then
 		echo "post-systemd: skip helper scripts (missing $overlay_scripts — run make apply-overlay)"
 		return 0
@@ -211,8 +211,8 @@ sdk_dir="${SDK_DIR:-${RK_SDK_DIR:-}}"
 if [ -z "$sdk_dir" ]; then
 	sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 fi
-if [ -f "$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh" ]; then
-	sh "$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh" \
+if [ -f "$sdk_dir/buildroot/board/rockchip/common/lws-hmi/install-systemctl-wrapper.sh" ]; then
+	sh "$sdk_dir/buildroot/board/rockchip/common/lws-hmi/install-systemctl-wrapper.sh" \
 		"$TARGET_DIR" post-systemd
 fi
 
@@ -223,7 +223,7 @@ sync_flutter_engine_prebuilt() {
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
-	script="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/sync-flutter-engine.sh"
+	script="$sdk_dir/buildroot/board/rockchip/common/lws-hmi/sync-flutter-engine.sh"
 	if [ -f "$script" ]; then
 		sh "$script" "$TARGET_DIR"
 	else
@@ -239,7 +239,7 @@ sync_flutter_elinux_prebuilt() {
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
-	script="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/sync-flutter-embedded-linux.sh"
+	script="$sdk_dir/buildroot/board/rockchip/common/lws-hmi/sync-flutter-embedded-linux.sh"
 	if [ -f "$script" ]; then
 		sh "$script" "$TARGET_DIR"
 	else

@@ -34,9 +34,9 @@ make build-app
 Or from repo root:
 
 ```bash
-make build-app   # libapp.so + assets → overlay /opt/hmi (any APP=*_hmi; default lws_hmi)
-# APP=cnc_hmi make build-app          # also → /opt/hmi (replaces previous HMI in overlay)
-# APP=os_settings make build-app      # → overlay /opt/os_settings
+make build-app   # libapp.so + assets → app/<APP>/build/bundle/release (any APP=*_hmi; default lws_hmi)
+# APP=cnc_hmi make build-app          # same device path /opt/hmi when pushed or rootfs-baked
+# APP=os_settings make build-app      # → app/os_settings/build/bundle/release → /opt/os_settings
 ```
 
 **Must use pinned Flutter `3.41.9`** (`make fetch-flutter-sdk`); `build-app.sh` refuses a mismatched SDK. AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or the HMI exits/hangs with little or no UI.
@@ -87,7 +87,7 @@ Build debug staging (host):
 make build-debug-app
 ```
 
-Run on a physical ynh960 over USB-SSH (board needs P1.5 overlay scripts from a rootfs rebuild):
+Run on hardware over USB-SSH (device needs P1.5 rootfs helpers from a prior `make build-rootfs`; **`SN=`** selects which device):
 
 ```bash
 make debug-app                 # SN=... when multiple boards

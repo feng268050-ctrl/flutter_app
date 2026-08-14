@@ -12,9 +12,12 @@ if [[ "$(uname -s)" == Darwin && "${1:-}" != "--inside-docker" ]]; then
 fi
 
 SDK="${SDK_DIR:-$ROOT/linux-sdk}"
+# shellcheck source=platform-paths.sh
+source "$ROOT/scripts/platform-paths.sh"
+platform_paths_init "$ROOT" "$SDK"
+
 TARGET="$(resolve_br_target "$SDK")"
 OUT_DIR="$(dirname "$TARGET")"
-STRIP="$SDK/buildroot/board/rockchip/rk3566_rk3568/strip-fstab.sh"
 NEED_REPACK=0
 
 if [[ ! -d "$TARGET" ]]; then
@@ -22,9 +25,7 @@ if [[ ! -d "$TARGET" ]]; then
 	exit 0
 fi
 
-if [[ ! -x "$STRIP" ]]; then
-	STRIP="$ROOT/overlay/board/rockchip/rk3566_rk3568/strip-fstab.sh"
-fi
+STRIP="$(platform_paths_board_script strip-fstab.sh || true)"
 [[ -x "$STRIP" ]] || {
 	echo "ERROR: strip-fstab.sh missing — run: make apply-overlay" >&2
 	exit 1
@@ -39,8 +40,7 @@ if [[ "$before" != "$after" ]]; then
 	NEED_REPACK=1
 fi
 
-INSTALL="$SDK/buildroot/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh"
-[[ -x "$INSTALL" ]] || INSTALL="$ROOT/overlay/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh"
+INSTALL="$(platform_paths_board_script install-systemctl-wrapper.sh || true)"
 [[ -x "$INSTALL" ]] || {
 	echo "ERROR: install-systemctl-wrapper.sh missing — run: make apply-overlay" >&2
 	exit 1
@@ -57,11 +57,7 @@ case "$wrapper_out" in
 	;;
 esac
 
-REFRESH="$ROOT/overlay/board/rockchip/rk3566_rk3568/refresh-plan-a-systemd-wants.sh"
-SDK_REFRESH="$SDK/buildroot/board/rockchip/rk3566_rk3568/refresh-plan-a-systemd-wants.sh"
-if [[ -x "$SDK_REFRESH" ]]; then
-	REFRESH="$SDK_REFRESH"
-fi
+REFRESH="$(platform_paths_board_script refresh-plan-a-systemd-wants.sh || true)"
 if [[ -f "$REFRESH" ]]; then
 	sh "$REFRESH" "$TARGET"
 	echo "rootfs-postprocess: refreshed Plan A systemd wants (multi-user + sysinit)"

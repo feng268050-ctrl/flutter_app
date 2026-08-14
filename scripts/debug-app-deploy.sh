@@ -13,8 +13,8 @@ DEVICE_APP_STAGE=/var/lib/hmi/debug-app-staging
 DEVICE_RUNTIME_STAGE=/var/lib/hmi/debug-runtime-staging
 RUNTIME_INSTALL=/usr/libexec/hmi/debug-runtime-install.sh
 APP_APPLY=/usr/libexec/hmi/debug-app-apply.sh
-RUNTIME_INSTALL_HOST="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-runtime-install.sh"
-APP_APPLY_HOST="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
+RUNTIME_INSTALL_HOST="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/debug-runtime-install.sh"
+APP_APPLY_HOST="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
 ENGINE_VER="$(debug_runtime_engine_version "$ROOT")"
 
 die() {

@@ -11,7 +11,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KEY_DIR="${OTA_KEY_DIR:-$ROOT/keys/ota}"
 PRIV="$KEY_DIR/ed25519.pem"
 PUB_HOST="$KEY_DIR/ed25519.pub"
-PUB_OVERLAY="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/ota/ed25519.pub"
+PUB_OVERLAY="$ROOT/overlay/board/rockchip/common/rootfs-overlay/etc/ota/ed25519.pub"
 
 die() {
 	echo "ERROR: $*" >&2

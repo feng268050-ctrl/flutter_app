@@ -68,14 +68,14 @@ Flutter engine and ICU data SHALL be on rootfs only (not duplicated in the app b
 - **WHEN** rootfs is deployed
 - **THEN** `/usr/lib/libflutter_engine.so` exists and matches the Flutter SDK version used to build `libapp.so`
 
-### Requirement: App integrated via rootfs overlay for P1
+### Requirement: App integrated via build-rootfs staging for P1
 
-P1 SHALL deploy Hello World artifacts via Buildroot rootfs overlay (not Buildroot-compiled Dart), updated by `make build-app` (or `scripts/build-app.sh`) before `make build-rootfs`.
+P1 SHALL deploy Hello World artifacts via `make build-app` → `app/lws_hmi/build/bundle/release/` (not Buildroot-compiled Dart), then `make build-rootfs` copies bundles into the SDK staging overlay and packs rootfs. Git fs-overlay MUST NOT contain `opt/hmi` app trees.
 
-#### Scenario: Overlay contains app artifacts
+#### Scenario: Rootfs pack includes app artifacts
 
-- **WHEN** lws-hmi overlay is applied and `make build-app` has run
-- **THEN** `opt/hmi/lib/libapp.so` is present inside fs-overlay tree before rootfs build
+- **WHEN** `make build-app` has run and `make build-rootfs` completes
+- **THEN** staging `target/opt/hmi/lib/libapp.so` is present before `rootfs.img` is published
 
 ### Requirement: Display orientation compatible with ynh960
 
@@ -98,7 +98,7 @@ The host build script SHALL use `hmi-bundle (flutter assemble) build --arch=arm6
 #### Scenario: build-app produces meta-flutter bundle
 
 - **WHEN** developer runs `make build-app`
-- **THEN** `lib/libapp.so` and `data/flutter_assets/` are installed under overlay `opt/hmi/` (assembled from `hmi-bundle (flutter assemble)` output; engine not copied into bundle)
+- **THEN** `lib/libapp.so` and `data/flutter_assets/` are installed under `app/lws_hmi/build/bundle/release/` (assembled from flutter assemble output; engine not copied into bundle)
 
 ### Requirement: Product audio assets exclude copyrighted demo tracks
 
@@ -106,6 +106,6 @@ The Flutter app MUST NOT ship `assets/audio/shanghai_tan.mp3` (or other copyrigh
 
 #### Scenario: Shanghai tan absent from bundle
 
-- **WHEN** `make build-app` completes and the overlay `/opt/hmi` tree is inspected
+- **WHEN** `make build-app` completes and the release bundle tree is inspected
 - **THEN** `shanghai_tan.mp3` MUST NOT be present under the bundled flutter assets path
 

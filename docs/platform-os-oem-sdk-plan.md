@@ -89,8 +89,10 @@
 
 | 轴 | 变化物 | 不变物 |
 |----|--------|--------|
-| **硬件 SKU** | OEM：`board_id` × `screen_id` | 同一 OS 版本（boot+rootfs）尽量共用 |
+| **硬件 SKU** | OEM：`board_id` × `screen_id`；**启动 DTB**（`overlay/kernel/` + FIT inventory）；可选 **`uboot_id`** | 同一 OS 版本：**通用 kernel Image** + 共享 rootfs 用户态配方 |
 | **产品 App** | `app/<name>` + gpio/modbus | 同一 HAL 合同 + 同一 OEM profile |
+
+**Kernel 标准化（ARM）：** 产品线维护 **一份通用 `Image`**（含在产及新 SoC 所需驱动）；**不为每块新板单独编 Image**。新板 → 板厂 **DTS** 进 `overlay/kernel/` + **`board/rk356x-fit-boards.txt`** + OEM；新 SoC → **`overlay/kernel/**/*.config`** 扩驱动后 **`FORCE_KERNEL_IMAGE=1 make build-kernel`** 刷新通用 Image。**不新建 `linux-sdk`。** 细则：[`docs/make-commands.md`](make-commands.md) → **构建模型**。
 
 ### 2.2 分区职责（强化）
 

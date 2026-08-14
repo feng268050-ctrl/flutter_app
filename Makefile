@@ -13,6 +13,7 @@ DOCKER_PLATFORM ?= linux/amd64
 BOARD ?= ynh960
 CHIP ?= rk3566_rk3568
 DEFCONFIG ?= ynh960_defconfig
+export BOARD CHIP DEFCONFIG
 
 # Flutter project under app/ (build-app / upgrade-app / build-rootfs). Default product HMI.
 APP ?= lws_hmi
@@ -93,7 +94,7 @@ bash -c 'set -euo pipefail; \
 endef
 
 help:
-	@echo "lws-hmi — Buildroot + ynh960 (Linux: native build; macOS: Docker linux/amd64)"
+	@echo "lws-hmi — generic embedded OS + Flutter HMI (Linux: native; macOS: Docker linux/amd64)"
 	@echo ""
 	@echo "Setup:"
 	@echo "  make setup                 # apply-overlay (+ Docker image on macOS)"
@@ -110,14 +111,14 @@ help:
 	@echo ""
 	@echo "Build (scope = active #include in overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig):"
 	@echo "  make build                 # full image: prebuilt → overlay → lunch → logo → ai → app → kernel → rootfs → img"
-	@echo "  make lunch                 # select ynh960 + lws_hmi Buildroot profile in SDK"
+	@echo "  make lunch                 # once: init SDK platform profile (not product/board pick)"
 	@echo "  make show-config           # print RK_* lines from output/.config"
 	@echo "  make build-boot-logo       # board/logo → logo.bmp (kernel FIT splash)"
 	@echo "  make build-ai              # incremental lws_ai_daemon → prebuilt/ai (daily; rebuild-ai / FORCE=1 wipe cmake)"
 	@echo "  make prepare-app-assets    # prune/convert process-library + firmware → assets/.generated/"
-	@echo "  make build-app             # release AOT → fs-overlay (*_hmi→/opt/hmi; else /opt/<APP>)"
+	@echo "  make build-app             # release AOT → app/<APP>/build/bundle/release (not SDK rootfs)"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
-	@echo "  make build-kernel          # parallel A+B FIT → boot.img + boot_b.img (+ bare Image)"
+	@echo "  make build-kernel          # one Image + multi-DTB FIT → boot.img + boot_b.img (docs/make-commands 构建模型)"
 	@echo "  make build-kernel-a        # slot A FIT only (rootfs_a → boot.img)"
 	@echo "  make build-kernel-b        # slot B FIT only (rootfs_b → boot_b.img)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/<APP>/rootfs.img (needs prior apply-overlay if overlay changed)"
@@ -264,7 +265,8 @@ help:
 	@echo "  - make publish: same tar.gz+.sig as upgrade; GET presigned-url on CLOUD_API_BASE (api-prod) then PUT R2; manifest has no sha512."
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ only (no host linux-sdk/output/ mirror)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
-	@echo "  - APP= selects product: *_hmi→/opt/hmi; os_settings→/opt/os_settings; rootfs/factory under output/firmware/<APP>/ (+ R2 publish prefix)."
+	@echo "  - Kernel FIT shared (no APP=). Rootfs product = APP= only. Factory hardware = FACTORY_SKU= + OEM."
+	@echo "  - APP= selects product HMI: *_hmi→/opt/hmi; rootfs under output/firmware/<APP>/ (+ R2 publish prefix)."
 	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
 	@echo "  - Emulator: README Make commands → P3.2 emulator (setup → deps → kernel/rootfs → setup-emulator-qemu → fetch-emulator-swgl → build-emulator → emulator)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
@@ -361,8 +363,7 @@ build-kernel:
 # Rootfs: Weston + eLinux + Mali wayland-gbm.
 # prepare-rootfs flips Mali/embedder only when the stack stamp differs.
 # Does not apply-overlay — run make apply-overlay after overlay/DTS/fs changes.
-# Ensures APP (default lws_hmi) + auto os_settings when app/os_settings exists
-# (ensure-rootfs-apps applies overlay only if it had to build a missing app).
+# ensure-rootfs-apps: build missing app/*/build/bundle/release, sync → SDK opt/, pack rootfs.
 build-rootfs: prepare-rootfs
 	@APP='$(APP)' bash scripts/ensure-rootfs-apps.sh
 	@bash scripts/docker-run.sh ./build.sh rootfs
@@ -402,7 +403,6 @@ build-boot-logo:
 
 build-app:
 	@APP='$(APP)' bash scripts/build-app.sh
-	@$(MAKE) apply-overlay
 
 prepare-app-assets:
 	@bash scripts/prepare-hmi-ship-assets.sh
@@ -679,7 +679,7 @@ upgrade-app:
 	@chmod +x scripts/upgrade-app.sh scripts/pack-app.sh scripts/peripheral-ota-http.sh scripts/ota-sign.sh scripts/ota-http-serve.py
 	@$(call WITH_DOTENV,APP='$(APP)' APP_PACKAGE='$(APP_PACKAGE)' bash scripts/upgrade-app.sh)
 
-# Debug: unsigned SSH stream of overlay APP → /opt/hmi (+ companions) + hmi.service restart.
+# Debug: unsigned SSH stream of app/<APP>/build/bundle/release → /opt/* (+ unit restart).
 # Not an alias of upgrade-app — use upgrade-app / publish-app for signed shipping.
 push-app:
 	@chmod +x scripts/push-app.sh

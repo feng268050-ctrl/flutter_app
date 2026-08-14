@@ -4,7 +4,7 @@
 
 **能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**产品子进程**（MediaMTX、AI daemon）经 **`cyber_pm`** 由 App 监护，**不**默认进通用 rootfs；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。MediaMTX App 化见 [`app-owned-mediamtx-cyber-pm`](../openspec/changes/archive/2026-07-30-app-owned-mediamtx-cyber-pm/)。AI daemon App 化见 [`app-owned-ai-daemon`](../openspec/changes/archive/2026-08-01-app-owned-ai-daemon/)（已归档）。统一整机 OTA 见 [`unified-ota-cyber-ota`](../openspec/changes/archive/2026-08-06-unified-ota-cyber-ota/)（已归档）。
 
-**板级范围（当前）**：**ynh960 / ynh962 / ynh961** 同产品线三档（RK3566 → RK3568B2 → RK3568）；**P1～P4 以 ynh960 验收**。中长期目标是 **少量不同主板 + 不同屏幕** 共用 OS 契约与 CyberUI，而非每产品从零开始。Rockchip SDK `**rk3566_rk3568`** profile 见 **§3.0**。
+**板级范围（当前）**：ynh960 / ynh961 / ynh962 同系列；**一张通用 OS**（共享 **kernel Image** + 多 DTB FIT + 共享 rootfs 用户态），产品用 **`APP=`**，硬件/屏用 **OEM**。新板 = DT + OEM，不为每板 fork Image；扩 SoC（如 RK3562）= 驱动并进 **通用 Image** Kconfig + 新 DTB 进 FIT 清单 — 见 [`docs/make-commands.md`](make-commands.md) **构建模型**。P1～P4 以 ynh960 验收。Rockchip SDK 目录名 `rk3566_rk3568` 仅为**当前 lunch 平台 profile**，不是 build-kernel/rootfs 的选板参数。
 
 ---
 

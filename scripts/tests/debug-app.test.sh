@@ -41,10 +41,10 @@ assert_executable "$ROOT/scripts/debug-setup.sh"
 assert_executable "$ROOT/scripts/debug-app-deploy.sh"
 assert_executable "$ROOT/scripts/debug-custom-device/install.sh"
 assert_executable "$ROOT/scripts/debug-custom-device/forward-port.sh"
-assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"
-assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh"
-assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
-assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh"
+assert_executable "$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"
+assert_executable "$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh"
+assert_executable "$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
+assert_executable "$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh"
 
 if grep -q '"--no-track-widget-creation"' "$ROOT/.vscode/launch.json" \
 	&& grep -q '"dart.flutterRunAdditionalArgs".*"--no-track-widget-creation"' "$ROOT/.vscode/settings.json" \
@@ -55,7 +55,7 @@ else
 	fail=1
 fi
 
-if ! grep -q 'hmi-launch.sh' "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/systemd/system/hmi.service"; then
+if ! grep -q 'hmi-launch.sh' "$ROOT/overlay/board/rockchip/common/rootfs-overlay/etc/systemd/system/hmi.service"; then
 	echo "FAIL hmi.service does not use hmi-launch.sh" >&2
 	fail=1
 else
@@ -113,8 +113,8 @@ fi
 
 # Default Weston image supports debug via LD_LIBRARY_PATH + JIT assets.
 # Deploy must not refuse weston; launch wires the debug engine path.
-LAUNCH="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"
-APPLY="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
+LAUNCH="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"
+APPLY="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
 if ! grep -q 'flutter-pi only' "$ROOT/scripts/debug-app-deploy.sh" \
 	&& ! grep -q 'display-stack' "$ROOT/scripts/debug-app-deploy.sh" \
 	&& ! grep -q 'display-stack' "$APPLY" \
@@ -176,7 +176,7 @@ else
 fi
 
 if grep -q 'Dart VM service is listening on' \
-	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh"; then
+	"$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh"; then
 	echo "OK  debug-app-run matches Flutter VM Service output"
 else
 	echo "FAIL debug-app-run misses Flutter VM Service output" >&2
@@ -184,7 +184,7 @@ else
 fi
 
 if grep -q "trap '' PIPE" \
-	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"; then
+	"$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"; then
 	echo "OK  hmi-launch ignores SIGPIPE (debug outside systemd)"
 else
 	echo "FAIL hmi-launch missing SIGPIPE ignore (debug exits 141)" >&2
@@ -192,11 +192,11 @@ else
 fi
 
 if grep -q 'start-stop-daemon -S -b -m' \
-	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh" \
+	"$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh" \
 	&& grep -q 'live_flutter_pids' \
-	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh" \
+	"$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh" \
 	&& grep -q 'live_weston_pids' \
-	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh"; then
+	"$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh"; then
 	echo "OK  debug process detaches cleanly; stop covers Weston"
 else
 	echo "FAIL debug process lifecycle incomplete for Weston" >&2

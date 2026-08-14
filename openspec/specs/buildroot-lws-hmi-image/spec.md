@@ -1,11 +1,11 @@
 # buildroot-lws-hmi-image Specification
 
 ## Purpose
-TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
+Generic embedded OS rootfs image for the lws-hmi Buildroot profile: shared userspace stack; **product** differentiation via `APP=` (`/opt/hmi` bundle); **hardware** via OEM partition and multi-DTB boot FIT — not per-motherboard rootfs forks at build time.
 ## Requirements
-### Requirement: lws_hmi Buildroot defconfig is the default rootfs profile for ynh960
+### Requirement: lws_hmi Buildroot defconfig is the platform rootfs profile (lunch once)
 
-The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the SDK Buildroot configs tree, composed from `base/base.config`, `lws_hmi_{base,systemd,network,flutter,bt,npu,font,build,toolchain_external}.config`, `rk3566_rk3568_aarch64.config`, `gpu/gpu.config`, `wifibt/wireless.config`, `wifibt/bt.config`, and `powermanager.config`. P1 SHALL `#include` `lws_hmi_npu.config` to gate RKNPU runtime overlay staging (`make fetch-rknn-rt`). Product MediaMTX SHALL NOT be gated by an included `lws_hmi_mediamtx` rootfs fragment (App ships the binary under `/opt/hmi`). Other deferred fragments (`lws_hmi_gst_*`, `lws_hmi_platform`) remain as documented by their owning phases. The defconfig SHALL `#include` `chips/lws_hmi_selinux.config` so the product rootfs builds with SELinux userspace and a permissive refpolicy (see `buildroot-selinux`). The ynh960 board configuration SHALL set `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"` (resolving to `rockchip_rk3566_rk3568_lws_hmi`) and `RK_ROOTFS_SYSTEM_BUILDROOT=y`.
+The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the SDK Buildroot configs tree (current Rockchip **platform** tree name), composed from `base/base.config`, `lws_hmi_{base,systemd,network,flutter,bt,npu,font,build,toolchain_external}.config`, `rk3566_rk3568_aarch64.config`, `gpu/gpu.config`, `wifibt/wireless.config`, `wifibt/bt.config`, and `powermanager.config`. P1 SHALL `#include` `lws_hmi_npu.config` to gate RKNPU runtime overlay staging (`make fetch-rknn-rt`). Product MediaMTX SHALL NOT be gated by an included `lws_hmi_mediamtx` rootfs fragment (App ships the binary under `/opt/hmi`). Other deferred fragments (`lws_hmi_gst_*`, `lws_hmi_platform`) remain as documented by their owning phases. The defconfig SHALL `#include` `chips/lws_hmi_selinux.config` so the product rootfs builds with SELinux userspace and a permissive refpolicy (see `buildroot-selinux`). **`make lunch`** with the reference defconfig SHALL set `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"` (output folder `rockchip_rk3566_rk3568_lws_hmi`) and `RK_ROOTFS_SYSTEM_BUILDROOT=y`. **`make build-rootfs` SHALL take `APP=` for product rootfs artifacts, not a motherboard/chip selector.**
 
 #### Scenario: ynh960 lunch selects lws_hmi defconfig
 

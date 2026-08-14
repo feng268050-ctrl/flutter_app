@@ -18,7 +18,8 @@
 #include "chips/lws_hmi_wayland.config"
 #include "chips/lws_hmi_flutter_weston.config"
 #include "chips/lws_hmi_p2_io.config"
-# BR2_ROOTFS_OVERLAY for rootfs-overlay: see chips/rk3566_rk3568.config (apply-overlay)
+# Generic OS + SoC-thin BR2_ROOTFS_OVERLAY (common then $CHIP; gst_prebuilt may reset the full list).
+#include "chips/rk3566_rk3568_lws.config"
 # #include "fs/vfat.config"
 
 # --- enable when feature is merged (not a separate make target) ---

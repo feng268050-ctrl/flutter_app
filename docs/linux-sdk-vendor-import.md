@@ -160,13 +160,17 @@ once) so the owned `patch-mk-kernel.sh` lands in the SDK’s `mk-kernel.sh`.
 
 `make build-kernel` packs **one** shared `Image` plus **N** flattened DTs into dual A/B FITs (`boot.img` / `boot_b.img`) using `board/boot-multi.its` (generated from the inventory; active via `RK_BOOT_FIT_ITS_NAME="boot-multi.its"`).
 
+**Design intent (ARM standard):** one **universal `Image`** per product-line kernel build (all in-line SoC drivers enabled via `overlay/kernel/**/*.config`); **per-board / per-hardware `board_id` DTB** in the FIT. Adding a motherboard does **not** fork Image — add DTS + inventory line + OEM. Adding a new SoC (e.g. RK3562 alongside RK3566) merges drivers into the **same** Image Kconfig, rebuilds Image once (`FORCE_KERNEL_IMAGE=1`), then adds that SoC’s board DTBs to the inventory. **No second `linux-sdk`.** Board-vendor deliverables (DTS, LCD tables, U-Boot/MiniLoader) land in `overlay/kernel/`, `board/`, `prebuilt/bootloader/`, `oem/` — see [`docs/make-commands.md`](make-commands.md) → **构建模型**.
+
 | Rule | Detail |
 |------|--------|
 | Conf name | Equals product `board_id` / OEM `manifest.json` `board_id` (default / first ship: `ynh960`) |
 | FDT node | `fdt-<board_id>` in the ITS; DTB file is `rockchip/<board_id>.dtb` |
+| **Image blob** | **Same file** embedded in every conf — only DTB (and slot `resource.img`) differs |
 | Selection | U-Boot **before** Linux: Innohi `boot_fit` boots the FIT **default** conf; non-default boards use `bootm <addr>#<board_id>` (or factory env — see `openspec/changes/multi-board-fit-dt/design.md`) |
 | Emulator | P3.2 still uses bare `Image` + QEMU `virt` DT — **no** `sim` / `conf-sim` in the product FIT |
 | OEM | Declares which conf that SKU expects; does **not** supply startup DTB |
+| U-Boot / MiniLoader | Per `FACTORY_SKU` → `prebuilt/bootloader/<uboot_id>/` (`board/factory-skus.tsv`); **not** inside FIT |
 
 Inspect / gate: `scripts/verify-boot-fit.sh <firmware-dir>` lists conf names, fails on missing inventory DTBs or oversized FIT.
 

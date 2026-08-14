@@ -4,7 +4,7 @@
 # Emulator (lws.emulator=1 / virtio oem disk): mount /dev/vdb; skip if no helper (sim).
 set -u
 
-log() { echo "ynh960-display-init: $*"; }
+log() { echo "display-init: $*"; }
 
 is_emulator() {
 	grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null && return 0

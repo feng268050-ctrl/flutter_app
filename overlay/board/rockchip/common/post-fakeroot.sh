@@ -128,14 +128,14 @@ fi
 DOCKER_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
 ENSURE_KEYS="$TARGET_DIR/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 if [ ! -f "$ENSURE_KEYS" ]; then
-	ENSURE_KEYS="$DOCKER_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
+	ENSURE_KEYS="$DOCKER_ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/ssh/ensure-sshd-hostkeys.sh"
 fi
 if [ -f "$ENSURE_KEYS" ]; then
 	sh "$ENSURE_KEYS" "$TARGET_DIR"
 fi
 
 # Team SSH pubkey (PasswordAuthentication no on sshd); private key stays on host only.
-AUTH_OVERLAY="$DOCKER_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/root/.ssh/authorized_keys"
+AUTH_OVERLAY="$DOCKER_ROOT/overlay/board/rockchip/common/rootfs-overlay/root/.ssh/authorized_keys"
 if [ -f "$AUTH_OVERLAY" ]; then
 	mkdir -p "$TARGET_DIR/root/.ssh"
 	cp -f "$AUTH_OVERLAY" "$TARGET_DIR/root/.ssh/authorized_keys"

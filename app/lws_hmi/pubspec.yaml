@@ -61,6 +61,10 @@ dependencies:
   cyber_pm:
     path: ../../packages/cyber_pm
 
+  # Screen capture (present-hook + GStreamer/MPP). Path dep.
+  cyber_capture:
+    path: ../../packages/cyber_capture
+
   # Whole-device OTA orchestration (manifest, staged apply). Path dep.
   cyber_ota:
     path: ../../packages/cyber_ota

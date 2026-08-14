@@ -120,6 +120,21 @@ rm -f \
 	"$TARGET_DIR/usr/libexec/hmi/push-app-apply-and-restart.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/upgrade-app-apply-and-restart.sh"
 
+# Retired snd-aloop record tap: overlay rsync --delete does not clear
+# Buildroot incremental target/ (broken asound.conf made ALSA unusable).
+rm -f \
+	"$TARGET_DIR/etc/asound.conf" \
+	"$TARGET_DIR/usr/libexec/hmi/capture-audio-loopback.sh" \
+	"$TARGET_DIR/etc/modules-load.d/snd-aloop.conf" \
+	"$TARGET_DIR/usr/bin/alsaloop" \
+	"$TARGET_DIR/usr/lib/gstreamer-1.0/libgstvoaacenc.so" \
+	"$TARGET_DIR/usr/lib/libvo-aacenc.so" \
+	"$TARGET_DIR/usr/lib/libvo-aacenc.so.0" \
+	"$TARGET_DIR/usr/lib/libvo-aacenc.so.0.0.4"
+rm -rf "$TARGET_DIR/etc/systemd/system/hmi-audio-loopback.service" \
+	"$TARGET_DIR/usr/lib/systemd/system/hmi-audio-loopback.service"
+disable_unit "hmi-audio-loopback.service"
+
 # libexec-board: helpers moved out of /usr/libexec/hmi/. Buildroot overlay into
 # incremental target/ has no --delete for moved files — purge stale copies here.
 rm -f \

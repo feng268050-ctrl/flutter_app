@@ -178,13 +178,12 @@ finish_publish() {
 			publish_sizes "$ROOT/output/firmware" boot.img boot_b.img Image update.img \
 				MiniLoaderAll.bin uboot.img misc.img parameter.txt || true
 		fi
-		# Require at least rootfs.img for rootfs scope.
+		# Require at least rootfs.img for rootfs scope (size already printed above).
 		if [[ "$scope" == rootfs ]]; then
 			[[ -r "$APP_ROOTFS_IMG" ]] || {
 				echo "ERROR: missing $APP_ROOTFS_IMG after export" >&2
 				return 1
 			}
-			bash "$SIZE_HELPER" "$APP_ROOTFS_IMG"
 		fi
 		;;
 	*)

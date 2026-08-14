@@ -14,9 +14,31 @@ Can't find part: boot
 | **A** | `boot` | `rootfs_a` |
 | **B** | `boot_b` (storage) | `rootfs_b` |
 
-**Try-boot (apply):** backup running FIT `boot` → `boot_b`, write new try FIT → `boot`, reboot. U-Boot always loads `boot`; running kernel/rootfs are unaffected until reboot. **Rollback (confirm):** swap `boot` ↔ `boot_b` to restore previous FIT. Rootfs letter is selected via FIT `root=PARTLABEL=rootfs_{a|b}` (inactive `rootfs_*` is written during apply; no rootfs swap).
+**Try-boot (apply):** backup running FIT `boot` → `boot_b`, write new try FIT → `boot`, reboot. U-Boot always loads `boot`; running kernel/rootfs are unaffected until reboot. **Rollback (confirm):** swap `boot` ↔ `boot_b` to restore previous FIT. Inactive `rootfs_*` is written during apply; no rootfs partition swap.
+
+**Rootfs LABEL/UUID:** `rootfs_a` and `rootfs_b` MUST NOT share ext4 `LABEL` or `UUID` (udev `by-label` / `by-uuid` hygiene). Boot itself uses **`root=PARTLABEL=`**, so collisions do not change which slot mounts. Stamp at **write time** only — never a boot service (KPI): OTA via `ab-rootfs-identity.sh` after `dd`; RockUSB / factory via host `scripts/stamp-rootfs-ext4-identity.sh` (`flash-usb.sh`, `build-img` → `rootfs_a.img` / `rootfs_b.img`). Manual repair: `ab-rootfs-identity.sh ensure` over SSH.
 
 Slot letter marker lives on **`misc`** (never userdata).
+
+## resource.img PARTLABEL + RSCE SHA-1 (required for true slot B)
+
+ynh960 U-Boot takes `root=` from the **DTB inside `resource.img`**, not only from FIT `fdt-*`. `scripts/build-kernel-ab.sh` therefore stages a per-slot `resource.img` via `scripts/patch-resource-img-partlabel.py`:
+
+| FIT artifact | `resource.img` / FDT `root=` |
+|--------------|------------------------------|
+| `boot.img` | `PARTLABEL=rootfs_a` |
+| `boot_b.img` | `PARTLABEL=rootfs_b` |
+
+Rockchip `resource.img` is an **RSCE** container. Each `ENTR` (e.g. `rk-kernel.dtb`, `logo.bmp`) stores a **SHA-1** of that file’s bytes. Changing PARTLABEL inside the embedded DTB **changes those bytes**, so the ENTR hash **must be refreshed** in the same patch.
+
+| Gate | Where |
+|------|--------|
+| Patch refreshes SHA-1 | `scripts/patch-resource-img-partlabel.py` |
+| Self-test | `python3 scripts/patch-resource-img-partlabel.py --self-test` |
+| Per-FIT after pack | `build-kernel-ab.sh` → `--verify <fit> rootfs_{a\|b}` |
+| Host verify | `scripts/verify-boot-fit.sh` on `boot.img` / `boot_b.img` |
+
+Do **not** binary-replace `PARTLABEL=rootfs_a`→`rootfs_b` in `resource.img` (or in a packed FIT) without going through that script. A stale ENTR hash is a silent, B-only failure mode (see pitfalls below).
 
 ## Layout (512-byte sectors; misc is 4 MiB)
 
@@ -57,6 +79,48 @@ Serial after flashing `boot_a`/`boot_b`:
 **Do not** binary-patch vendor uboot env (CRC → brick). Do **not** rename A slot to `boot_a` without an Innohi-approved U-Boot that resolves `boot_${slot}`.
 
 Escalate `make build-uboot` only if product later requires true `boot_a`/`boot_b` names without content swap.
+
+## Pitfalls (field lessons)
+
+### 1. Stale RSCE SHA-1 after PARTLABEL patch (B-only)
+
+**Symptom (true `rootfs_b` only):** no kernel boot splash; UI stutter / frame drops; after soft poweroff, cold boot dies early.
+
+**Serial fingerprint:**
+
+```text
+OF: fdt: Reserved memory: failed to reserve memory for node 'drm-logo@0': base 0x0, size 0 MiB
+rockchip-pm-domain ... failed to get ack on domain 'npu' ...
+Kernel panic - not syncing: panic_on_set_idle set ...
+```
+
+**Cause:** `resource.img` DTB bytes changed to `PARTLABEL=rootfs_b` but the `rk-kernel.dtb` ENTR SHA-1 still matched the unpatched (A) blob. U-Boot skipped / mishandled resource DTB + logo setup (`drm-logo@0` left at 0). Slot A was fine because its resource was never rewritten.
+
+**Fix / prevention:** always use `patch-resource-img-partlabel.py` (refreshes hashes). Build gates above fail the pack if hashes drift. Manual check:
+
+```bash
+python3 scripts/patch-resource-img-partlabel.py --verify output/firmware/boot.img rootfs_a
+python3 scripts/patch-resource-img-partlabel.py --verify output/firmware/boot_b.img rootfs_b
+```
+
+### 2. “Fake B” — misc says B but kernel still has `rootfs_a`
+
+**Symptom:** misc `active=B`, but UI / splash look like A (smooth, splash present).
+
+**Cause:** U-Boot **always** loads GPT `PARTNAME=boot`. Writing misc to B does **not** load `boot_b`. RockUSB `di` of `boot.img`→`boot` and `boot_b.img`→`boot_b` leaves A’s FIT in `boot` until try-boot / `ab_swap_boot_partitions`.
+
+**Check:**
+
+```text
+grep PARTLABEL= /proc/cmdline    # must be rootfs_b for true B
+. /usr/libexec/ab/ab-slot-lib.sh; ab_slot_read
+```
+
+**True B after both FITs are already on eMMC:** `ab_swap_boot_partitions` then `ab_slot_write B 0 A 0` and reboot (or run a normal SSH OTA try-boot onto the inactive letter).
+
+### 3. Do not blame rootfs / present-hook first for B-only jank
+
+When **only** true B is broken and A is fine with the same rootfs bytes, suspect FIT/`resource.img` first (PARTLABEL + RSCE hash), not Flutter eLinux present-hook or app drift.
 
 ## Safety
 

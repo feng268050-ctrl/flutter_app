@@ -85,7 +85,7 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 | A-2 | 内核 `loglevel=7` → `4` 或 `3` | **done** | `loglevel=4`；板端串口日志已减少 |
 | A-3 | 裁内核无用驱动 | **repo** | `ynh960-kernel-trim.config`：裁 CAN/PCIe/NVMe/SATA/UFS、本地 CSI/RKISP/CIF/HDMIRX/DVB/tuner、DP/LVDS/RGB/TVE、heavy debug/test；保留 HDMI/USB/音频/文件系统/BT/Wi‑Fi/eth0/RKNPU/MPP/debugfs；**DTS** `ynh960-evb-trim.dtsi` 关 EVB 残留节点 — 见 [`docs/kernel-evb-dts-deferred.md`](kernel-evb-dts-deferred.md) |
 | A-4 | RKNPU / Wi‑Fi / BT 延迟至首屏后 | **done** | disable `wifibt-init`/`wpa_supplicant`/`network.service`；板端已验证 |
-| A-5 | 确认无 `After=systemd-udev-settle`（尤其 `hmi`） | **done** | `hmi.service` 设计已禁止；板端 `critical-chain` 已验证 |
+| A-5 | 确认无 `After=systemd-udev-settle`（尤其 `hmi`） | **done** | `hmi.service` 设计已禁止；板端 `critical-chain` 已验证。**勿**再加开机 oneshot 挂 `udev-settle`（已撤 `ab-rootfs-identity.service`：LABEL/UUID 在写分区时打标） |
 | A-6 | eMMC `noatime` / HS200/HS400 | **done** | fstab + display-init；**勿**用 `rootflags=noatime`；HS400 沿用 SDK DTS |
 | A-7 | 默认去掉 `ynh960-usb-gadget.config` | **done** | `ynh960_defconfig` |
 

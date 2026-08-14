@@ -12,7 +12,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORCE="${FORCE:-0}"
 TOOL="${TOOL:-all}"
 
-LIBEXEC_BIN_ALL="reboot-loader extract-video-frame emulator-tablet-to-touch"
+LIBEXEC_BIN_ALL="reboot-loader extract-video-frame emulator-tablet-to-touch hmi-capture"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -21,6 +21,7 @@ libexec_bin_script_for() {
 	reboot-loader) echo build-reboot-loader.sh ;;
 	extract-video-frame) echo build-extract-video-frame.sh ;;
 	emulator-tablet-to-touch) echo build-emulator-tablet-to-touch.sh ;;
+	hmi-capture) echo build-hmi-capture.sh ;;
 	*) return 1 ;;
 	esac
 }

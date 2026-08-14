@@ -95,11 +95,11 @@ Print the host path on success. Do not commit `output/`.
 
 ### D7 — Recording duration / stop + live elapsed UI
 
-**Choice:** Default `DURATION=30` (seconds) passed to ffmpeg `-t`. `DURATION=0` means “until host Ctrl+C”: remote ffmpeg runs until interrupt; trap forwards SIGINT, then finalize/pull. Always pull whatever was written if the file is non-empty.
+**Choice:** Default `DURATION=0` (record until host Ctrl+C). Optional positive `DURATION=N` passes ffmpeg `-t N`. On interrupt, host SIGINTs **only** the remote ffmpeg pid (pidfile) so the muxer can finalize; do **not** kill the SSH client first. Container is **Matroska** (`screen.mkv`) — playable after SIGINT; avoid MP4 `+faststart` (moov-at-end breaks early stop). Always pull whatever was written if the file is non-empty.
 
 While recording, the **host** SHALL refresh a single TTY status line with live elapsed time (and remaining/total when `DURATION>0`), e.g. `Recording 00:12 / 00:30` or `Recording 00:12 (Ctrl+C to stop)`. Prefer a host wall-clock ticker while waiting on the SSH/ffmpeg session — do **not** rely solely on parsing remote ffmpeg `time=` (SSH buffering makes that flaky). Optional: also pass ffmpeg `-stats` / `-progress` for diagnostics in the log file, but the operator-facing timer is host-driven.
 
-**Alternatives:** Interactive Enter-to-stop only — worse for automation. Fixed max only — rejected. Only echo ffmpeg stderr — rejected as primary UX (buffering / noisy).
+**Alternatives:** Interactive Enter-to-stop only — worse for automation. Fixed 30s default — rejected (duration is dynamic). MP4 +faststart — rejected (unplayable if stopped early).
 
 ### D8 — Shared script structure
 

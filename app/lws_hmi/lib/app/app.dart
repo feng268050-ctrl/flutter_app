@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_ime/cyber_ime.dart';
+import 'package:cyber_capture/cyber_capture.dart';
 import 'package:cyber_settings_ui/cyber_settings_ui.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
@@ -281,6 +282,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   late final MigrateSecretsCommandWatcher _migrateSecretsCommandWatcher =
       MigrateSecretsCommandWatcher(services: _services);
 
+  late final CaptureCommandWatcher _captureCommandWatcher =
+      CaptureCommandWatcher();
+
   late final RgbLedPolicyDriver _rgbLedPolicy = RgbLedPolicyDriver(
     services: _services,
     warnAlarm: _warnAlarm,
@@ -394,6 +398,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       _upgradeProcessLibraryCommandWatcher.start();
       _upgradeOtaCommandWatcher.start();
       _migrateSecretsCommandWatcher.start();
+      _captureCommandWatcher.start();
       unawaited(_startCloudLocalRuntime());
       unawaited(_liveWeldStreamDetect.start());
       _jobRuntimeStatistics.resume();
@@ -553,6 +558,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_upgradeProcessLibraryCommandWatcher.dispose());
     unawaited(_upgradeOtaCommandWatcher.dispose());
     unawaited(_migrateSecretsCommandWatcher.dispose());
+    unawaited(_captureCommandWatcher.dispose());
     unawaited(_rgbLedPolicy.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();

@@ -191,6 +191,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  cyber_capture:
+    dependency: "direct main"
+    description:
+      path: "../../packages/cyber_capture"
+      relative: true
+    source: path
+    version: "0.1.0"
   cyber_hal:
     dependency: "direct main"
     description:

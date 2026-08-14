@@ -408,6 +408,8 @@ make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphen
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
+make screenshot                 # present-hook still (HMI or OS Settings seat) → output/screenshot/
+make record-screen              # present-hook record (either seat) → output/record-screen/ (Ctrl+C stops)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make smoke-ai                   # upload stain demo JPG; offline RKNN via AI daemon sock (HMI running)
 make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if changed
@@ -838,9 +840,10 @@ make build                 # full firmware → output/firmware/update.img
 ## Notes
 
 - First Buildroot build downloads packages; allow network and ~20GB+ free disk under SDK `output/` and `buildroot/dl/`.
-- Rockchip’s pre-build check used to probe `sources.buildroot.net` with HTTP HEAD on the site root, which always returns **403** (not a VPN/GFW issue). `make setup` patches `check-buildroot.sh` to probe `buildroot.net/downloads/buildroot-<version>.tar.gz` instead. Package downloads during the build may still use `sources.buildroot.net` via `BR2_PRIMARY_SITE`; that is separate from this pre-flight check.
+- Rockchip’s pre-build check used to probe `sources.buildroot.net` with HTTP HEAD on the site root, which always returns **403** (not a VPN/GFW issue). `make apply-overlay` installs `check-buildroot.sh` / `check-network.sh`: probe uses `buildroot.net/downloads/buildroot-<version>.tar.gz`, and **`RK_NETWORK_CHECK=n`** (ynh960 defconfig) skips the probe entirely — no 5s soft-fail delay on offline/Docker incremental `build-rootfs`. Set `RK_NETWORK_CHECK=y` only when you want a hard fail if the mirror is unreachable. Package downloads during the build may still use `sources.buildroot.net` via `BR2_PRIMARY_SITE`; that is separate from this pre-flight check.
 - Weston + eLinux is enabled via `lws_hmi_wayland.config` + `lws_hmi_flutter_weston.config`. See [`app/README.md`](app/README.md).
 - **Linux Flutter HMI 规划**（组件裁剪、Hello World、RTSP 分阶段）：[`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md)
 - **ynh960 串口 / GPIO / pinmux 台账**（P2.1）：[`docs/ynh960-io-pinmux-ledger.md`](docs/ynh960-io-pinmux-ledger.md)
+- **A/B misc + resource RSCE**（含 B 槽 splash/卡顿/冷启动踩坑）：[`docs/ab-slot-misc.md`](docs/ab-slot-misc.md)；验收：[`docs/ab-upgrade-acceptance.md`](docs/ab-upgrade-acceptance.md)
 - **SELinux**（permissive；不改 U-Boot）：[`docs/selinux.md`](docs/selinux.md)
 - `make clean-overlay` restores patched SDK files (`check-sdk.sh`, `rk3566_rk3568.config`, post-hook, fs-overlay).

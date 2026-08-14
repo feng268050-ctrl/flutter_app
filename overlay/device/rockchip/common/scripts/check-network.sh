@@ -1,8 +1,22 @@
 #!/bin/bash -e
 
+# Rockchip preflight probe (called from check-buildroot / check-debian / …).
+#
+# Board sets RK_NETWORK_CHECK=n (→ "# RK_NETWORK_CHECK is not set" in .config)
+# for Docker/offline incremental builds. Only enforce when RK_NETWORK_CHECK=y.
+
 SITE="${1:-www.baidu.com}"
 SITE_NAME="${2:-$SITE}"
 EXTRA_MSG="$3"
+
+case "${RK_NETWORK_CHECK:-}" in
+y | Y | 1) ;;
+*)
+	# Disabled / unset: skip curl + 5s soft-fail delay. Package fetches use
+	# BR2 mirrors separately when a recipe actually needs a download.
+	exit 0
+	;;
+esac
 
 http_ok() {
 	case "$1" in
@@ -31,19 +45,6 @@ fi
 echo -e "\e[35m"
 echo -e "Your network is not able to access $SITE_NAME!"
 echo -e "$EXTRA_MSG"
-echo -ne "\e[0m"
-
-if [ -z "$RK_NETWORK_CHECK" ]; then
-	echo -ne "\e[35m"
-	echo "Will continue in 5 seconds ..."
-	for S in $(seq 0 4); do
-		echo "$((5 - $S)) ..."
-		sleep 1
-	done
-	echo -e "\e[0m"
-else
-	echo -ne "\e[35m"
-	echo "Unset RK_NETWORK_CHECK in the SDK config to continue..."
-	echo -e "\e[0m"
-	exit 1
-fi
+echo "Set RK_NETWORK_CHECK=n in the board defconfig to skip this preflight."
+echo -e "\e[0m"
+exit 1

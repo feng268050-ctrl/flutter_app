@@ -221,6 +221,12 @@ accel-speed=$accel
 repeat-rate=25
 repeat-delay=500
 
+# Product soft IME is CyberIME. Empty path= still falls back to
+# @libexecdir@/weston-keyboard on Weston 14.0.1 — use a non-executable
+# sentinel so the client is never started (~23 MB RSS saved).
+[input-method]
+path=/bin/false
+
 [output]
 name=$output_name
 mode=$output_mode

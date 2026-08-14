@@ -256,6 +256,12 @@ class OtaApply {
         label: 'writing rootfs',
       );
 
+      // Same rootfs.img is written to A or B; stamp distinct LABEL/UUID so
+      // /dev/disk/by-label|by-uuid never collide across slots. Prefer the
+      // board helper when present (new rootfs); else tune2fs directly so an
+      // older running image can still apply an upgrade that includes the helper.
+      await _stampRootfsIdentity(devicePath: rootDev, letter: inactive);
+
       // backup-boot is part of kernel apply; UI stays on "writing kernel" at 0%.
       await emit(
         OtaProgress(
@@ -340,6 +346,28 @@ class OtaApply {
         throw StateError('refusing to write uboot device');
       }
     }
+  }
+
+  /// Give the just-written inactive rootfs a slot-unique LABEL + UUID.
+  Future<void> _stampRootfsIdentity({
+    required String devicePath,
+    required String letter,
+  }) async {
+    final helper = '/usr/libexec/ab/ab-rootfs-identity.sh';
+    if (await File(helper).exists()) {
+      await _proc.runChecked(
+        helper,
+        <String>[devicePath, letter],
+        errorPrefix: 'ab-rootfs-identity',
+      );
+      return;
+    }
+    final label = letter == 'A' ? 'rootfs_a' : 'rootfs_b';
+    await _proc.runChecked(
+      'tune2fs',
+      <String>['-L', label, '-U', 'random', devicePath],
+      errorPrefix: 'tune2fs rootfs identity',
+    );
   }
 
   Future<void> _verifyLooseDigests(

@@ -230,6 +230,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **何时用：** 改 kernel、DTS（`overlay/kernel/`）、boot logo、FIT 多 conf；仅重打 B 槽 FIT 时用 `build-kernel-b`。
 - **Image 何时重编：** SDK 里已有 `kernel/arch/arm64/boot/Image` 时默认**跳过** `./build.sh kernel`，只重编 DTB + 打 FIT（日志里有 `kernel Image present — skip`）。改 `*.config` 片段、驱动/补丁、`board/logo`、或首次构建 → `FORCE_KERNEL_IMAGE=1 make build-kernel`。仅改 DTS/dtsi、FIT 清单 →  plain `make build-kernel` 即可。详见 `AGENTS.md`「make build-kernel = Image + DTB/FIT」。
 - **产物：** `output/firmware/boot.img`（rootfs_a）、`boot_b.img`（rootfs_b）、裸 `Image`（模拟器用）。
+- **A/B `resource.img`：** 每槽 FIT 会 patch PARTLABEL 并**刷新 RSCE ENTR SHA-1**（`scripts/patch-resource-img-partlabel.py`）。漏刷 hash 会导致 **仅 B 槽**无 splash / 卡顿 / 关机冷启动 panic。打包后自动 `--verify`；说明与踩坑见 [`docs/ab-slot-misc.md`](ab-slot-misc.md)。
 - **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`；强制重编 Image：`FORCE_KERNEL_IMAGE=1 make build-kernel`。
 - **日志：** `output/logs/build-kernel-{ab|a|b}-*.log`
 - **后续：** 板端 `make upgrade`（不必 `build-img`）。
@@ -262,11 +263,9 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 - **怎么用：** 先 `make build-oem`，再 `make build-img`
 - **何时用：** 出厂/USB 烧录用的 `factory.img`；**不**编译 kernel/rootfs。
-- **产物：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img` + `update.img` symlink。
+- **产物：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img` + `update.img` symlink。打包前会对 `rootfs_a.img` / `rootfs_b.img` 打独立 LABEL/UUID（`scripts/stamp-rootfs-ext4-identity.sh`）；无开机 `ab-rootfs-identity.service`。
 - **参数：** `APP`、`FACTORY_SKU`（由此取 `UBOOT_ID`/`OEM_ID` 打进镜像）。
 - **后续：** `make reboot-loader` → `make flash`。
-
----
 
 ---
 
@@ -349,6 +348,18 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 - **怎么用：** `make alarm CODE=L001`；清理限制：`make alarm-clean`
 - **何时用：** 演示告警弹窗（HMI 须在跑）。
+
+### `make screenshot`
+
+- **怎么用：** `make screenshot`；可选 `ROTATE=0|90|180|270`、`Q=80`、`SN=` / `IP=`
+- **何时用：** 当前前台 Flutter seat（`hmi.service` **或** `os-settings.service`）运行中抓一张逻辑横屏静帧 → `output/screenshot/shot-<stamp>/`（`screen.jpg` + `summary.txt`），`shot-latest` 指向最近一次
+- **行为：** SSH 写 `/run/hmi/capture.cmd` → `cyber_capture` → `libhmi_capture` present-hook（**不是** ffmpeg/`kmsgrab`）；host **单次 SSH 板端轮询** status（含 `seq=`，避免旧 `done` 误判），有进度输出；拉回后清理远端 staging。两 seat 共用同一 cmd 路径；录制中勿切换 seat
+
+### `make record-screen`
+
+- **怎么用：** `make record-screen`；Ctrl+C 停止（退出码 0）；或 `DURATION=15 make record-screen`
+- **何时用：** Debug 录屏（HMI 或 OS Settings 前台均可）→ `output/record-screen/rec-<stamp>/screen.mp4`（默认仅视频；扬声器抽取未做）
+- **参数：** `FPS=`（默认 30）、`SCALE=`（默认 100）、`ROTATE=`、`AUDIO=0|1`（默认 **0**）、`AUDIO_DEV=`（默认 `default`）
 
 ### `make smoke-ai`
 
@@ -438,7 +449,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | `build-mediamtx` | MediaMTX 二进制 | → prebuilt；随 `build-app` 进 `/opt/hmi` |
 | `build-opencv` / `fetch-opencv` / `fetch-opencv-ximgproc` | AI 依赖 | OpenCV 源码/产物 |
 | `build-umtprd` | USB MTP | → prebuilt + overlay |
-| `build-libexec-binaries` | `/usr/libexec/` 小型 C 二进制（`reboot-loader`、`extract-video-frame`、模拟器触摸桥） | `TOOL=<name>` 单项；`rebuild-libexec-binaries`；macOS 自动进 Docker |
+| `build-libexec-binaries` | `/usr/libexec/` 小型 C 二进制 + `libhmi_capture.so`（`reboot-loader`、`extract-video-frame`、`hmi-capture`、模拟器触摸桥） | `TOOL=<name>` 单项；`rebuild-libexec-binaries`；`make build-hmi-capture`；macOS 自动进 Docker |
 | `build-secrets-seal` | OP-TEE seal TA + CA | → prebuilt + overlay |
 | `fetch-btop` | btop 二进制 | → prebuilt + overlay |
 | `fetch-rknn-rt` | `librknnrt` | → `prebuilt/rknn-rt/` |

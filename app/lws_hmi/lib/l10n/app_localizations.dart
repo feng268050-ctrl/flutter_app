@@ -1883,6 +1883,12 @@ abstract class AppLocalizations {
   /// **'Model'**
   String get deviceModel;
 
+  /// No description provided for @deviceMonitorDeviceHealthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Health'**
+  String get deviceMonitorDeviceHealthTitle;
+
   /// No description provided for @deviceMonitorHomeTitle.
   ///
   /// In en, this message translates to:

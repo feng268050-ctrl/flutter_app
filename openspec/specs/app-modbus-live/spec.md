@@ -20,10 +20,10 @@ The product App SHALL expose an ensure path (e.g. `AppServices.ensureModbusLive`
 - **AND** self-check SHALL continue to use one-shot attribute reads (not continuous watch) for its snapshot
 
 ### Requirement: Live UI surfaces subscribe with their own attribute ids
-Each product surface that displays live Modbus fields (including Device Information, Monitor Alarm Information telemetry, and Demo Modbus tiles) SHALL subscribe via HAL `watchAttributes` (or an App façade that passes through to it) with an explicit id list for that surface’s interests. The surface MUST cancel its subscription on dispose. Surfaces MUST NOT rely on filtering a process-wide undifferentiating attribute broadcast as the primary interest mechanism. Surfaces that need communication-fault UI SHALL subscribe to `watchHealth` (or equivalent façade) themselves.
+Each product surface that displays live Modbus fields (including Device Information, Monitor Machine Status Device Health telemetry, and Demo Modbus tiles) SHALL subscribe via HAL `watchAttributes` (or an App façade that passes through to it) with an explicit id list for that surface’s interests. The surface MUST cancel its subscription on dispose. Surfaces MUST NOT rely on filtering a process-wide undifferentiating attribute broadcast as the primary interest mechanism. Surfaces that need communication-fault UI SHALL subscribe to `watchHealth` (or equivalent façade) themselves.
 
 #### Scenario: Monitor alarm telemetry binds ids at subscribe
-- **WHEN** Monitor Alarm Information telemetry starts
+- **WHEN** Monitor Machine Status Device Health telemetry starts
 - **THEN** it SHALL watch with an id list covering gun temperatures, over-temp alarms, and catalog alarms it displays
 - **AND** it MUST NOT depend on another screen’s watch allowlist
 

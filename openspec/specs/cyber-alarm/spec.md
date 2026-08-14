@@ -16,7 +16,7 @@ The product stack SHALL place warn/alarm **domain policy and orchestration** in 
 
 #### Scenario: Monitor does not own episode policy
 
-- **WHEN** Alarm Information displays status lights or active alarms
+- **WHEN** Machine Status Device Health displays status lights or Alarm Logs rows
 - **THEN** toggling a light or list row MUST NOT itself arm or dismiss warn episodes
 - **AND** episode arming SHALL occur in the `cyber_alarm` coordinator subscribed to alarm signals via App wiring
 
@@ -113,9 +113,9 @@ This product App SHALL back the port with SQLite at `/var/lib/hmi/alarm-logs.db`
 
 #### Scenario: Clear history only
 
-- **WHEN** the operator clears Alarm Logs
+- **WHEN** the operator clears Alarm Logs on Machine Status
 - **THEN** historical rows are removed
-- **AND** if `alarm.gun_comm` remains true, the live active representation MAY still show that alarm as active
+- **AND** if `alarm.gun_comm` remains true, Device Health MAY still show that communication fault and the App warn host MAY still show the live episode
 
 #### Scenario: No repository time-window dedup
 
@@ -150,12 +150,12 @@ The coordinator MUST NOT maintain a separate modal presentation FIFO for dialogs
 
 ### Requirement: Status lights remain separate from warn episodes
 
-Alarm Information Cyber status lights (Success Icon / Failure Icon / Idle) SHALL continue to reflect attribute health semantics only. Machine Status run tiles SHALL continue Dot Success/Idle run semantics. Neither light path SHALL replace or implement warn episode presentation.
+Machine Status Device Health Cyber status lights (Success Icon / Failure Icon / Idle) SHALL continue to reflect attribute health semantics only. Machine Status Live Status run tiles SHALL continue Dot Success/Idle run semantics. Neither light path SHALL replace or implement warn episode presentation.
 
 #### Scenario: Failure light without owning dialog
 
 - **WHEN** `alarm.gun_comm` is true and controller status is ready
-- **THEN** the Gun Comm Status light shows Failure (red cross) per Alarm Information rules
+- **THEN** the Gun Comm Status light shows Failure (red cross) per Device Health rules
 - **AND** any modal warn is owned by the App warn presentation host backed by `cyber_alarm`, not by the status indicator widget
 
 ### Requirement: Package dependency boundaries

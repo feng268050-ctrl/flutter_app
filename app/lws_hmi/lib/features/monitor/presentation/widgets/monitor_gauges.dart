@@ -56,6 +56,45 @@ abstract final class MonitorArcGeometry {
       center.dy + radius * math.sin(angle),
     );
   }
+
+  /// Closed annular sector with true concentric arcs and flat radial cuts.
+  ///
+  /// Progress rendering owns this geometry. Bottom-cabin rounding stays in
+  /// [IntegratedRingGaugeGeometry.bottomCabinPath] and must not be introduced
+  /// here as end caps: caps extend beyond the requested progress angles and
+  /// make a constant-thickness circular ring appear elliptical.
+  static Path flatAnnularSector({
+    required Offset center,
+    required double innerRadius,
+    required double outerRadius,
+    required double startAngle,
+    required double sweepAngle,
+  }) {
+    assert(outerRadius > innerRadius);
+    assert(sweepAngle > 0);
+    final endAngle = startAngle + sweepAngle;
+    final outerStart = pointOnArc(center, outerRadius, startAngle);
+    final innerEnd = pointOnArc(center, innerRadius, endAngle);
+    return Path()
+      ..moveTo(outerStart.dx, outerStart.dy)
+      ..arcTo(
+        Rect.fromCircle(center: center, radius: outerRadius),
+        startAngle,
+        sweepAngle,
+        false,
+      )
+      // Flat terminal cut at the live progress angle.
+      ..lineTo(innerEnd.dx, innerEnd.dy)
+      ..arcTo(
+        Rect.fromCircle(center: center, radius: innerRadius),
+        endAngle,
+        -sweepAngle,
+        false,
+      )
+      // Flat terminal cut at the fixed start angle.
+      ..lineTo(outerStart.dx, outerStart.dy)
+      ..close();
+  }
 }
 
 /// 0–100% gauge: 270° open arc, gray track, colored progress, white end dot.
@@ -827,17 +866,10 @@ final class IntegratedRingGaugeGeometry {
   double get ringSectorOuterRadius => ringRadius + ringThickness / 2;
   double get ringInnerRadius => ringRadius - ringThickness / 2;
 
-  /// Angular air between each terminal major tick and the cabin outer join.
-  ///
-  /// The cabin deliberately does not complete the scale rim: the short gaps
-  /// keep the two silhouettes readable and prevent their 1px outlines from
-  /// accumulating into bright, heavy corners.
-  static const double bottomCabinOuterJoinInset = 8 * math.pi / 180;
-
-  /// Pulls the inner shoulder toward the bottom independently of the outer
-  /// join, leaving enough width for two-line names and a rounded transition
-  /// into the outer wall.
-  static const double bottomCabinInnerShoulderInset = 24 * math.pi / 180;
+  /// Temporary plain-sector baseline: clear each terminal scale angle by 16°.
+  /// Inner and outer joins intentionally share this angle so the cabin sides
+  /// are straight radial cuts, with no rounded corner occupation.
+  static const double bottomCabinTerminalClearance = 16 * math.pi / 180;
 
   /// Fixed radial spacing between the dark Ring Sector and outer scale rim.
   double get outerRimRadiusDelta => outerRimRadius - ringSectorOuterRadius;
@@ -852,8 +884,8 @@ final class IntegratedRingGaugeGeometry {
   Rect get outerRimBounds =>
       Rect.fromCircle(center: center, radius: outerRimRadius);
 
-  /// The cabin bottom remains concentric with the outer rim. Its join angles
-  /// are inset independently, leaving air beside the scale terminals.
+  /// The cabin bottom remains concentric with the outer rim. Outer joins stay
+  /// inset from the scale terminals so the 1px outlines do not collide.
   Rect get bottomCabinOuterBounds => outerRimBounds;
 
   /// Exact identity prevents a radial seam between progress and center dial.
@@ -868,6 +900,56 @@ final class IntegratedRingGaugeGeometry {
 
   double get bottomCabinInnerLiftAboveDialBaseline =>
       centerDialBaselineY - bottomCabinInnerApexY;
+
+  double get bottomCabinScaleRightAngle =>
+      GaugeArcPresets.integratedRing.startAngle +
+      GaugeArcPresets.integratedRing.sweepAngle;
+
+  double get bottomCabinScaleLeftAngle =>
+      GaugeArcPresets.integratedRing.startAngle;
+
+  double get bottomCabinRightAngle =>
+      bottomCabinScaleRightAngle + bottomCabinTerminalClearance;
+
+  double get bottomCabinLeftAngle =>
+      bottomCabinScaleLeftAngle - bottomCabinTerminalClearance;
+
+  double get bottomCabinSweepAngle =>
+      bottomCabinLeftAngle + 2 * math.pi - bottomCabinRightAngle;
+
+  /// Intermediate spacing-validation silhouette: two concentric arcs joined
+  /// by two straight radial sides. Corner curves can be reintroduced only
+  /// after this baseline clears terminal ticks and labels at production size.
+  Path bottomCabinPath() {
+    final innerLeft = MonitorArcGeometry.pointOnArc(
+      center,
+      bottomCabinInnerRadius,
+      bottomCabinLeftAngle,
+    );
+    final outerRight = MonitorArcGeometry.pointOnArc(
+      center,
+      outerRimRadius,
+      bottomCabinRightAngle,
+    );
+
+    return Path()
+      ..moveTo(innerLeft.dx, innerLeft.dy)
+      ..arcTo(
+        Rect.fromCircle(center: center, radius: bottomCabinInnerRadius),
+        bottomCabinLeftAngle,
+        -bottomCabinSweepAngle,
+        false,
+      )
+      ..lineTo(outerRight.dx, outerRight.dy)
+      ..arcTo(
+        bottomCabinOuterBounds,
+        bottomCabinRightAngle,
+        bottomCabinSweepAngle,
+        false,
+      )
+      ..lineTo(innerLeft.dx, innerLeft.dy)
+      ..close();
+  }
 
   static IntegratedRingGaugeGeometry compute({
     required double side,
@@ -1034,98 +1116,7 @@ class _GaugeBottomCabinPainter extends CustomPainter {
 
   final IntegratedRingGaugeGeometry geom;
 
-  Path _cabinPath() {
-    const gaugeArc = GaugeArcPresets.integratedRing;
-    final outerRadius = geom.outerRimRadius;
-    final innerRadius = geom.bottomCabinInnerRadius;
-    final cornerReach = (outerRadius - innerRadius) * 0.24;
-    const outerJoinInset =
-        IntegratedRingGaugeGeometry.bottomCabinOuterJoinInset;
-    const innerShoulderInset =
-        IntegratedRingGaugeGeometry.bottomCabinInnerShoulderInset;
-    final scaleRightAngle = gaugeArc.startAngle + gaugeArc.sweepAngle;
-    final scaleLeftAngle = gaugeArc.startAngle;
-    // These join angles are intentionally independent from the scale arc
-    // terminals. Moving both joins into the open-bottom sector creates a
-    // stable angular gap beside the first and last major ticks.
-    final outerRightAngle = scaleRightAngle + outerJoinInset;
-    final outerLeftAngle = scaleLeftAngle - outerJoinInset;
-    final innerRightAngle = scaleRightAngle + innerShoulderInset;
-    final innerLeftAngle = scaleLeftAngle - innerShoulderInset;
-    final outerSweep = outerLeftAngle + 2 * math.pi - outerRightAngle;
-    final innerSweep = innerRightAngle - 2 * math.pi - innerLeftAngle;
-    final innerLeft = MonitorArcGeometry.pointOnArc(
-      geom.center,
-      innerRadius,
-      innerLeftAngle,
-    );
-    final innerRight = MonitorArcGeometry.pointOnArc(
-      geom.center,
-      innerRadius,
-      innerRightAngle,
-    );
-    final outerRight = MonitorArcGeometry.pointOnArc(
-      geom.center,
-      outerRadius,
-      outerRightAngle,
-    );
-    final outerLeft = MonitorArcGeometry.pointOnArc(
-      geom.center,
-      outerRadius,
-      outerLeftAngle,
-    );
-    final innerRightTangent = Offset(
-      math.sin(innerRightAngle),
-      -math.cos(innerRightAngle),
-    );
-    final outerRightTangent = Offset(
-      -math.sin(outerRightAngle),
-      math.cos(outerRightAngle),
-    );
-    final outerLeftTangent = Offset(
-      -math.sin(outerLeftAngle),
-      math.cos(outerLeftAngle),
-    );
-    final innerLeftTangent = Offset(
-      math.sin(innerLeftAngle),
-      -math.cos(innerLeftAngle),
-    );
-
-    // The cabin remains concentric with the gauge, but its outer arc is
-    // shorter than the scale complement. Independent outer/inner join angles
-    // and tangent-aligned cubic handles produce compact, rounded shoulders.
-    return Path()
-      ..moveTo(innerLeft.dx, innerLeft.dy)
-      ..arcTo(
-        Rect.fromCircle(center: geom.center, radius: innerRadius),
-        innerLeftAngle,
-        innerSweep,
-        false,
-      )
-      ..cubicTo(
-        innerRight.dx + innerRightTangent.dx * cornerReach,
-        innerRight.dy + innerRightTangent.dy * cornerReach,
-        outerRight.dx - outerRightTangent.dx * cornerReach,
-        outerRight.dy - outerRightTangent.dy * cornerReach,
-        outerRight.dx,
-        outerRight.dy,
-      )
-      ..arcTo(
-        geom.bottomCabinOuterBounds,
-        outerRightAngle,
-        outerSweep,
-        false,
-      )
-      ..cubicTo(
-        outerLeft.dx + outerLeftTangent.dx * cornerReach,
-        outerLeft.dy + outerLeftTangent.dy * cornerReach,
-        innerLeft.dx - innerLeftTangent.dx * cornerReach,
-        innerLeft.dy - innerLeftTangent.dy * cornerReach,
-        innerLeft.dx,
-        innerLeft.dy,
-      )
-      ..close();
-  }
+  Path _cabinPath() => geom.bottomCabinPath();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1218,16 +1209,23 @@ class _IntegratedRingGaugePainter extends CustomPainter {
       ..isAntiAlias = true;
     canvas.drawOval(geom.ringSectorOuterBounds, backgroundPaint);
 
-    // 2. Rounded annular sector spans the complete radial distance from the
-    //    center dial to the gauge surface outer edge.
+    // 2. Flat-cut annular sector: both curved edges remain true concentric
+    //    circles and both terminals are straight radial lines. Cabin rounding
+    //    is intentionally owned by bottomCabinPath(), not this progress path.
     final t = progress.clamp(0.0, 1.0);
     if (t > 0) {
-      _drawRoundedAnnularSector(
-        canvas,
+      final sector = MonitorArcGeometry.flatAnnularSector(
+        center: geom.center,
+        innerRadius: geom.centerDialRadius,
+        outerRadius: geom.ringSectorOuterRadius,
         startAngle: arc.startAngle,
         sweepAngle: arc.sweepAngle * t,
-        color: progressColor,
       );
+      final progressPaint = Paint()
+        ..color = progressColor
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true;
+      canvas.drawPath(sector, progressPaint);
     }
 
     // 3. Pure-black center circle: no gradient, glow, or white outline.
@@ -1236,70 +1234,6 @@ class _IntegratedRingGaugePainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
     canvas.drawCircle(geom.center, geom.centerDialRadius, dialPaint);
-  }
-
-  void _drawRoundedAnnularSector(
-    Canvas canvas, {
-    required double startAngle,
-    required double sweepAngle,
-    required Color color,
-  }) {
-    final outerRadius = geom.ringSectorOuterRadius;
-    final innerRadius = geom.centerDialRadius;
-    final middleRadius = (outerRadius + innerRadius) / 2;
-    final capRadius = (outerRadius - innerRadius) / 2;
-    final endAngle = startAngle + sweepAngle;
-    final outerStart = MonitorArcGeometry.pointOnArc(
-      geom.center,
-      outerRadius,
-      startAngle,
-    );
-    final startCapCenter = MonitorArcGeometry.pointOnArc(
-      geom.center,
-      middleRadius,
-      startAngle,
-    );
-    final endCapCenter = MonitorArcGeometry.pointOnArc(
-      geom.center,
-      middleRadius,
-      endAngle,
-    );
-
-    // One closed path made exclusively from true circular arcs. Its outer
-    // edge is the same-center ring-sector circle; the two semicircular caps
-    // only close the Start/End edges and never replace or flatten that arc.
-    final sector = Path()
-      ..moveTo(outerStart.dx, outerStart.dy)
-      ..arcTo(
-        geom.ringSectorOuterBounds,
-        startAngle,
-        sweepAngle,
-        false,
-      )
-      ..arcTo(
-        Rect.fromCircle(center: endCapCenter, radius: capRadius),
-        endAngle,
-        math.pi,
-        false,
-      )
-      ..arcTo(
-        Rect.fromCircle(center: geom.center, radius: innerRadius),
-        endAngle,
-        -sweepAngle,
-        false,
-      )
-      ..arcTo(
-        Rect.fromCircle(center: startCapCenter, radius: capRadius),
-        startAngle + math.pi,
-        math.pi,
-        false,
-      )
-      ..close();
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill
-      ..isAntiAlias = true;
-    canvas.drawPath(sector, paint);
   }
 
   @override

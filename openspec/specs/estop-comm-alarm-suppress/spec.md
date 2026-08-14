@@ -63,12 +63,12 @@ When `machine.emergency_stop` returns inactive, H022 and W001 SHALL again follow
 
 ### Requirement: Status checks keep raw laser/wire-feeder comm bits under e-stop
 
-E-stop suppression applies only to the warn/alarm signal path (episodes, modal presentation, historical log). Alarm Information status lights, boot self-check, and other status consumers MUST continue to observe the raw Modbus values for `alarm.laser_comm` and `alarm.wire_feeder_comm` without e-stop masking.
+E-stop suppression applies only to the warn/alarm signal path (episodes, modal presentation, historical log). Machine Status Device Health status lights, boot self-check, and other status consumers MUST continue to observe the raw Modbus values for `alarm.laser_comm` and `alarm.wire_feeder_comm` without e-stop masking.
 
 #### Scenario: Comm lights still show raw fault during e-stop
 
 - **WHEN** `machine.emergency_stop` is true
 - **AND** raw `alarm.laser_comm` / `alarm.wire_feeder_comm` are true
-- **AND** Alarm Information is driven by the App warn Modbus adapter monitor feed
+- **AND** Machine Status Device Health is driven by the App warn Modbus adapter monitor feed
 - **THEN** those two comm status lights SHALL reflect the raw true (fault) bits
 - **AND** the warn path MUST still suppress H022/W001 popup and history as specified above

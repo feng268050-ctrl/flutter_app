@@ -83,7 +83,7 @@ The boot self-check pipeline SHALL evaluate, in order:
 
 The pipeline MUST NOT include a Camera Comm / ICMP camera item. Camera reachability is owned by HAL `ip_camera` health observation and the product IP-camera session / Home status icon, not by boot self-check.
 
-Item labels SHOULD align with Monitor → Alarm Information wording where applicable for the Modbus-backed items above.
+Item labels SHOULD align with Monitor → Machine Status Device Health wording where applicable for the Modbus-backed items above.
 
 #### Scenario: Controller unreachable fails dependent Modbus items
 
@@ -145,7 +145,7 @@ Common Settings → Misc “Show Startup Self-Check” SHALL read and write the 
 
 ### Requirement: Boot self-check suppresses warn presentation
 
-While the boot self-check overlay is active, the product App MUST gate `cyber_alarm` so it does not present new modal warn dialogs for Modbus-backed alarm onsets. Self-check item evaluation MAY continue to use the same Alarm Information semantics for pass/fail tiles. After self-check completes (success or operator-dismissed failure path per existing rules), normal warn presentation SHALL resume for subsequent onsets via the global prompt queue and MUST NOT remain suppressed for guidance/network readiness.
+While the boot self-check overlay is active, the product App MUST gate `cyber_alarm` so it does not present new modal warn dialogs for Modbus-backed alarm onsets. Self-check item evaluation MAY continue to use the same Device Health (comm/temp) semantics for pass/fail tiles. After self-check completes (success or operator-dismissed failure path per existing rules), normal warn presentation SHALL resume for subsequent onsets via the global prompt queue and MUST NOT remain suppressed for guidance/network readiness.
 
 #### Scenario: Alarm during self-check does not popup
 

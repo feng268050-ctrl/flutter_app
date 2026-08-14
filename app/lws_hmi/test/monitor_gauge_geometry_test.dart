@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
@@ -29,6 +31,45 @@ void main() {
     );
   });
 
+  test('flat annular sector has concentric arcs and radial terminal cuts', () {
+    const center = Offset(100, 100);
+    const innerRadius = 40.0;
+    const outerRadius = 60.0;
+    const startAngle = 0.0;
+    const sweepAngle = math.pi / 2;
+    final path = MonitorArcGeometry.flatAnnularSector(
+      center: center,
+      innerRadius: innerRadius,
+      outerRadius: outerRadius,
+      startAngle: startAngle,
+      sweepAngle: sweepAngle,
+    );
+
+    Offset radialPoint(double radius, double angle) =>
+        MonitorArcGeometry.pointOnArc(center, radius, angle);
+
+    // Constant 20px thickness throughout the live sector.
+    expect(path.contains(radialPoint(39, math.pi / 4)), isFalse);
+    expect(path.contains(radialPoint(41, math.pi / 4)), isTrue);
+    expect(path.contains(radialPoint(59, math.pi / 4)), isTrue);
+    expect(path.contains(radialPoint(61, math.pi / 4)), isFalse);
+
+    // A rounded cap would include both of these mid-ring points because they
+    // sit less than capRadius (10px) beyond the requested terminal angles.
+    expect(path.contains(radialPoint(50, -0.1)), isFalse);
+    expect(path.contains(radialPoint(50, sweepAngle + 0.1)), isFalse);
+
+    // Perimeter = outer arc + end radial + inner arc + start radial.
+    final expectedLength = outerRadius * sweepAngle +
+        (outerRadius - innerRadius) +
+        innerRadius * sweepAngle +
+        (outerRadius - innerRadius);
+    final metric = path.computeMetrics().single;
+    // Skia flattens circular path metrics numerically; keep the tolerance
+    // below one logical pixel while still detecting semicircular cap length.
+    expect(metric.length, closeTo(expectedLength, 0.5));
+  });
+
   test('integrated ring cabin clears scale terminals and lifts its concavity',
       () {
     final geometry = IntegratedRingGaugeGeometry.compute(side: 260);
@@ -45,20 +86,14 @@ void main() {
     expect(geometry.labelBandRadius, lessThan(geometry.majorTickInnerRadius));
     expect(geometry.labelBandRadius, greaterThan(geometry.ringInnerRadius));
     expect(
-      IntegratedRingGaugeGeometry.bottomCabinOuterJoinInset *
+      IntegratedRingGaugeGeometry.bottomCabinTerminalClearance *
           180 /
           3.141592653589793,
-      closeTo(8, 1e-9),
+      closeTo(16, 1e-9),
     );
     expect(
-      IntegratedRingGaugeGeometry.bottomCabinInnerShoulderInset *
-          180 /
-          3.141592653589793,
-      closeTo(24, 1e-9),
-    );
-    expect(
-      IntegratedRingGaugeGeometry.bottomCabinInnerShoulderInset,
-      greaterThan(IntegratedRingGaugeGeometry.bottomCabinOuterJoinInset),
+      geometry.bottomCabinSweepAngle * 180 / math.pi,
+      closeTo(68, 1e-9),
     );
     expect(
       geometry.ringSectorOuterRadius,
@@ -71,6 +106,77 @@ void main() {
     expect(
       geometry.bottomCabinInnerLiftAboveDialBaseline,
       closeTo(260 * 0.045, 1e-9),
+    );
+  });
+
+  test('bottom cabin uses a short plain sector with radial side walls', () {
+    final geometry = IntegratedRingGaugeGeometry.compute(side: 260);
+    final path = geometry.bottomCabinPath();
+    final innerRight = MonitorArcGeometry.pointOnArc(
+      geometry.center,
+      geometry.bottomCabinInnerRadius,
+      geometry.bottomCabinRightAngle,
+    );
+    final outerRight = MonitorArcGeometry.pointOnArc(
+      geometry.center,
+      geometry.outerRimRadius,
+      geometry.bottomCabinRightAngle,
+    );
+    final innerLeft = MonitorArcGeometry.pointOnArc(
+      geometry.center,
+      geometry.bottomCabinInnerRadius,
+      geometry.bottomCabinLeftAngle,
+    );
+    final outerLeft = MonitorArcGeometry.pointOnArc(
+      geometry.center,
+      geometry.outerRimRadius,
+      geometry.bottomCabinLeftAngle,
+    );
+
+    // Both side walls are radial: inner and outer endpoints share one ray.
+    double cross(Offset a, Offset b) => a.dx * b.dy - a.dy * b.dx;
+    expect(
+      cross(innerRight - geometry.center, outerRight - geometry.center),
+      closeTo(0, 1e-9),
+    );
+    expect(
+      cross(innerLeft - geometry.center, outerLeft - geometry.center),
+      closeTo(0, 1e-9),
+    );
+    expect(innerLeft.dx, closeTo(2 * geometry.center.dx - innerRight.dx, 1e-9));
+    expect(outerLeft.dx, closeTo(2 * geometry.center.dx - outerRight.dx, 1e-9));
+    expect(innerLeft.dy, closeTo(innerRight.dy, 1e-9));
+    expect(outerLeft.dy, closeTo(outerRight.dy, 1e-9));
+
+    final side = geometry.center.dx * 2;
+    expect((outerRight.dx - outerLeft.dx) / side, lessThan(0.55));
+    final midRadius =
+        (geometry.outerRimRadius + geometry.bottomCabinInnerRadius) / 2;
+    final cabinMid = MonitorArcGeometry.pointOnArc(
+      geometry.center,
+      midRadius,
+      math.pi / 2,
+    );
+    expect(path.contains(cabinMid), isTrue);
+
+    // Halfway through the new 16° clearance remains outside the cabin.
+    final terminalClearanceProbe = MonitorArcGeometry.pointOnArc(
+      geometry.center,
+      midRadius,
+      geometry.bottomCabinScaleRightAngle +
+          IntegratedRingGaugeGeometry.bottomCabinTerminalClearance / 2,
+    );
+    expect(path.contains(terminalClearanceProbe), isFalse);
+
+    // Perimeter proves the path contains two circular arcs and two straight
+    // radial walls, with no cubic/conic corner occupation.
+    final expectedLength =
+        (geometry.outerRimRadius + geometry.bottomCabinInnerRadius) *
+                geometry.bottomCabinSweepAngle +
+            2 * (geometry.outerRimRadius - geometry.bottomCabinInnerRadius);
+    expect(
+      path.computeMetrics().single.length,
+      closeTo(expectedLength, 0.5),
     );
   });
 

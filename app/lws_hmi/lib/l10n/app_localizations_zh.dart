@@ -965,6 +965,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceModel => '设备型号';
 
   @override
+  String get deviceMonitorDeviceHealthTitle => '设备健康';
+
+  @override
   String get deviceMonitorHomeTitle => '监测';
 
   @override
@@ -4067,6 +4070,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get deviceModel => '設備型號';
+
+  @override
+  String get deviceMonitorDeviceHealthTitle => '設備健康';
 
   @override
   String get deviceMonitorHomeTitle => '監測';

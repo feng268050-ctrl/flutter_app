@@ -17,13 +17,9 @@ linux-sdk/
 # adb pull backups (regenerate with make pull-display-params)
 board/from-device/
 
-# U-Boot boot logo (generated from board/logo/splash_icon.png)
-board/logo/logo.bmp
-board/logo/logo_kernel.bmp
-
-# Flutter release bundles (run make build-app / APP=os_settings make build-app)
-overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/
-overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/os_settings/
+# Flutter release bundles (make build-app → app/<APP>/build/bundle/release)
+app/*/build/bundle/release/
+app/*/build/bundle/.assemble/
 
 # Local env (see .env.example)
 .env

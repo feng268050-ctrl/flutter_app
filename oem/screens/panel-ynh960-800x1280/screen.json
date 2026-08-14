@@ -9,7 +9,7 @@
     "lcd/lcd_mipi_param.txt"
   ],
   "splash": {
-    "notes": "Boot splash remains board/logo; screen-pack splash migration later"
+    "notes": "Early boot BMP + Weston boot-splash.png from board/logo/splash_icon.png (icon-sized, centered); not panel resolution"
   },
   "touch_notes": "Touch via board DT; not configured from this pack"
 }

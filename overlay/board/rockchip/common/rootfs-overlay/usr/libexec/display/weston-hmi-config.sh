@@ -131,8 +131,7 @@ emulator_touch_input_present() {
 # desktop-shell (not kiosk): kiosk only has solid background-color; we need
 # background-image so the product logo survives until Flutter's first frame
 # (legacy DRM stacks kept kernel drm_logo).
-# Splash PNG is logical landscape (make build-boot-logo) for transform=rotate-270
-# — not the portrait pre-rotated kernel logo.bmp.
+# Splash PNG is icon-sized (make build-boot-logo); pad + black centers on output.
 # usage: weston_write_hmi_ini <out_path> <transform>
 weston_write_hmi_ini() {
 	out="$1"
@@ -217,8 +216,8 @@ animation=none
 startup-animation=none
 panel-position=none
 background-image=$splash
-background-type=scale
-background-color=0xffffffff
+background-type=pad
+background-color=0xff000000
 cursor-size=$cursor_px
 
 [libinput]

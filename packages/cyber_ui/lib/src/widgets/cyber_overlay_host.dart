@@ -138,9 +138,12 @@ class CyberPromptContent extends StatelessWidget {
 
   static const _titleDark = Color(0xFF1A1A1A);
   static const _bodyDark = Color(0xCC1A1A1A);
-  static const _titleSize = 37.0;
-  /// One type-step below [_titleSize] (≈ largeDialog → dialogTitle).
-  static const _bodySize = 32.0;
+
+  /// Product tip chrome — keep in sync with App `tipPromptTitleSize`.
+  static const titleSize = 40.0;
+
+  /// Product tip chrome — keep in sync with App `tipPromptBodySize`.
+  static const bodySize = 32.0;
 
   @override
   Widget build(BuildContext context) {
@@ -158,10 +161,10 @@ class CyberPromptContent extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: titleColor,
-            fontSize: _titleSize,
+            fontSize: titleSize,
             fontWeight: FontWeight.w700,
             height: 1.15,
-            letterSpacing: 0.02 * _titleSize,
+            letterSpacing: 0.02 * titleSize,
             decoration: TextDecoration.none,
           ),
         ),
@@ -172,7 +175,7 @@ class CyberPromptContent extends StatelessWidget {
           DefaultTextStyle(
             style: TextStyle(
               color: bodyColor,
-              fontSize: _bodySize,
+              fontSize: bodySize,
               height: 1.2,
               fontWeight: FontWeight.w400,
               decoration: TextDecoration.none,

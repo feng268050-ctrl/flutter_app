@@ -137,9 +137,9 @@ final class _OperationFailedBody extends StatelessWidget {
   /// `frost_dialog_prompt_confirm_button_min_width` / entry confirm 500dp.
   static const _confirmMinWidth = 500.0;
 
-  /// Light ink on dark frost status tips (matches [CyberPromptContent] dark tone).
+  /// White ink on dark frost — matches boot self-check.
   static const _titleInk = CyberColors.textPrimary;
-  static const _bodyInk = CyberColors.textSecondary;
+  static const _bodyInk = CyberColors.textPrimary;
 
   @override
   Widget build(BuildContext context) {

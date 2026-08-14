@@ -90,6 +90,11 @@ void main() {
     expect(value, 6);
   });
 
+  test('CyberPromptContent uses product tip title/body sizes', () {
+    expect(CyberPromptContent.titleSize, 40);
+    expect(CyberPromptContent.bodySize, 32);
+  });
+
   testWidgets('CyberOverlayHost show/dismiss', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

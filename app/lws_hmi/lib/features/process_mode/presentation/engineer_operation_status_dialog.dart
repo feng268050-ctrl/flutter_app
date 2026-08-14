@@ -8,7 +8,7 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui [FrostStatusDialog] success mode (`OperationDialogBuilder.openSuccessDialog`).
 ///
-/// Title + success glyph + message + OK — toast-like cream fill (no page透视),
+/// Title + success glyph + message + OK — dark frost like boot self-check,
 /// with title / body / action dividers like `dialog_frost_prompt`.
 Future<void> showEngineerOperationSuccessDialog(
   BuildContext context, {
@@ -39,20 +39,18 @@ final class _EngineerOperationSuccessBody extends StatelessWidget {
 
   static const _maxWidth = 560.0;
   static const _iconSize = 80.0;
-  static const _bodyDark = Color(0xFF1A1A1A);
-  static const _titleDark = Color(0xFF1A1A1A);
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final titleStyle = context.hmiTypography.dialogTitle.copyWith(
-      color: _titleDark,
+      color: CyberColors.textPrimary,
       fontWeight: FontWeight.w700,
       height: 1.15,
       decoration: TextDecoration.none,
     );
     final bodyStyle = context.hmiTypography.dialogBody.copyWith(
-      color: _bodyDark,
+      color: CyberColors.textPrimary,
       fontWeight: FontWeight.w400,
       height: 1.35,
       decoration: TextDecoration.none,

@@ -270,6 +270,8 @@ void main() {
     expect(t.dialogOptionLabel.fontSize, HmiTypography.dialogOptionLabelSize);
     expect(t.engineerTipTitle.fontSize, HmiTypography.tipPromptTitleSize);
     expect(t.engineerTipBody.fontSize, HmiTypography.tipPromptBodySize);
+    expect(CyberPromptContent.titleSize, HmiTypography.tipPromptTitleSize);
+    expect(CyberPromptContent.bodySize, HmiTypography.tipPromptBodySize);
     expect(t.safetyTipBody.fontSize, AppTypography.navigationSize);
     expect(t.reminderBody.fontSize, AppTypography.sectionTitleSize);
     expect(HmiTypography.buttonHeroFontSize, 24);

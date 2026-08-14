@@ -31,8 +31,9 @@ if command -v tune2fs >/dev/null 2>&1; then
 	run_tune2fs "$abs"
 elif command -v docker >/dev/null 2>&1; then
 	echo "stamp-rootfs-ext4-identity: tune2fs via Docker alpine ($base → $LABEL)" >&2
+	# Alpine keeps tune2fs in e2fsprogs-extra (e2fsprogs alone → "tune2fs: not found").
 	docker run --rm -v "$dir:/work" alpine:3.20 \
-		sh -c "apk add --no-cache e2fsprogs >/dev/null && \
+		sh -c "apk add --no-cache e2fsprogs e2fsprogs-extra >/dev/null && \
 			tune2fs -L $LABEL -U random /work/$base >/dev/null"
 else
 	die "need host tune2fs or Docker to stamp $abs (no boot-time restamp)"

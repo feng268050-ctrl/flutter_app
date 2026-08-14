@@ -86,10 +86,10 @@ class HmiTypography extends ThemeExtension<HmiTypography> {
   static const buttonHeroFontSize = 24.0;
   static const buttonJumboFontSize = 32.0;
 
-  /// Engineer-entry / warn-alarm prompt title (product tip chrome).
+  /// Engineer-entry / warn-alarm / register / tip prompt title.
   static const tipPromptTitleSize = 40.0;
 
-  /// Engineer-entry / warn-alarm prompt body (product tip chrome).
+  /// Engineer-entry / warn-alarm / register / tip prompt body.
   static const tipPromptBodySize = 32.0;
 
   /// Engineer-entry / warn-alarm Confirm label — not [buttonHeroFontSize].

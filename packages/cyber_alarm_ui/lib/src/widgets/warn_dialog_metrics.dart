@@ -30,14 +30,14 @@ abstract final class WarnDialogMetrics {
   /// `frost_dialog_prompt_icon_size` → `engineer_mode_entry_icon_size`.
   static const double iconSize = 150;
 
-  /// `frost_dialog_prompt_title_text_size` → criticalTitle (52).
-  static const double titleSize = 52.0;
+  /// Engineer-entry / warn prompt title (product tip chrome).
+  static const double titleSize = 40.0;
 
   /// Absolute floor only for pathological titles (prefer fit over this).
   static const double minTitleSize = 18.0; // body
 
-  /// `prompt_content` → largeDialogTitle (36) special large body.
-  static const double bodySize = 36.0;
+  /// Engineer-entry / warn prompt body (product tip chrome).
+  static const double bodySize = 32.0;
 
   /// `frost_dialog_prompt_scroll_max_height` (tightened for hero confirm 68).
   static const double bodyScrollMaxHeight = 134;
@@ -48,14 +48,14 @@ abstract final class WarnDialogMetrics {
   /// `frost_dialog_prompt_confirm_button_min_width`.
   static const double confirmMinWidth = 500;
 
-  /// Confirm face — aligned with App `HmiButtonSize.hero` (68 / 24 / w700).
+  /// Confirm face height — aligned with App `HmiButtonSize.hero` (68).
   static const double confirmHeight = 68;
 
-  /// Confirm label — aligned with App `HmiButtonSize.hero` / `buttonHero`.
-  static const double confirmLabelSize = 24.0;
+  /// Confirm label — product tip Confirm (not App `buttonHeroFontSize` 24).
+  static const double confirmLabelSize = 30.0;
 
-  /// Body `lineSpacingExtra` 6dp on 37sp ≈ height multiplier.
-  static const double bodyHeight = (37 + 6) / 37;
+  /// Body `lineSpacingExtra` 6dp on [bodySize].
+  static const double bodyHeight = (bodySize + 6) / bodySize;
 
   /// Max card height: dimen cap and screen margins.
   static double maxCardHeight(BuildContext context) {

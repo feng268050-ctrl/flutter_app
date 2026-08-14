@@ -36,10 +36,10 @@ const PageTransitionsTheme kAppPageTransitionsTheme = PageTransitionsTheme(
 );
 
 /// Forward (enter) duration for Home fade / in-module slide.
-const Duration kAppPageEnterDuration = Duration(milliseconds: 280);
+const Duration kAppPageEnterDuration = Duration(milliseconds: 380);
 
 /// Reverse (pop) duration for Home fade / in-module slide.
-const Duration kAppPageExitDuration = Duration(milliseconds: 240);
+const Duration kAppPageExitDuration = Duration(milliseconds: 340);
 
 /// Enter duration under balanced load profile (snap chrome transitions).
 Duration appPageEnterDuration(BuildContext? context, {bool? snap}) {

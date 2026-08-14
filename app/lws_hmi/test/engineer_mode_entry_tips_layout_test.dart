@@ -54,10 +54,27 @@ void main() {
           )
           .first,
     );
-    // Title-based width (≥700, ≤95% screen) so 53sp title fits.
-    expect(card.width, greaterThanOrEqualTo(700));
+    // Title-based width (≥600 floor, ≤95% screen) so tip title fits.
+    expect(card.width, greaterThanOrEqualTo(600));
     expect(card.width, lessThanOrEqualTo(1280 * 0.95));
     // cardH = (800 + 600) / 2 → 700; margins ~50 each (half of former ~100).
     expect(card.height, moreOrLessEquals(700, epsilon: 1));
+
+    // Checkbox + label group is horizontally centered in the card.
+    final cardRect = tester.getRect(
+      find
+          .ancestor(
+            of: find.byKey(const ValueKey('engineer-mode-entry-tips')),
+            matching: find.byType(ConstrainedBox),
+          )
+          .first,
+    );
+    final checkboxRect = tester.getRect(
+      find.byKey(const ValueKey('engineer-mode-entry-dont-show-again')),
+    );
+    expect(
+      checkboxRect.center.dx,
+      moreOrLessEquals(cardRect.center.dx, epsilon: 2),
+    );
   });
 }

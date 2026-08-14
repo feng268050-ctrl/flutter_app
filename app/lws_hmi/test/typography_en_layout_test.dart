@@ -170,9 +170,9 @@ void main() {
   });
 
   test('WarnDialogMetrics ladder sizes stay on FrostUI 100% scale', () {
-    expect(WarnDialogMetrics.titleSize, 52);
-    expect(WarnDialogMetrics.bodySize, 36);
-    expect(WarnDialogMetrics.confirmLabelSize, 24);
+    expect(WarnDialogMetrics.titleSize, 40);
+    expect(WarnDialogMetrics.bodySize, 32);
+    expect(WarnDialogMetrics.confirmLabelSize, 30);
     expect(WarnDialogMetrics.minTitleSize, 18);
   });
 
@@ -268,11 +268,12 @@ void main() {
     expect(t.dialogBody.fontSize, AppTypography.pageTitleSize); // 28
     expect(t.importantDialogBody.fontSize, AppTypography.dialogTitleSize); // 32
     expect(t.dialogOptionLabel.fontSize, HmiTypography.dialogOptionLabelSize);
-    expect(t.engineerTipTitle.fontSize, AppTypography.criticalTitleSize);
-    expect(t.engineerTipBody.fontSize, AppTypography.largeDialogTitleSize);
+    expect(t.engineerTipTitle.fontSize, HmiTypography.tipPromptTitleSize);
+    expect(t.engineerTipBody.fontSize, HmiTypography.tipPromptBodySize);
     expect(t.safetyTipBody.fontSize, AppTypography.navigationSize);
     expect(t.reminderBody.fontSize, AppTypography.sectionTitleSize);
     expect(HmiTypography.buttonHeroFontSize, 24);
+    expect(HmiTypography.dialogConfirmLabelSize, 30);
     expect(t.clock.fontSize, HmiDisplayTypography.clockSize);
     expect(t.dashboardValue.fontSize, HmiDisplayTypography.dashboardValueSize);
   });

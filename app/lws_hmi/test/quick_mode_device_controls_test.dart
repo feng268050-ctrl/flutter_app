@@ -112,6 +112,50 @@ void main() {
     expect(left.top, closeTo(right.top, 0.5));
   });
 
+  testWidgets('busy does not dim peer side keys', (tester) async {
+    final controller = DeviceControlController(servicesWith(_IdleModbus()))
+      ..keySwitchOn = true
+      ..busy = true;
+    await pumpControls(
+      tester,
+      processType: ProcessType.continuousWelding,
+      controller: controller,
+    );
+
+    expect(
+      tester
+          .widget<ProcessModeOutlineButton>(
+            find.byKey(const ValueKey('device-control-manual-gas')),
+          )
+          .enabled,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<ProcessModeOutlineButton>(
+            find.byKey(const ValueKey('device-control-auto-wire-feed')),
+          )
+          .enabled,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<ProcessModeOutlineWireButton>(
+            find.byKey(const ValueKey('device-control-feed')),
+          )
+          .enabled,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<ProcessModeOutlineWireButton>(
+            find.byKey(const ValueKey('device-control-retract')),
+          )
+          .enabled,
+      isTrue,
+    );
+  });
+
   testWidgets('pins left/right groups to screen corners', (tester) async {
     await pumpControls(tester, processType: ProcessType.continuousWelding);
 

@@ -2,6 +2,41 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_text_scale.dart';
+
+enum GaugeVisualStyle {
+  horseshoe,
+  integratedRing,
+}
+
+@immutable
+final class GaugeArcConfig {
+  const GaugeArcConfig({
+    required this.startAngle,
+    required this.sweepAngle,
+  });
+
+  final double startAngle;
+  final double sweepAngle;
+
+  double get complementSweepAngle => 2 * math.pi - sweepAngle;
+
+  double angleForProgress(double progress) =>
+      startAngle + sweepAngle * progress.clamp(0.0, 1.0);
+}
+
+abstract final class GaugeArcPresets {
+  static const horseshoe = GaugeArcConfig(
+    startAngle: 135 * math.pi / 180,
+    sweepAngle: 270 * math.pi / 180,
+  );
+
+  static const integratedRing = GaugeArcConfig(
+    startAngle: 140 * math.pi / 180,
+    sweepAngle: 260 * math.pi / 180,
+  );
+}
 
 /// Shared 270° arc geometry: start bottom-left → end bottom-right, clockwise.
 abstract final class MonitorArcGeometry {
@@ -290,8 +325,7 @@ final class CurrentArcGaugeGeom {
     for (var i = 0; i <= 24; i++) {
       final t = i / 24.0;
       final angle = MonitorArcGeometry.angleForProgress(t);
-      final labelY =
-          center.dy + labelBandRadius * math.sin(angle);
+      final labelY = center.dy + labelBandRadius * math.sin(angle);
       minY = math.min(minY, labelY - labelHalfHeight);
       maxY = math.max(maxY, labelY + labelHalfHeight);
       final trackY = center.dy + trackOuter * math.sin(angle);
@@ -311,9 +345,7 @@ final class CurrentArcGaugeGeom {
     if (span <= 0) {
       return const [];
     }
-    final step = majorTickEvery > 0
-        ? majorTickEvery
-        : math.max(1.0, span / 10);
+    final step = majorTickEvery > 0 ? majorTickEvery : math.max(1.0, span / 10);
     final out = <double>[];
     for (var v = min; v <= max + 1e-9; v += step) {
       out.add(v > max ? max : v);
@@ -369,16 +401,20 @@ class CurrentArcGauge extends StatefulWidget {
     this.min = 0,
     this.max = 100,
     this.unit = 'A',
+    this.title,
     this.titleLine1 = 'Laser',
     this.titleLine2 = 'Current',
+    this.visualStyle = GaugeVisualStyle.horseshoe,
     this.size = 280,
     this.trackWidth = 16,
+
     /// Step between labeled majors; `≤0` → `max/10` (11 marks).
     this.majorTickEvery = 0,
     this.evenlySpacedTickValues,
     this.minorTicksBetweenMajors = 0,
     this.geometryMaxLabelValue,
     this.progressColor = const Color(0xFF4FC3F7),
+    this.ringSurfaceColor = const Color(0xFF181818),
     this.trackColor = const Color(0x33FFFFFF),
     this.tickColor = Colors.white,
     this.rimStrokeColor = Colors.white,
@@ -389,8 +425,15 @@ class CurrentArcGauge extends StatefulWidget {
   final double min;
   final double max;
   final String unit;
+
+  /// Gauge name used by [GaugeVisualStyle.integratedRing].
+  ///
+  /// The bottom cabin renders at most two centered lines. When omitted, the
+  /// legacy title lines are joined with a line break for compatibility.
+  final String? title;
   final String titleLine1;
   final String titleLine2;
+  final GaugeVisualStyle visualStyle;
   final double size;
   final double trackWidth;
   final double majorTickEvery;
@@ -405,6 +448,7 @@ class CurrentArcGauge extends StatefulWidget {
   ///
   /// The minor marks use the same arc geometry as the major scale, so they
   /// remain evenly spaced even when [evenlySpacedTickValues] is used.
+  /// [GaugeVisualStyle.integratedRing] deliberately renders major ticks only.
   final int minorTicksBetweenMajors;
 
   /// Reference numeral used only to resolve the arc radius.
@@ -413,6 +457,7 @@ class CurrentArcGauge extends StatefulWidget {
   /// identical geometry while retaining their own tick labels and values.
   final double? geometryMaxLabelValue;
   final Color progressColor;
+  final Color ringSurfaceColor;
   final Color trackColor;
   final Color tickColor;
   final Color rimStrokeColor;
@@ -476,22 +521,46 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
     return v.toStringAsFixed(0);
   }
 
+  String get _gaugeTitle {
+    final title = widget.title?.trim();
+    if (title != null && title.isNotEmpty) {
+      return _twoLineGaugeTitle(title);
+    }
+    return _twoLineGaugeTitle(
+      [widget.titleLine1, widget.titleLine2]
+          .where((part) => part.trim().isNotEmpty)
+          .join('\n'),
+    );
+  }
+
+  String _twoLineGaugeTitle(String rawTitle) {
+    final words = rawTitle
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .toList(growable: false);
+    if (words.length <= 1) {
+      return words.isEmpty ? '' : words.single;
+    }
+
+    var bestSplit = 1;
+    var smallestDifference = double.infinity;
+    for (var split = 1; split < words.length; split++) {
+      final firstLength = words.take(split).join(' ').length;
+      final secondLength = words.skip(split).join(' ').length;
+      final difference = (firstLength - secondLength).abs().toDouble();
+      if (difference < smallestDifference) {
+        smallestDifference = difference;
+        bestSplit = split;
+      }
+    }
+    return '${words.take(bestSplit).join(' ')}\n'
+        '${words.skip(bestSplit).join(' ')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final span = (widget.max - widget.min).abs();
-    // Machine Status tab content: +2 over size-relative bases.
-    final labelStyle = TextStyle(
-      color: widget.tickColor,
-      fontSize: widget.size * (18 / 200) + 2,
-      fontWeight: FontWeight.w400,
-      height: 1.0,
-    );
-    final geom = CurrentArcGaugeGeom.compute(
-      side: widget.size,
-      trackWidth: widget.trackWidth,
-      maxValue: widget.geometryMaxLabelValue ?? widget.max,
-      labelStyle: labelStyle,
-    );
     final majors = CurrentArcGaugeGeom.majorValues(
       min: widget.min,
       max: widget.max,
@@ -503,9 +572,63 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
             .map((mark) => ((mark - widget.min) / span).clamp(0.0, 1.0))
             .toList(growable: false)
         : CurrentArcGaugeGeom.evenlySpacedProgresses(tickValues.length);
-    final minorTickProgresses = CurrentArcGaugeGeom.intermediateProgresses(
-      tickProgresses,
-      widget.minorTicksBetweenMajors,
+    // Integrated Ring is a major-only scale. Preserve optional minor marks
+    // exclusively for the legacy horseshoe visual style.
+    final minorTickProgresses = widget.visualStyle == GaugeVisualStyle.horseshoe
+        ? CurrentArcGaugeGeom.intermediateProgresses(
+            tickProgresses,
+            widget.minorTicksBetweenMajors,
+          )
+        : const <double>[];
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, _) {
+        final v = _animation.value.clamp(widget.min, widget.max);
+        final t = span <= 0 ? 0.0 : (v - widget.min) / span;
+        return switch (widget.visualStyle) {
+          GaugeVisualStyle.horseshoe => _buildHorseshoe(
+              context,
+              value: v,
+              progress: t,
+              tickValues: tickValues,
+              tickProgresses: tickProgresses,
+              minorTickProgresses: minorTickProgresses,
+            ),
+          GaugeVisualStyle.integratedRing => _buildIntegratedRing(
+              context,
+              value: v,
+              progress: t,
+              tickValues: tickValues,
+              tickProgresses: tickProgresses,
+            ),
+        };
+      },
+    );
+  }
+
+  double get _geometryScale => (widget.size / 260).clamp(0.68, 1.0);
+
+  Widget _buildHorseshoe(
+    BuildContext context, {
+    required double value,
+    required double progress,
+    required List<double> tickValues,
+    required List<double> tickProgresses,
+    required List<double> minorTickProgresses,
+  }) {
+    // Legacy lws-ui gauge dimensions stay unchanged in horseshoe mode.
+    final labelStyle = TextStyle(
+      color: widget.tickColor,
+      fontSize: widget.size * (18 / 200) + 2,
+      fontWeight: FontWeight.w400,
+      height: 1,
+    );
+    final geom = CurrentArcGaugeGeom.compute(
+      side: widget.size,
+      trackWidth: widget.trackWidth,
+      maxValue: widget.geometryMaxLabelValue ?? widget.max,
+      labelStyle: labelStyle,
     );
     final labelProbe = TextPainter(
       text: TextSpan(
@@ -517,101 +640,516 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
     final opticalDy = geom.opticalVerticalOffset(
       labelHalfHeight: labelProbe.height / 2,
     );
+    final titleStyle = HmiDisplayTypography.gaugeName.copyWith(
+      color: Colors.white70,
+      fontSize: HmiDisplayTypography.gaugeNameSize * _geometryScale,
+    );
+    final titleScaler = HmiTextScale.displayTextScalerOf(context);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, _) {
-        final v = _animation.value.clamp(widget.min, widget.max);
-        final t = span <= 0 ? 0.0 : (v - widget.min) / span;
-        return SizedBox(
-          width: widget.size,
-          height: widget.size,
-          // Horseshoe dial is optically high in a centered square — shift the
-          // whole ink (arc + ticks + labels + readout) so T/B match the box.
-          child: Transform.translate(
-            offset: Offset(0, opticalDy),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CustomPaint(
-                  size: Size.square(widget.size),
-                  painter: _CurrentArcPainter(
-                    progress: t,
-                    geom: geom,
-                    tickProgresses: tickProgresses,
-                    minorTickProgresses: minorTickProgresses,
-                    progressColor: widget.progressColor,
-                    trackColor: widget.trackColor,
-                    tickColor: widget.tickColor,
-                    rimStrokeColor: widget.rimStrokeColor,
-                  ),
-                ),
-                // Tick numerals as real Text widgets (lws-ui horizontal, radial
-                // centers) — prefer Flutter layout over Canvas.drawText.
-                for (var index = 0; index < tickValues.length; index++)
-                  _MajorTickLabel(
-                    geom: geom,
-                    progress: tickProgresses[index],
-                    text: _formatTick(tickValues[index]),
-                    style: labelStyle,
-                  ),
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: widget.size * 0.06),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text.rich(
+    return SizedBox.square(
+      dimension: widget.size,
+      child: Transform.translate(
+        offset: Offset(0, opticalDy),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CustomPaint(
+              size: Size.square(widget.size),
+              painter: _CurrentArcPainter(
+                progress: progress,
+                geom: geom,
+                tickProgresses: tickProgresses,
+                minorTickProgresses: minorTickProgresses,
+                progressColor: widget.progressColor,
+                trackColor: widget.trackColor,
+                tickColor: widget.tickColor,
+                rimStrokeColor: widget.rimStrokeColor,
+              ),
+            ),
+            for (var index = 0; index < tickValues.length; index++)
+              _MajorTickLabel(
+                geom: geom,
+                progress: tickProgresses[index],
+                text: _formatTick(tickValues[index]),
+                style: labelStyle,
+              ),
+            Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: widget.size * 0.06),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text.rich(
+                      TextSpan(
+                        children: [
                           TextSpan(
-                            children: [
-                              TextSpan(
-                                text: _formatValue(v),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: widget.size * 0.14 + 2,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.1,
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' ${widget.unit}',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: widget.size * 0.07 + 2,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.1,
-                                ),
-                              ),
-                            ],
+                            text: _formatValue(value),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: widget.size * 0.14 + 2,
+                              fontWeight: FontWeight.w700,
+                              height: 1.1,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: widget.size * 0.02),
-                        Text(
-                          widget.titleLine1,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: widget.size * 0.055 + 2,
-                            height: 1.15,
+                          TextSpan(
+                            text: ' ${widget.unit}',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: widget.size * 0.07 + 2,
+                              fontWeight: FontWeight.w500,
+                              height: 1.1,
+                            ),
                           ),
-                        ),
-                        Text(
-                          widget.titleLine2,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: widget.size * 0.055 + 2,
-                            height: 1.15,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                    SizedBox(height: widget.size * 0.02),
+                    Text(
+                      widget.titleLine1,
+                      textScaler: titleScaler,
+                      style: titleStyle,
+                    ),
+                    Text(
+                      widget.titleLine2,
+                      textScaler: titleScaler,
+                      style: titleStyle,
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIntegratedRing(
+    BuildContext context, {
+    required double value,
+    required double progress,
+    required List<double> tickValues,
+    required List<double> tickProgresses,
+  }) {
+    final geom = IntegratedRingGaugeGeometry.compute(
+      side: widget.size,
+    );
+    final geometryScale = _geometryScale;
+    final textScaler = HmiTextScale.displayTextScalerOf(context);
+    final tickStyle = HmiDisplayTypography.gaugeTickLabel.copyWith(
+      color: widget.tickColor.withValues(alpha: 0.88),
+      fontSize: HmiDisplayTypography.gaugeTickLabelSize * geometryScale,
+    );
+
+    return SizedBox.square(
+      dimension: widget.size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CustomPaint(
+            size: Size.square(widget.size),
+            painter: _IntegratedRingGaugePainter(
+              progress: progress,
+              geom: geom,
+              progressColor: widget.progressColor,
+              ringSurfaceColor: widget.ringSurfaceColor,
+            ),
+          ),
+          CustomPaint(
+            size: Size.square(widget.size),
+            painter: _GaugeBottomCabinPainter(geom: geom),
+          ),
+          CustomPaint(
+            size: Size.square(widget.size),
+            painter: _IntegratedRingGaugeForegroundPainter(
+              geom: geom,
+              tickProgresses: tickProgresses,
+              tickColor: widget.tickColor,
+              rimStrokeColor: widget.rimStrokeColor,
+            ),
+          ),
+          for (var index = 0; index < tickValues.length; index++)
+            _IntegratedRingTickLabel(
+              geom: geom,
+              progress: tickProgresses[index],
+              text: _formatTick(tickValues[index]),
+              style: tickStyle,
+              textScaler: textScaler,
+            ),
+          Positioned(
+            left: widget.size * 0.25,
+            right: widget.size * 0.25,
+            top: widget.size * 0.34,
+            height: widget.size * 0.31,
+            child: _GaugeCenterReadout(
+              value: _formatValue(value),
+              unit: widget.unit,
+              geometryScale: geometryScale,
+              textScaler: textScaler,
+            ),
+          ),
+          Positioned(
+            left: widget.size * 0.15,
+            right: widget.size * 0.15,
+            bottom: 0,
+            height: widget.size * 0.36,
+            child: _GaugeBottomInfoCabin(
+              key: const ValueKey<String>('gauge-bottom-info-cabin'),
+              label: _gaugeTitle,
+              geometryScale: geometryScale,
+              textScaler: textScaler,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Fixed-ratio geometry shared by both machine-status integrated-ring gauges.
+final class IntegratedRingGaugeGeometry {
+  const IntegratedRingGaugeGeometry({
+    required this.center,
+    required this.ringRadius,
+    required this.ringThickness,
+    required this.outerRimRadius,
+    required this.labelBandRadius,
+    required this.bottomCabinInnerRadius,
+  }) : assert(outerRimRadius > ringRadius + ringThickness / 2);
+
+  final Offset center;
+  final double ringRadius;
+  final double ringThickness;
+  final double outerRimRadius;
+  final double labelBandRadius;
+  final double bottomCabinInnerRadius;
+
+  double get ringSectorOuterRadius => ringRadius + ringThickness / 2;
+  double get ringInnerRadius => ringRadius - ringThickness / 2;
+
+  /// Angular air between each terminal major tick and the cabin outer join.
+  ///
+  /// The cabin deliberately does not complete the scale rim: the short gaps
+  /// keep the two silhouettes readable and prevent their 1px outlines from
+  /// accumulating into bright, heavy corners.
+  static const double bottomCabinOuterJoinInset = 8 * math.pi / 180;
+
+  /// Pulls the inner shoulder toward the bottom independently of the outer
+  /// join, leaving enough width for two-line names and a rounded transition
+  /// into the outer wall.
+  static const double bottomCabinInnerShoulderInset = 24 * math.pi / 180;
+
+  /// Fixed radial spacing between the dark Ring Sector and outer scale rim.
+  double get outerRimRadiusDelta => outerRimRadius - ringSectorOuterRadius;
+
+  /// Major ticks occupy only the external scale band: Outer Rim → Ring Sector.
+  double get majorTickOuterRadius => outerRimRadius;
+  double get majorTickInnerRadius => ringSectorOuterRadius;
+
+  Rect get ringSectorOuterBounds =>
+      Rect.fromCircle(center: center, radius: ringSectorOuterRadius);
+
+  Rect get outerRimBounds =>
+      Rect.fromCircle(center: center, radius: outerRimRadius);
+
+  /// The cabin bottom remains concentric with the outer rim. Its join angles
+  /// are inset independently, leaving air beside the scale terminals.
+  Rect get bottomCabinOuterBounds => outerRimBounds;
+
+  /// Exact identity prevents a radial seam between progress and center dial.
+  double get centerDialRadius => ringInnerRadius;
+
+  /// Bottom tangent of the center dial. The cabin concavity is intentionally
+  /// lifted above this baseline so the cabin has visible vertical mass.
+  double get centerDialBaselineY => center.dy + centerDialRadius;
+
+  /// Lowest point of the cabin's inner concave edge (at 90°).
+  double get bottomCabinInnerApexY => center.dy + bottomCabinInnerRadius;
+
+  double get bottomCabinInnerLiftAboveDialBaseline =>
+      centerDialBaselineY - bottomCabinInnerApexY;
+
+  static IntegratedRingGaugeGeometry compute({
+    required double side,
+  }) {
+    final ringRadius = side * 0.355;
+    final ringThickness = side * 0.18;
+    return IntegratedRingGaugeGeometry(
+      center: Offset(side / 2, side / 2),
+      ringRadius: ringRadius,
+      ringThickness: ringThickness,
+      outerRimRadius: side * 0.48,
+      labelBandRadius: side * 0.345,
+      bottomCabinInnerRadius: side * 0.22,
+    );
+  }
+}
+
+final class _IntegratedRingTickLabel extends StatelessWidget {
+  const _IntegratedRingTickLabel({
+    required this.geom,
+    required this.progress,
+    required this.text,
+    required this.style,
+    required this.textScaler,
+  });
+
+  final IntegratedRingGaugeGeometry geom;
+  final double progress;
+  final String text;
+  final TextStyle style;
+  final TextScaler textScaler;
+
+  @override
+  Widget build(BuildContext context) {
+    final angle = GaugeArcPresets.integratedRing.angleForProgress(progress);
+    final anchor = MonitorArcGeometry.pointOnArc(
+      geom.center,
+      geom.labelBandRadius,
+      angle,
+    );
+    return Positioned(
+      left: 0,
+      top: 0,
+      child: Transform.translate(
+        offset: anchor,
+        child: FractionalTranslation(
+          translation: const Offset(-0.5, -0.5),
+          child: Text(
+            text,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+            textScaler: textScaler,
+            style: style,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _GaugeCenterReadout extends StatelessWidget {
+  const _GaugeCenterReadout({
+    required this.value,
+    required this.unit,
+    required this.geometryScale,
+    required this.textScaler,
+  });
+
+  final String value;
+  final String unit;
+  final double geometryScale;
+  final TextScaler textScaler;
+
+  @override
+  Widget build(BuildContext context) {
+    final valueStyle = HmiDisplayTypography.gaugeValue.copyWith(
+      color: Colors.white,
+      fontSize: HmiDisplayTypography.gaugeValueSize * geometryScale,
+    );
+    final unitStyle = HmiDisplayTypography.gaugeUnit.copyWith(
+      color: const Color(0xCCFFFFFF),
+      fontSize: HmiDisplayTypography.gaugeUnitSize * geometryScale,
+    );
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              textScaler: textScaler,
+              style: valueStyle,
+            ),
+          ),
+        ),
+        SizedBox(height: 5 * geometryScale),
+        Text(
+          unit,
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          textScaler: textScaler,
+          style: unitStyle,
+        ),
+      ],
+    );
+  }
+}
+
+final class _GaugeBottomInfoCabin extends StatelessWidget {
+  const _GaugeBottomInfoCabin({
+    super.key,
+    required this.label,
+    required this.geometryScale,
+    required this.textScaler,
+  });
+
+  final String label;
+  final double geometryScale;
+  final TextScaler textScaler;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Keep both lines below the cabin's center concavity. The bottom
+        // inset follows the curved edge so glyphs stay inside the fan at
+        // every supported gauge size and display text scale.
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            18 * geometryScale,
+            constraints.maxHeight * 0.37,
+            18 * geometryScale,
+            constraints.maxHeight * 0.12,
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 2,
+                softWrap: false,
+                overflow: TextOverflow.visible,
+                textAlign: TextAlign.center,
+                textScaler: textScaler,
+                style: HmiDisplayTypography.gaugeName.copyWith(
+                  color: Colors.white,
+                  fontSize: HmiDisplayTypography.gaugeNameSize * geometryScale,
+                ),
+              ),
             ),
           ),
         );
       },
     );
+  }
+}
+
+class _GaugeBottomCabinPainter extends CustomPainter {
+  const _GaugeBottomCabinPainter({required this.geom});
+
+  final IntegratedRingGaugeGeometry geom;
+
+  Path _cabinPath() {
+    const gaugeArc = GaugeArcPresets.integratedRing;
+    final outerRadius = geom.outerRimRadius;
+    final innerRadius = geom.bottomCabinInnerRadius;
+    final cornerReach = (outerRadius - innerRadius) * 0.24;
+    const outerJoinInset =
+        IntegratedRingGaugeGeometry.bottomCabinOuterJoinInset;
+    const innerShoulderInset =
+        IntegratedRingGaugeGeometry.bottomCabinInnerShoulderInset;
+    final scaleRightAngle = gaugeArc.startAngle + gaugeArc.sweepAngle;
+    final scaleLeftAngle = gaugeArc.startAngle;
+    // These join angles are intentionally independent from the scale arc
+    // terminals. Moving both joins into the open-bottom sector creates a
+    // stable angular gap beside the first and last major ticks.
+    final outerRightAngle = scaleRightAngle + outerJoinInset;
+    final outerLeftAngle = scaleLeftAngle - outerJoinInset;
+    final innerRightAngle = scaleRightAngle + innerShoulderInset;
+    final innerLeftAngle = scaleLeftAngle - innerShoulderInset;
+    final outerSweep = outerLeftAngle + 2 * math.pi - outerRightAngle;
+    final innerSweep = innerRightAngle - 2 * math.pi - innerLeftAngle;
+    final innerLeft = MonitorArcGeometry.pointOnArc(
+      geom.center,
+      innerRadius,
+      innerLeftAngle,
+    );
+    final innerRight = MonitorArcGeometry.pointOnArc(
+      geom.center,
+      innerRadius,
+      innerRightAngle,
+    );
+    final outerRight = MonitorArcGeometry.pointOnArc(
+      geom.center,
+      outerRadius,
+      outerRightAngle,
+    );
+    final outerLeft = MonitorArcGeometry.pointOnArc(
+      geom.center,
+      outerRadius,
+      outerLeftAngle,
+    );
+    final innerRightTangent = Offset(
+      math.sin(innerRightAngle),
+      -math.cos(innerRightAngle),
+    );
+    final outerRightTangent = Offset(
+      -math.sin(outerRightAngle),
+      math.cos(outerRightAngle),
+    );
+    final outerLeftTangent = Offset(
+      -math.sin(outerLeftAngle),
+      math.cos(outerLeftAngle),
+    );
+    final innerLeftTangent = Offset(
+      math.sin(innerLeftAngle),
+      -math.cos(innerLeftAngle),
+    );
+
+    // The cabin remains concentric with the gauge, but its outer arc is
+    // shorter than the scale complement. Independent outer/inner join angles
+    // and tangent-aligned cubic handles produce compact, rounded shoulders.
+    return Path()
+      ..moveTo(innerLeft.dx, innerLeft.dy)
+      ..arcTo(
+        Rect.fromCircle(center: geom.center, radius: innerRadius),
+        innerLeftAngle,
+        innerSweep,
+        false,
+      )
+      ..cubicTo(
+        innerRight.dx + innerRightTangent.dx * cornerReach,
+        innerRight.dy + innerRightTangent.dy * cornerReach,
+        outerRight.dx - outerRightTangent.dx * cornerReach,
+        outerRight.dy - outerRightTangent.dy * cornerReach,
+        outerRight.dx,
+        outerRight.dy,
+      )
+      ..arcTo(
+        geom.bottomCabinOuterBounds,
+        outerRightAngle,
+        outerSweep,
+        false,
+      )
+      ..cubicTo(
+        outerLeft.dx + outerLeftTangent.dx * cornerReach,
+        outerLeft.dy + outerLeftTangent.dy * cornerReach,
+        innerLeft.dx - innerLeftTangent.dx * cornerReach,
+        innerLeft.dy - innerLeftTangent.dy * cornerReach,
+        innerLeft.dx,
+        innerLeft.dy,
+      )
+      ..close();
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = _cabinPath();
+    final fill = Paint()
+      ..color = const Color(0xFF050506)
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    canvas.drawPath(path, fill);
+
+    final border = Paint()
+      ..color = const Color(0x66FFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+    canvas.drawPath(path, border);
+  }
+
+  @override
+  bool shouldRepaint(covariant _GaugeBottomCabinPainter oldDelegate) {
+    return oldDelegate.geom.center != geom.center ||
+        oldDelegate.geom.outerRimRadius != geom.outerRimRadius ||
+        oldDelegate.geom.bottomCabinInnerRadius != geom.bottomCabinInnerRadius;
   }
 }
 
@@ -652,6 +1190,207 @@ final class _MajorTickLabel extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _IntegratedRingGaugePainter extends CustomPainter {
+  _IntegratedRingGaugePainter({
+    required this.progress,
+    required this.geom,
+    required this.progressColor,
+    required this.ringSurfaceColor,
+  });
+
+  final double progress;
+  final IntegratedRingGaugeGeometry geom;
+  final Color progressColor;
+  final Color ringSurfaceColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const arc = GaugeArcPresets.integratedRing;
+
+    // 1. A complete circular surface stabilizes the gauge silhouette. The
+    //    black center dial later reveals this surface as one continuous ring.
+    final backgroundPaint = Paint()
+      ..color = ringSurfaceColor
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    canvas.drawOval(geom.ringSectorOuterBounds, backgroundPaint);
+
+    // 2. Rounded annular sector spans the complete radial distance from the
+    //    center dial to the gauge surface outer edge.
+    final t = progress.clamp(0.0, 1.0);
+    if (t > 0) {
+      _drawRoundedAnnularSector(
+        canvas,
+        startAngle: arc.startAngle,
+        sweepAngle: arc.sweepAngle * t,
+        color: progressColor,
+      );
+    }
+
+    // 3. Pure-black center circle: no gradient, glow, or white outline.
+    final dialPaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    canvas.drawCircle(geom.center, geom.centerDialRadius, dialPaint);
+  }
+
+  void _drawRoundedAnnularSector(
+    Canvas canvas, {
+    required double startAngle,
+    required double sweepAngle,
+    required Color color,
+  }) {
+    final outerRadius = geom.ringSectorOuterRadius;
+    final innerRadius = geom.centerDialRadius;
+    final middleRadius = (outerRadius + innerRadius) / 2;
+    final capRadius = (outerRadius - innerRadius) / 2;
+    final endAngle = startAngle + sweepAngle;
+    final outerStart = MonitorArcGeometry.pointOnArc(
+      geom.center,
+      outerRadius,
+      startAngle,
+    );
+    final startCapCenter = MonitorArcGeometry.pointOnArc(
+      geom.center,
+      middleRadius,
+      startAngle,
+    );
+    final endCapCenter = MonitorArcGeometry.pointOnArc(
+      geom.center,
+      middleRadius,
+      endAngle,
+    );
+
+    // One closed path made exclusively from true circular arcs. Its outer
+    // edge is the same-center ring-sector circle; the two semicircular caps
+    // only close the Start/End edges and never replace or flatten that arc.
+    final sector = Path()
+      ..moveTo(outerStart.dx, outerStart.dy)
+      ..arcTo(
+        geom.ringSectorOuterBounds,
+        startAngle,
+        sweepAngle,
+        false,
+      )
+      ..arcTo(
+        Rect.fromCircle(center: endCapCenter, radius: capRadius),
+        endAngle,
+        math.pi,
+        false,
+      )
+      ..arcTo(
+        Rect.fromCircle(center: geom.center, radius: innerRadius),
+        endAngle,
+        -sweepAngle,
+        false,
+      )
+      ..arcTo(
+        Rect.fromCircle(center: startCapCenter, radius: capRadius),
+        startAngle + math.pi,
+        math.pi,
+        false,
+      )
+      ..close();
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    canvas.drawPath(sector, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _IntegratedRingGaugePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.geom.center != geom.center ||
+        oldDelegate.geom.ringRadius != geom.ringRadius ||
+        oldDelegate.geom.ringThickness != geom.ringThickness ||
+        oldDelegate.progressColor != progressColor ||
+        oldDelegate.ringSurfaceColor != ringSurfaceColor;
+  }
+}
+
+/// Circular foreground stays above the name-cabin surface. The scale rim and
+/// cabin remain concentric while retaining a deliberate angular separation.
+class _IntegratedRingGaugeForegroundPainter extends CustomPainter {
+  _IntegratedRingGaugeForegroundPainter({
+    required this.geom,
+    required this.tickProgresses,
+    required this.tickColor,
+    required this.rimStrokeColor,
+  });
+
+  final IntegratedRingGaugeGeometry geom;
+  final List<double> tickProgresses;
+  final Color tickColor;
+  final Color rimStrokeColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const arc = GaugeArcPresets.integratedRing;
+    final majorPaint = Paint()
+      ..color = tickColor.withValues(alpha: 0.92)
+      ..strokeWidth = math.max(1.6, size.width * 0.007)
+      ..strokeCap = StrokeCap.butt
+      ..isAntiAlias = true;
+
+    // Hard-clip Major Tick paint to the Outer Rim circle. Each mark starts
+    // on the rim and is drawn radially toward the center; no tick pixels can
+    // extend beyond the outer circular boundary.
+    canvas.save();
+    canvas.clipPath(
+      Path()..addOval(geom.outerRimBounds),
+      doAntiAlias: true,
+    );
+    for (final tickProgress in tickProgresses) {
+      final angle = arc.angleForProgress(tickProgress);
+      canvas.drawLine(
+        MonitorArcGeometry.pointOnArc(
+          geom.center,
+          geom.majorTickOuterRadius,
+          angle,
+        ),
+        MonitorArcGeometry.pointOnArc(
+          geom.center,
+          geom.majorTickInnerRadius,
+          angle,
+        ),
+        majorPaint,
+      );
+    }
+    canvas.restore();
+
+    // Paint the effective-range rim last so it remains the clean outermost
+    // boundary and visually caps every inward tick at the same radius.
+    final rimPaint = Paint()
+      ..color = rimStrokeColor.withValues(alpha: 0.72)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.butt
+      ..isAntiAlias = true;
+    canvas.drawArc(
+      geom.outerRimBounds,
+      arc.startAngle,
+      arc.sweepAngle,
+      false,
+      rimPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(
+    covariant _IntegratedRingGaugeForegroundPainter oldDelegate,
+  ) {
+    return oldDelegate.geom.center != geom.center ||
+        oldDelegate.geom.outerRimRadius != geom.outerRimRadius ||
+        oldDelegate.geom.majorTickInnerRadius != geom.majorTickInnerRadius ||
+        oldDelegate.geom.majorTickOuterRadius != geom.majorTickOuterRadius ||
+        oldDelegate.tickColor != tickColor ||
+        oldDelegate.rimStrokeColor != rimStrokeColor ||
+        !listEquals(oldDelegate.tickProgresses, tickProgresses);
   }
 }
 

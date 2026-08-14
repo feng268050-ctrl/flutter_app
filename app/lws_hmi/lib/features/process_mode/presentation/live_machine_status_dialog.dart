@@ -294,6 +294,8 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                                         l10n?.machineBlowContent ?? 'Pressure',
                                     size: _LiveGaugeDimens.gaugeSide,
                                     trackWidth: _LiveGaugeDimens.trackWidth,
+                                    animationDuration:
+                                        const Duration(milliseconds: 700),
                                   ),
                                 ),
                                 const Spacer(),
@@ -312,6 +314,8 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                                             'Current',
                                     size: _LiveGaugeDimens.gaugeSide,
                                     trackWidth: _LiveGaugeDimens.trackWidth,
+                                    animationDuration:
+                                        const Duration(milliseconds: 700),
                                   ),
                                 ),
                               ],

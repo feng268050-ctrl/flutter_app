@@ -75,6 +75,10 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final s = _ctrl;
+    final gasPressureTitle =
+        '${l10n.machineBlowTitle}\n${l10n.machineBlowContent}';
+    final laserCurrentTitle =
+        '${l10n.machineLaserCurrentTitle}\n${l10n.machineLaserCurrentContent}';
     // Labels match lws-ui `fragment_machine_status` string refs.
     final tiles = <(String, bool?)>[
       (l10n.laserText, s?.laserOn),
@@ -96,8 +100,8 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
             flex: 5,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final gaugeSize = (constraints.maxHeight - 16)
-                    .clamp(160.0, 260.0);
+                final gaugeSize =
+                    (constraints.maxHeight - 16).clamp(160.0, 260.0);
                 return Row(
                   children: [
                     Expanded(
@@ -107,34 +111,17 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                             CyberBorderGradientCenter.topLeftBottomRight,
                         child: Center(
                           child: CurrentArcGauge(
+                            visualStyle: GaugeVisualStyle.integratedRing,
                             value: s?.gasPressureKpa ?? 0,
                             min: 0,
                             // lws-ui MachineStatusBaseFragment.setBlowAirPressure max.
                             max: 1500,
-                            // Seven displayed marks. Their visual positions are
-                            // evenly distributed across the arc, preserving 0,
-                            // 750, and 1500 at start / top / end.
-                            evenlySpacedTickValues: const [
-                              0,
-                              300,
-                              600,
-                              750,
-                              900,
-                              1200,
-                              1500,
-                            ],
-                            // One short, unlabelled mark halfway between each
-                            // consecutive displayed pressure value.
-                            minorTicksBetweenMajors: 1,
-                            // Match the adjacent 0–100 A gauge's ring size;
-                            // only the gas labels use the larger 0–1500 scale.
-                            geometryMaxLabelValue: 100,
+                            // Match Laser Current: 11 majors / 10 intervals.
+                            majorTickEvery: 150,
                             unit: 'kPa',
-                            titleLine1: l10n.machineBlowTitle,
-                            titleLine2: l10n.machineBlowContent,
+                            title: gasPressureTitle,
                             size: gaugeSize,
-                            progressColor: const Color(0xFF4FC3F7),
-                            trackColor: const Color(0x33FFFFFF),
+                            progressColor: const Color(0xFFD18846),
                           ),
                         ),
                       ),
@@ -147,6 +134,7 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                             CyberBorderGradientCenter.bottomLeftTopRight,
                         child: Center(
                           child: CurrentArcGauge(
+                            visualStyle: GaugeVisualStyle.integratedRing,
                             value: s?.laserCurrentA ?? 0,
                             min: 0,
                             // lws-ui MachineStatusBaseFragment.setPumpSourceCurrent max.
@@ -154,11 +142,9 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                             // lws-ui CircleProgressView: scaleInterval = max/10.
                             majorTickEvery: 10,
                             unit: 'A',
-                            titleLine1: l10n.machineLaserCurrentTitle,
-                            titleLine2: l10n.machineLaserCurrentContent,
+                            title: laserCurrentTitle,
                             size: gaugeSize,
-                            progressColor: const Color(0xFF4FC3F7),
-                            trackColor: const Color(0x33FFFFFF),
+                            progressColor: const Color(0xFFD18846),
                           ),
                         ),
                       ),
@@ -215,12 +201,12 @@ class _MachineStatusTileGrid extends StatelessWidget {
                               on: tiles[index].$2,
                               height: tileH,
                               borderGradientCenter: switch (index % 3) {
-                                0 => CyberBorderGradientCenter
-                                    .topLeftBottomRight,
-                                1 => CyberBorderGradientCenter
-                                    .bottomLeftTopRight,
-                                _ => CyberBorderGradientCenter
-                                    .topRightBottomLeft,
+                                0 =>
+                                  CyberBorderGradientCenter.topLeftBottomRight,
+                                1 =>
+                                  CyberBorderGradientCenter.bottomLeftTopRight,
+                                _ =>
+                                  CyberBorderGradientCenter.topRightBottomLeft,
                               },
                             );
                           },

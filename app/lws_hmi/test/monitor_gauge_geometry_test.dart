@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
 
 void main() {
@@ -8,6 +9,69 @@ void main() {
     final a1 = MonitorArcGeometry.angleForProgress(1);
     expect(a0, MonitorArcGeometry.startAngle);
     expect(a1, MonitorArcGeometry.startAngle + MonitorArcGeometry.sweepAngle);
+  });
+
+  test('integrated-ring preset runs clockwise from 140° through a 260° sweep',
+      () {
+    const degrees = 180 / 3.141592653589793;
+    expect(GaugeArcPresets.integratedRing.startAngle * degrees,
+        closeTo(140, 1e-9));
+    expect(GaugeArcPresets.integratedRing.sweepAngle * degrees,
+        closeTo(260, 1e-9));
+    expect(
+      GaugeArcPresets.integratedRing.angleForProgress(1) * degrees,
+      closeTo(400, 1e-9),
+    );
+    expect(
+      GaugeArcPresets.integratedRing.sweepAngle +
+          GaugeArcPresets.integratedRing.complementSweepAngle,
+      closeTo(2 * 3.141592653589793, 1e-9),
+    );
+  });
+
+  test('integrated ring cabin clears scale terminals and lifts its concavity',
+      () {
+    final geometry = IntegratedRingGaugeGeometry.compute(side: 260);
+
+    expect(
+        geometry.outerRimBounds.center, geometry.ringSectorOuterBounds.center);
+    expect(geometry.bottomCabinOuterBounds, geometry.outerRimBounds);
+    expect(geometry.outerRimBounds.center, geometry.center);
+    expect(geometry.outerRimRadiusDelta, closeTo(260 * 0.035, 1e-9));
+    expect(geometry.majorTickOuterRadius, geometry.outerRimRadius);
+    expect(geometry.majorTickInnerRadius, geometry.ringSectorOuterRadius);
+    expect(
+        geometry.majorTickInnerRadius, lessThan(geometry.majorTickOuterRadius));
+    expect(geometry.labelBandRadius, lessThan(geometry.majorTickInnerRadius));
+    expect(geometry.labelBandRadius, greaterThan(geometry.ringInnerRadius));
+    expect(
+      IntegratedRingGaugeGeometry.bottomCabinOuterJoinInset *
+          180 /
+          3.141592653589793,
+      closeTo(8, 1e-9),
+    );
+    expect(
+      IntegratedRingGaugeGeometry.bottomCabinInnerShoulderInset *
+          180 /
+          3.141592653589793,
+      closeTo(24, 1e-9),
+    );
+    expect(
+      IntegratedRingGaugeGeometry.bottomCabinInnerShoulderInset,
+      greaterThan(IntegratedRingGaugeGeometry.bottomCabinOuterJoinInset),
+    );
+    expect(
+      geometry.ringSectorOuterRadius,
+      greaterThan(geometry.bottomCabinInnerRadius),
+    );
+    expect(
+      geometry.bottomCabinInnerApexY,
+      lessThan(geometry.centerDialBaselineY),
+    );
+    expect(
+      geometry.bottomCabinInnerLiftAboveDialBaseline,
+      closeTo(260 * 0.045, 1e-9),
+    );
   });
 
   test('majorValues: 11 labeled majors for max/10 (no minors)', () {
@@ -157,6 +221,130 @@ void main() {
     }
   });
 
+  testWidgets('integrated ring separates value, unit, and bottom-cabin name',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: CurrentArcGauge(
+              visualStyle: GaugeVisualStyle.integratedRing,
+              value: 42,
+              min: 0,
+              max: 100,
+              majorTickEvery: 10,
+              unit: 'A',
+              title: 'Laser Current',
+              size: 240,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('42'), findsOneWidget);
+    expect(find.text('A'), findsOneWidget);
+    expect(find.text('Laser\nCurrent'), findsOneWidget);
+    expect(find.text('Laser'), findsNothing);
+    expect(find.text('Current'), findsNothing);
+
+    final nameText = tester.widget<Text>(find.text('Laser\nCurrent'));
+    expect(nameText.maxLines, 2);
+    expect(nameText.overflow, TextOverflow.visible);
+    expect(nameText.textAlign, TextAlign.center);
+
+    final valueCenter = tester.getCenter(find.text('42'));
+    final unitCenter = tester.getCenter(find.text('A'));
+    final titleCenter = tester.getCenter(find.text('Laser\nCurrent'));
+    final cabinRect = tester.getRect(
+      find.byKey(const ValueKey<String>('gauge-bottom-info-cabin')),
+    );
+    final titleRect = tester.getRect(find.text('Laser\nCurrent'));
+    expect(unitCenter.dx, closeTo(valueCenter.dx, 0.01));
+    expect(unitCenter.dy, greaterThan(valueCenter.dy));
+    expect(titleCenter.dy, greaterThan(unitCenter.dy));
+    expect(cabinRect.height, closeTo(240 * 0.36, 0.01));
+    expect(titleRect.top,
+        greaterThanOrEqualTo(cabinRect.top + cabinRect.height * 0.22));
+    expect(titleRect.bottom,
+        lessThanOrEqualTo(cabinRect.bottom - cabinRect.height * 0.08));
+  });
+
+  testWidgets('integrated-ring gas scale renders all 11 symmetric major labels',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: CurrentArcGauge(
+              visualStyle: GaugeVisualStyle.integratedRing,
+              value: 725,
+              min: 0,
+              max: 1500,
+              majorTickEvery: 150,
+              unit: 'kPa',
+              title: 'Gas Pressure',
+              size: 260,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    for (final label in [
+      '0',
+      '150',
+      '300',
+      '450',
+      '600',
+      '750',
+      '900',
+      '1050',
+      '1200',
+      '1350',
+      '1500',
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
+    expect(find.text('Gas\nPressure'), findsOneWidget);
+  });
+
+  testWidgets('two-line gauge name fits the minimum integrated-ring size',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(1.12)),
+            child: Center(
+              child: CurrentArcGauge(
+                visualStyle: GaugeVisualStyle.integratedRing,
+                value: 0,
+                max: 1500,
+                majorTickEvery: 150,
+                unit: 'kPa',
+                title: 'Gas\nPressure',
+                size: 160,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Gas\nPressure'), findsOneWidget);
+    final cabinRect = tester.getRect(
+      find.byKey(const ValueKey<String>('gauge-bottom-info-cabin')),
+    );
+    final titleRect = tester.getRect(find.text('Gas\nPressure'));
+    expect(titleRect.top, greaterThan(cabinRect.top));
+    expect(titleRect.bottom, lessThan(cabinRect.bottom));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('paired gauges align their arc geometry despite label width',
       (tester) async {
     await tester.pumpWidget(
@@ -210,5 +398,36 @@ void main() {
     expect(gasTop.dy, closeTo(currentTop.dy, 0.01));
     expect(gasEnd.dx, closeTo(currentEnd.dx, 0.01));
     expect(gasEnd.dy, closeTo(currentEnd.dy, 0.01));
+  });
+
+  testWidgets('horseshoe titles reuse gaugeName at the shared geometry scale',
+      (tester) async {
+    const size = 234.0;
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: CurrentArcGauge(
+              value: 0,
+              titleLine1: 'Gas',
+              titleLine2: 'Pressure',
+              size: size,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final expected =
+        HmiDisplayTypography.gaugeNameSize * (size / 260).clamp(0.68, 1.0);
+    expect(
+      tester.widget<Text>(find.text('Gas')).style?.fontSize,
+      expected,
+    );
+    expect(
+      tester.widget<Text>(find.text('Pressure')).style?.fontSize,
+      expected,
+    );
   });
 }

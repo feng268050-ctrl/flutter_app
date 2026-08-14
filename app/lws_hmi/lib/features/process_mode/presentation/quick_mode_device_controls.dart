@@ -83,7 +83,8 @@ final class QuickModeDeviceControls extends StatelessWidget {
                           children: [
                             if (_wireCapable)
                               const SizedBox(
-                                height: ProcessModeDimens.feedHoldHintSlotHeight,
+                                height:
+                                    ProcessModeDimens.feedHoldHintSlotHeight,
                               ),
                             // Toast mutex only — do not dim peers for [busy]
                             // (Engineer parity; shared busy was flashing all
@@ -94,6 +95,8 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               leading: _materialIcon(Icons.air),
                               selected: controller.manualGas,
                               enabled: true,
+                              accent: ProcessModeTokens.accentFor(processType)
+                                  .solid,
                               onPressed: () =>
                                   unawaited(_toggleManualGas(context, l10n)),
                             ),
@@ -103,8 +106,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                                   'device-control-auto-wire-feed'),
                               label: l10n.autoWireFeed,
                               leading: _materialIcon(Icons.sync),
-                              selected:
-                                  controller.autoWireFeed && _wireCapable,
+                              selected: controller.autoWireFeed && _wireCapable,
                               enabled: _wireCapable,
                               iconLabelClearance:
                                   ProcessModeOutlineChrome.noIconLabelClearance,
@@ -158,8 +160,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               active: controller.wireWork &&
                                   !controller.wireRetracting,
                               controller: controller,
-                              onMessage: (message) =>
-                                  _toast(context, message),
+                              onMessage: (message) => _toast(context, message),
                             ),
                             const SizedBox(height: _sideButtonGap),
                             ProcessModeOutlineWireButton(
@@ -172,8 +173,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               active: controller.wireWork &&
                                   controller.wireRetracting,
                               controller: controller,
-                              onMessage: (message) =>
-                                  _toast(context, message),
+                              onMessage: (message) => _toast(context, message),
                             ),
                           ],
                         ),

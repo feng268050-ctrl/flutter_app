@@ -294,12 +294,11 @@ void main() {
       findsOneWidget,
     );
 
-    // Engineer outline chrome: idle orange / disabled brown.
-    const idle = ProcessModeOutlineChrome.actionOrange;
+    // Manual Gas follows process accent; wire keys stay Engineer orange.
     const disabled = ProcessModeOutlineChrome.disabledForeground;
     expect(
       tester.widget<Text>(find.text('Manual Gas')).style?.color,
-      idle,
+      ProcessModeTokens.accentFor(ProcessType.weldCleaning).solid,
     );
     expect(
       tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
@@ -313,6 +312,72 @@ void main() {
       tester.widget<Text>(find.text('Retract')).style?.color,
       disabled,
     );
+
+    bool hasOutline(Key key) {
+      return tester
+          .widgetList<Container>(
+        find.descendant(
+          of: find.byKey(key),
+          matching: find.byType(Container),
+        ),
+      )
+          .any((c) {
+        final decoration = c.decoration;
+        return decoration is BoxDecoration && decoration.border != null;
+      });
+    }
+
+    expect(hasOutline(const ValueKey('device-control-manual-gas')), isTrue);
+    expect(
+        hasOutline(const ValueKey('device-control-auto-wire-feed')), isFalse);
+    expect(hasOutline(const ValueKey('device-control-feed')), isFalse);
+    expect(hasOutline(const ValueKey('device-control-retract')), isFalse);
+  });
+
+  testWidgets('Manual Gas font, fill, and stroke follow process accent',
+      (tester) async {
+    BoxDecoration gasDecoration() {
+      return tester
+          .widgetList<Container>(
+            find.descendant(
+              of: find.byKey(const ValueKey('device-control-manual-gas')),
+              matching: find.byType(Container),
+            ),
+          )
+          .map((c) => c.decoration)
+          .whereType<BoxDecoration>()
+          .firstWhere((d) => d.border != null);
+    }
+
+    Future<void> expectAccent(
+      ProcessType type, {
+      required bool selected,
+    }) async {
+      final controller = DeviceControlController(servicesWith(_IdleModbus()))
+        ..keySwitchOn = true
+        ..manualGas = selected;
+      await pumpControls(
+        tester,
+        processType: type,
+        controller: controller,
+      );
+      final accent = ProcessModeTokens.accentFor(type).solid;
+      expect(
+        tester.widget<Text>(find.text('Manual Gas')).style?.color,
+        selected ? Colors.white : accent,
+      );
+      final decoration = gasDecoration();
+      expect(
+        decoration.color,
+        selected ? accent : ProcessModeOutlineChrome.idleFillFor(accent),
+      );
+      expect((decoration.border! as Border).top.color, accent);
+    }
+
+    await expectAccent(ProcessType.continuousWelding, selected: false);
+    await expectAccent(ProcessType.weldCleaning, selected: false);
+    await expectAccent(ProcessType.handCutting, selected: false);
+    await expectAccent(ProcessType.weldCleaning, selected: true);
   });
 
   testWidgets('ignores Feed tap quietly when wire ops are disabled',

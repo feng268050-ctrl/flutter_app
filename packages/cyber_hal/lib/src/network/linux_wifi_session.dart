@@ -297,6 +297,10 @@ class LinuxWifiSession implements WifiController {
   Future<void> setRadioEnabled(bool enabled) async {
     _stopWantedWatch();
     if (enabled) {
+      if (_radio == WifiRadioState.on) {
+        // Already up — do not re-run modem bring-up (AIC SDIO unbind/insmod).
+        return;
+      }
       _emitRadio(WifiRadioState.starting);
       // Persist wanted before stack bring-up so OTA reboot-after-arm still
       // restores Wi‑Fi on the next boot if reboot races the enable path.

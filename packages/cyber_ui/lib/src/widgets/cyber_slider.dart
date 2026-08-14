@@ -11,9 +11,9 @@ import 'package:cyber_ui/src/widgets/cyber_slider_logic.dart';
 ///
 /// Interaction (lws-ui `FrostSlider` / `frostSliderLongPressDragGesture`):
 /// 1. Pointer must land on the thumb hit target (not the bare track).
-/// 2. Hold ~200ms without moving past touch slop → thumb expands + click.
-/// 3. After expand animation (~150ms) value is armed; drag updates by delta
-///    from the arm point (does not jump to finger on arm).
+/// 2. Hold ~200ms without moving past touch slop → thumb expands + click,
+///    and value is armed immediately (expand animation does not delay drag).
+/// 3. Drag updates by delta from the arm point (does not jump to finger on arm).
 /// 4. Ranges spanning 0 get center snap (±3 units, 12px escape).
 class CyberSlider extends StatefulWidget {
   const CyberSlider({
@@ -66,7 +66,6 @@ class _CyberSliderState extends State<CyberSlider>
     with SingleTickerProviderStateMixin {
   late final AnimationController _expand;
   Timer? _longPressTimer;
-  Timer? _armTimer;
 
   bool _thumbExpanded = false;
   bool _valueArmed = false;
@@ -102,8 +101,6 @@ class _CyberSliderState extends State<CyberSlider>
   void _cancelTimers() {
     _longPressTimer?.cancel();
     _longPressTimer = null;
-    _armTimer?.cancel();
-    _armTimer = null;
   }
 
   void _resetGesture({required bool cancelled}) {
@@ -272,22 +269,13 @@ class _CyberSliderState extends State<CyberSlider>
         }
         _startedExpand = true;
         _thumbExpanded = true;
+        _valueArmed = true;
+        _activationX = _lastX;
         _expand.forward();
         CyberClickSoundRegistry.playClick();
         _snapSession.reset(_restingFraction);
         _dragFraction = _restingFraction;
         setState(() {});
-        _armTimer = Timer(
-          const Duration(milliseconds: CyberSliderLogic.thumbExpandDurationMs),
-          () {
-            if (_activePointer == null || !_thumbExpanded) {
-              return;
-            }
-            _valueArmed = true;
-            _activationX = _lastX;
-            setState(() {});
-          },
-        );
       },
     );
   }

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:cyber_ui/cyber_ui.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
@@ -34,6 +37,16 @@ class CustomHomeTab extends StatefulWidget {
   static const gridHeight = 494.0;
   static const animationDuration = Duration(milliseconds: 400);
   static const animationCurve = Curves.fastOutSlowIn;
+
+  /// Hold without slop before the card enlarges and drag is armed.
+  /// Same threshold as Settings [CyberSliderLogic.longPressThresholdMs].
+  static const dragHoldDuration = Duration(
+    milliseconds: CyberSliderLogic.longPressThresholdMs,
+  );
+
+  /// Visual scale-up after [dragHoldDuration]; drag is armed at hold, not after this.
+  static const dragExpandDuration = Duration(milliseconds: 150);
+  static const dragArmedScale = 1.08;
 
   @override
   State<CustomHomeTab> createState() => _CustomHomeTabState();
@@ -316,7 +329,7 @@ class _SelectionGridState extends State<_SelectionGrid> {
                 height: _dragSize.height,
                 child: IgnorePointer(
                   child: Transform.scale(
-                    scale: 1.05,
+                    scale: CustomHomeTab.dragArmedScale,
                     child: Opacity(
                       opacity: 0.88,
                       child: _MetricSelectionCard(
@@ -368,7 +381,7 @@ class _SelectionGridState extends State<_SelectionGrid> {
   }
 }
 
-class _MetricDragShell extends StatelessWidget {
+class _MetricDragShell extends StatefulWidget {
   const _MetricDragShell({
     required this.child,
     required this.dimmed,
@@ -384,21 +397,137 @@ class _MetricDragShell extends StatelessWidget {
   final ValueChanged<PointerEvent> onPointerEnd;
 
   @override
+  State<_MetricDragShell> createState() => _MetricDragShellState();
+}
+
+class _MetricDragShellState extends State<_MetricDragShell>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _expand = AnimationController(
+    vsync: this,
+    duration: CustomHomeTab.dragExpandDuration,
+  );
+  Timer? _holdTimer;
+  Timer? _armTimer;
+  int? _pointer;
+  Offset _down = Offset.zero;
+  PointerDownEvent? _downEvent;
+  Size _size = Size.zero;
+  bool _expanding = false;
+  bool _armed = false;
+
+  @override
+  void dispose() {
+    _holdTimer?.cancel();
+    _armTimer?.cancel();
+    _expand.dispose();
+    super.dispose();
+  }
+
+  void _clearTimers() {
+    _holdTimer?.cancel();
+    _holdTimer = null;
+    _armTimer?.cancel();
+    _armTimer = null;
+  }
+
+  void _reset({required bool reverseScale}) {
+    _clearTimers();
+    _pointer = null;
+    _downEvent = null;
+    _expanding = false;
+    _armed = false;
+    if (reverseScale) {
+      _expand.reverse();
+    } else {
+      _expand.value = 0;
+    }
+  }
+
+  void _onPointerDown(PointerDownEvent event, Size size) {
+    _clearTimers();
+    _pointer = event.pointer;
+    _down = event.position;
+    _downEvent = event;
+    _size = size;
+    _expanding = false;
+    _armed = false;
+    _expand.value = 0;
+    _holdTimer = Timer(CustomHomeTab.dragHoldDuration, () {
+      if (!mounted || _pointer == null) {
+        return;
+      }
+      _expanding = true;
+      _expand.forward();
+      CyberClickSoundRegistry.playClick();
+      _armTimer = Timer(CustomHomeTab.dragExpandDuration, () {
+        if (!mounted || _pointer == null || !_expanding || _armed) {
+          return;
+        }
+        final down = _downEvent;
+        if (down == null) {
+          return;
+        }
+        _armed = true;
+        widget.onPointerDown(down, _size);
+      });
+    });
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (_pointer != event.pointer) {
+      return;
+    }
+    if (_armed) {
+      widget.onPointerMove(event);
+      return;
+    }
+    // After the card starts enlarging, keep the hold (slider parity).
+    if (_expanding) {
+      return;
+    }
+    if ((event.position - _down).distance > kTouchSlop) {
+      _reset(reverseScale: false);
+    }
+  }
+
+  void _onPointerEnd(PointerEvent event) {
+    if (_pointer != event.pointer) {
+      return;
+    }
+    final armed = _armed;
+    _reset(reverseScale: true);
+    if (armed) {
+      widget.onPointerEnd(event);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) => Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerDown: (event) => onPointerDown(
+        onPointerDown: (event) => _onPointerDown(
           event,
           Size(constraints.maxWidth, constraints.maxHeight),
         ),
-        onPointerMove: onPointerMove,
-        onPointerUp: onPointerEnd,
-        onPointerCancel: onPointerEnd,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 100),
-          opacity: dimmed ? 0.28 : 1,
-          child: child,
+        onPointerMove: _onPointerMove,
+        onPointerUp: _onPointerEnd,
+        onPointerCancel: _onPointerEnd,
+        child: AnimatedBuilder(
+          animation: _expand,
+          builder: (context, child) {
+            final t = Curves.easeOut.transform(_expand.value);
+            final scale = 1.0 + (CustomHomeTab.dragArmedScale - 1.0) * t;
+            return Transform.scale(
+              scale: scale,
+              child: child,
+            );
+          },
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 100),
+            opacity: widget.dimmed ? 0.28 : 1,
+            child: widget.child,
+          ),
         ),
       ),
     );
@@ -446,28 +575,41 @@ class _MetricSelectionCard extends StatelessWidget {
         Center(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _icon(metric),
-                  color: selected
-                      ? const Color(0xFFC6D6F4)
-                      : const Color(0xFFE8EEF9),
-                  size: CustomHomeTab.cardIconSize,
-                ),
-                const SizedBox(height: 6),
-                WordBoundaryLabel(
-                  text: _label(l10n, metric),
-                  textAlign: TextAlign.center,
-                  style: context.hmiTypography.metricLabel.copyWith(
-                    color: selected ? Colors.white : const Color(0xFFF1F4FB),
-                    fontWeight: FontWeight.w500,
-                    height: 1.15,
-                  ),
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _icon(metric),
+                      color: selected
+                          ? const Color(0xFFC6D6F4)
+                          : const Color(0xFFE8EEF9),
+                      size: CustomHomeTab.cardIconSize,
+                    ),
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: SizedBox(
+                          width: constraints.maxWidth,
+                          child: WordBoundaryLabel(
+                            text: _label(l10n, metric),
+                            textAlign: TextAlign.center,
+                            style: context.hmiTypography.metricLabel.copyWith(
+                              color: selected
+                                  ? Colors.white
+                                  : const Color(0xFFF1F4FB),
+                              fontWeight: FontWeight.w500,
+                              height: 1.15,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),

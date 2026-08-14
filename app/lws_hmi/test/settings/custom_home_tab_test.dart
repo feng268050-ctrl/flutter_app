@@ -1,9 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
+
+Future<void> _holdThenDrag(
+  WidgetTester tester,
+  Finder card,
+  Offset delta,
+) async {
+  final gesture = await tester.startGesture(tester.getCenter(card));
+  await tester.pump(CustomHomeTab.dragHoldDuration);
+  await tester.pump(CustomHomeTab.dragExpandDuration);
+  await tester.pump();
+  await gesture.moveBy(delta);
+  await tester.pump();
+  await gesture.up();
+}
+
+Widget _customHomeApp({required Widget home}) {
+  return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    locale: const Locale('en'),
+    theme: ThemeData(
+      extensions: const <ThemeExtension<dynamic>>[HmiTypography()],
+    ),
+    builder: (context, child) {
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.noScaling,
+        ),
+        child: child!,
+      );
+    },
+    home: home,
+  );
+}
 
 void main() {
   testWidgets('dragging a candidate onto a selected slot swaps the cards',
@@ -11,10 +46,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('en'),
+      _customHomeApp(
         home: Scaffold(
           body: CustomHomeTab(
             store: CustomHomeLayoutStore(
@@ -42,7 +74,8 @@ void main() {
     final to = tester.getCenter(
       find.byKey(const ValueKey('custom-home-card-wireConsumption')),
     );
-    await tester.drag(
+    await _holdThenDrag(
+      tester,
       find.byKey(const ValueKey('custom-home-card-cutRatio')),
       to - from,
     );
@@ -61,14 +94,49 @@ void main() {
     expect(find.text('Selected 4/4'), findsOneWidget);
   });
 
+  testWidgets('quick drag without hold does not reorder cards', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      _customHomeApp(
+        home: Scaffold(
+          body: CustomHomeTab(
+            store: CustomHomeLayoutStore(
+              preferencePath: '/tmp/custom-home-layout-slop-test.json',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final from = tester.getCenter(
+      find.byKey(const ValueKey('custom-home-card-cutRatio')),
+    );
+    final to = tester.getCenter(
+      find.byKey(const ValueKey('custom-home-card-wireConsumption')),
+    );
+    await tester.drag(
+      find.byKey(const ValueKey('custom-home-card-cutRatio')),
+      to - from,
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('custom-home-candidate-cutRatio')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('custom-home-selected-cutRatio')),
+      findsNothing,
+    );
+  });
+
   testWidgets('dragging reorders within the selected row', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('en'),
+      _customHomeApp(
         home: Scaffold(
           body: CustomHomeTab(
             store: CustomHomeLayoutStore(
@@ -86,7 +154,8 @@ void main() {
     final to = tester.getCenter(
       find.byKey(const ValueKey('custom-home-card-laserOnDuration')),
     );
-    await tester.drag(
+    await _holdThenDrag(
+      tester,
       find.byKey(const ValueKey('custom-home-card-wireConsumption')),
       to - from,
     );

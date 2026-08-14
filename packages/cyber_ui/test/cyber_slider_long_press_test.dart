@@ -37,14 +37,12 @@ void main() {
     await tester.pump();
     expect(value, 50);
 
-    // Long-press then drag updates value.
+    // Long-press then drag updates value (expand animation must not delay arm).
     final hold = await tester.startGesture(center);
     await tester.pump(
       const Duration(milliseconds: CyberSliderLogic.longPressThresholdMs),
     );
-    await tester.pump(
-      const Duration(milliseconds: CyberSliderLogic.thumbExpandDurationMs),
-    );
+    await tester.pump();
     await hold.moveBy(const Offset(80, 0));
     await tester.pump();
     await hold.up();
@@ -82,9 +80,6 @@ void main() {
     final g = await tester.startGesture(trackLeft);
     await tester.pump(
       const Duration(milliseconds: CyberSliderLogic.longPressThresholdMs + 50),
-    );
-    await tester.pump(
-      const Duration(milliseconds: CyberSliderLogic.thumbExpandDurationMs),
     );
     await g.moveBy(const Offset(100, 0));
     await g.up();
@@ -162,9 +157,6 @@ void main() {
         await tester.startGesture(tester.getCenter(find.byType(CyberSlider)));
     await tester.pump(
       const Duration(milliseconds: CyberSliderLogic.longPressThresholdMs),
-    );
-    await tester.pump(
-      const Duration(milliseconds: CyberSliderLogic.thumbExpandDurationMs),
     );
     await tester.pump();
     expect(find.text('50'), findsOneWidget);

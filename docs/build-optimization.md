@@ -57,7 +57,7 @@ Daily:
 |--------|-----|
 | App (hot-swap) | `make build-app` → `make push-app`（或 `upgrade-app`） |
 | App baked into image | `make build-app` → `make build-rootfs` → `make upgrade` |
-| Kernel / DTS / logo | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`（若改了 overlay）→ `make build-kernel` → `make upgrade` |
+| Kernel / DTS / logo | `make apply-overlay` → `make build-kernel` → `make upgrade`（patches / `patch-mk-*.sh` 才加 `FORCE_PLATFORM_OVERLAY=1`） |
 | Defconfig / overlay | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
 
 See [`AGENTS.md`](AGENTS.md) for the full path → command mapping for agents.

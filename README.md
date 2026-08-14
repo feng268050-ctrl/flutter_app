@@ -226,6 +226,7 @@ SN=SIM-EMU make debug-app
 After kernel / rootfs / sim OEM changes:
 
 ```bash
+make apply-overlay
 make build-kernel
 make build-rootfs
 make build-emulator
@@ -268,16 +269,19 @@ Checks bare `fontSize: N` and any `AppTypography.*Size` under `lib/features` / `
 
 ```bash
 make build-boot-logo
-make build-kernel
+make apply-overlay
+FORCE_KERNEL_IMAGE=1 make build-kernel
+make build-rootfs
 make upgrade
 ```
 
 **Kernel / DTS / display DTS** (`overlay/kernel/` is the **git source of truth** while `linux-sdk/` is gitignored; do **not** put boot DTBs in `oem/`):
 
 ```bash
-# After editing overlay/kernel (required for colleague sync):
-FORCE_PLATFORM_OVERLAY=1 make apply-overlay
-# or: make squash-linux-sdk-platform
+# After editing overlay/kernel DTS or *.config (required for colleague sync):
+make apply-overlay
+# Kernel patches or overlay/device patch-mk-*.sh only:
+# FORCE_PLATFORM_OVERLAY=1 make apply-overlay
 make build-kernel
 make build-rootfs
 make upgrade
@@ -303,7 +307,7 @@ Weston notes (ynh960):
 
 - `hmi-launch.sh` starts Weston then `flutter-wayland-client --fullscreen`.
 - Shell is **desktop-shell** (`panel-position=none`) so `background-image` can show the product logo after DRM takeover (kiosk-shell only supports a solid color).
-- `make build-boot-logo` also writes overlay `usr/share/hmi/boot-splash.png` as **logical landscape** (1280×800 upright) for Weston `transform=rotate-270` — not a copy of portrait `logo.bmp`.
+- `make build-boot-logo` writes icon-sized `logo.bmp` (kernel, pre-rotated for landscape) and overlay `usr/share/hmi/boot-splash.png` (upright). Weston uses `background-type=pad` on black — **not** a panel-resolution canvas.
 
 
 ```bash

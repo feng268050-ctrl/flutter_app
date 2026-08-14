@@ -132,14 +132,14 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 ### `make apply-overlay`
 
-- **怎么用：** `make apply-overlay`；改 DTS/kernel 后常用 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`
-- **何时用：** 改了 `overlay/**`、`board/**`（非纯 app 热更）后、**在** `build-kernel` / `build-rootfs` **之前**显式执行。`build-rootfs` / `docker-run` **不会**自动 apply（与 `build-kernel` 对称）。
-- **做什么：** 把 board/buildroot/kernel overlay 打进 `linux-sdk/`（macOS volume 模式下在容器内执行）：通用 OS → SDK `buildroot/board/rockchip/common/rootfs-overlay/`，SoC 薄层 → `$CHIP/rootfs-overlay/`；钩子装到 `common/lws-hmi/`（不覆盖厂商 `common/post-build.sh`）。**删除** repo/SDK 里误放在 `rootfs-overlay/opt/` 的 App bundle（正确来源是 `app/<APP>/build/bundle/release`，由 `build-rootfs` 再拷入 SDK **common** overlay）。
+- **怎么用：** `make apply-overlay`。owned 树上改 **kernel patches** 或 `overlay/device/**/patch-mk-*.sh` 时：`FORCE_PLATFORM_OVERLAY=1 make apply-overlay`
+- **何时用：** 改了 `overlay/**`、`board/**`（非纯 app 热更）后、**在**对应 `build-kernel` / `build-rootfs` **之前**显式执行（谁吃 overlay 谁先 apply）。`build-*` / `docker-run` **不会**自动 apply。
+- **做什么：** 把 board/buildroot/kernel overlay 打进 `linux-sdk/`（macOS volume 模式下在容器内执行）：通用 OS → SDK `buildroot/board/rockchip/common/rootfs-overlay/`，SoC 薄层 → `$CHIP/rootfs-overlay/`；钩子装到 `common/lws-hmi/`（不覆盖厂商 `common/post-build.sh`）。**删除** repo/SDK 里误放在 `rootfs-overlay/opt/` 的 App bundle（正确来源是 `app/<APP>/build/bundle/release`，由 `build-rootfs` 再拷入 SDK **common** overlay）。DTS / `*.config` / firmware / logo / rootfs 每次都会 sync。owned 树默认**跳过** `overlay/kernel/patches/` 与 SDK `mk-kernel`/`mk-rootfs` 等脚本补丁。
 - **参数：**
 
 | 变量 / 标志 | 说明 |
 |-------------|------|
-| `FORCE_PLATFORM_OVERLAY=1` | 在已 owned 的 SDK 树上强制重打 kernel/device 补丁 |
+| `FORCE_PLATFORM_OVERLAY=1` | owned 树（`.lws-owned-tree`）上强制重打 **kernel patches** + SDK `mk-*` / `post-wifibt` 脚本补丁。DTS/`*.config`/rootfs **不需要** |
 | `BUILD_BIND_MOUNT=1` | macOS：在宿主机跑 overlay（非 volume） |
 | `SKIP_OVERLAY=0` | 可选：让随后的 `docker-run` 在命令前再 apply 一次（默认跳过） |
 | `--restore`（经 `clean-overlay`） | 还原被 patch 的 SDK 文件 |
@@ -222,8 +222,8 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 - **怎么用：** `make build-boot-logo`
 - **何时用：** 改了 `board/logo/`。
-- **做什么：** 生成 kernel FIT splash `logo.bmp`，并刷新 overlay Weston `boot-splash.png`（横屏直立，对齐 `rotate-270`）。
-- **后续：** 通常 `make build-kernel`（+ 若 splash 进 rootfs 则 `build-rootfs`）再 `upgrade`。
+- **做什么：** 从 `splash_icon.png` 生成 **icon 尺寸** kernel `logo.bmp`（横屏预旋转，bootloader 居中）和 Weston `boot-splash.png`（直立，`pad` + 黑底居中）。**不**按面板分辨率铺画布。
+- **后续：** `make apply-overlay`，再 **`FORCE_KERNEL_IMAGE=1 make build-kernel`**，然后 `make build-rootfs`、`make upgrade`。
 
 ### `make build-ai` / `make rebuild-ai`
 
@@ -290,7 +290,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **Image 何时重编：** SDK 里已有 `kernel/arch/arm64/boot/Image` 时默认**跳过** `./build.sh kernel`，只重编 DTB + 打 FIT（日志里有 `kernel Image present — skip`）。改 `*.config` 片段、驱动/补丁、`board/logo`、或首次构建 → `FORCE_KERNEL_IMAGE=1 make build-kernel`。仅改 DTS/dtsi、FIT 清单 →  plain `make build-kernel` 即可。详见 `AGENTS.md`「make build-kernel = Image + DTB/FIT」。
 - **产物：** `output/firmware/boot.img`（rootfs_a）、`boot_b.img`（rootfs_b）、裸 `Image`（模拟器用）。
 - **A/B `resource.img`：** 每槽 FIT 会 patch PARTLABEL 并**刷新 RSCE ENTR SHA-1**（`scripts/patch-resource-img-partlabel.py`）。漏刷 hash 会导致 **仅 B 槽**无 splash / 卡顿 / 关机冷启动 panic。打包后自动 `--verify`；说明与踩坑见 [`docs/ab-slot-misc.md`](ab-slot-misc.md)。
-- **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`；强制重编 Image：`FORCE_KERNEL_IMAGE=1 make build-kernel`。
+- **参数：** 经 Docker/`BUILD_JOBS`。**先** `make apply-overlay`（kernel 有 overlay，`build-kernel` 不自动 apply）。强制重编 Image：`FORCE_KERNEL_IMAGE=1 make build-kernel`。
 - **日志：** `output/logs/build-kernel-{ab|a|b}-*.log`
 - **后续：** 板端 `make upgrade`（不必 `build-img`）。
 
@@ -772,8 +772,9 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | App 日更（Debug） | `make build-app` → `make push-app` |
 | App 签名升级 | `make build-app` → `make upgrade-app` |
 | Overlay / systemd | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
-| Kernel / DTS | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `make build-kernel` → `make upgrade` |
-| SELinux + auditd（permissive；见 [`docs/selinux.md`](selinux.md)） | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage audit systemd` → `make build-kernel` → `make build-rootfs` → `make upgrade`（**勿** `build-uboot`） |
+| Kernel / DTS | `make apply-overlay` → `make build-kernel` → `make upgrade` |
+| Kernel patches / `patch-mk-*.sh` | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `FORCE_KERNEL_IMAGE=1 make build-kernel` → `make upgrade` |
+| SELinux + auditd（permissive；见 [`docs/selinux.md`](selinux.md)） | `make apply-overlay` → `bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage audit systemd` → `FORCE_KERNEL_IMAGE=1 make build-kernel` → `make build-rootfs` → `make upgrade`（**勿** `build-uboot`） |
 | rng-tools + jitterentropy（`rngd.service`） | `make apply-overlay` → `bash scripts/br-make-packages.sh rng rng-tools jitterentropy-library` → `make build-rootfs` → `make upgrade` |
 | 仅 OEM | `make build-oem` → `OEM_ONLY=1 make upgrade` |
 | 出厂 USB | `make build-oem` → `make build-img` → `make reboot-loader` → `make flash` |

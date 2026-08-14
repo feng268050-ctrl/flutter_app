@@ -46,11 +46,12 @@ make docker-volume-init
 # or: make docker-volume-sync
 ```
 
-Platform kernel DTS/config/patches and stable device script patches
+Platform kernel **patches** and stable device script patches
 (`mk-rootfs`, `post-wifibt`, …) are squashed into the owned tree by
 `make squash-linux-sdk-platform` (also run at end of trim). After that,
-`make apply-overlay` **skips** those platform steps when `.lws-owned-tree`
-exists (`FORCE_PLATFORM_OVERLAY=1` to force re-apply).
+`make apply-overlay` **skips those patch steps** when `.lws-owned-tree`
+exists (`FORCE_PLATFORM_OVERLAY=1` to force re-apply). DTS, kconfig
+fragments, firmware, logo, and rootfs overlay **still sync every apply**.
 
 **Third-party / custom Buildroot packages stay on overlay** — do not move
 `overlay/buildroot/package/**` or `overlay/third-party/**` into `linux-sdk`.
@@ -182,7 +183,9 @@ Inspect / gate: `scripts/verify-boot-fit.sh <firmware-dir>` lists conf names, fa
    and land that board’s DTS under overlay/kernel/ (then regenerate ITS via apply-overlay / generate script)
 3. Commit those overlay (+ inventory) paths in this repo
 4. On each machine with an owned SDK:
-     FORCE_PLATFORM_OVERLAY=1 make apply-overlay
+     make apply-overlay
+   # patches / mk-* scripts only:
+   # FORCE_PLATFORM_OVERLAY=1 make apply-overlay
    # or: make squash-linux-sdk-platform
 5. make build-kernel
    make upgrade   # (and build-rootfs when rootfs also changed)

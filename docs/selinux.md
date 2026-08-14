@@ -18,9 +18,9 @@ after AVC soak.
 ## Rebuild
 
 ```text
-FORCE_PLATFORM_OVERLAY=1 make apply-overlay
+make apply-overlay
 bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage audit systemd
-make build-kernel
+FORCE_KERNEL_IMAGE=1 make build-kernel
 make build-rootfs
 make upgrade
 ```

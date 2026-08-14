@@ -98,7 +98,7 @@ help:
 	@echo ""
 	@echo "Setup:"
 	@echo "  make setup                 # apply-overlay (+ Docker image on macOS)"
-	@echo "  make apply-overlay         # patch SDK (explicit; build-kernel/rootfs do not auto-apply)"
+	@echo "  make apply-overlay         # patch SDK (required before any build that consumes overlay)"
 	@echo "  make clean-overlay         # restore patched SDK files"
 	@echo ""
 	@echo "Docker (macOS only):"

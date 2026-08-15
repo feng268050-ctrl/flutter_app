@@ -11,10 +11,6 @@ void main() {
       ? 'boards'
       : 'packages/cyber_hal/boards';
 
-  final appHalRoot = Directory.current.path.endsWith('cyber_hal')
-      ? '../../app/lws_hmi/assets/hal'
-      : 'app/lws_hmi/assets/hal';
-
   final oemYnh960 = Directory.current.path.endsWith('cyber_hal')
       ? '../../oem/boards/ynh960/board_profile.json'
       : 'oem/boards/ynh960/board_profile.json';
@@ -194,8 +190,8 @@ void main() {
       expect(s.isHardwareBound, isTrue);
     });
 
-    test('ynh960 app asset selects optee', () {
-      final json = File('$appHalRoot/board_profile.json').readAsStringSync();
+    test('ynh960 OEM profile selects optee', () {
+      final json = File(oemYnh960).readAsStringSync();
       final profile = BoardProfile.fromJsonString(json);
       expect(profile.info.boardId, 'ynh960');
       expect(profile.secretsBackend, 'optee');
@@ -276,7 +272,7 @@ void main() {
     });
 
     test('override injects fake on hardware profile', () {
-      final json = File('$appHalRoot/board_profile.json').readAsStringSync();
+      final json = File(oemYnh960).readAsStringSync();
       final profile = BoardProfile.fromJsonString(json);
       final s = BoardBindings(profile).secrets(override: FakeKekProvider());
       expect(s, isA<FakeKekProvider>());

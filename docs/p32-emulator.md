@@ -90,7 +90,9 @@ Build the bridge: `make build-libexec-binaries TOOL=emulator-tablet-to-touch` (t
 
 No dongle plugged: launcher **warns** (Modbus/BT will fail) but still boots — other subsystems continue (plan §6.6). Do **not** rely on ad-hoc `EMULATOR_QEMU_EXTRA=-device usb-host…` for the default path.
 
-**Modbus / USB-RS485:** product `modbus.json` uses `/dev/ttyS5` (ynh960 UART). sim OEM helper `modbus_rtu_device=/dev/ttyUSB0` remaps for the QEMU guest. Host dongle must be passed through (`EMULATOR_USB=auto` or `EMULATOR_USB=1a86:7523`); close any macOS app holding `/dev/cu.usbserial-*` before `make emulator`. Guest check: `ls /dev/ttyUSB*`.
+**Modbus / USB-RS485:** product `modbus.json` `device_by_board.sim` (and default
+sim OEM helper `modbus_rtu_device`) both map to `/dev/ttyUSB0` for the QEMU guest.
+Host dongle must be passed through (`EMULATOR_USB=auto` or `EMULATOR_USB=1a86:7523`); close any macOS app holding `/dev/cu.usbserial-*` before `make emulator`. Guest check: `ls /dev/ttyUSB*`.
 
 Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 

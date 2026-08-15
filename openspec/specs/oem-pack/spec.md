@@ -23,12 +23,24 @@ On-device `/oem/manifest.json` SHALL include at least: `schema_version`, `pack_i
 
 ### Requirement: OEM board profile excludes product gpio/modbus
 
-OEM `board_profile.json` SHALL declare board identity, capabilities, net roles, helpers, storage mounts, and route metrics as needed. It MUST NOT be the authoritative owner of `configs.gpio` / `configs.modbus` product catalogs (those remain App assets).
+OEM `board_profile.json` SHALL declare board identity, capabilities, net roles, helpers, storage mounts, and route metrics as needed. It MUST NOT be the authoritative owner of `configs.gpio` / `configs.modbus` product catalogs (those remain App assets). Shipping OEM boards (`ynh960`, `ek3562`, and successors on the product line) MUST NOT declare `helpers.modbus_rtu_device` for the product welder UART — the App `modbus.json` `device_by_board` (plus default `transport.device`) selects RTU `device` by `board_id`. The QEMU `sim` board MAY keep `modbus_rtu_device` as a guest USB-serial remap for package tests / non-App consumers; product `modbus.json` SHALL also map `sim` → `/dev/ttyUSB0` under `device_by_board`.
+
+The product HMI App (`lws_hmi`) MUST NOT ship `assets/hal/board_profile.json` as a Flutter asset or treat any App-bundled board profile as a Linux device fallback. Host/desktop MAY use an in-code stub profile (not a Flutter asset).
 
 #### Scenario: OEM profile has no product catalogs
 
 - **WHEN** inspecting `oem/boards/ynh960/board_profile.json`
 - **THEN** it SHALL NOT point gpio/modbus configs at OEM-owned pin/register maps as the product authority
+
+#### Scenario: Shipping OEM omits modbus_rtu_device
+
+- **WHEN** inspecting `oem/boards/ynh960/board_profile.json` and `oem/boards/ek3562/board_profile.json`
+- **THEN** helpers SHALL NOT include `modbus_rtu_device`
+
+#### Scenario: HMI App has no board_profile asset
+
+- **WHEN** inspecting `app/lws_hmi/pubspec.yaml` assets and `app/lws_hmi/assets/hal/`
+- **THEN** `board_profile.json` SHALL NOT be listed or present under the App HAL assets
 
 ### Requirement: Board helpers live under OEM
 
@@ -184,7 +196,7 @@ The repository SHALL provide OEM pack `sim-virt` with `oem/packs/sim-virt/manife
 
 ### Requirement: sim board profile without OTG
 
-OEM `oem/boards/sim/board_profile.json` SHALL declare capabilities for ethernet, wifi, bluetooth, gpio, modbus, sysInfo, datetime, sshDebug, and typical I/O (backlight/volume/keyboard/mouse as applicable). It MUST omit `usbOtg`. It MUST NOT reference ynh960 helper paths. Product gpio/modbus catalogs remain App-owned. For the QEMU guest, helpers MAY include `modbus_rtu_device` remapping Modbus RTU to the USB-serial node (e.g. `/dev/ttyUSB0`) while product `modbus.json` keeps the board UART path for ynh960.
+OEM `oem/boards/sim/board_profile.json` SHALL declare capabilities for ethernet, wifi, bluetooth, gpio, modbus, sysInfo, datetime, sshDebug, and typical I/O (backlight/volume/keyboard/mouse as applicable). It MUST omit `usbOtg`. It MUST NOT reference ynh960 helper paths. Product gpio/modbus catalogs remain App-owned. For the QEMU guest, helpers MAY include `modbus_rtu_device` remapping Modbus RTU to the USB-serial node (e.g. `/dev/ttyUSB0`) as a non-App / package-test fallback; product `modbus.json` `device_by_board.sim` SHALL also be `/dev/ttyUSB0`.
 
 #### Scenario: No usbOtg and no ynh960 helpers
 

@@ -207,11 +207,14 @@ Test: `packages/cyber_hal/test/board_bindings_portability_test.dart`.
 
 ## Demo wiring
 
-On device, `main.dart` prefers `/run/hmi/board_profile.json` (from `oem-compose`)
-or `/oem/boards/<id>/board_profile.json`, then merges App gpio/modbus assets
-(`assets/hal/gpio.ynh960.json`, `assets/hal/modbus.json`). On Linux device a missing
-OEM/compose profile **fails hard** (no App asset fallback). Host/desktop may
-still `loadAsset` `assets/hal/board_profile.json` for UI work without `/oem`.
+On device, `main.dart` loads only `/run/hmi/board_profile.json` (from
+`oem-compose`), then merges App gpio/modbus assets
+(`assets/hal/gpio.<board>.json`, `assets/hal/modbus.json`). A missing
+OEM/compose profile **fails hard** (no App asset board-profile fallback).
+Host/desktop uses an in-code stub (`HmiHalAssets.hostDevBoardProfile()`), not a
+Flutter `board_profile.json` asset. Modbus RTU nodes are selected from product
+`modbus.json` → `transport.device_by_board` by `board_id` (`ynh960` /
+`ek3562` / `sim`; others fall back to `transport.device`).
 
 OEM owns board×screen SKU only (no properties.ini seed); tunables via
 `/var/lib/hal/properties.ini` (bind to `/mnt/provision/properties.ini` on device)

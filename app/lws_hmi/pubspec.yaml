@@ -126,8 +126,7 @@ flutter:
     # Dialog warn/info icons live in packages/cyber_alarm_ui.
     - assets/warn/warn_icon.webp
     - assets/warn/alarm_button_icon.webp
-    # Product HAL pack (board profile + gpio/modbus catalogs).
-    - assets/hal/board_profile.json
+    # Product HAL pack (gpio/modbus catalogs; board profile is OEM-only).
     - assets/hal/gpio.ynh960.json
     - assets/hal/gpio.sim.json
     - assets/hal/gpio.ek3562.json

@@ -47,9 +47,9 @@ Future<void> _migrateLegacyStatistics() async {
 }
 
 Future<BoardProfile> _loadBoardProfile() async {
-  // Host/desktop UI work without an OEM partition.
+  // Host/desktop UI work without an OEM partition (in-code stub, not an asset).
   if (!Platform.isLinux) {
-    return BoardProfile.loadAsset(HmiHalAssets.boardProfile);
+    return HmiHalAssets.hostDevBoardProfile();
   }
 
   final file = File(_kRunBoardProfile);

@@ -41,6 +41,7 @@
 | 第 4 路输出 | `OUT3` → 同文件 `aux_out3` |
 | 数字输入 | `IN0`–`IN3` → `type: button`（读电平；极性待产品确认） |
 | 选型 | `board_id=ek3562` → `HmiHalAssets.gpioForBoard` |
+| Modbus RTU | `/dev/ttyS4`（`uart4`）via App `modbus.json` → `transport.device_by_board.ek3562` |
 
 JSON 片段形状：
 

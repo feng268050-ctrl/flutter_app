@@ -148,7 +148,9 @@ abstract class ModbusHal {
   }
 
   /// Prefer [BoardProfile.resolvedModbusAsset] when set (D22).
-  /// Applies optional [BoardHelperKeys.modbusRtuDevice] over the asset transport.
+  ///
+  /// Device resolve order: OEM [BoardHelperKeys.modbusRtuDevice] if set,
+  /// else product `transport.device_by_board[boardId]`, else `transport.device`.
   static Future<ModbusHal> fromProfile(
     BoardProfile profile, {
     AssetBundle? bundle,
@@ -164,6 +166,8 @@ abstract class ModbusHal {
     final deviceOverride = profile.helper(BoardHelperKeys.modbusRtuDevice);
     if (deviceOverride != null && deviceOverride.isNotEmpty) {
       config = config.withTransportDevice(deviceOverride);
+    } else {
+      config = config.withDeviceForBoard(profile.info.boardId);
     }
     return ModbusHal.fromConfig(config);
   }

@@ -12,7 +12,7 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 | Linux | Mux / 引脚 | 产品用途 | 状态 |
 |-------|------------|----------|------|
-| **`/dev/ttyS5`**（`uart5m1`） | gpio3 **PC2/PC3** | **Modbus RTU**（App 写死此路径） | OK；曾被 EVB gmac PHY reset 占用 PC2 — 已修 |
+| **`/dev/ttyS5`**（`uart5m1`） | gpio3 **PC2/PC3** | **Modbus RTU**（App `modbus.json` → `device_by_board.ynh960` / 默认 `device`） | OK；曾被 EVB gmac PHY reset 占用 PC2 — 已修 |
 | `ttyS4` / uart4 | gpio3 PB1/PB2 | **disabled**；丝印 COM4 → 侧栏黄/红 LED | 故意留给产品 GPIO |
 | `ttyS1` / uart1 | BT HCI | 蓝牙 | OK |
 | `ttyS3` / uart3m1 | gpio3 PB7/PC0 | 板级调试 UART | 与 Modbus/LED 无重叠 |

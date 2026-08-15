@@ -11,15 +11,15 @@
 
 ## 3. Bootloader (same rules as ynh960)
 
-- [ ] 3.1 rkbin `boot_merger` with `RK3562MINIALL*.ini` (DDR4 EVB2 matched) → `prebuilt/bootloader/vendor-ek3562/loader.bin`
+- [ ] 3.1 rkbin `boot_merger` with `RK3562MINIALL*.ini` (DDR4 EVB2 matched) → install OUTPUT **`rk3562_spl_loader_v*.bin`** as-is under `prebuilt/bootloader/vendor-ek3562/` (no invented `loader.bin`)
 - [ ] 3.2 Build `uboot.img` with Linux-first bootcmd patch; RK3562 TRUST pins recorded in README; FIT conf selection `#ek3562` or factory env
-- [ ] 3.3 Package README: ini, DDR/SPL, BL31/BL32, u-boot rev
+- [ ] 3.3 Package README: ini, exact OUTPUT basename, DDR/SPL, BL31/BL32, u-boot rev
 
 ## 4. OEM and factory
 
 - [x] 4.1 Set `oem/packs/ek3562-panel/manifest.json` `compat.fit_dt` to `ek3562`; screen.json 800×1280
 - [x] 4.2a `FACTORY_SKU=ek3562-dev make build-oem` → `oem/out/ek3562-panel/oem.img` (2026-08-15)
-- [ ] 4.2b `make build-img` (requires loader+uboot in `prebuilt/bootloader/vendor-ek3562/`)
+- [ ] 4.2b `make build-img` (requires `rk3562_spl_loader_*.bin` + `uboot.img` in `prebuilt/bootloader/vendor-ek3562/`)
 - [x] 4.3 Update `overlay/kernel/rockchip/ek3562.md` checklist for FIT/OEM (bootloader still open)
 
 ## 5. Board validation

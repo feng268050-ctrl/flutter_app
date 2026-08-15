@@ -14,18 +14,18 @@ The product line SHALL support **`board_id` `ek3562`** (Rockchip RK3562 EVB2 DDR
 - **WHEN** the ek3562 OEM pack is shipped for factory
 - **THEN** its `manifest.json` `compat.fit_dt` SHALL equal `ek3562` and `board_id` SHALL equal `ek3562`
 
-### Requirement: ek3562 self-built loader.bin and Linux-first uboot
+### Requirement: ek3562 self-built rk3562_spl_loader and Linux-first uboot
 
-`prebuilt/bootloader/vendor-ek3562/` SHALL provide **`loader.bin`** (rkbin `boot_merger` + RK3562 SPL MINIALL) and **`uboot.img`** built with the same **Linux-first** bootcmd policy as ynh960 (no Android FIT/`boot_android` before `boot_fit`). README in that directory SHALL record rkbin ini, DDR/SPL versions, and BL31/BL32 pins used.
+`prebuilt/bootloader/vendor-ek3562/` SHALL provide the rkbin **`boot_merger` OUTPUT** filename matching **`rk3562_spl_loader_v*.bin`** (RK3562 SPL MINIALL; install as-is) and **`uboot.img`** built with the same **Linux-first** bootcmd policy as ynh960 (no Android FIT/`boot_android` before `boot_fit`). README in that directory SHALL record rkbin ini, exact OUTPUT basename, DDR/SPL versions, and BL31/BL32 pins used. Invented names such as `loader.bin` or `bootloader.bin` MUST NOT be the authoritative early-loader artifact.
 
 #### Scenario: Bootloader package complete
 
 - **WHEN** an operator prepares `FACTORY_SKU=ek3562-dev make build-img`
-- **THEN** `prebuilt/bootloader/vendor-ek3562/loader.bin` and `uboot.img` SHALL exist
+- **THEN** `prebuilt/bootloader/vendor-ek3562/` SHALL contain `rk3562_spl_loader_v*.bin` (exactly one match or README pin) and `uboot.img`
 
 ### Requirement: ynh960 bootloader validation gate
 
-Flashing a newly self-built ek3562 `loader.bin` / `uboot.img` as the primary lab validation path SHALL be gated on successful acceptance of **`ynh960-spl-linux-uboot`** on ynh960 hardware (or an explicit written waiver in the change notes), because ynh960 has a known eMMC-short / Maskrom recovery procedure.
+Flashing a newly self-built ek3562 `rk3562_spl_loader_v*.bin` / `uboot.img` as the primary lab validation path SHALL be gated on successful acceptance of **`ynh960-spl-linux-uboot`** on ynh960 hardware (or an explicit written waiver in the change notes), because ynh960 has a known eMMC-short / Maskrom recovery procedure.
 
 #### Scenario: Gate documented in tasks or notes
 

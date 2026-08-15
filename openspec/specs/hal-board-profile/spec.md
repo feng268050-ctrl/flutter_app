@@ -14,7 +14,7 @@ Each supported product image/App SHALL provide product gpio/modbus config assets
 
 ### Requirement: Product gpio/modbus configs are App-owned
 
-Product `gpio.json` and `modbus.json` catalogs SHALL live in the **product App** (or product pack), not under `oem/boards/<board_id>/` and not under `packages/cyber_hal/boards/<board_id>/` as the product authority. The same motherboard MAY ship different pin/register maps across products. After merge, `BoardProfile` gpio/modbus paths SHALL point at Flutter asset URIs (typically `assets/hal/gpio.json` / `assets/hal/modbus.json`). Absolute `assets/…` and `packages/…` paths SHALL resolve as-is; relative paths MAY resolve under `packages/cyber_hal/` for package example profiles only (`sim`, `portable-smoke`).
+Product `gpio.<board_id>.json` and `modbus.json` catalogs SHALL live in the **product App** (or product pack), not under `oem/boards/<board_id>/` and not under `packages/cyber_hal/boards/<board_id>/` as the product authority. The same motherboard MAY ship different pin/register maps across products. After merge, `BoardProfile` gpio/modbus paths SHALL point at Flutter asset URIs (typically `assets/hal/gpio.ynh960.json` / `assets/hal/modbus.json`). Absolute `assets/…` and `packages/…` paths SHALL resolve as-is; relative paths MAY resolve under `packages/cyber_hal/` for package example profiles only (`sim`, `portable-smoke`).
 
 #### Scenario: LWS HMI pack
 
@@ -50,7 +50,7 @@ Profiles for products without display, audio, or network SHALL omit those capabi
 
 #### Scenario: App merges catalogs
 
-- **WHEN** an OEM profile has no gpio/modbus config paths and the App calls `withProductConfigs` with `assets/hal/gpio.json` and `assets/hal/modbus.json`
+- **WHEN** an OEM profile has no gpio/modbus config paths and the App calls `withProductConfigs` with `assets/hal/gpio.ynh960.json` and `assets/hal/modbus.json`
 - **THEN** `resolvedGpioAsset` / `resolvedModbusAsset` SHALL resolve to those App assets
 
 ### Requirement: Runtime profile prefers OEM compose export

@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+// ek3562 industrial I/O map (vendor userspace + lab 2026-08-15).
+//
+// OUT* → PCA9535 @ i2c1 0x20 (chardev gpiochip6 when base=495)
+// IN*  → SoC GPIO banks (not the expander)
+//
+// Do not hog these lines (no gpio-leds / gpio-hog) — HAL uses gpiod.
+
+#include <dt-bindings/pinctrl/rockchip.h>
+
+&i2c1 {
+	status = "okay";
+
+	pca9535: gpio@20 {
+		compatible = "nxp,pca9535";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "okay";
+		/* offsets 0..3 = OUT0..OUT3; linux 495..498 when chip base 495 */
+		gpio-line-names = "OUT0",
+				  "OUT1",
+				  "OUT2",
+				  "OUT3",
+				  "",
+				  "",
+				  "",
+				  "",
+				  "",
+				  "",
+				  "",
+				  "",
+				  "",
+				  "",
+				  "",
+				  "";
+	};
+};
+
+/* gpiochip1 base 32: offset 18/19 = PC2/PC3 → IN2/IN3 (linux 50/51) */
+&gpio1 {
+	gpio-line-names = "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "IN2",
+			  "IN3",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "";
+};
+
+/* gpiochip3 base 96: offset 14 = PB6 → IN1 (110); offset 17 = PC1 → IN0 (113) */
+&gpio3 {
+	gpio-line-names = "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "IN1",
+			  "",
+			  "",
+			  "IN0",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "";
+};

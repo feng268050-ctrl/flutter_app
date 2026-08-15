@@ -129,7 +129,7 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 
 | Need | Detail |
 |------|--------|
-| **Asset** | Product `gpio.json` (named lines + sysfs chips); declare in `configs.gpio` (App asset, e.g. `assets/hal/gpio.json`) |
+| **Asset** | Product `gpio.<board_id>.json` (named lines + chips); declare in `configs.gpio` (App asset, e.g. `assets/hal/gpio.ynh960.json`) |
 | **OS** | Kernel GPIO / LED sysfs matching the JSON |
 
 ### `hal/modbus`
@@ -209,7 +209,7 @@ Test: `packages/cyber_hal/test/board_bindings_portability_test.dart`.
 
 On device, `main.dart` prefers `/run/hmi/board_profile.json` (from `oem-compose`)
 or `/oem/boards/<id>/board_profile.json`, then merges App gpio/modbus assets
-(`assets/hal/gpio.json`, `assets/hal/modbus.json`). On Linux device a missing
+(`assets/hal/gpio.ynh960.json`, `assets/hal/modbus.json`). On Linux device a missing
 OEM/compose profile **fails hard** (no App asset fallback). Host/desktop may
 still `loadAsset` `assets/hal/board_profile.json` for UI work without `/oem`.
 

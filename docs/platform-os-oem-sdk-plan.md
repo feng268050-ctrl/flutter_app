@@ -67,7 +67,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │  app/lws_hmi  (+ 未来 app/<product>)                            │
 │  UI · CyberUI · CyberIME                                        │
-│  assets/hal/gpio.json · modbus.json   ← 产品专属，不进 OEM      │
+│  assets/hal/gpio.<board>.json · modbus.json   ← 产品专属，不进 OEM      │
 │  加载：OEM board_profile + App gpio/modbus                      │
 ├─────────────────────────────────────────────────────────────────┤
 │  packages/cyber_hal · cyber_ui · cyber_ime                      │
@@ -112,7 +112,7 @@
 
 1. **编译期/工厂选定组合**，不做任意主板运行时自动探测（与既有 `board-screen-pack` 规格一致）。  
 2. **OEM 无 A/B**：坏包或刷错 SKU → 装配器失败进入安全策略（见 §3.6），不静默加载错板 profile。  
-3. **Profile 在 OEM；产品目录在 App**：`BoardProfile.configs.gpio/modbus` 继续指向 App assets（如 `assets/hal/gpio.json`），或由 App 在构造 HAL 时显式注入路径——**权威源永不在 `/oem`**。  
+3. **Profile 在 OEM；产品目录在 App**：`BoardProfile.configs.gpio/modbus` 继续指向 App assets（如 `assets/hal/gpio.ynh960.json`），或由 App 在构造 HAL 时显式注入路径——**权威源永不在 `/oem`**。  
 4. **Helpers 脚本可住在 OEM**，由 profile 用绝对路径引用（如 `/oem/boards/ynh960/helpers/wifibt-bringup.sh`）；rootfs 只保留**可移植默认**（`hal-portability.md`）。
 
 ### 3.2 仓库布局（源码）
@@ -189,7 +189,7 @@ App 启动伪代码：
 profile = BoardProfile.loadFile("/oem/boards/<id>/board_profile.json")
      或  经装配器导出的 /run/hmi/board_profile.json
 profile = profile.withProductConfigs(
-  gpio: "assets/hal/gpio.json",
+  gpio: "assets/hal/gpio.ynh960.json",
   modbus: "assets/hal/modbus.json",
 )
 AppServices(boardProfile: profile) …

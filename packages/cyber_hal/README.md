@@ -18,7 +18,7 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/output.dart` | display + sound barrels | see sub-imports |
 | `package:cyber_hal/input.dart` | keyboard, mouse (USB/serial cameras later) | `/var/lib/hal/keyboard.conf`, `mouse.conf` |
 | `package:cyber_hal/ip_camera.dart` | IP network camera (host-injected; multi-instance; RTSP→file recording) | path/MediaMTX are **product** concerns — not this module |
-| `package:cyber_hal/gpio.dart` | Status LED / buzzer / button / encoder (config-driven) | App `gpio.json` — **sysfs** and/or **gpiod** per binding |
+| `package:cyber_hal/gpio.dart` | Status LED / buzzer / button / encoder (config-driven) | App `gpio.<board>.json` — **sysfs** and/or **gpiod** per binding |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
 | `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` | procfs/sysfs + Vendor Storage identity (`brand`/`model`/`sn`/`chipId`) + opaque `/var/lib/hal/properties.ini` bag via `get(key)` |
@@ -54,7 +54,7 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/displa
 | `boards/sim.json` | Limited host/emulator profile (no gpio/modbus/network/BT) |
 | `boards/portable-smoke.json` | D22 accept: non-default ifaces / unit names; no libexec required |
 
-**Product** board profile + `gpio.json` + `modbus.json` live in the **App** (this repo: `app/lws_hmi/assets/hal/`), not under `boards/<board_id>/` in this package. The same motherboard may ship different catalogs in other products. `BoardProfile.configs.gpio` / `configs.modbus` point at Flutter asset URIs (`assets/hal/…`); `assets/…` and `packages/…` resolve as-is.
+**Product** board profile + `gpio.<board_id>.json` + `modbus.json` live in the **App** (this repo: `app/lws_hmi/assets/hal/`), not under `boards/<board_id>/` in this package. The same motherboard may ship different catalogs in other products. `BoardProfile.configs.gpio` / `configs.modbus` point at Flutter asset URIs (`assets/hal/…`); `assets/…` and `packages/…` resolve as-is.
 
 ### Config install path (v1)
 
@@ -83,7 +83,7 @@ if (resolveHalBackend(env: 'stub') == HalBackendKind.stub) {
 
 ## GPIO
 
-`package:cyber_hal/gpio.dart` loads App-owned `gpio.json` (via `BoardProfile.configs.gpio`). **Pins and paths are never hard-coded in HAL** — boards enable fewer/more devices by editing config.
+`package:cyber_hal/gpio.dart` loads App-owned `gpio.<board>.json` (via `BoardProfile.configs.gpio`). **Pins and paths are never hard-coded in HAL** — boards enable fewer/more devices by editing config.
 
 **Devices:** `StatusLedBank`, `GpioBuzzer`, `GpioButton` (long-press), `RotaryEncoder` (debounce).
 
@@ -95,7 +95,7 @@ if (resolveHalBackend(env: 'stub') == HalBackendKind.stub) {
 | `gpiod` | `chip` + `offset` via `flutter_gpiod` (`/dev/gpiochip*`) |
 | `stub` | in-memory (host tests; `forceStub: true`) |
 
-ynh960 product catalog example (RGB + BELL) and pad table: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md). Shipping LWS `gpio.json` uses **gpiod**; sysfs remains supported for boards that still expose a `/sys/class/…` value node (optional `sysfs_innohi` / `sysfs` scheme).
+ynh960 product catalog example (RGB + BELL) and pad table: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md). Shipping LWS `gpio.ynh960.json` uses **gpiod**; sysfs remains supported for boards that still expose a `/sys/class/…` value node (optional `sysfs_innohi` / `sysfs` scheme).
 
 **gpiod access:** HMI runs as root on the appliance and opens `/dev/gpiochip*` directly — no extra udev/`gpio` group is required for the current seat. If a later non-root seat appears, add `gpio` group + udev rules then.
 

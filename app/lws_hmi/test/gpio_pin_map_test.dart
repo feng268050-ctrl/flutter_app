@@ -9,8 +9,8 @@ void main() {
       ? 'assets/hal'
       : 'app/lws_hmi/assets/hal';
 
-  test('RGB channel ids match product gpio.json (5/4/7 → 105/106/149)', () {
-    final json = File('$halRoot/gpio.json').readAsStringSync();
+  test('RGB channel ids match product gpio.ynh960.json (5/4/7 → 105/106/149)', () {
+    final json = File('$halRoot/gpio.ynh960.json').readAsStringSync();
     final config = GpioConfig.fromJsonString(json);
 
     expect(LedColor.red.channelId, 'red');

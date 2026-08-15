@@ -1,7 +1,7 @@
 // ynh960: retire gpio_innohi / own-gpio hog; free product pads for userspace gpiod.
 //
 // Product RGB (GPIO_4/5/7), BELL, GPIO_1…3/6/8, LED_RED/BLUE stay unclaimed so
-// flutter_gpiod can request chip+offset (see app gpio.json). Silk WG_D0/D1 =
+// flutter_gpiod can request chip+offset (see app gpio.ynh960.json). Silk WG_D0/D1 =
 // GPIO_7 (green) / GPIO_8 (spare) — no Wiegand chardev.
 //
 // USB_HOST_PWREN* remain kernel-owned via gpio-hog (output-high) so 1 mm host

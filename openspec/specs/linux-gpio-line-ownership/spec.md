@@ -25,7 +25,7 @@ Silk **WG_D0 / WG_D1** are the former Wiegand D0/D1 pads, remuxed as **GPIO_7 / 
 - **AND** userspace requests `gpiochip4` offset `22` (silk WG_D1 / `GPIO_8`)
 - **THEN** the request SHALL succeed
 - **AND** `/dev/wiegand_input` and `/dev/wiegand_output` MUST NOT be required
-- **AND** shipping LWS `gpio.json` MUST NOT be required to declare a device for GPIO_8
+- **AND** shipping LWS `gpio.ynh960.json` MUST NOT be required to declare a device for GPIO_8
 
 ### Requirement: Board enable lines stay kernel-owned without gpio_innohi
 

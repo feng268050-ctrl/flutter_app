@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Side-panel red/yellow/green indicators driven through the product Status LED bank (`hal/gpio`) with bindings from App `gpio.json`. Steady / Blink / Off modes match lws-ui.
+Side-panel red/yellow/green indicators driven through the product Status LED bank (`hal/gpio`) with bindings from App `gpio.<board_id>.json`. Steady / Blink / Off modes match lws-ui.
 
 ## Requirements
 
 ### Requirement: RGB pins match lws-ui GpioLedConfig
 
-The Linux GPIO LED path SHALL drive side-panel indicators using the product Status LED bank (`hal/gpio`) with **hardware bindings solely from** App `gpio.json` (or the profile-resolved gpio asset). For the current LWS product on ynh960, the shipped config SHALL map red, yellow, and green to these pads (documented here for the product catalog—not as HAL built-ins):
+The Linux GPIO LED path SHALL drive side-panel indicators using the product Status LED bank (`hal/gpio`) with **hardware bindings solely from** App `gpio.<board_id>.json` (or the profile-resolved gpio asset). For the current LWS product on ynh960, the shipped config SHALL map red, yellow, and green to these pads (documented here for the product catalog—not as HAL built-ins):
 
 | Color | Silk / DTS label | SoC pad | gpiochip / offset | Linux GPIO # |
 |-------|------------------|---------|-------------------|--------------|

@@ -31,12 +31,12 @@ void main() {
   "capabilities": ["gpio", "modbus"],
   "net_roles": {},
   "configs": {
-    "gpio": "assets/hal/gpio.json",
+    "gpio": "assets/hal/gpio.ynh960.json",
     "modbus": "assets/hal/modbus.json"
   }
 }
 ''');
-    expect(profile.resolvedGpioAsset, 'assets/hal/gpio.json');
+    expect(profile.resolvedGpioAsset, 'assets/hal/gpio.ynh960.json');
     expect(profile.resolvedModbusAsset, 'assets/hal/modbus.json');
   });
 }

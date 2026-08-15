@@ -33,7 +33,7 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 | 黄 | **`GPIO_4`** | gpio3 RK_PB2 | `gpiochip3` / 10 | 106 | `YNHAPI.GPIO_4` → **3** |
 | 绿 | **`GPIO_7`**（丝印 WG_D0） | gpio4 RK_PC5 | `gpiochip4` / 21 | 149 | `YNHAPI.GPIO_7` → **6** |
 
-- 运行时：App `assets/hal/gpio.json` scheme **`gpiod`**（`flutter_gpiod` / `/dev/gpiochip*`）。`label` / 历史 `path` 字段仅文档。
+- 运行时：App `assets/hal/gpio.ynh960.json` scheme **`gpiod`**（`flutter_gpiod` / `/dev/gpiochip*`）。`label` / 历史 `path` 字段仅文档。
 - 蜂鸣器：`BELL`（DTS Bell-CTL，gpio3 RK_PD3 → `gpiochip3:27` / linux 123）。
 - App：`chassis_rgb` Status LED + `panel_buzzer`；勿在 Dart 写死 SoC 号。
 - 开机默认：关（HMI `resetAllOff` Force Off；halt 见 `gpio-product-off.sh`）。

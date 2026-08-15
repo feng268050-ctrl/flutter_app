@@ -25,7 +25,7 @@
     "wifi.station": "wlan0"
   },
   "configs": {
-    "gpio": "assets/hal/gpio.json",
+    "gpio": "assets/hal/gpio.ynh960.json",
     "modbus": "assets/hal/modbus.json"
   },
   "storage_mounts": [

@@ -128,8 +128,9 @@ flutter:
     - assets/warn/alarm_button_icon.webp
     # Product HAL pack (board profile + gpio/modbus catalogs).
     - assets/hal/board_profile.json
-    - assets/hal/gpio.json
+    - assets/hal/gpio.ynh960.json
     - assets/hal/gpio.sim.json
+    - assets/hal/gpio.ek3562.json
     - assets/hal/modbus.json
     # Ship-only (make prepare-app-assets / build-app): newest firmware per HW +
     # newest process-library JSON per model. Sources: assets/firmware/control-board/

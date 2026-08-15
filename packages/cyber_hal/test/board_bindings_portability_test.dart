@@ -68,7 +68,7 @@ void main() {
     expect(profile.helper(BoardHelperKeys.btModem),
         '/oem/boards/ynh960/helpers/wifibt-bringup.sh');
     expect(profile.helper(BoardHelperKeys.wifiStackUp), isNull);
-    expect(profile.resolvedGpioAsset, 'assets/hal/gpio.json');
+    expect(profile.resolvedGpioAsset, 'assets/hal/gpio.ynh960.json');
     expect(profile.resolvedModbusAsset, 'assets/hal/modbus.json');
 
     final b = BoardBindings(profile);

@@ -2,7 +2,7 @@
 // Git source of truth: overlay/kernel/rockchip/ek3562.dts — synced by make apply-overlay.
 // Hardware baseline: Rockchip RK3562 EVB2 DDR4 V10 Board (live FDT model /
 // compatible matched 2026-08-15). Same include set as
-// rk3562-evb2-ddr4-v10-linux.dts.
+// rk3562-evb2-ddr4-v10-linux.dts, plus ek3562-io for PCA9535 / silk I/O.
 // SoC skeletons (rk3562.dtsi, rk3562-pinctrl.dtsi, rockchip-pinconf.dtsi) stay
 // in the owned linux-sdk kernel tree — do not fork them here until we must.
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
@@ -15,3 +15,5 @@
 #include "rk3562-linux.dtsi"
 #include "rk3562-rk809.dtsi"
 #include "rk3562-evb2-cam.dtsi"
+/* PCA9535 OUT0–3 + SoC IN0–3 gpio-line-names; see docs/ek3562-io-pinmux-ledger.md */
+#include "ek3562-io.dtsi"

@@ -4,10 +4,6 @@
   "height": 1280,
   "default_orientation": "landscape_left",
   "default_ui_scale": 1.13,
-  "lcd_param_files": [
-    "lcd/960_lcd_param_rk356x.txt",
-    "lcd/lcd_mipi_param.txt"
-  ],
   "splash": {
     "notes": "Early boot BMP + Weston boot-splash.png from board/logo/splash_icon.png (icon-sized, centered); not panel resolution"
   },

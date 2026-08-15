@@ -31,7 +31,7 @@
 |----|------|
 | HAL | P3.1 ✅：`BoardProfile` + `BoardBindings`；合同见 `hal-portability.md` |
 | 板级 JSON | **W1 ✅**：OEM `board_profile`；`gpio.json` / `modbus.json` 仍在 App assets |
-| 屏参 | **W2 ✅**：screen pack `lcd/` → private1（OEM 权威）；无 `/system/etc` 回退 |
+| 屏参 | **DT-only ✅**：面板时序在 kernel DT；OEM `screen.json` 仅旋转/逻辑分辨率/ui_scale；ParamUpdate `lcd/` 已删 |
 | 板脚本 | **W2 ✅**：modem / OTG / storage-init 在 `oem/boards/ynh960/helpers/`；rootfs 为 thin stub |
 | GPT `oem` | ✅ ~128 MiB `/oem`；`build-oem` + `upgrade`（含 `OEM_ONLY=1`）已通；ynh960 pack 有内容 |
 | `properties.ini` | ✅ 运行时 `/var/lib/hal/properties.ini`（无 OEM 种子）；`set-prop`/`del-prop`；identity → Vendor Storage |
@@ -137,8 +137,7 @@ oem/                              # 新建：OEM 包源（打进 oem.img）
       product.ini                 # 可选；模拟器可用占位
   screens/
     panel-ynh960-800x1280/
-      screen.json                 # 旋转默认、分辨率契约、splash
-      lcd/                        # 替代/迁移 private1 参数表
+      screen.json                 # 旋转默认、分辨率契约、splash、ui_scale
     virt/
       screen.json                 # QEMU virtio 虚拟显示
 ```
@@ -224,11 +223,13 @@ LWS HMI App product_property_defaults
 | `display_name` | 人读 |
 | `width` / `height` | 逻辑像素契约（UI/文档） |
 | `default_orientation` | `landscape_left` 等 → `hmi-launch` / Weston |
-| `lcd_param_files` | 相对 screen 目录的参数表（迁移期） |
+| `default_ui_scale` | 出厂 UI 缩放（可选） |
 | `splash` | 尺寸/路径约定（与 `board/logo` 策略对齐） |
 | `touch_notes` | 文档性；驱动仍在 DT/kernel |
 
-**Headless / sim**：可无 LCD 文件；`capabilities` 可不含 backlight。
+面板时序 / MIPI init 在 **kernel DT**（`board/*.txt` 仅作生成 DTSI 的源）；**不**再经 OEM `lcd/` / ParamUpdate / private1。
+
+**Headless / sim**：可无 backlight 等 capability。
 
 ### 3.7 装配器（rootfs 内）
 
@@ -261,7 +262,7 @@ LWS HMI App product_property_defaults
 | O1 | 定义 manifest / screen.json schema；`oem/boards/ynh960` 从 App `board_profile.json` **剥掉** gpio/modbus 指针后迁入；**迁入 `product.ini` 种子** | ✅ W1 |
 | O2 | App 改为「OEM profile + 本地 gpio/modbus」；单测用 fixture | ✅ W1 |
 | O3 | 板脚本：modem / OTG / storage-init 迁到 `oem/boards/.../helpers`，profile helpers 改路径 | ✅ W2 |
-| O4 | 屏参：仅 OEM screen pack `lcd/` 种子 private1（无 `/system/etc` 回退） | ✅ W2 |
+| O4 | 屏参：去掉 `/system/etc` 回退；后迁 DT-only，删除 OEM `lcd/` ParamUpdate 表 | ✅ W2 → DT |
 | O5 | `make build-oem`（ext4）+ flash/upgrade 路径打通；清空 oem-fallback | ✅ W1+W2 |
 
 ---
@@ -604,7 +605,7 @@ W1  OEM 垂直切片（真机 ynh960）                          ✅
 W2  Rootfs/脚本瘦身                                      ✅
     ├─ helpers → OEM；rootfs thin stubs
     ├─ hmi-launch 读 display.conf → /run/hmi/screen.env（缺则失败）
-    ├─ private1 仅由 screen pack lcd/ 种子；去掉 oem-fallback
+    ├─ private1 不再承载 ParamUpdate 屏参（面板时序已迁 DT；OEM `lcd/` 已删）；去掉 oem-fallback
     ├─ product.ini：OEM 强制 brand/model/sn；set-prop 拒 identity
     └─ archive: 2026-07-27-platform-rootfs-script-thinning
 
@@ -662,7 +663,7 @@ W4 → W5 ✅ 多 DT FIT（已解除对 kernel-61-lts-rebase 的阻塞）
 |------|------|
 | OEM 单槽刷坏 | compose 失败可见；工厂校验 manifest；关键升级默认不写 OEM |
 | 错 uboot / 错 oem 打进整包 | §5.6：分目录 + SKU 表 + 缺文件失败；`factory` 旁写 `manifest.txt` |
-| 早启亮屏仍依赖 private1/Innohi | W2：private1 由 OEM `lcd/` 种子；换屏 DT 变更仍走 boot 升级 |
+| 早启亮屏仍依赖 private1/Innohi | ParamUpdate 已退役；面板时序在 kernel DT；换屏改 DT → boot 升级 |
 | SDK 进仓历史膨胀 | 白名单 + LFS/prebuilt；禁 commit `output/`/`dl/` |
 | 模拟器与真机差过大 | 契约对齐（单元名、路径、Weston）；不追求 GPU 奇偶 |
 | App 合并 profile 出错 | 单测：OEM fixture + App gpio/modbus；错 board_id 拒绝启动 |

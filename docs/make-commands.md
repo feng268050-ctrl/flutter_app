@@ -52,7 +52,7 @@ Linux on ARM64 的常规做法是：**一份 `Image`（内核二进制）+ 每�
 | 板厂 / 硬件交付 | 进仓库 | 构建 |
 |-----------------|--------|------|
 | 设备树（`.dts`/`.dtsi`） | `overlay/kernel/` | `apply-overlay` → `build-kernel`（通常仅 DTB；新驱动则 `FORCE_KERNEL_IMAGE=1`） |
-| 屏显 / LCD 参数 | `board/*.txt`、`oem/screens/.../lcd/` | `build-oem` |
+| 屏显 / LCD 参数 | `board/*.txt` → DT（`gen-ynh960-panel-init-dtsi`）；OEM `screen.json` 仅用户态契约 | 改时序：`apply-overlay` + `build-kernel`；改旋转/UI scale：`build-oem` |
 | U-Boot + MiniLoader | `prebuilt/bootloader/<uboot_id>/` | `build-img` / `flash` |
 | 板级 profile / helpers | `oem/boards/<board_id>/` | `build-oem` |
 | 新 `board_id` | `board/rk356x-fit-boards.txt` + OEM `manifest.json` | `build-kernel`（FIT inventory） |

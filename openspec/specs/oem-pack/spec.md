@@ -44,20 +44,15 @@ OEM board packs SHALL place board-specific bringup scripts under `boards/<board_
 - **WHEN** `wifi-stack-up` runs and `/run/hmi/board_profile.json` (or compose oem.env) provides a modem helper path
 - **THEN** it SHALL invoke that path instead of hardcoding only `/usr/libexec/bluetooth/wifibt-bringup.sh`
 
-### Requirement: Screen pack LCD seed files
+### Requirement: Panel timing is kernel DT only
 
-Screen packs that require private1 LCD tables SHALL ship those files under `screens/<screen_id>/lcd/` and reference them from `screen.json`. Panel timing SHALL come from kernel device tree. Early `storage-init` SHALL NOT copy LCD tables from `/system/etc`. Innohi ParamUpdate SHALL NOT run.
+Panel timing and MIPI init SHALL come from kernel device tree (boot FIT). Screen packs MUST NOT ship Innohi ParamUpdate / private1 LCD tables under `screens/<screen_id>/lcd/`. Rootfs MUST NOT seed `/system/etc` LCD tables. Innohi ParamUpdate SHALL NOT run.
 
-#### Scenario: OEM lcd seeds private1
+#### Scenario: No OEM lcd ParamUpdate tables
 
-- **WHEN** `/oem/manifest.json` is valid and the resolved screen `lcd/` directory contains the required LCD param files
-- **THEN** compose or a dedicated LCD helper MAY copy those OEM files into private1
-- **AND** MUST NOT use `/usr/libexec/board/storage-init.sh` as a display-bringup path
-
-#### Scenario: Missing OEM lcd fails hard
-
-- **WHEN** OEM is missing `manifest.json` or screen `lcd/` lacks required param files
-- **THEN** LCD seeding SHALL fail without copying `/system/etc` LCD tables into private1
+- **WHEN** inspecting an active screen pack under `oem/screens/`
+- **THEN** it SHALL NOT contain an `lcd/` directory of ParamUpdate tables
+- **AND** `/system/etc/960_lcd_param_rk356x.txt` and `/system/etc/lcd_mipi_param.txt` SHALL be absent from rootfs
 
 ### Requirement: HMI launch consumes screen.env defaults
 
@@ -98,17 +93,17 @@ Screen packs that require private1 LCD tables SHALL ship those files under `scre
 
 ### Requirement: Screen pack screen.json
 
-Each screen pack SHALL provide `screen.json` with at least logical `width` / `height` and `default_orientation`. When LCD param tables are required for the panel, `lcd_param_files` SHALL list paths relative to the screen pack (under `lcd/`), not repository `board/*.txt` paths alone. Compose SHALL continue to expose orientation (and related) values in `/run/hmi/screen.env`. Screen packs MAY declare optional `default_ui_scale` (positive number, typically `0.5`–`2.0`) as the factory default UI scale multiplier for that panel; when omitted, runtime behavior SHALL treat the OEM default as absent (Apps fall back to `1.0` until seeded or operator-set).
+Each screen pack SHALL provide `screen.json` with at least logical `width` / `height` and `default_orientation`. Compose SHALL expose orientation (and related) values in `/run/hmi/screen.env`. Screen packs MAY declare optional `default_ui_scale` (positive number, typically `0.5`–`2.0`) as the factory default UI scale multiplier for that panel; when omitted, runtime behavior SHALL treat the OEM default as absent (Apps fall back to `1.0` until seeded or operator-set). Screen packs MUST NOT declare `lcd_param_files` (ParamUpdate tables retired; panel timing is DT-only).
 
 #### Scenario: ynh960 panel screen.json
 
 - **WHEN** compose succeeds for the ynh960 panel pack
 - **THEN** `/run/hmi/screen.env` SHALL expose orientation (and related) values derived from that `screen.json`
 
-#### Scenario: lcd_param_files under screen pack
+#### Scenario: ynh960 screen.json has no lcd_param_files
 
 - **WHEN** inspecting `oem/screens/panel-ynh960-800x1280/screen.json`
-- **THEN** `lcd_param_files` entries SHALL refer to files under that screen pack's `lcd/` directory
+- **THEN** it SHALL NOT contain a `lcd_param_files` key
 
 #### Scenario: ynh960 default_ui_scale exported
 

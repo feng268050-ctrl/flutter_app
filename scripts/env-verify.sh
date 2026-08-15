@@ -621,21 +621,21 @@ fi
 
 echo ""
 echo "--- LCD / display params ---"
-oem_lcd=""
+# Panel timing is kernel DT only. OEM screen packs must not ship ParamUpdate lcd/ tables.
 if [ -f /oem/manifest.json ]; then
 	sp="$(sed -n 's/.*"screen_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /oem/manifest.json | head -1)"
-	[ -n "$sp" ] && [ -d "/oem/$sp/lcd" ] && oem_lcd="/oem/$sp/lcd"
-fi
-if [ -z "$oem_lcd" ]; then
-	fail "OEM screen lcd/ missing — required (no /system/etc seed fallback)"
+	if [ -n "$sp" ] && [ -f "/oem/$sp/screen.json" ]; then
+		pass "OEM screen.json (/oem/$sp/screen.json)"
+	else
+		fail "OEM screen.json missing (manifest screen_path=$sp)"
+	fi
+	if [ -n "$sp" ] && [ -d "/oem/$sp/lcd" ]; then
+		fail "OEM screen lcd/ still present (ParamUpdate retired — rebuild oem.img)"
+	else
+		pass "OEM screen lcd/ absent (DT-only panel)"
+	fi
 else
-	for f in 960_lcd_param_rk356x.txt lcd_mipi_param.txt; do
-		if [ -f "$oem_lcd/$f" ]; then
-			pass "OEM lcd $(basename "$f")"
-		else
-			fail "$oem_lcd/$f missing"
-		fi
-	done
+	fail "OEM manifest missing — cannot verify screen pack"
 fi
 for f in /system/etc/960_lcd_param_rk356x.txt /system/etc/lcd_mipi_param.txt \
 	/system/etc/LCD_PARAM_RK356X_V11_0.txt; do

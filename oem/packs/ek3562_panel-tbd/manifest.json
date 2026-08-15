@@ -10,5 +10,5 @@
     "soc_family": "rk356x",
     "fit_dt": "pending"
   },
-  "notes": "board_id will equal boot FIT conf name once vendor DTS is in overlay/kernel/ and listed in board/rk356x-fit-boards.txt. GPU = same Mali as RK3566. Wi-Fi = RTL8821CU. Do not copy Innohi MainServer/ParamUpdate."
+  "notes": "DTS SoT: overlay/kernel/rockchip/ek3562.dts (Rockchip RK3562 EVB2 DDR4 V10). Keep fit_dt=pending until ek3562 is appended to board/rk356x-fit-boards.txt and verify-boot-fit passes; then set fit_dt to ek3562. Checklist: overlay/kernel/rockchip/ek3562.md. GPU = same Mali as RK3566. Wi-Fi = RTL8821CU. Do not copy Innohi MainServer/ParamUpdate."
 }

@@ -152,7 +152,7 @@ once) so the owned `patch-mk-kernel.sh` lands in the SDK’s `mk-kernel.sh`.
 
 | Layer | Role |
 |-------|------|
-| **`overlay/kernel/rockchip/`** | **Git source of truth** for product board trees: `ynh960.dts`, `customer_board_ynh960.dtsi`, `ynh960-*.dtsi` (future `ek3562.*`), plus `*.config` fragments and kernel patches under `overlay/kernel/` |
+| **`overlay/kernel/rockchip/`** | **Git source of truth** for product board trees: `ynh960.dts`, `customer_board_ynh960.dtsi`, `ynh960-*.dtsi`, **`ek3562.dts`** + RK3562 EVB2 board `.dtsi` (see `ek3562.md`), plus `*.config` fragments and kernel patches under `overlay/kernel/` |
 | **`board/rk356x-fit-boards.txt`** | SoC-family **FIT board inventory** — one `board_id` per line; drives multi-conf ITS generation (`scripts/generate-boot-fit-its.sh`) |
 | **`linux-sdk/.../dts/rockchip/`** | **Build mirror only** — `make apply-overlay` copies `overlay/kernel/rockchip/*.dts*` here; do not edit product DTS only in the SDK |
 | **`oem/`** | **Not** for boot DTBs. U-Boot loads FIT (kernel+DT) before `/oem` is mounted. OEM may carry runtime LCD params (`screens/.../lcd/`), profile identity, helpers — never the startup device tree |
@@ -166,7 +166,7 @@ as ek3562 and selective Wi‑Fi/driver imports).
 | Git path | Synced to SDK by `apply-overlay` | Used for |
 |----------|----------------------------------|----------|
 | `overlay/kernel/rockchip/*.dts*` | `kernel/arch/arm64/boot/dts/rockchip/` | FIT DTBs |
-| `overlay/kernel/innohi/` | `kernel/innohi/` | leftover `gpio_innohi` only |
+| `overlay/kernel/innohi/` | `kernel/innohi/` | README / empty Makefile only (`gpio_innohi` removed) |
 | `overlay/kernel/drivers/net/wireless/aic8800/` | `kernel/drivers/net/wireless/aic8800/` | ynh960 AIC8800 SDIO |
 | `overlay/board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules` | rootfs overlay | `/dev/block/by-name`, `/dev/disk/by-partlabel` |
 
@@ -216,10 +216,14 @@ Do not invent a parallel DT store under `oem/` to work around gitignore.
 
 ## U-Boot layout
 
-- **Authoritative binaries:** `prebuilt/bootloader/<uboot_id>/` (see `board/factory-skus.tsv`).
-- **`linux-sdk/u-boot/`:** absent after trim (unless you ran `make fetch-uboot` for optional
-  source). `make build-img` creates the directory temporarily and copies loader/uboot from
-  prebuilt for Rockchip pack scripts — not a persistent store.
+- **Delivery binaries:** `prebuilt/bootloader/<uboot_id>/` (see `board/factory-skus.tsv`) —
+  **self-built or vendor-validated** `uboot.img` + MiniLoader. How to build from
+  Rockchip `u-boot` + `rkbin`/`boot_merger`: [`docs/uboot-rkbin.md`](uboot-rkbin.md).
+- **`linux-sdk/u-boot/`:** populated by `make fetch-uboot` (clones
+  `rockchip-linux/u-boot`). `make build-img` also stages loader/uboot from
+  prebuilt for Rockchip pack scripts.
+- **Policy:** compiling U-Boot is expected for new boards once DTS matches;
+  do not flash an **unvalidated** pair onto a shipping SKU.
 
 ## Git strategy (deferred)
 

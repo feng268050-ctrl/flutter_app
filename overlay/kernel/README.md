@@ -3,7 +3,7 @@
 **Board device trees:** git source of truth is [`rockchip/`](rockchip/) (`ynh960.dts`,
 `customer_board_*.dtsi`, …). **Drivers:** AIC8800 combo under
 [`drivers/net/wireless/aic8800/`](drivers/net/wireless/aic8800/); leftover
-board helpers under [`innohi/`](innohi/) (`gpio_innohi` only).
+board helpers under [`innohi/`](innohi/) (README only — `gpio_innohi` removed; product GPIO is gpiod).
 `make apply-overlay` copies kernel trees into `linux-sdk/kernel/`.
 
 Kernel **patches** and stable device script patches are squashed into owned

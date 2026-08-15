@@ -1,0 +1,17 @@
+// ek3562 board device tree (FIT conf / board_id = ek3562).
+// Git source of truth: overlay/kernel/rockchip/ek3562.dts — synced by make apply-overlay.
+// Hardware baseline: Rockchip RK3562 EVB2 DDR4 V10 Board (live FDT model /
+// compatible matched 2026-08-15). Same include set as
+// rk3562-evb2-ddr4-v10-linux.dts.
+// SoC skeletons (rk3562.dtsi, rk3562-pinctrl.dtsi, rockchip-pinconf.dtsi) stay
+// in the owned linux-sdk kernel tree — do not fork them here until we must.
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2022 Rockchip Electronics Co., Ltd.
+ *
+ */
+
+#include "rk3562-evb2-ddr4-v10.dtsi"
+#include "rk3562-linux.dtsi"
+#include "rk3562-rk809.dtsi"
+#include "rk3562-evb2-cam.dtsi"

@@ -19,7 +19,7 @@
 | **Linux P2.5 — 双分区刷机** | A/B 双分区；经 Wi‑Fi / USB 的 `make upgrade` 落盘；为 **P4.8 统一整机 OTA**（验签 + 同 apply）打底（原 P2.4） | ✅ |
 | **Linux P3.0 — UI 框架 + IME** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（`packages/` path 包；初期 Frosted Glass，API 面向可换设计）；骨架已落地，持续优化中 | 🔄 |
 | **Linux P3.1 — HAL 硬件抽象层** | **Dart HAL 子包** + **systemd-networkd 网络栈切换**（wpa D-Bus + networkd L3；无 Rust/`hald`）。设计：[`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md) | ✅ |
-| **Linux P3.2 — Linux 模拟器** | 同 `Image` + 同 rootfs 内容 + OEM `sim_virt`；QEMU + VirGL 自动 `hmi.service`；细则 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §6 / W4；操作 [`p32-emulator.md`](p32-emulator.md)；OpenSpec `archive/2026-07-28-platform-p32-sim-virt` | ✅ |
+| **Linux P3.2 — Linux 模拟器** | 同 `Image` + 同 rootfs 内容 + OEM `sim-virt`；QEMU + VirGL 自动 `hmi.service`；细则 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §6 / W4；操作 [`p32-emulator.md`](p32-emulator.md)；OpenSpec `archive/2026-07-28-platform-p32-sim-virt` | ✅ |
 | **Linux P3.3 — AI 库迁移** | `native/lws_ai` + `lws_ai_daemon` + RKNN；App 经 **`cyber_pm`** 监护；OpenSpec [`archive/2026-08-01-app-owned-ai-daemon`](../openspec/changes/archive/2026-08-01-app-owned-ai-daemon/) | ✅ |
 | **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务、**P4.8 统一整机 OTA** 等（原 P5 业务；子阶段见 **§1.2**）；IPC MediaMTX 已 App 化 | ✅ |
 | **Linux P5.0 — Android 兼容** | Flutter App 打 **APK**；Modbus / GPIO / Wi‑Fi / BT 等在 **App 侧**接 Android / `YNHAPI`（**不**往 `cyber_hal` 加 Android 后端） | 🔲 |
@@ -73,7 +73,7 @@ P3.1  Dart HAL 子包 + 网络栈切换 ✅
 
 P3.2  Linux 模拟器 ✅（W4 / archive/2026-07-28-platform-p32-sim-virt）
     ├─ QEMU + VirGL + Weston + eLinux + Linux HAL；三网卡 + ethssh；无 OTG
-    ├─ sim_virt OEM；USB BT/串口；GPIO LED 悬浮层（参考系统状态浮层）
+    ├─ sim-virt OEM；USB BT/串口；GPIO LED 悬浮层（参考系统状态浮层）
     ├─ 平台化：OEM · 通用 boot/rootfs · 自有 linux-sdk
     │   （见 docs/platform-os-oem-sdk-plan.md；gpio/modbus 仍属产品 App）
     │   操作见 docs/p32-emulator.md（原 UTM 方案已改为 QEMU）

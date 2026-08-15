@@ -64,8 +64,8 @@ Linux on ARM64 的常规做法是：**一份 `Image`（内核二进制）+ 每�
 
 | SKU | board_id | U-Boot 目录 | OEM pack | 状态 |
 |-----|----------|-------------|----------|------|
-| `ynh960-p800`（默认） | `ynh960` | `prebuilt/bootloader/rockchip-ynh960/` | `ynh960_panel-800x1280` | 在产 |
-| `ek3562-dev` | `ek3562` | `prebuilt/bootloader/vendor-ek3562/` | `ek3562_panel-tbd` | DTS 已落 overlay；U-Boot/loader **自建**（[`uboot-rkbin.md`](uboot-rkbin.md) / [`ek3562.md`](../overlay/kernel/rockchip/ek3562.md)）；`fit_dt=pending` 期间勿写 FIT 清单 |
+| `ynh960-p800`（默认） | `ynh960` | `prebuilt/bootloader/rockchip-ynh960/` | `ynh960-panel` | 在产 |
+| `ek3562-dev` | `ek3562` | `prebuilt/bootloader/vendor-ek3562/` | `ek3562-panel` | DTS + FIT conf `ek3562` 已落；U-Boot/loader **自建**（[`uboot-rkbin.md`](uboot-rkbin.md) / [`ek3562.md`](../overlay/kernel/rockchip/ek3562.md)） |
 
 运行时识别：`oem-compose` 写 `/run/hmi/board_id` 与 `/run/hmi/boards.d/<board_id>`。板端 `read-board-id`。Innohi **MainServer / ParamUpdate 已实验性移除**（面板时序靠 kernel DT）。
 
@@ -102,7 +102,7 @@ Linux on ARM64 的常规做法是：**一份 `Image`（内核二进制）+ 每�
 | `FORCE` | `0` | 强制覆盖/重建（各目标语义见下文） |
 | `FACTORY_SKU` | `ynh960-p800` | 出厂变体主键；查 `board/factory-skus.tsv` 得到下面两个 ID；也是 `factory.img` 子目录名 |
 | `UBOOT_ID` | 由表推出（默认 `rockchip-ynh960`） | bootloader 包：`prebuilt/bootloader/<id>/`；日常勿设，用 `FACTORY_SKU`；模拟器不用 |
-| `OEM_ID` | 由表推出（默认 `ynh960_panel-800x1280`） | OEM 包：`oem/packs/<id>/` → `oem/out/<id>/oem.img`；日常勿设；模拟器用 `sim_virt` |
+| `OEM_ID` | 由表推出（默认 `ynh960-panel`） | OEM 包：`oem/packs/<id>/` → `oem/out/<id>/oem.img`；日常勿设；模拟器用 `sim-virt` |
 | `BOARD` / `CHIP` / `DEFCONFIG` | `ynh960` / `rk3566_rk3568` / `ynh960_defconfig` | **仅 `make lunch`**（Rockchip SDK 平台 profile；**不是** `build-kernel` / `build-rootfs` 的产品选择）。rootfs 产品区分用 **`APP=`**；硬件/屏参用 **OEM**。 |
 
 `FACTORY_SKU` → `UBOOT_ID` + `OEM_ID`（已设的 ID 覆盖表值）。`APP` 选软件/rootfs；SKU 族选 U-Boot+OEM；kernel FIT 各 SKU 共用。
@@ -322,7 +322,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 ### `make build-oem`
 
-- **怎么用：** `make build-oem`；模拟器：`OEM_ID=sim_virt make build-oem`
+- **怎么用：** `make build-oem`；模拟器：`OEM_ID=sim-virt make build-oem`
 - **何时用：** 改了 `oem/**`、屏参包、board helpers。
 - **产物：** `oem/out/<OEM_ID>/oem.img`。
 - **参数：** `FACTORY_SKU`（推荐）或直接 `OEM_ID=`；`UBOOT_ID` 无关。
@@ -707,7 +707,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **怎么用：** `make build-emulator`；重置模拟器身份盘：`FORCE=1 make build-emulator`
 - **何时用：** 已有 `Image` + `rootfs.img` 后组装模拟器目录。
 - **参数：** `APP`（模拟器 rootfs 固定扩到 1536M，设备 OTA 仍为 ~600M）；`FORCE=1` 仅重建 `provision.img`（清空 identity/tunables，下次启动 autogen 新 SN）。
-- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim_virt` oem；**默认保留**已有 `provision.img`）。
+- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim-virt` oem；**默认保留**已有 `provision.img`）。
 
 ### `make emulator` / `make emulator-stop`
 

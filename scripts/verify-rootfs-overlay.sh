@@ -405,7 +405,7 @@ run_check() {
 		fi
 	}
 	check_screen_default_ui_scale \
-		"$ROOT/oem/screens/panel-ynh960-800x1280/screen.json" "1.13" "ynh960 panel"
+		"$ROOT/oem/screens/ynh960-tbd/screen.json" "1.13" "ynh960 panel"
 	check_screen_default_ui_scale \
 		"$ROOT/oem/screens/virt/screen.json" "1.28" "virt"
 

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "pack_id": "ek3562_panel-tbd",
+  "pack_id": "ek3562-panel",
   "board_id": "ek3562",
-  "screen_id": "panel-ek3562-tbd",
+  "screen_id": "ek3562-tbd",
   "board_path": "boards/ek3562",
-  "screen_path": "screens/panel-ek3562-tbd",
+  "screen_path": "screens/ek3562-tbd",
   "compat": {
     "os_min": "1.0.0",
     "soc_family": "rk356x",
@@ -12,4 +12,3 @@
   },
   "notes": "DTS SoT: overlay/kernel/rockchip/ek3562.dts (+ ek3562-display.dtsi 7\" 800x1280, ek3562-io.dtsi). FIT conf ek3562 in board/rk356x-fit-boards.txt. OEM screen.json geometry 800x1280. Checklist: overlay/kernel/rockchip/ek3562.md. GPU = same Mali as RK3566. Wi-Fi = RTL8821CU. GMAC0 = RGMII clock_in_out=output (not ynh960 RMII input). Do not copy Innohi MainServer/ParamUpdate."
 }
-

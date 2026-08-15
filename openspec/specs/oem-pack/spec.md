@@ -9,8 +9,8 @@ The repository SHALL provide an `oem/` tree with `packs/<pack_id>/manifest.json`
 
 #### Scenario: ynh960 pack present
 
-- **WHEN** a developer inspects `oem/packs/ynh960_panel-800x1280/manifest.json`
-- **THEN** the manifest SHALL declare `board_id` `ynh960` and a screen id for the 800×1280 panel with paths under `boards/` and `screens/`
+- **WHEN** a developer inspects `oem/packs/ynh960-panel/manifest.json`
+- **THEN** the manifest SHALL declare `pack_id` `ynh960-panel`, `board_id` `ynh960`, `screen_id` `ynh960-tbd`, and paths under `boards/` and `screens/`
 
 ### Requirement: OEM manifest schema
 
@@ -82,7 +82,7 @@ Panel timing and MIPI init SHALL come from kernel device tree (boot FIT). Screen
 #### Scenario: virt OEM ui_scale seeded on first boot
 
 - **WHEN** `display.conf` exists or is created without a `ui_scale` key
-- **AND** the active pack is `sim_virt` and `/run/hmi/screen.env` sets `SCREEN_DEFAULT_UI_SCALE=1.28`
+- **AND** the active pack is `sim-virt` and `/run/hmi/screen.env` sets `SCREEN_DEFAULT_UI_SCALE=1.28`
 - **THEN** `hmi-launch` SHALL upsert `ui_scale=1.28` into `/var/lib/hal/display.conf` before starting the embedder
 
 #### Scenario: Operator ui_scale wins over OEM
@@ -102,7 +102,7 @@ Each screen pack SHALL provide `screen.json` with at least logical `width` / `he
 
 #### Scenario: ynh960 screen.json has no lcd_param_files
 
-- **WHEN** inspecting `oem/screens/panel-ynh960-800x1280/screen.json`
+- **WHEN** inspecting `oem/screens/ynh960-tbd/screen.json`
 - **THEN** it SHALL NOT contain a `lcd_param_files` key
 
 #### Scenario: ynh960 default_ui_scale exported
@@ -114,7 +114,7 @@ Each screen pack SHALL provide `screen.json` with at least logical `width` / `he
 #### Scenario: virt default_ui_scale exported
 
 - **WHEN** the virt `screen.json` includes `"default_ui_scale": 1.28`
-- **AND** `oem-compose` succeeds for `sim_virt`
+- **AND** `oem-compose` succeeds for `sim-virt`
 - **THEN** `/run/hmi/screen.env` SHALL include `SCREEN_DEFAULT_UI_SCALE=1.28`
 
 ### Requirement: oem-compose early boot
@@ -143,7 +143,7 @@ The build system SHALL provide `make build-oem` that resolves `FACTORY_SKU` / `O
 #### Scenario: Default SKU build-oem
 
 - **WHEN** the operator runs `FACTORY_SKU=ynh960-p800 make build-oem` (or the default sku)
-- **THEN** `oem/out/ynh960_panel-800x1280/oem.img` (or matching oem_id path) exists and is an ext4 filesystem image
+- **THEN** `oem/out/ynh960-panel/oem.img` (or matching oem_id path) exists and is an ext4 filesystem image
 
 ### Requirement: FACTORY_SKU resolves uboot and oem paths
 
@@ -163,19 +163,19 @@ The build system SHALL provide `make build-oem` that resolves `FACTORY_SKU` / `O
 - **WHEN** `make build-oem` then `make build-img` succeed for default APP and `ynh960-p800`
 - **THEN** `output/firmware/lws_hmi/ynh960-p800/factory.img` exists and the package includes the oem partition payload
 
-### Requirement: sim_virt OEM pack
+### Requirement: sim-virt OEM pack
 
-The repository SHALL provide OEM pack `sim_virt` with `oem/packs/sim_virt/manifest.json` declaring `board_id` `sim`, `screen_id` `virt`, paths `boards/sim` and `screens/virt`, and `compat.soc_family` of `virt` (not `rk356x`). `OEM_ID=sim_virt make build-oem` SHALL produce `oem/out/sim_virt/oem.img`. The `boards/sim` tree MUST NOT ship `identity.env` or other per-unit identity seeds — emulator identity uses virtio `provision.img` per `gpt-provision-partition`.
+The repository SHALL provide OEM pack `sim-virt` with `oem/packs/sim-virt/manifest.json` declaring `board_id` `sim`, `screen_id` `virt`, paths `boards/sim` and `screens/virt`, and `compat.soc_family` of `virt` (not `rk356x`). `OEM_ID=sim-virt make build-oem` SHALL produce `oem/out/sim-virt/oem.img`. The `boards/sim` tree MUST NOT ship `identity.env` or other per-unit identity seeds — emulator identity uses virtio `provision.img` per `gpt-provision-partition`.
 
-#### Scenario: sim_virt pack present
+#### Scenario: sim-virt pack present
 
-- **WHEN** a developer inspects `oem/packs/sim_virt/manifest.json`
-- **THEN** the manifest SHALL declare `pack_id` `sim_virt`, `board_id` `sim`, `screen_id` `virt`, and `compat.soc_family` `virt`
+- **WHEN** a developer inspects `oem/packs/sim-virt/manifest.json`
+- **THEN** the manifest SHALL declare `pack_id` `sim-virt`, `board_id` `sim`, `screen_id` `virt`, and `compat.soc_family` `virt`
 
-#### Scenario: build-oem for sim_virt
+#### Scenario: build-oem for sim-virt
 
-- **WHEN** `OEM_ID=sim_virt make build-oem` succeeds
-- **THEN** `oem/out/sim_virt/oem.img` SHALL exist as an ext4 image containing the pack layout
+- **WHEN** `OEM_ID=sim-virt make build-oem` succeeds
+- **THEN** `oem/out/sim-virt/oem.img` SHALL exist as an ext4 image containing the pack layout
 
 #### Scenario: sim board pack has no identity.env
 
@@ -202,7 +202,7 @@ OEM `oem/screens/virt/screen.json` SHALL declare logical width/height and `defau
 
 #### Scenario: virt screen.json compose
 
-- **WHEN** oem-compose succeeds for `sim_virt`
+- **WHEN** oem-compose succeeds for `sim-virt`
 - **THEN** `/run/hmi/screen.env` SHALL expose `SCREEN_DEFAULT_ORIENTATION` from virt `screen.json` without requiring lcd param files
 
 ### Requirement: OEM board_id aligns with FIT configuration
@@ -241,11 +241,11 @@ OEM board packs MUST NOT include `product.ini` or `properties.ini`. Board profil
 
 ### Requirement: ynh960 panel default UI scale
 
-The ynh960 800×1280 screen pack (`oem/screens/panel-ynh960-800x1280/screen.json`) SHALL declare `default_ui_scale` of approximately `1.13` so factory-flashed devices obtain panel-appropriate UI scale without manual OS Settings configuration.
+The ynh960 800×1280 screen pack (`oem/screens/ynh960-tbd/screen.json`) SHALL declare `default_ui_scale` of approximately `1.13` so factory-flashed devices obtain panel-appropriate UI scale without manual OS Settings configuration.
 
 #### Scenario: ynh960 pack declares default_ui_scale
 
-- **WHEN** inspecting `oem/screens/panel-ynh960-800x1280/screen.json`
+- **WHEN** inspecting `oem/screens/ynh960-tbd/screen.json`
 - **THEN** `default_ui_scale` SHALL be present and approximately `1.13`
 
 ### Requirement: virt screen default UI scale
@@ -263,6 +263,6 @@ When `/var/lib/hal/input.conf` is absent, `oem-compose` SHALL create it from the
 
 #### Scenario: Pack defaults seeded once
 
-- **WHEN** compose runs on first boot for pack `ynh960_panel-800x1280` with `input_defaults.json` present and no runtime conf
+- **WHEN** compose runs on first boot for pack `ynh960-panel` with `input_defaults.json` present and no runtime conf
 - **THEN** `/var/lib/hal/input.conf` SHALL exist with keys from the pack file
 

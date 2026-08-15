@@ -2,12 +2,12 @@
 
 ## Purpose
 
-P3.2 same-OS **QEMU** guest: shared device `Image` + rootfs content + `sim_virt` OEM, host VirGL, product-shaped NICs/USB, no OTG. Formal launcher is `make emulator` (`qemu-system-aarch64`).
+P3.2 same-OS **QEMU** guest: shared device `Image` + rootfs content + `sim-virt` OEM, host VirGL, product-shaped NICs/USB, no OTG. Formal launcher is `make emulator` (`qemu-system-aarch64`).
 
 ## Requirements
 ### Requirement: Same OS artifacts in emulator
 
-The P3.2 emulator SHALL boot the **same** kernel `Image` produced by `make build-kernel` and the **same** rootfs **content** produced by `make build-rootfs`, plus OEM pack `sim_virt`, and a host **`provision.img`** virtio disk per `gpt-provision-partition`. It MUST NOT require a separately built virt userspace rootfs as the formal guest OS. The emulator working `rootfs.img` MAY be a grown copy of the device artifact (fixed size **1536M**) so host debug/push tooling has free space; the device OTA `rootfs.img` size MUST remain unchanged. Operators MUST NOT treat emulator rootfs size as a tunable build parameter. It MUST NOT rely on OEM `boards/sim/identity.env` for per-unit SN.
+The P3.2 emulator SHALL boot the **same** kernel `Image` produced by `make build-kernel` and the **same** rootfs **content** produced by `make build-rootfs`, plus OEM pack `sim-virt`, and a host **`provision.img`** virtio disk per `gpt-provision-partition`. It MUST NOT require a separately built virt userspace rootfs as the formal guest OS. The emulator working `rootfs.img` MAY be a grown copy of the device artifact (fixed size **1536M**) so host debug/push tooling has free space; the device OTA `rootfs.img` size MUST remain unchanged. Operators MUST NOT treat emulator rootfs size as a tunable build parameter. It MUST NOT rely on OEM `boards/sim/identity.env` for per-unit SN.
 
 #### Scenario: Emulator uses device rootfs content
 
@@ -36,12 +36,12 @@ After OEM compose succeeds in the guest, `hmi.service` SHALL start the HMI via `
 
 #### Scenario: Cold boot reaches hmi.service
 
-- **WHEN** the emulator guest reaches multi-user target with valid `sim_virt` OEM
+- **WHEN** the emulator guest reaches multi-user target with valid `sim-virt` OEM
 - **THEN** `oem-compose` SHALL export `/run/hmi/board_profile.json` and `hmi.service` SHALL attempt to start Weston + Flutter as on device
 
 ### Requirement: QEMU host launcher with VirGL
 
-`make emulator` SHALL launch `qemu-system-aarch64` with the published Image, emulator rootfs.img, sim_virt oem.img, and **`provision.img`**, using host VirGL (`virtio-gpu-gl`) on the documented host QEMU build (macOS: qemu-virgl via `make setup-emulator-qemu`). It MUST NOT treat starting an empty/non-appliance VM as success. Guest Mesa for VirGL MAY be provided via a host 9p share (not baked into the device rootfs). The guest SHALL mount `PARTLABEL=provision` from the virtio disk. Per-developer identity when Vendor Storage is absent SHALL come from `provision/identity.env` on that disk, not from shared OEM seeds.
+`make emulator` SHALL launch `qemu-system-aarch64` with the published Image, emulator rootfs.img, sim-virt oem.img, and **`provision.img`**, using host VirGL (`virtio-gpu-gl`) on the documented host QEMU build (macOS: qemu-virgl via `make setup-emulator-qemu`). It MUST NOT treat starting an empty/non-appliance VM as success. Guest Mesa for VirGL MAY be provided via a host 9p share (not baked into the device rootfs). The guest SHALL mount `PARTLABEL=provision` from the virtio disk. Per-developer identity when Vendor Storage is absent SHALL come from `provision/identity.env` on that disk, not from shared OEM seeds.
 
 #### Scenario: make emulator invokes QEMU
 

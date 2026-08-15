@@ -77,7 +77,7 @@ factory_sku_print() {
   echo "  out:   $FACTORY_IMG"
 }
 
-# OEM-only builds (e.g. build-emulator → OEM_ID=sim_virt): do not imply factory.img.
+# OEM-only builds (e.g. build-emulator → OEM_ID=sim-virt): do not imply factory.img.
 factory_sku_print_oem() {
   echo "OEM_ID=$OEM_ID → $FACTORY_OEM_IMG"
   if [[ "$OEM_ID" != "${_default_oem}" ]]; then

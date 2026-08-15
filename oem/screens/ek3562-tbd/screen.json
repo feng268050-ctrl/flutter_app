@@ -5,7 +5,7 @@
   "default_orientation": "landscape_left",
   "default_ui_scale": 1.13,
   "splash": {
-    "notes": "Startup panel timing lives in FIT DTB (ek3562-display.dtsi). No Innohi ParamUpdate / private1 LCD tables. OEM lcd_param_files optional later if userspace needs them."
+    "notes": "Startup panel timing lives in FIT DTB (ek3562-display.dtsi). No Innohi ParamUpdate / private1 LCD tables."
   },
   "touch_notes": "Touch via board DT (EVB2 cam/touch as enabled); not configured from this pack"
 }

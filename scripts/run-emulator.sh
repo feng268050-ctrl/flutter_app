@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Boot P3.2 guest: same device Image + rootfs.img + sim_virt oem via QEMU.
+# Boot P3.2 guest: same device Image + rootfs.img + sim-virt oem via QEMU.
 #
 # Default guest hardware is aligned with oem/boards/sim (not a half-configured box):
 #   - 3× virtio-net with fixed MACs → eth0 / wlan0 / eth1 (debug) via systemd .link
@@ -565,7 +565,7 @@ emulator: hardware map (sim OEM contract)
   machine : virt + GICv3 + cpu ${CPU:-cortex-a55}
   memory  : ${MEM} MiB   smp=${SMP}
   disk0   : /dev/vda ← rootfs.img (same as device)
-  disk1   : /dev/vdb ← sim_virt oem.img → /oem
+  disk1   : /dev/vdb ← sim-virt oem.img → /oem
   disk2   : /dev/vdc ← provision.img → /mnt/provision (per-developer identity + tunables)
   display : ${DISPLAY_DESC}
   input   : ${INPUT_DESC} (+ virtio-keyboard)

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "pack_id": "ynh960_panel-800x1280",
+  "pack_id": "ynh960-panel",
   "board_id": "ynh960",
-  "screen_id": "panel-ynh960-800x1280",
+  "screen_id": "ynh960-tbd",
   "board_path": "boards/ynh960",
-  "screen_path": "screens/panel-ynh960-800x1280",
+  "screen_path": "screens/ynh960-tbd",
   "compat": {
     "os_min": "1.0.0",
     "soc_family": "rk356x"

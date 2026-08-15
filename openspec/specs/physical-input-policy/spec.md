@@ -9,7 +9,7 @@ OEM packs MAY ship `input_defaults.json` beside `manifest.json` with boolean key
 
 #### Scenario: ynh960-p800 first boot
 
-- **WHEN** OEM pack `ynh960_panel-800x1280` includes both keys false and `/var/lib/hal/input.conf` is missing
+- **WHEN** OEM pack `ynh960-panel` includes both keys false and `/var/lib/hal/input.conf` is missing
 - **THEN** compose SHALL write `physical_keyboard_enabled=0` and `physical_mouse_enabled=0`
 
 #### Scenario: Operator override preserved

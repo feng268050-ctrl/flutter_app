@@ -25,7 +25,7 @@ ek3562 (RK3562 EVB2 DDR4 V10) already has Linux board DTS in `overlay/kernel/roc
 ## Impact
 
 - `overlay/kernel/rockchip/ek3562.dts` + EVB2 dtsi (already present), `ek3562-wifibt.config`, `board/rk356x-fit-boards.txt`, `board/factory-skus.tsv`
-- `oem/packs/ek3562_panel-tbd/`, `prebuilt/bootloader/vendor-ek3562/`
+- `oem/packs/ek3562-panel/`, `prebuilt/bootloader/vendor-ek3562/`
 - Shared u-boot patch / build scripts from `ynh960-spl-linux-uboot`
 - Kernel universal Image (RK3562 drivers), rootfs Wi‑Fi firmware packages
 - Depends on / sequenced after: `openspec/changes/ynh960-spl-linux-uboot`

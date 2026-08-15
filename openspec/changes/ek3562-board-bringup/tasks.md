@@ -17,7 +17,7 @@
 
 ## 4. OEM and factory
 
-- [x] 4.1 Set `oem/packs/ek3562_panel-tbd/manifest.json` `compat.fit_dt` to `ek3562`; screen.json 800×1280
+- [x] 4.1 Set `oem/packs/ek3562-panel/manifest.json` `compat.fit_dt` to `ek3562`; screen.json 800×1280
 - [ ] 4.2 `FACTORY_SKU=ek3562-dev make build-oem` then `make build-img` (img requires loader+uboot)
 - [x] 4.3 Update `overlay/kernel/rockchip/ek3562.md` checklist for FIT/OEM (bootloader still open)
 

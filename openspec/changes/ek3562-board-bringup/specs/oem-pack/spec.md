@@ -7,4 +7,4 @@ When the OS FIT inventory includes configuration `ek3562`, the ek3562 OEM pack m
 #### Scenario: Pending cleared with inventory
 
 - **WHEN** `ek3562` is an active FIT configuration in the shipping OS
-- **THEN** `oem/packs/ek3562_panel-tbd/manifest.json` (or successor pack) SHALL declare `compat.fit_dt` equal to `ek3562`
+- **THEN** `oem/packs/ek3562-panel/manifest.json` (or successor pack) SHALL declare `compat.fit_dt` equal to `ek3562`

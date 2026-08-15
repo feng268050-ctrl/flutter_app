@@ -270,7 +270,7 @@ portrait_up)
 	;;
 *)
 	# Device panel is portrait-native → rotate-270 for landscape UI.
-	# Emulator virt screen is already landscape (sim_virt screen.json).
+	# Emulator virt screen is already landscape (sim-virt screen.json).
 	if [ "$BOARD_ID" = "sim" ] || grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null; then
 		WESTON_TRANSFORM=normal
 	else

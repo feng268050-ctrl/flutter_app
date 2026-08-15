@@ -164,7 +164,7 @@ make reboot-loader
 make flash
 ```
 
-**P3.2 emulator** — same kernel `Image` + same `rootfs.img` as the board, plus `sim_virt` OEM (not Rockchip flash). Detail: [`docs/p32-emulator.md`](docs/p32-emulator.md).
+**P3.2 emulator** — same kernel `Image` + same `rootfs.img` as the board, plus `sim-virt` OEM (not Rockchip flash). Detail: [`docs/p32-emulator.md`](docs/p32-emulator.md).
 
 Colleague / new machine — run **in order** (one command per line). Skip steps already done on that host.
 

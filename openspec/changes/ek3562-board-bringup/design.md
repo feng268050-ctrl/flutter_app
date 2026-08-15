@@ -1,6 +1,6 @@
 ## Context
 
-ek3562 hardware baseline is Rockchip RK3562 EVB2 DDR4 V10 (live FDT matched 2026-08-15). Overlay contains `ek3562.dts` plus display/io/linux-root fragments; OEM pack `ek3562_panel-tbd` has `fit_dt: ek3562`; FIT inventory lists `ek3562`. Bootloader directory `vendor-ek3562` is still a placeholder (this change §3). Console is USB-C Debug CH340 @ 115200.
+ek3562 hardware baseline is Rockchip RK3562 EVB2 DDR4 V10 (live FDT matched 2026-08-15). Overlay contains `ek3562.dts` plus display/io/linux-root fragments; OEM pack `ek3562-panel` has `fit_dt: ek3562`; FIT inventory lists `ek3562`. Bootloader directory `vendor-ek3562` is still a placeholder (this change §3). Console is USB-C Debug CH340 @ 115200.
 
 This change formalizes the board after **`ynh960-spl-linux-uboot`** proves self-built `loader.bin` + Linux-first uboot recovery on ynh960.
 

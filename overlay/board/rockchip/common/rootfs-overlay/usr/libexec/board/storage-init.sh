@@ -92,7 +92,7 @@ if [ -f /oem/manifest.json ]; then
 	fi
 fi
 if [ -z "$HELPER" ] || [ ! -x "$HELPER" ]; then
-	# sim_virt: mount-only is enough.
+	# sim-virt: mount-only is enough.
 	if [ "$board_id" = "sim" ] || is_emulator; then
 		log "no OEM storage-init (board_id=${board_id:-?}) — mount-only on emulator/sim"
 		exit 0

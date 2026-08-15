@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "pack_id": "sim_virt",
+  "pack_id": "sim-virt",
   "board_id": "sim",
   "screen_id": "virt",
   "board_path": "boards/sim",

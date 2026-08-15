@@ -468,8 +468,8 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | 变量 | 默认 | 说明 |
 |------|------|------|
 | `MODE` | `TTL` | `TTL`=miniterm；`RS485`/`RS232`=hex+TX |
-| `PORT` | 自动 | 如 `/dev/cu.wchusbserial…` |
-| `BAUD` | TTL `1500000`；其它 `115200` | |
+| `PORT` | 自动 | 优先 `/dev/cu.usbmodem…`，否则 `usbserial` / `wch…` |
+| `BAUD` | TTL 按口：`usbserial*`→`115200`（ek3562），其它→`1500000`（ynh960）；RS485/RS232→`115200` | 显式 `BAUD=` 覆盖 |
 | `LOG_FILE` | 空 | hex 模式会话日志文件 |
 | `SNIFF_SEC` | `8` | sniff 每档波特率监听秒数 |
 

@@ -682,20 +682,24 @@ On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under
 
 | `MODE` | Backend | Default baud | Quit | Typical use |
 |--------|---------|--------------|------|-------------|
-| `TTL` (default) | pyserial miniterm | `1500000` | `Ctrl+]` | USB-TTL → board UART2 / `ttyFIQ0` |
+| `TTL` (default) | pyserial miniterm | port-aware (below) | `Ctrl+]` | Board debug UART |
 | `RS485` | pyserial curses hex console | `115200` | `Esc` or `:q` | USB-RS485; RX hex + bottom TX bar |
 | `RS232` | pyserial curses hex console | `115200` | `Esc` or `:q` | USB-RS232; RX hex + bottom TX bar |
 
+TTL baud when `BAUD` is unset: `/dev/cu.usbmodem*` (and WCH/SLAB dongles) → **1500000** (ynh960 FIQ / CH9102 Debug); `/dev/cu.usbserial*` → **115200** (ek3562 USB-C Debug CH340).
+
 ```bash
 make serial-console
-MODE=TTL make serial-console
+PORT=/dev/cu.usbserial-110 make serial-console   # ek3562 Debug → 115200
+PORT=/dev/cu.usbmodem… make serial-console       # ynh960 Debug → 1500000
+BAUD=1500000 PORT=/dev/cu.usbserial-… make serial-console  # force FIQ over CH340 TTL
 MODE=RS485 make serial-console
 MODE=RS232 BAUD=9600 make serial-console
 MODE=RS485 LOG_FILE=/tmp/uart.log make serial-console
 make serial-ports
 ```
 
-`PORT=` auto-picks `/dev/cu.usb*` when unset; `BAUD=` overrides baud in all modes. RS485/RS232 open a **split UI**: scrolling RX hex (one line per idle gap, default `TIMESTAMP_TIMEOUT=5` ms) and a fixed bottom **`TX>`** bar — type hex (`01 03 …` or `0103`) and press Enter to send. Optional `LOG_FILE=` (+ `LOG_APPEND=1`). No host `tio` required. Electrical RS-485 vs RS-232 is the adapter. TTL wiring: GND + TX↔RX cross (3.3V only). Self-test: short TTL TX–RX, type keys — should echo.
+`PORT=` auto-picks `/dev/cu.usb*` when unset (prefers `usbmodem*`); `BAUD=` overrides baud in all modes. RS485/RS232 open a **split UI**: scrolling RX hex (one line per idle gap, default `TIMESTAMP_TIMEOUT=5` ms) and a fixed bottom **`TX>`** bar — type hex (`01 03 …` or `0103`) and press Enter to send. Optional `LOG_FILE=` (+ `LOG_APPEND=1`). No host `tio` required. Electrical RS-485 vs RS-232 is the adapter. TTL wiring: GND + TX↔RX cross (3.3V only). Self-test: short TTL TX–RX, type keys — should echo.
 
 **Login (Buildroot):**
 

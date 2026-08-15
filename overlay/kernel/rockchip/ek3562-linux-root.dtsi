@@ -1,0 +1,7 @@
+// ek3562: rootfs on Buildroot GPT (parameter-buildroot-fit.txt) — P2.4 A/B.
+// Prefer PARTLABEL over PARTUUID (rk3562-linux.dtsi default) so A/B FITs can
+// switch root without repartition. Letter B FITs patch bootargs via
+// scripts/build-kernel-ab.sh (same as ynh960-linux-root.dtsi).
+&chosen {
+	bootargs = "earlycon=uart8250,mmio32,0xff210000 console=ttyFIQ0 root=PARTLABEL=rootfs_a rw rootfstype=ext4 rootwait loglevel=4";
+};

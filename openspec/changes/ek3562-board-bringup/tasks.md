@@ -7,7 +7,7 @@
 
 - [x] 2.1 Wire `ek3562-wifibt.config` into `RK_KERNEL_CFG_FRAGMENTS` + rootfs `lws_hmi_wifi_rtw88.config` (Image still needs `FORCE_KERNEL_IMAGE=1` when enabling rtw88 / RK3562 SoC bits)
 - [x] 2.2 Append `ek3562` to `board/rk356x-fit-boards.txt`; multi-board `*-linux-root.dtsi` in `build-kernel-ab.sh`; ITS `fdt-ek3562`
-- [ ] 2.3 `make apply-overlay` + `make build-kernel` then `bash scripts/verify-boot-fit.sh output/firmware` (refresh DTB with display/io; confs `ynh960` + `ek3562`)
+- [x] 2.3 `make apply-overlay` + `FORCE_KERNEL_IMAGE=1 make build-kernel` then `bash scripts/verify-boot-fit.sh output/firmware` (confs `ynh960` + `ek3562`; 2026-08-15)
 
 ## 3. Bootloader (same rules as ynh960)
 
@@ -18,7 +18,8 @@
 ## 4. OEM and factory
 
 - [x] 4.1 Set `oem/packs/ek3562-panel/manifest.json` `compat.fit_dt` to `ek3562`; screen.json 800×1280
-- [ ] 4.2 `FACTORY_SKU=ek3562-dev make build-oem` then `make build-img` (img requires loader+uboot)
+- [x] 4.2a `FACTORY_SKU=ek3562-dev make build-oem` → `oem/out/ek3562-panel/oem.img` (2026-08-15)
+- [ ] 4.2b `make build-img` (requires loader+uboot in `prebuilt/bootloader/vendor-ek3562/`)
 - [x] 4.3 Update `overlay/kernel/rockchip/ek3562.md` checklist for FIT/OEM (bootloader still open)
 
 ## 5. Board validation
@@ -26,4 +27,4 @@
 - [ ] 5.1 Flash lab ek3562; serial `@115200` (`cu.usbserial*`); confirm model/compatible EVB2 DDR4 V10
 - [ ] 5.2 Confirm Linux boot via `boot_fit` / conf `ek3562` without Android try-chain
 - [ ] 5.3 Smoke Wi‑Fi helper / eth as applicable; note panel limits
-- [ ] 5.4 ynh960 regression: same FIT still boots conf `ynh960`
+- [x] 5.4 ynh960 regression: same FIT still boots conf `ynh960` (`SN=L1SZ2026070001 make upgrade` 2026-08-15 — board_id/ynh960-panel/hmi active)

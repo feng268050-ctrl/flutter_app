@@ -63,12 +63,19 @@ publish_factory_artifacts() {
     install_file_follow "$FACTORY_OEM_IMG" "$FACTORY_OUT_DIR/oem.img"
   fi
   install_file_follow "$FACTORY_UBOOT_IMG" "$FACTORY_OUT_DIR/uboot.img"
+  # package-file still names the payload MiniLoaderAll.bin for upgrade_tool;
+  # source may be rk356x_spl_loader_*.bin (or transitional MiniLoaderAll symlink).
   install_file_follow "$FACTORY_LOADER_BIN" "$FACTORY_OUT_DIR/MiniLoaderAll.bin"
+  if [[ "$FACTORY_LOADER_BASENAME" == rk*_spl_loader_*.bin ]]; then
+    install_file_follow "$FACTORY_LOADER_BIN" "$FACTORY_OUT_DIR/$FACTORY_LOADER_BASENAME"
+  fi
   {
     echo "app=$APP"
     echo "factory_sku=$FACTORY_SKU"
     echo "uboot_id=$UBOOT_ID"
     echo "oem_id=$OEM_ID"
+    echo "loader=$FACTORY_LOADER_BIN"
+    echo "loader_basename=$FACTORY_LOADER_BASENAME"
     echo "git_rev=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
     echo "uboot=$FACTORY_UBOOT_IMG"
     echo "oem=$FACTORY_OEM_IMG"
@@ -84,13 +91,21 @@ ensure_sdk_loader() {
   local sdk="$1" firmware="$2"
   local loader="$FACTORY_LOADER_BIN"
   local host="$ROOT/output/firmware/MiniLoaderAll.bin"
+  local staged_name="$FACTORY_LOADER_BASENAME"
 
   factory_sku_require_uboot
   mkdir -p "$sdk/u-boot" "$firmware" "$ROOT/output/firmware"
+  # package-file PATH is MiniLoaderAll.bin; also stage rkbin OUTPUT name for SDK tools.
   install_file_follow "$loader" "$firmware/MiniLoaderAll.bin"
-  install_file_follow "$loader" "$sdk/u-boot/rk356x_spl_loader_v1.23.114.bin"
   install_file_follow "$loader" "$host"
-  echo "MiniLoaderAll.bin: $UBOOT_ID"
+  if [[ "$staged_name" == rk*_spl_loader_*.bin ]]; then
+    install_file_follow "$loader" "$sdk/u-boot/$staged_name"
+    install_file_follow "$loader" "$firmware/$staged_name"
+  else
+    # Transitional MiniLoader-only package: keep historical SPL staging name.
+    install_file_follow "$loader" "$sdk/u-boot/rk356x_spl_loader_v1.23.114.bin"
+  fi
+  echo "early loader: $UBOOT_ID ($staged_name)"
   bash "$SIZE_HELPER" "$loader"
 }
 
@@ -106,15 +121,15 @@ ensure_sdk_uboot() {
 
   # ONLY unpatched vendor uboot for the chosen UBOOT_ID (env CRC / wrong blob → brick).
   # Self-build OK after SKU validation (docs/uboot-rkbin.md); do not flash unvalidated pairs.
-  # ynh960 MiniLoaderAll.bin is already an SPL merger blob (staged as rk356x_spl_loader_*.bin).
+  # Early loader authoritative name is rkbin OUTPUT rk*_spl_loader_*.bin (MiniLoaderAll may be symlink).
   # Authoritative: prebuilt/bootloader/$UBOOT_ID — sdk/u-boot is pack staging only.
   rm -f "$dest" "$staging"
   install_file_follow "$vendor" "$dest"
   install_file_follow "$vendor" "$host"
   install_file_follow "$vendor" "$staging"
-  echo "uboot.img: $UBOOT_ID unmodified (staged to sdk/u-boot for pack)"
+  echo "uboot.img: $UBOOT_ID (staged to sdk/u-boot for pack)"
   bash "$SIZE_HELPER" "$vendor"
-  echo "NOTE: bootcmd=boot_android;boot_fit — Linux needs Innohi uboot or serial 'boot_fit'"
+  echo "NOTE: expect Linux-first bootcmd (boot_fit without boot_android before it) after ynh960-spl-linux-uboot"
   strings "$dest" | grep '^bootcmd=' || true
 }
 

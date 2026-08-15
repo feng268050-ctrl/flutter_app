@@ -35,7 +35,7 @@ Linux on ARM64 的常规做法是：**一份 `Image`（内核二进制）+ 每�
 | **`Image`** | **产品线通用** — 一次 `./build.sh kernel` 产出，FIT 内各 conf **共用同一 blob** | `overlay/kernel/**/*.config`（SoC/驱动 Kconfig）、补丁；扩 SoC（如 RK3562）时 **并入同一次构建**，打出 **新通用 Image** |
 | **DTB** | **每 `board_id` 一份** — 描述具体主板接线 | `overlay/kernel/`（git 真相源）；板厂交付 DTS 并进 overlay |
 | **`resource.img`** | A/B 槽各一份（PARTLABEL + logo） | `make build-kernel` / `scripts/patch-resource-img-partlabel.py` |
-| **U-Boot + MiniLoader** | 按出厂 SKU，非 FIT 内 | **可自建**：[rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) + [rkbin](https://github.com/rockchip-linux/rkbin) `boot_merger` → 落入 `prebuilt/bootloader/<uboot_id>/`（见 [`docs/uboot-rkbin.md`](uboot-rkbin.md)）；`board/factory-skus.tsv` |
+| **U-Boot + SPL loader** | 按出厂 SKU，非 FIT 内 | **可自建**：[rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) + [rkbin](https://github.com/rockchip-linux/rkbin) `boot_merger` → 权威名 `rk*_spl_loader_*.bin` + `uboot.img` 落入 `prebuilt/bootloader/<uboot_id>/`（见 [`docs/uboot-rkbin.md`](uboot-rkbin.md)）；可选 `MiniLoaderAll.bin` symlink；`board/factory-skus.tsv` |
 
 **日常规则：**
 
@@ -740,7 +740,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `fix-buildroot-host-rpaths` | `make fix-buildroot-host-rpaths` | migrate 后修 host rpath | — |
 | `clean-buildroot-output` | `make clean-buildroot-output` | 删当前 BR output（保留 `dl/`）后全量重编 rootfs；**macOS** 走 Docker volume（勿只清 host `linux-sdk/`） | 大版本 BR 升级（见 `BUILDROOT_VERSION`）必做；之后 `lunch` + `build-rootfs` |
 | `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
-| `build-uboot` | SDK `./build.sh uboot`（现 lunch / ynh960 向）；新板优先按 [`uboot-rkbin.md`](uboot-rkbin.md) 自建后拷入 `prebuilt/bootloader/<uboot_id>/` | 有匹配 DT + rkbin 即可编；**勿**把未验收包刷进量产 SKU | `BUILD_UBOOT=1` 经 Docker |
+| `build-uboot` | SDK `./build.sh uboot`（现 lunch / ynh960 向）；新板优先按 [`uboot-rkbin.md`](uboot-rkbin.md) 自建后拷入 `prebuilt/bootloader/<uboot_id>/`；ynh960 须验收 Linux-first bootcmd + TRUST v1.44/v2.15 | 有匹配 DT + rkbin 即可编；**勿**把未验收包刷进量产 SKU | `BUILD_UBOOT=1` 经 Docker |
 | `fetch-uboot` | `make fetch-uboot` | 拉取 [rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) 进 `linux-sdk/u-boot/` | `FORCE=1` 重装；分支见 `overlay/third-party/uboot.version` |
 | `build-libexec-binaries` | 交叉编译 libexec C 二进制 → prebuilt + overlay | `TOOL=`、`rebuild-libexec-binaries` | macOS 自动进 Docker |
 | `test-debug-app` | `make test-debug-app` | debug-app 脚本自测 | — |
@@ -800,7 +800,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - [`docs/build-optimization.md`](build-optimization.md)
 - [`docs/p32-emulator.md`](p32-emulator.md)
 - [`docs/selinux.md`](selinux.md) — SELinux permissive enablement（不依赖改 U-Boot）
-- [`docs/uboot-rkbin.md`](uboot-rkbin.md) — 自建 U-Boot / MiniLoader（rkbin `boot_merger` + rockchip-linux/u-boot）
+- [`docs/uboot-rkbin.md`](uboot-rkbin.md) — 自建 U-Boot / SPL（rkbin `boot_merger` OUTPUT `rk*_spl_loader_*.bin` + rockchip-linux/u-boot）
 - [`docs/linux-sdk-vendor-import.md`](linux-sdk-vendor-import.md)
 - [`docs/cache-mirror.md`](cache-mirror.md)
 - [`.env.example`](../.env.example)

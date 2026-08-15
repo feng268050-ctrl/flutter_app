@@ -74,7 +74,8 @@ Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash|upgrade-ota}
   reboot         Linux board (USB-SSH or SSH) → reboot; Android → adb reboot
   reboot-loader  Linux board (USB-SSH only) → reboot-loader; Android → adb reboot loader
                  (Android emulator not supported)
-  loader         upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]
+  loader         upgrade_tool ul <early loader>  [LOADER_NORESET=1]
+                 (rk*_spl_loader_*.bin or transitional MiniLoaderAll.bin)
   upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1]
   flash          uf update.img; ul first when RockUSB mode is Maskrom
                  (Android emulator not supported)
@@ -97,6 +98,12 @@ EOF
 
 resolve_loader_bin() {
   if [[ -n "$LOADER_BIN" && -r "$LOADER_BIN" ]]; then
+    return 0
+  fi
+
+  # Prefer FACTORY_SKU-resolved SPL (rk*_spl_loader_*.bin or MiniLoaderAll symlink).
+  if [[ -n "${FACTORY_LOADER_BIN:-}" && -r "${FACTORY_LOADER_BIN}" ]]; then
+    LOADER_BIN="$FACTORY_LOADER_BIN"
     return 0
   fi
 
@@ -795,12 +802,12 @@ EOF
     || die "could not detect RockUSB mode (make devices)"
 
   if rockusb_mode_needs_loader "$mode"; then
-    # Prefer prebuilt MiniLoader for the selected SKU (RAM bring-up only).
+    # Prefer FACTORY_SKU-resolved SPL (rk*_spl_loader_*.bin) for RAM bring-up.
     if [[ -z "$LOADER_BIN" && -r "$FACTORY_LOADER_BIN" ]]; then
       LOADER_BIN="$FACTORY_LOADER_BIN"
     fi
     resolve_loader_bin
-    echo "RockUSB: $mode — ul MiniLoader (RAM) then di OTA images"
+    echo "RockUSB: $mode — ul early loader (RAM) then di OTA images"
     LOADER_NORESET=1 run_loader
   else
     echo "RockUSB: $mode — di OTA images only (no ul)"

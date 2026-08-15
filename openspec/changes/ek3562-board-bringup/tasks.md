@@ -1,6 +1,6 @@
 ## 1. Prerequisites
 
-- [ ] 1.1 Confirm `ynh960-spl-linux-uboot` lab acceptance (or record explicit waiver) before flashing new ek3562 loader/uboot
+- [x] 1.1 Confirm `ynh960-spl-linux-uboot` lab acceptance (or record explicit waiver) before flashing new ek3562 loader/uboot
 - [x] 1.2 Ensure ek3562 overlay DTS package is committed (`ek3562.dts` + display/io/linux-root + EVB2 dtsi); SoC `rk3562.dtsi` remains in SDK
 
 ## 2. Kernel Image and FIT

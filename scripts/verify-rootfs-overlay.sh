@@ -307,7 +307,7 @@ run_check() {
 	for stale in read-device-serial.sh read-product-identity.sh write-product-identity.sh \
 		vendor-storage-ids.txt secrets-seal secrets-seal-ca paths.sh lws-hostname.sh \
 		device-mdns-advertise.sh serial-console-stty.sh reboot-loader boot-verify.sh env-verify.sh \
-		usb-otg-mode.sh usb-gadget-usb-state.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh \
+		usb-otg-mode.sh usb-otg-paths.sh usb-gadget-usb-state.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh \
 		usb-plug-ssh-recover.sh usb-plug-ssh-diag.sh usb-plug-ssh-vbus-check.sh \
 		usb-mtp-start.sh usb-mtp-stop.sh ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh ab-ota-verify.sh \
 		ab-preflight.sh ab-boot-confirm.sh oem-compose.sh ynh960-display-init.sh display-init.sh weston-hmi-config.sh \
@@ -352,7 +352,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/usb ---"
-	for f in usb-otg-mode.sh usb-gadget-usb-state.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh \
+	for f in usb-otg-mode.sh usb-otg-paths.sh usb-gadget-usb-state.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh \
 		usb-plug-ssh-recover.sh usb-plug-ssh-diag.sh usb-plug-ssh-vbus-check.sh \
 		usb-mtp-start.sh usb-mtp-stop.sh; do
 		if [[ -x "$libexec_usb/$f" ]]; then

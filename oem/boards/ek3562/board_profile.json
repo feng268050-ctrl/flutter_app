@@ -16,7 +16,8 @@
     "modbus",
     "sysInfo",
     "datetime",
-    "sshDebug"
+    "sshDebug",
+    "usbOtg"
   ],
   "net_roles": {
     "ethernet.primary": "eth0",
@@ -31,6 +32,8 @@
     "eth0": 2000
   },
   "helpers": {
+    "usb_otg_mode": "/oem/boards/ek3562/helpers/usb-otg-mode.sh",
+    "otg_mode_sysfs": "/sys/devices/platform/ff740000.usb2-phy/otg_mode",
     "ssh_debug": "/usr/libexec/ssh/enable-ssh-debug.sh",
     "wifi_modem": "/oem/boards/ek3562/helpers/wifibt-bringup.sh",
     "bt_modem": "/oem/boards/ek3562/helpers/wifibt-bringup.sh",
@@ -39,5 +42,5 @@
     "apply_mouse_settings": "/usr/bin/apply-mouse-settings",
     "apply_physical_input_policy": "/usr/bin/apply-physical-input-policy"
   },
-  "notes": "FIT conf/board_id=ek3562. Panel SoT=ek3562-display.dtsi (7\" 800x1280). GPIO=gpio.ek3562.json. Wi-Fi=RTL8821CU (ek3562-wifibt.config + rtw88 firmware). USB OTG helper deferred until phy path confirmed. Bootloader=prebuilt/bootloader/vendor-ek3562 (OpenSpec)."
+  "notes": "FIT conf/board_id=ek3562. Panel SoT=ek3562-display.dtsi (7\" 800x1280). GPIO=gpio.ek3562.json. Wi-Fi=RTL8821CU (ek3562-wifibt.config + rtw88 firmware). USB-C OTG phy=ff740000.usb2-phy UDC=fe500000.usb (vendor Linux 2026-08-15); plug-ssh needs our rootfs g_ether. Debug UART=CH340 /dev/cu.usbserial* @115200. Bootloader=prebuilt/bootloader/vendor-ek3562 (OpenSpec)."
 }

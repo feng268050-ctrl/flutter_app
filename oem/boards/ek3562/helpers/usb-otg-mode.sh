@@ -1,9 +1,12 @@
 #!/bin/sh
-# Micro-USB OTG mode: debug | mtp | host
+# ek3562 USB-C OTG mode: debug | mtp | host
 #
 #   debug → peripheral + plug-ssh (g_ether) on VBUS
 #   mtp   → peripheral + MTP gadget on /userdata/storage
-#   host  → host role; tear down gadgets (keyboard/mouse on Micro-USB)
+#   host  → host role; tear down gadgets on the OTG Type-C
+#
+# PHY path from vendor Linux lab (2026-08-15): ff740000.usb2-phy
+# (NOT ynh960 fe8a0000). UDC: fe500000.usb. Extcon0 under same phy.
 #
 # Preference (persisted): /var/lib/hal/usb-otg.conf  (mode=debug|mtp|host)
 # Board policy (rootfs):  /etc/usb-otg.ini
@@ -20,7 +23,7 @@ set -eu
 # shellcheck source=/dev/null
 . /usr/libexec/usb/usb-otg-paths.sh 2>/dev/null || true
 
-PHY_OTG_MODE="${PHY_OTG_MODE:-/sys/devices/platform/fe8a0000.usb2-phy/otg_mode}"
+PHY_OTG_MODE="${PHY_OTG_MODE:-/sys/devices/platform/ff740000.usb2-phy/otg_mode}"
 CONF="${VAR_HAL:-/var/lib/hal}/usb-otg.conf"
 LOCK_DIR="${RUN_USB_OTG_MODE_LOCK:-/run/usb-otg-mode.lock}"
 INI="${ETC_USB_OTG_INI:-/etc/usb-otg.ini}"
@@ -104,7 +107,7 @@ otg_extcon_state() {
 		dir="$(dirname "$state")"
 		dev="$(readlink -f "$dir" 2>/dev/null || true)"
 		case "$dev" in
-		*fe8a0000* | *usb2phy0* | *.usb2-phy | *.usb2-phy/*)
+		*ff740000* | *.usb2-phy | *.usb2-phy/* | *usb2phy*)
 			cat "$state"
 			return 0
 			;;

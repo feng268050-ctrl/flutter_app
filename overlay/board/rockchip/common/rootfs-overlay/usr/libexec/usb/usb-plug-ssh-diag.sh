@@ -1,6 +1,10 @@
 #!/bin/sh
 # USB plug-ssh diagnostics (manual USB Debug preference).
+# Board-agnostic: discovers usb2-phy otg_mode + UDC (ynh960 / ek3562 / …).
 set -u
+
+# shellcheck source=/dev/null
+. /usr/libexec/usb/usb-otg-paths.sh 2>/dev/null || true
 
 pass() { echo "  [PASS] $*"; }
 fail() { echo "  [FAIL] $*"; }
@@ -22,34 +26,63 @@ if [ -r /etc/usb-otg.ini ]; then
 fi
 
 echo ""
-echo "=== 2. DWC3 / otg_mode ==="
-if [ -e /sys/bus/platform/drivers/dwc3/fcc00000.usb ]; then
-	pass "fcc00000.usb (usbdrd / Micro-USB) bound"
+echo "=== 2. DWC3 / otg_mode / UDC ==="
+phy=""
+if [ "${USB_OTG_PATHS_LOADED:-}" = 1 ]; then
+	phy="$(usb_otg_phy_mode_path 2>/dev/null || true)"
+fi
+if [ -n "$phy" ] && [ -r "$phy" ]; then
+	pass "phy otg_mode path=$phy val=$(tr -d ' \n' <"$phy")"
+elif [ -n "$phy" ]; then
+	info "phy otg_mode path=$phy (not readable yet)"
 else
-	fail "fcc00000.usb missing"
+	fail "otg_mode sysfs not found"
 fi
-if [ -r /sys/firmware/devicetree/base/usbdrd/usb@fcc00000/dr_mode ]; then
-	info "DT dr_mode=$(tr -d '\0' </sys/firmware/devicetree/base/usbdrd/usb@fcc00000/dr_mode)"
-fi
-if [ -r /sys/devices/platform/fe8a0000.usb2-phy/otg_mode ]; then
-	info "phy otg_mode=$(cat /sys/devices/platform/fe8a0000.usb2-phy/otg_mode)"
-fi
-state="$(cat /sys/class/udc/fcc00000.usb/state 2>/dev/null || echo none)"
-info "UDC state=$state"
+
+udc_found=0
+for udc in /sys/class/udc/*; do
+	[ -e "$udc" ] || continue
+	udc_found=1
+	name="$(basename "$udc")"
+	state="$(tr -d ' \n' <"$udc/state" 2>/dev/null || echo none)"
+	pass "UDC $name state=$state"
+	# Bound dwc3 platform device (symlink under drivers/dwc3).
+	if [ -e "/sys/bus/platform/drivers/dwc3/$name" ]; then
+		pass "dwc3 driver bound: $name"
+	else
+		info "dwc3 driver node missing for $name (may still be OK)"
+	fi
+done
+[ "$udc_found" -eq 1 ] || fail "no /sys/class/udc/*"
+
+# Best-effort DT dr_mode for known Rockchip usbdrd layouts.
+for dt in /sys/firmware/devicetree/base/usbdrd/usb@*/dr_mode \
+	/sys/firmware/devicetree/base/usbdrd*/usb@*/dr_mode; do
+	[ -r "$dt" ] || continue
+	info "DT $(basename "$(dirname "$dt")") dr_mode=$(tr -d '\0' <"$dt")"
+done
 
 echo ""
-echo "=== 3. OTG extcon (fe8a0000) ==="
+echo "=== 3. OTG extcon (usb2-phy) ==="
 found=0
-for state_file in /sys/class/extcon/extcon*/state; do
-	[ -r "$state_file" ] || continue
-	dev="$(readlink -f "$(dirname "$state_file")" 2>/dev/null || echo ?)"
-	case "$dev" in
-	*fe8a0000* | *usb2phy0*)
+if [ "${USB_OTG_PATHS_LOADED:-}" = 1 ]; then
+	if state="$(usb_otg_read_extcon_state 2>/dev/null)"; then
 		found=1
-		info "$state_file: $(tr '\n' ' ' <"$state_file")"
-		;;
-	esac
-done
+		info "extcon: $(printf '%s' "$state" | tr '\n' ' ')"
+	fi
+fi
+if [ "$found" -eq 0 ]; then
+	for state_file in /sys/class/extcon/extcon*/state; do
+		[ -r "$state_file" ] || continue
+		dev="$(readlink -f "$(dirname "$state_file")" 2>/dev/null || echo ?)"
+		case "$dev" in
+		*.usb2-phy | *.usb2-phy/* | *usb2phy* | *fe8a0000* | *ff740000*)
+			found=1
+			info "$state_file: $(tr '\n' ' ' <"$state_file")"
+			;;
+		esac
+	done
+fi
 [ "$found" -eq 1 ] || fail "OTG extcon missing"
 
 echo ""

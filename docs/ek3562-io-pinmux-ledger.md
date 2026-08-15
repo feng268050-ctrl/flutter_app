@@ -51,10 +51,27 @@ JSON 片段形状：
 "label": "OUT0"
 ```
 
+## USB 物理口（ek3562）
+
+lab 厂家 Linux（`rk3562-buildroot` 6.1.118，model EVB2 DDR4 V10）+ 本机枚举（2026-08-15）：
+
+| 口 | 本机 / 板端 | 用途 |
+|----|-------------|------|
+| USB-C **Debug** | Host：`1a86:7533` CH340 → `/dev/cu.usbserial-*` @ **115200**；板：`console=ttyFIQ0` | 串口 console（`PORT=/dev/cu.usbserial-110 make serial-console`） |
+| USB-C **OTG** | Phy：`ff740000.usb2-phy`（`otg_mode`）；UDC：`fe500000.usb`；extcon0：`USB=` / `USB-HOST=` | 我们系统：**plug-ssh**（`g_ether` / `usb0` `192.168.55.1`）；Loader：`2207:0006` `rk3xxx` |
+| 厂家镜像差异 | configfs `usb_gadget/rockchip`（非 ECM）；无 `usb0` | 勿按厂家枚举改 host `usb-ssh` |
+
+OEM：`usbOtg` + `helpers.usb_otg_mode` / `otg_mode_sysfs` → `oem/boards/ek3562/helpers/usb-otg-mode.sh`。  
+Rootfs 共用：`/usr/libexec/usb/usb-otg-paths.sh`（勿写死 ynh960 `fe8a0000`）。
+
+**验收（我们的系统上）：** OTG 线接 PC → `make devices` 出 USB-SSH；`diagnose-usb-ssh` 见 `ff740000` + UDC `fe500000`；Debug 口仍可串口。
+
 ## DT
 
 `overlay/kernel/rockchip/ek3562-io.dtsi`：`&pca9535` / `&gpio1` / `&gpio3` 的 `gpio-line-names`。  
 **不要**对上述脚 `gpio-hog` / `gpio-leds`（会 EBUSY）。
+
+OTG 基线在 `rk3562-evb2-ddr4-v10.dtsi`（`&usbdrd_dwc3` `dr_mode=otg`，`extcon=<&u2phy>`）；与 live `ff740000` / `fe500000` 一致。产品策略走 OEM helper，不在此 dtsi 抄 ynh960 pinmux。
 
 ## 手工烟测
 

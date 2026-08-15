@@ -3,6 +3,8 @@
 set -eu
 
 . /usr/libexec/board/paths.sh 2>/dev/null || true
+# shellcheck source=/dev/null
+. /usr/libexec/usb/usb-otg-paths.sh
 
 LOCK_DIR="${RUN_USB_PLUG_SSH_VBUS_LOCK:-/run/usb-plug-ssh-vbus.lock}"
 PENDING="${RUN_USB_PLUG_SSH_VBUS_PENDING:-/run/usb-plug-ssh-vbus.pending}"
@@ -19,26 +21,10 @@ mode_is_debug() {
 	return 0
 }
 
-otg_extcon_state() {
-	local state dir dev
-	for state in /sys/class/extcon/extcon*/state; do
-		[ -r "$state" ] || continue
-		dir="$(dirname "$state")"
-		dev="$(readlink -f "$dir" 2>/dev/null || true)"
-		case "$dev" in
-		*fe8a0000* | *usb2phy0*)
-			cat "$state"
-			return 0
-			;;
-		esac
-	done
-	return 1
-}
-
 otg_peripheral_vbus_up() {
 	local state
 	mode_is_debug || return 1
-	state="$(otg_extcon_state)" || return 1
+	state="$(usb_otg_read_extcon_state)" || return 1
 	echo "$state" | grep -qE '(^|[[:space:]])USB-HOST=1([[:space:]]|$)' && return 1
 	echo "$state" | grep -qE '(^|[[:space:]])USB=1([[:space:]]|$)'
 }

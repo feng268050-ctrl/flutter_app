@@ -576,6 +576,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_migrateSecretsCommandWatcher.dispose());
     unawaited(_captureCommandWatcher.dispose());
     unawaited(_rgbLedPolicy.dispose());
+    _services.leds.dispose();
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();
     }

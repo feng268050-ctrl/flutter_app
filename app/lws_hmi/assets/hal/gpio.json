@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "backend": "sysfs_innohi",
+  "backend": "gpiod",
   "defaults": {
     "active_low": false,
     "blink_on_ms": 1000,
@@ -16,7 +16,7 @@
       "channels": [
         {
           "id": "red",
-          "scheme": "sysfs_innohi",
+          "scheme": "gpiod",
           "label": "GPIO_5",
           "path": "/sys/class/gpio_innohi/GPIO_5/value",
           "gpiod": { "chip": "gpiochip3", "offset": 9 },
@@ -26,7 +26,7 @@
         },
         {
           "id": "yellow",
-          "scheme": "sysfs_innohi",
+          "scheme": "gpiod",
           "label": "GPIO_4",
           "path": "/sys/class/gpio_innohi/GPIO_4/value",
           "gpiod": { "chip": "gpiochip3", "offset": 10 },
@@ -36,7 +36,7 @@
         },
         {
           "id": "green",
-          "scheme": "sysfs_innohi",
+          "scheme": "gpiod",
           "label": "GPIO_7",
           "path": "/sys/class/gpio_innohi/GPIO_7/value",
           "gpiod": { "chip": "gpiochip4", "offset": 21 },
@@ -50,7 +50,7 @@
       "type": "buzzer",
       "id": "panel_buzzer",
       "line": {
-        "scheme": "sysfs_innohi",
+        "scheme": "gpiod",
         "label": "BELL",
         "path": "/sys/class/gpio_innohi/BELL/value",
         "gpiod": { "chip": "gpiochip3", "offset": 27 },

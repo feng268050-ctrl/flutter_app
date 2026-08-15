@@ -14,10 +14,12 @@ Conflicts=shutdown.target os-settings.service
 [Service]
 Type=simple
 Nice=-5
-# Runs as root so /dev/ttyS5 (Modbus), GPIO sysfs, backlight sysfs,
+# Runs as root so /dev/ttyS5 (Modbus), /dev/gpiochip* (gpiod), backlight sysfs,
 # and ALSA devices remain accessible for P2 / P2.1 demos.
 # Weston + flutter-wayland-client (eLinux).
 ExecStart=/usr/libexec/hmi/hmi-launch.sh
+# After the HMI process exits, force indicators/buzzer low (gpiod lines released).
+ExecStop=/usr/libexec/board/gpio-product-off.sh
 Restart=on-failure
 RestartSec=2
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

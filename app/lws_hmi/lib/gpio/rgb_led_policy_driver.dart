@@ -144,6 +144,8 @@ final class RgbLedPolicyDriver {
       _ledWorkState.removeListener(_workStateListener!);
       _workStateListener = null;
     }
+    // Release policy ownership; drive Off before HMI/process exit (gpiod cutover).
+    await services.leds.resetAllOff();
   }
 
   Future<void> dispose() => stop();

@@ -95,11 +95,11 @@ if (resolveHalBackend(env: 'stub') == HalBackendKind.stub) {
 | `gpiod` | `chip` + `offset` via `flutter_gpiod` (`/dev/gpiochip*`) |
 | `stub` | in-memory (host tests; `forceStub: true`) |
 
-ynh960 product catalog example (RGB + BELL) and pad table: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md). Sysfs remains supported alongside gpiod (lines hogged by Innohi `own-gpio` typically stay on sysfs).
+ynh960 product catalog example (RGB + BELL) and pad table: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md). Shipping LWS `gpio.json` uses **gpiod**; sysfs remains supported for boards that still expose a `/sys/class/…` value node (optional `sysfs_innohi` / `sysfs` scheme).
 
-**gpiod access:** HMI must open `/dev/gpiochip*` (often root or `gpio` group). Prefer sysfs for hogged Innohi lines; use gpiod when the line is free and edges are needed.
+**gpiod access:** HMI runs as root on the appliance and opens `/dev/gpiochip*` directly — no extra udev/`gpio` group is required for the current seat. If a later non-root seat appears, add `gpio` group + udev rules then.
 
-**Field smoke (manual):** after `make build-app` / `upgrade-app`, verify RGB Steady/Blink/Off and optional `panel_buzzer` beep on hardware; confirm `BELL` sysfs node name if beep fails.
+**Field smoke (manual):** after kernel gpiod cutover + `make build-app` / `push-app`, verify RGB Steady/Blink/Off and optional `panel_buzzer`; confirm `/sys/class/gpio_innohi` is absent and `gpioinfo` shows product pads not kernel-hogged.
 
 ## Keyboard layouts (v1)
 

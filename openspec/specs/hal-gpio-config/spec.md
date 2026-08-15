@@ -46,3 +46,13 @@ Portable HAL SHALL NOT require a fixed RGB LED type, fixed channel count, or fix
 - **WHEN** one board’s config adds a second button device and omits rotary encoder, while another board’s config does the opposite
 - **THEN** each HAL instance SHALL expose only the devices listed in its loaded config
 - **AND** MUST NOT assume a universal pin set
+
+### Requirement: Shipping LWS gpio catalog uses gpiod
+
+After cutover, the LWS product App `gpio.json` SHALL set the document default backend and chassis RGB / buzzer channel schemes to `gpiod`, with chip + offset populated. Historical `label` / `path` fields MAY remain as documentation. The catalog MUST NOT select `sysfs_innohi` as the runtime scheme on ynh960 once `gpio_innohi` is removed.
+
+#### Scenario: Chassis RGB scheme is gpiod
+
+- **WHEN** loading `app/lws_hmi/assets/hal/gpio.json` after cutover
+- **THEN** device `chassis_rgb` channels SHALL use scheme `gpiod`
+- **AND** MUST include chip and offset for each channel

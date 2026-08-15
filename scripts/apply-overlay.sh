@@ -339,11 +339,88 @@ sync_kernel_board_dts() {
   echo "overlay: synced board DTS/DTSI from $overlay_dts → $kernel_dts"
 }
 
-# Product vendor kernel drivers (git SoT under overlay/kernel/{innohi,drivers/...}).
-sync_kernel_vendor_drivers() {
-  local kernel src_innohi src_aic dst_aic
+# Product vendor kernel drivers (git SoT under overlay/kernel/drivers/...; innohi retired).
+# Drop vendor gpio_innohi tree and strip owned-SDK hooks that still pointed at it.
+retire_kernel_innohi() {
+  local kernel kconfig makefile
   kernel="$(kernel_source_dir)"
-  src_innohi="$OVERLAY/kernel/innohi"
+  kconfig="$kernel/Kconfig"
+  makefile="$kernel/Makefile"
+
+  [[ -d "$kernel" ]] || return 0
+
+  rm -rf "$kernel/innohi"
+
+  if [[ -f "$kconfig" ]] && grep -q 'source "innohi/Kconfig"' "$kconfig" 2>/dev/null; then
+    # Remove the source line and a preceding blank line if present.
+    python3 - "$kconfig" <<'PY'
+import pathlib, re, sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+new = re.sub(r'\n*source "innohi/Kconfig"\n*', '\n\n', text, count=1)
+if new != text:
+    path.write_text(new)
+    print(f"overlay: removed source \"innohi/Kconfig\" from {path}")
+else:
+    print(f"overlay: {path} already has no innohi/Kconfig source")
+PY
+  fi
+
+  if [[ -f "$makefile" ]]; then
+    python3 - "$makefile" <<'PY'
+import pathlib, re, sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+orig = text
+# Drop Innohi include path (headers were under kernel/innohi/inc).
+text = re.sub(r'\n\t+-Iinnohi/inc \\\n', '\n', text)
+# Owned tree used drivers-y := innohi/ solely for that subdir; clear it.
+text = re.sub(
+    r'(?m)^drivers-y\t:= innohi/\s*$',
+    'drivers-y\t:=',
+    text,
+    count=1,
+)
+# distclean helper that only cleaned innohi/ objects — remove when tree is gone.
+text = re.sub(
+    r'\n\t@find innohi/ \\\( -name "\*\.o".*?\|xargs rm -rf\n',
+    '\n',
+    text,
+    count=1,
+    flags=re.S,
+)
+if text != orig:
+    path.write_text(text)
+    print(f"overlay: stripped innohi hooks from {path}")
+else:
+    print(f"overlay: {path} already has no innohi hooks")
+PY
+  fi
+
+  echo "overlay: retired kernel/innohi (directory removed; Kconfig/Makefile hooks stripped)"
+  # Drop any leftover LCD_PARAM_S stub from the Innohi bridge-pass experiment.
+  rm -rf "$kernel/include/innohi"
+}
+
+sync_kernel_panel_simple() {
+  local kernel src dst
+  kernel="$(kernel_source_dir)"
+  src="$OVERLAY/kernel/drivers/gpu/drm/panel/panel-simple.c"
+  dst="$kernel/drivers/gpu/drm/panel/panel-simple.c"
+
+  [[ -d "$kernel" ]] || return 0
+  if [[ ! -f "$src" ]]; then
+    echo "WARNING: $src missing; keep SDK panel-simple.c" >&2
+    return 0
+  fi
+  mkdir -p "$(dirname "$dst")"
+  install -m 0644 "$src" "$dst"
+  echo "overlay: synced Rockchip panel-simple.c (no Innohi bridge/LCD_PARAM_S)"
+}
+
+sync_kernel_vendor_drivers() {
+  local kernel src_aic dst_aic
+  kernel="$(kernel_source_dir)"
   src_aic="$OVERLAY/kernel/drivers/net/wireless/aic8800"
 
   if [[ ! -d "$kernel" ]]; then
@@ -351,17 +428,8 @@ sync_kernel_vendor_drivers() {
     return 0
   fi
 
-  if [[ -d "$src_innohi" ]]; then
-    mkdir -p "$kernel/innohi"
-    rsync -a --delete \
-      --exclude='*.o' --exclude='*.ko' --exclude='*.mod' --exclude='*.mod.c' \
-      "$src_innohi/" "$kernel/innohi/"
-    # Kitchen-sink Wi-Fi trees are not in git (CONFIG_INNOHI_NET=n).
-    rm -rf "$kernel/innohi/net"
-    echo "overlay: synced innohi kernel drivers → $kernel/innohi"
-  else
-    echo "WARNING: $src_innohi missing; skip innohi driver sync" >&2
-  fi
+  retire_kernel_innohi
+  sync_kernel_panel_simple
 
   if [[ -d "$src_aic" ]]; then
     dst_aic="$kernel/drivers/net/wireless/aic8800"

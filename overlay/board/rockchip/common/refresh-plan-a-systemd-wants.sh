@@ -30,7 +30,8 @@ fi
 
 for unit in cpu-performance.service serial-stty.service \
 	pwrkey-poweroff.service ab-boot-confirm.service oem-compose.service \
-	tee-supplicant.service usb-otg-role-boot.service hmi.service; do
+	tee-supplicant.service usb-otg-role-boot.service hmi.service \
+	gpio-product-off.service; do
 	link_boot_unit "$unit"
 done
 

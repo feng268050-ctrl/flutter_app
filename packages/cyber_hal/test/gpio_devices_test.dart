@@ -128,6 +128,32 @@ void main() {
       expect(line.offset, 27);
       expect(line.fallbackLinuxGpio, 123);
     });
+
+    test('v2 gpiod scheme keeps silk label as documentation', () {
+      final config = GpioConfig.fromJson({
+        'version': 2,
+        'backend': 'gpiod',
+        'devices': [
+          {
+            'type': 'buzzer',
+            'id': 'panel_buzzer',
+            'line': {
+              'scheme': 'gpiod',
+              'label': 'BELL',
+              'path': '/sys/class/gpio_innohi/BELL/value',
+              'gpiod': {'chip': 'gpiochip3', 'offset': 27},
+              'linux_gpio': 123,
+            },
+          },
+        ],
+      });
+
+      final line = config.devices.single.buzzer!.line;
+      expect(line.scheme, GpioBindingScheme.gpiod);
+      expect(line.label, 'BELL');
+      expect(line.chip, 'gpiochip3');
+      expect(line.offset, 27);
+    });
   });
 
   group('devices (stub)', () {

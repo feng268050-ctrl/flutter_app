@@ -166,8 +166,9 @@ as ek3562 and selective Wi‑Fi/driver imports).
 | Git path | Synced to SDK by `apply-overlay` | Used for |
 |----------|----------------------------------|----------|
 | `overlay/kernel/rockchip/*.dts*` | `kernel/arch/arm64/boot/dts/rockchip/` | FIT DTBs |
-| `overlay/kernel/innohi/` | `kernel/innohi/` | README / empty Makefile only (`gpio_innohi` removed) |
-| `overlay/kernel/drivers/net/wireless/aic8800/` | `kernel/drivers/net/wireless/aic8800/` | ynh960 AIC8800 SDIO |
+| `overlay/kernel/drivers/net/wireless/aic8800/` | `kernel/drivers/net/wireless/aic8800/` | AIC8800 combo driver |
+| *(removed)* `overlay/kernel/innohi/` | removed; hooks stripped from `kernel/Kconfig` + `Makefile` | `gpio_innohi` retired |
+| `overlay/kernel/drivers/gpu/drm/panel/panel-simple.c` | `kernel/drivers/gpu/drm/panel/panel-simple.c` | Rockchip `develop-6.1` pre-`65f19639` (DT `panel-init-sequence`; matches SDK `panel-simple.h`) |
 | `overlay/board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules` | rootfs overlay | `/dev/block/by-name`, `/dev/disk/by-partlabel` |
 
 `innohi/net/wireless/*` (250MB+ Realtek/QCA trees) is **not** in git; `CONFIG_INNOHI_NET=n`.

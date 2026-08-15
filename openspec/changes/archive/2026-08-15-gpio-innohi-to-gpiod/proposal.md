@@ -4,7 +4,7 @@ Product GPIO on ynh960 is still claimed by the vendor `gpio_innohi` driver (`/sy
 
 ## What Changes
 
-- Stop building/shipping `overlay/kernel/innohi/gpio_innohi.c` once lines are free. Unbind/`own-gpio` hogging so `/dev/gpiochip*` request succeeds for product LEDs, buzzer, and GPIO_8.
+- Stop shipping Innohi `gpio_innohi` (removed `overlay/kernel/innohi/`). Unbind/`own-gpio` hogging so `/dev/gpiochip*` request succeeds for product LEDs, buzzer, and the former Wiegand silk pads (**GPIO_7** / **GPIO_8** = WG_D0 / WG_D1). GPIO_7 stays the green LED via gpiod; GPIO_8 stays unclaimed (no HAL device, no Wiegand chardev).
 - Switch the LWS product `gpio.json` **runtime** scheme from `sysfs_innohi` to `gpiod` using the already-recorded chip/offset map (red `gpiochip3:9`, yellow `gpiochip3:10`, green `gpiochip4:21`, buzzer `gpiochip3:27`).
 - Preserve boot-off defaults and **shutdown pull-low** currently done by `gpio_innohi` `syscore_ops.shutdown` (all hogged outputs driven 0). Kernel `gpio-leds` and/or a small userspace/systemd helper MAY own that; do not drop the behavior silently.
 - Keep HAL **sysfs** backend as a generic path/label writer for other boards; it MUST NOT depend on `/sys/class/gpio_innohi` existing.
@@ -25,7 +25,7 @@ Product GPIO on ynh960 is still claimed by the vendor `gpio_innohi` driver (`/sy
 
 ## Impact
 
-- **Kernel:** `overlay/kernel/innohi/gpio_innohi.c` + `own-gpio` / `gpio-innohi` DTS; rebuild Image (`FORCE_KERNEL_IMAGE=1`).
+- **Kernel:** remove `overlay/kernel/innohi/`; disable `own-gpio` / `gpio-innohi` DTS; rebuild Image (`FORCE_KERNEL_IMAGE=1`).
 - **HAL / App:** `packages/cyber_hal` already has gpiod; `app/lws_hmi/assets/hal/gpio.json` scheme flip; tests that assume sysfs_innohi as product default.
 - **Docs / verify:** `docs/ynh960-io-pinmux-ledger.md`, `verify-env` / board helpers that `ls /sys/class/gpio_innohi`.
 - **Rootfs:** HMI (or a gpio group) must open `/dev/gpiochip*`; no new daemon required if userspace holds lines.

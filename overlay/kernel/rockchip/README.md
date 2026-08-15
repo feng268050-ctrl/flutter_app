@@ -28,16 +28,16 @@ Kconfig fragments: same directory (`*.config`), synced to kernel `arch/arm64/con
 | Path | Role |
 |------|------|
 | [`../drivers/net/wireless/aic8800/`](../drivers/net/wireless/aic8800/) | AIC8800D80 SDIO Wi‑Fi/BT modules |
-| [`../innohi/`](../innohi/) | empty build + README (`gpio_innohi` removed; see pinmux ledger) |
-| `ynh960-own-gpio.dtsi` | disables `own_gpio`; USB_HOST_PWREN* via gpio-hog |
+| `ynh960-own-gpio.dtsi` | disables `own_gpio`; USB_HOST_PWREN* via gpio-hog; product pads free for gpiod |
 
 Platform udev: [`../../board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules`](../../board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules) (`by-name` / `by-partlabel`).
 
 ## ek3562 (RK3562 EVB2 DDR4 V10 — DTS landed)
 
-Board package is in this directory (`ek3562.dts` + `rk3562-evb2-*` / `rk3562-linux` /
-`rk3562-rk809`). **FIT inventory + OEM `fit_dt` still gated** — follow the checklist
-in [`ek3562.md`](ek3562.md) before appending `ek3562` to `board/rk356x-fit-boards.txt`.
+Board package is in this directory (`ek3562.dts` + `ek3562-display.dtsi` + `ek3562-io.dtsi` +
+`rk3562-evb2-*` / `rk3562-linux` / `rk3562-rk809`). Panel is lab **7″ 800×1280**; I/O expander
+is **PCA9535** on i2c1（silk IN/OUT line map TBD）. **FIT inventory includes `ek3562`**;
+OEM `fit_dt` = `ek3562`. Bootloader still gated — follow [`ek3562.md`](ek3562.md).
 
 ## Workflow
 

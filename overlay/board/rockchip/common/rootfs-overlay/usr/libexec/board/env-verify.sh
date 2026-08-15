@@ -700,6 +700,29 @@ if [ ! -f /system/etc/960_lcd_param_rk356x.txt ] && \
 fi
 
 echo ""
+echo "--- Product GPIO (gpiod cutover) ---"
+if [ -d /sys/class/gpio_innohi ]; then
+	fail "gpio_innohi still present (expected removed after gpiod cutover)"
+else
+	pass "gpio_innohi absent"
+fi
+if [ -e /dev/gpiochip3 ] && [ -e /dev/gpiochip4 ]; then
+	pass "gpiochip3/4 present"
+else
+	fail "gpiochip3/4 missing"
+fi
+if [ -x /usr/libexec/board/gpio-product-off.sh ]; then
+	pass "gpio-product-off.sh present"
+else
+	fail "gpio-product-off.sh missing"
+fi
+if [ -f /etc/systemd/system/gpio-product-off.service ]; then
+	pass "gpio-product-off.service present"
+else
+	fail "gpio-product-off.service missing"
+fi
+
+echo ""
 if [ "$FAILED" -eq 0 ]; then
 	echo "=== verify-env: ALL PASS ==="
 	exit 0

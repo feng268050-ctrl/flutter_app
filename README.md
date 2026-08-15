@@ -672,7 +672,7 @@ On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under
 
 ### `innohi/` / WiFi-BT firmware errors
 
-**Git SoT:** ynh960 kernel drivers → `overlay/kernel/innohi/` + `overlay/kernel/drivers/net/wireless/aic8800/`; partition udev → `overlay/board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules`. `make apply-overlay` syncs kernel trees into `linux-sdk/kernel/`. Combo **firmware** → OEM radio pack (`oem/boards/ynh960/radio/`). If `aic8800_*.ko` is missing after rebuild, run `make apply-overlay` then `FORCE_KERNEL_IMAGE=1 make build-kernel` / `make build-rootfs`. Legacy `linux-sdk/innohi/` is optional (normalize hook retargets old scripts if present).
+**Git SoT:** ynh960 kernel combo driver → `overlay/kernel/drivers/net/wireless/aic8800/` (no `overlay/kernel/innohi/` — product GPIO is gpiod); partition udev → `overlay/board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules`. `make apply-overlay` syncs kernel trees into `linux-sdk/kernel/`. Combo **firmware** → OEM radio pack (`oem/boards/ynh960/radio/`). If `aic8800_*.ko` is missing after rebuild, run `make apply-overlay` then `FORCE_KERNEL_IMAGE=1 make build-kernel` / `make build-rootfs`. Legacy `linux-sdk/innohi/` is optional (normalize hook retargets old scripts if present).
 
 **ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`). `RK_WIFIBT_CHIP="AIC8800D80"` keeps `post-wifibt` running for kernel `*.ko` → `/vendor/lib/modules` without Broadcom `AP6256`/`bcmdhd`/`fw_bcm*` dumps. Combo firmware ships in the OEM radio pack (`oem/boards/ynh960/radio/`); runtime uses `wifibt-bringup.sh` manual `insmod` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
 

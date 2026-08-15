@@ -23,6 +23,7 @@ This change is the kernel/userspace cutover the earlier `gpiod-gpio-hal` work ex
 - Replacing `flutter_gpiod`.
 - Using `/sys/class/leds` (`gpio-leds`) as the product LED API (still a vendor-style sysfs class, not gpiod).
 - Changing App RGB policy.
+- Restoring Wiegand `/dev/wiegand_*` on silk WG_D0/D1 (those pads are GPIO_7/GPIO_8 now).
 
 ## Decisions
 
@@ -52,6 +53,24 @@ This change is the kernel/userspace cutover the earlier `gpiod-gpio-hal` work ex
 
 **Choice:** HMI already runs as root on the appliance; `/dev/gpiochip*` is usable. If a later non-root seat appears, add `gpio` group + udev — not a blocker for this change.
 
+### D5 — WG_D0 / WG_D1 silk = GPIO_7 / GPIO_8 (not Wiegand)
+
+**Background:** Board silkscreen still labels the pair **WG_D0 / WG_D1** (Wiegand D0/D1). Vendor Wiegand character devices and DTS nodes are already gone; both pads are muxed as GPIO and hogged only by `gpio_innohi` today. Product wiring reuses them as generic GPIO, not access-control Wiegand.
+
+| Silk | Logical label | Pad | gpiochip / offset | Cutover ownership |
+|------|---------------|-----|-------------------|-------------------|
+| WG_D0 | `GPIO_7` | gpio4 RK_PC5 | `gpiochip4` / **21** | **HAL** — green Status LED (`chassis_rgb` / `green`); scheme `gpiod` |
+| WG_D1 | `GPIO_8` | gpio4 RK_PC6 | `gpiochip4` / **22** | **Unclaimed** — free for future product use; **no** HAL device, **no** `gpio-hog`, **no** Wiegand driver |
+
+**Choice:**
+
+- Treat both as ordinary lines in the cutover: remove from `gpio_innohi` / `own-gpio` hog set; leave pinmux as GPIO.
+- **GPIO_7** stays the shipping green LED binding (already in `gpio.json` with recorded gpiod map).
+- **GPIO_8** stays unused in the LWS catalog until a product feature needs it. Document chip/offset in the pinmux ledger only; do not invent a HAL id “just in case.”
+- MUST NOT restore `/dev/wiegand_input` / `/dev/wiegand_output` or claim these pads for Wiegand protocol.
+
+**Alternatives:** Hog GPIO_8 low at boot — rejected (blocks future gpiod). Add a stub HAL line for GPIO_8 — rejected (no consumer). Re-enable Wiegand — rejected (product path is GPIO LEDs / spare GPIO).
+
 ## Risks / Trade-offs
 
 - [LEDs float between kernel init and HMI open] → pinctrl GPIO function + HAL Force-Off on start; accept brief undefined until HMI (today gpio_innohi sets default-value from DTS, overlay already `"0"` for RGB).
@@ -59,17 +78,16 @@ This change is the kernel/userspace cutover the earlier `gpiod-gpio-hal` work ex
 - [PWREN halt no longer goes low] → VBUS may stay until power cut; prefer hog high for runtime correctness.
 - [Half-upgrade: new App + old Image] → gpiod EBUSY; keep sysfs fields in JSON unused; do not ship App-only without kernel.
 - [Half-upgrade: new Image + old App] → sysfs class gone, old App writes missing nodes → dark LEDs. Ship kernel + App together (`build-kernel` + `build-app` / `push-app`).
-- [GPIO_8 silk WG_D1 still looks like Wiegand] → pinmux ledger §2.1; no character device.
+- [Silk still says WG_D0/D1] → pinmux ledger §2.1; pads are ordinary GPIO after Wiegand chardev removal; do not reintroduce `/dev/wiegand_*`.
 
 ## Migration Plan
 
 1. Implement kernel/DTS unhog + PWREN hog; `FORCE_KERNEL_IMAGE=1 make build-kernel`.
 2. Flip `gpio.json` + HAL tests; `make build-app` / `push-app`.
 3. Add halt helper if ExecStop alone is insufficient on device.
-4. Delete `gpio_innohi.c` from `overlay/kernel/innohi/` (or stop `obj-y`).
+4. Delete `overlay/kernel/innohi/`; strip owned `source "innohi/Kconfig"` / `drivers-y := innohi/`; replace Innohi-patched `panel-simple.c` with Rockchip `develop-6.1` pre-`65f19639` (DT `panel-init-sequence` only — no bridge/`LCD_PARAM_S`; matches SDK `panel-simple.h`).
 5. Rollback: restore driver + `sysfs_innohi` JSON (A/B slot).
 
 ## Open Questions
 
-- Exact DT syntax for PWREN (`gpio-hog` vs `regulator-gpio`) — pick whichever matches existing Rockchip USB VBUS enable on this tree.
-- Whether GPIO_8 needs a HAL device or stays unused (unclaimed).
+- None remaining for PWREN — implemented as `&gpio4` `gpio-hog` output-high in `ynh960-own-gpio.dtsi`.

@@ -186,13 +186,24 @@ class GpioLedController extends ChangeNotifier {
   @override
   void dispose() {
     final hal = _hal;
+    final bank = _bank;
+    final watching = _watching;
+    _watching = false;
     if (hal != null) {
-      if (_watching) {
+      if (watching) {
         hal.removeLevelListener(_levelListener);
       }
-      unawaited(hal.dispose());
+      unawaited(() async {
+        if (bank != null) {
+          try {
+            for (final color in LedColor.values) {
+              await bank.setMode(color.channelId, LedMode.off, force: true);
+            }
+          } catch (_) {}
+        }
+        await hal.dispose();
+      }());
     }
-    _watching = false;
     _bank = null;
     for (final c in LedColor.values) {
       _modes[c] = null;

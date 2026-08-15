@@ -17,14 +17,8 @@ rsync -a --delete \
   "$SDK/kernel/drivers/net/wireless/aic8800/" \
   "$ROOT/overlay/kernel/drivers/net/wireless/aic8800/"
 
-echo "import: innohi leftover gpio_innohi.c only (no MCU/wiegand/atsh204a/video/input/power/net)"
-INNOHI_SRC="$SDK/kernel/innohi"
-INNOHI_DST="$ROOT/overlay/kernel/innohi"
-mkdir -p "$INNOHI_DST"
-if [[ -f "$INNOHI_SRC/gpio_innohi.c" ]]; then
-  install -m 0755 "$INNOHI_SRC/gpio_innohi.c" "$INNOHI_DST/gpio_innohi.c"
-fi
-# Overlay owns Kconfig / Makefile / README — do not restore vendor kitchen sink.
+echo "import: skip kernel/innohi (retired — gpio_innohi → gpiod; do not re-create overlay/kernel/innohi)"
+rm -rf "$ROOT/overlay/kernel/innohi"
 
 UDEV_SRC="$SDK/innohi/rootfs/usr/lib/udev/rules.d/61-partition-init.rules"
 UDEV_DST="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/lib/udev/rules.d/61-partition-init.rules"
@@ -36,6 +30,5 @@ else
   echo "import: skip udev rules (no $UDEV_SRC)"
 fi
 
-du -sh "$ROOT/overlay/kernel/drivers/net/wireless/aic8800" \
-  "$ROOT/overlay/kernel/innohi"
+du -sh "$ROOT/overlay/kernel/drivers/net/wireless/aic8800"
 echo "import: done — run make apply-overlay && FORCE_KERNEL_IMAGE=1 make build-kernel"

@@ -21,25 +21,41 @@ void main() {
 
     test('matches former GpioLedConfig pin map', () {
       expect(config.version, 2);
-      expect(config.backend, 'sysfs_innohi');
+      expect(config.backend, 'gpiod');
       expect(config.defaults.blinkOnMs, 1000);
       expect(config.defaults.blinkOffMs, 1000);
       expect(config.defaults.activeLow, isFalse);
 
       final expected = {
-        'led_red': (label: 'GPIO_5', linux: 105),
-        'led_yellow': (label: 'GPIO_4', linux: 106),
-        'led_green': (label: 'GPIO_7', linux: 149),
+        'led_red': (label: 'GPIO_5', linux: 105, chip: 'gpiochip3', offset: 9),
+        'led_yellow': (
+          label: 'GPIO_4',
+          linux: 106,
+          chip: 'gpiochip3',
+          offset: 10,
+        ),
+        'led_green': (
+          label: 'GPIO_7',
+          linux: 149,
+          chip: 'gpiochip4',
+          offset: 21,
+        ),
       };
       for (final entry in expected.entries) {
         final line = config.lineById(entry.key)!;
         expect(line.label, entry.value.label);
         expect(line.fallbackLinuxGpio, entry.value.linux);
-        expect(line.path, contains(entry.value.label));
+        expect(line.binding.scheme, GpioBindingScheme.gpiod);
+        expect(line.binding.chip, entry.value.chip);
+        expect(line.binding.offset, entry.value.offset);
       }
 
       final bank = config.deviceById('chassis_rgb')!.statusLed!;
       expect(bank.channelById('red')!.binding.offset, 9);
+      expect(
+        config.deviceById('panel_buzzer')!.buzzer!.line.scheme,
+        GpioBindingScheme.gpiod,
+      );
       expect(config.deviceById('panel_buzzer')!.buzzer!.line.label, 'BELL');
     });
 
@@ -51,6 +67,29 @@ void main() {
         () => hal.openLine('led_blue'),
         throwsA(isA<HalNotFoundException>()),
       );
+    });
+  });
+
+  group('app gpio.ek3562.json golden', () {
+    late GpioConfig config;
+
+    setUp(() {
+      final json = File('$halRoot/gpio.ek3562.json').readAsStringSync();
+      config = GpioConfig.fromJsonString(json);
+    });
+
+    test('OUT0/1/2 map to PCA9535 offsets 0/1/2', () {
+      expect(config.backend, 'gpiod');
+      expect(config.capabilities.buzzer, isFalse);
+      final bank = config.deviceById('chassis_rgb')!.statusLed!;
+      expect(bank.channelById('red')!.binding.label, 'OUT0');
+      expect(bank.channelById('red')!.binding.chip, 'gpiochip6');
+      expect(bank.channelById('red')!.binding.offset, 0);
+      expect(bank.channelById('yellow')!.binding.label, 'OUT1');
+      expect(bank.channelById('yellow')!.binding.offset, 1);
+      expect(bank.channelById('green')!.binding.label, 'OUT2');
+      expect(bank.channelById('green')!.binding.offset, 2);
+      expect(config.deviceById('panel_buzzer'), isNull);
     });
   });
 

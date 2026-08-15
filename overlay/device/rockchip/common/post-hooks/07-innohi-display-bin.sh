@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # Innohi userspace leftovers (display binaries retired).
-# Kernel drivers: overlay/kernel/innohi/ + overlay/kernel/drivers/net/wireless/aic8800/
+# Kernel combo Wi‑Fi: overlay/kernel/drivers/net/wireless/aic8800/ (gpio_innohi tree removed).
 
 source "${RK_POST_HELPER:-$(dirname "$(realpath "$0")")/post-helper}"
 

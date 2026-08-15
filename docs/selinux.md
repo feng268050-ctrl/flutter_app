@@ -13,7 +13,7 @@ after AVC soak.
 | Buildroot chip | `overlay/buildroot/chips/lws_hmi_selinux.config` (`#include` from `rockchip_rk3566_rk3568_lws_hmi_defconfig`) |
 | Mode | `BR2_PACKAGE_REFPOLICY_POLICY_STATE_PERMISSIVE` → `/etc/selinux/config` |
 
-**U-Boot is not modified.** Do not run `make build-uboot` for SELinux.
+**U-Boot is not modified for SELinux.** Enabling SELinux does not require rebuilding or reflashing U-Boot.
 
 ## Rebuild
 

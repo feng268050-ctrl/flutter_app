@@ -104,8 +104,9 @@ ensure_sdk_uboot() {
   factory_sku_require_uboot
   mkdir -p "$firmware" "$ROOT/output/firmware" "$sdk/u-boot"
 
-  # ONLY unpatched vendor uboot. Do NOT binary-patch (env CRC → no backlight/maskrom).
-  # Do NOT use locally-compiled U-Boot (ynh960 brick risk). Do NOT use Innohi uboot for Linux GPT.
+  # ONLY unpatched vendor uboot for the chosen UBOOT_ID (env CRC / wrong blob → brick).
+  # Self-build OK after SKU validation (docs/uboot-rkbin.md); do not flash unvalidated pairs.
+  # ynh960 MiniLoaderAll.bin is already an SPL merger blob (staged as rk356x_spl_loader_*.bin).
   # Authoritative: prebuilt/bootloader/$UBOOT_ID — sdk/u-boot is pack staging only.
   rm -f "$dest" "$staging"
   install_file_follow "$vendor" "$dest"

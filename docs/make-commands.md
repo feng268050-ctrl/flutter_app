@@ -35,7 +35,7 @@ Linux on ARM64 的常规做法是：**一份 `Image`（内核二进制）+ 每�
 | **`Image`** | **产品线通用** — 一次 `./build.sh kernel` 产出，FIT 内各 conf **共用同一 blob** | `overlay/kernel/**/*.config`（SoC/驱动 Kconfig）、补丁；扩 SoC（如 RK3562）时 **并入同一次构建**，打出 **新通用 Image** |
 | **DTB** | **每 `board_id` 一份** — 描述具体主板接线 | `overlay/kernel/`（git 真相源）；板厂交付 DTS 并进 overlay |
 | **`resource.img`** | A/B 槽各一份（PARTLABEL + logo） | `make build-kernel` / `scripts/patch-resource-img-partlabel.py` |
-| **U-Boot + MiniLoader** | 按出厂 SKU，非 FIT 内 | 板厂二进制 → `prebuilt/bootloader/<uboot_id>/`；`board/factory-skus.tsv` |
+| **U-Boot + MiniLoader** | 按出厂 SKU，非 FIT 内 | **可自建**：[rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) + [rkbin](https://github.com/rockchip-linux/rkbin) `boot_merger` → 落入 `prebuilt/bootloader/<uboot_id>/`（见 [`docs/uboot-rkbin.md`](uboot-rkbin.md)）；`board/factory-skus.tsv` |
 
 **日常规则：**
 
@@ -65,11 +65,11 @@ Linux on ARM64 的常规做法是：**一份 `Image`（内核二进制）+ 每�
 | SKU | board_id | U-Boot 目录 | OEM pack | 状态 |
 |-----|----------|-------------|----------|------|
 | `ynh960-p800`（默认） | `ynh960` | `prebuilt/bootloader/rockchip-ynh960/` | `ynh960_panel-800x1280` | 在产 |
-| `ek3562-dev` | `ek3562` | `prebuilt/bootloader/vendor-ek3562/` | `ek3562_panel-tbd` | 占位：补 U-Boot/MiniLoader、DTS、屏参；`compat.fit_dt=pending` 期间**不要**把 `ek3562` 写入 FIT 清单 |
+| `ek3562-dev` | `ek3562` | `prebuilt/bootloader/vendor-ek3562/` | `ek3562_panel-tbd` | DTS 已落 overlay；U-Boot/loader **自建**（[`uboot-rkbin.md`](uboot-rkbin.md) / [`ek3562.md`](../overlay/kernel/rockchip/ek3562.md)）；`fit_dt=pending` 期间勿写 FIT 清单 |
 
 运行时识别：`oem-compose` 写 `/run/hmi/board_id` 与 `/run/hmi/boards.d/<board_id>`。板端 `read-board-id`。Innohi **MainServer / ParamUpdate 已实验性移除**（面板时序靠 kernel DT）。
 
-**示例（ek3562，与 ynh960 在产并存）：** 供应商 DTS 进 `overlay/kernel/rockchip/`（见 `ek3562.md`）+ 主线 `rtw_8821cu`（`ek3562-wifibt.config` + `lws_hmi_wifi_rtw88.config`）→ `FORCE_KERNEL_IMAGE=1 make build-kernel` + `bash scripts/br-make-packages.sh wifi linux-firmware` → 清单加 `ek3562` 并去掉 OEM `fit_dt: pending` → U-Boot 放进 `prebuilt/bootloader/vendor-ek3562/` → `FACTORY_SKU=ek3562-dev make build-oem` / `build-img`。**ynh960 继续用同一 FIT 里的 `ynh960` conf**，不是各 SoC 各维护一套 SDK。
+**示例（ek3562，与 ynh960 在产并存）：** 板级 DTS 已落 `overlay/kernel/rockchip/`（见 [`ek3562.md`](../overlay/kernel/rockchip/ek3562.md)）→ 按 [`uboot-rkbin.md`](uboot-rkbin.md) 用 **rkbin `boot_merger` + rockchip-linux/u-boot** 自建 loader/`uboot.img` 放入 `prebuilt/bootloader/vendor-ek3562/` → 主线 `rtw_8821cu`（`ek3562-wifibt.config` + `lws_hmi_wifi_rtw88.config`）→ Image 含 RK3562 后 `FORCE_KERNEL_IMAGE=1 make build-kernel`（若仅 DTB 则 plain）+ `bash scripts/br-make-packages.sh wifi linux-firmware` → **再**把 `ek3562` 写入 `board/rk356x-fit-boards.txt` 并将 OEM `fit_dt` 改为 `ek3562` → `FACTORY_SKU=ek3562-dev make build-oem` / `build-img`。**ynh960 继续用同一 FIT 里的 `ynh960` conf**，不是各 SoC 各维护一套 SDK。
 
 ---
 
@@ -740,8 +740,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `fix-buildroot-host-rpaths` | `make fix-buildroot-host-rpaths` | migrate 后修 host rpath | — |
 | `clean-buildroot-output` | `make clean-buildroot-output` | 删当前 BR output（保留 `dl/`）后全量重编 rootfs；**macOS** 走 Docker volume（勿只清 host `linux-sdk/`） | 大版本 BR 升级（见 `BUILDROOT_VERSION`）必做；之后 `lunch` + `build-rootfs` |
 | `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
-| `build-uboot` | **ynh960 勿用**（无 Innohi 指示） | 有砖机风险 | — |
-| `fetch-uboot` | 内部/少用 | 拉 uboot | — |
+| `build-uboot` | SDK `./build.sh uboot`（现 lunch / ynh960 向）；新板优先按 [`uboot-rkbin.md`](uboot-rkbin.md) 自建后拷入 `prebuilt/bootloader/<uboot_id>/` | 有匹配 DT + rkbin 即可编；**勿**把未验收包刷进量产 SKU | `BUILD_UBOOT=1` 经 Docker |
+| `fetch-uboot` | `make fetch-uboot` | 拉取 [rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) 进 `linux-sdk/u-boot/` | `FORCE=1` 重装；分支见 `overlay/third-party/uboot.version` |
 | `build-libexec-binaries` | 交叉编译 libexec C 二进制 → prebuilt + overlay | `TOOL=`、`rebuild-libexec-binaries` | macOS 自动进 Docker |
 | `test-debug-app` | `make test-debug-app` | debug-app 脚本自测 | — |
 
@@ -783,7 +783,7 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | Overlay / systemd | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
 | Kernel / DTS | `make apply-overlay` → `make build-kernel` → `make upgrade` |
 | Kernel patches / `patch-mk-*.sh` | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `FORCE_KERNEL_IMAGE=1 make build-kernel` → `make upgrade` |
-| SELinux + auditd（permissive；见 [`docs/selinux.md`](selinux.md)） | `make apply-overlay` → `bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage audit systemd` → `FORCE_KERNEL_IMAGE=1 make build-kernel` → `make build-rootfs` → `make upgrade`（**勿** `build-uboot`） |
+| SELinux + auditd（permissive；见 [`docs/selinux.md`](selinux.md)） | `make apply-overlay` → `bash scripts/br-make-packages.sh selinux …` → `FORCE_KERNEL_IMAGE=1 make build-kernel` → `make build-rootfs` → `make upgrade`（**不要求**改 U-Boot） |
 | rng-tools + jitterentropy（`rngd.service`） | `make apply-overlay` → `bash scripts/br-make-packages.sh rng rng-tools jitterentropy-library` → `make build-rootfs` → `make upgrade` |
 | 仅 OEM | `make build-oem` → `OEM_ONLY=1 make upgrade` |
 | 出厂 USB | `make build-oem` → `make build-img` → `make reboot-loader` → `make flash` |
@@ -799,7 +799,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - [`AGENTS.md`](../AGENTS.md) — Agent 重建表（改完代码后该跑哪些 make）
 - [`docs/build-optimization.md`](build-optimization.md)
 - [`docs/p32-emulator.md`](p32-emulator.md)
-- [`docs/selinux.md`](selinux.md) — SELinux permissive enablement（不改 U-Boot）
+- [`docs/selinux.md`](selinux.md) — SELinux permissive enablement（不依赖改 U-Boot）
+- [`docs/uboot-rkbin.md`](uboot-rkbin.md) — 自建 U-Boot / MiniLoader（rkbin `boot_merger` + rockchip-linux/u-boot）
 - [`docs/linux-sdk-vendor-import.md`](linux-sdk-vendor-import.md)
 - [`docs/cache-mirror.md`](cache-mirror.md)
 - [`.env.example`](../.env.example)

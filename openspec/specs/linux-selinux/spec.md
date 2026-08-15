@@ -37,4 +37,4 @@ Enabling SELinux MUST NOT require rebuilding or replacing the prebuilt U-Boot / 
 
 - **WHEN** implementers list rebuild steps for this change
 - **THEN** the required sequence includes kernel and rootfs rebuild/upgrade
-- **AND** MUST NOT require `make build-uboot` or rewriting `prebuilt/bootloader/`
+- **AND** MUST NOT require rewriting U-Boot solely to enable SELinux (self-building U-Boot for new boards is unrelated; see `docs/uboot-rkbin.md`)

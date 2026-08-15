@@ -709,7 +709,7 @@ make serial-ports
 
 From `buildroot/configs/rockchip/base/common.config` (`BR2_TARGET_GENERIC_ROOT_PASSWD`). Not empty.
 
-**Do not** `make build-uboot` on ynh960 unless Innohi instructs — wrong uboot bricks MaskROM recovery.
+**U-Boot / MiniLoader:** self-build from Rockchip public trees is expected (especially new boards). Canonical: [`docs/uboot-rkbin.md`](docs/uboot-rkbin.md). Do **not** flash an unvalidated pair onto a shipping SKU; land accepted binaries under `prebuilt/bootloader/<uboot_id>/`.
 
 ### USB flash (macOS / Linux / Windows)
 
@@ -837,5 +837,6 @@ make build                 # full firmware → output/firmware/update.img
 - **Linux Flutter HMI 规划**（组件裁剪、Hello World、RTSP 分阶段）：[`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md)
 - **ynh960 串口 / GPIO / pinmux 台账**（P2.1）：[`docs/ynh960-io-pinmux-ledger.md`](docs/ynh960-io-pinmux-ledger.md)
 - **A/B misc + resource RSCE**（含 B 槽 splash/卡顿/冷启动踩坑）：[`docs/ab-slot-misc.md`](docs/ab-slot-misc.md)；验收：[`docs/ab-upgrade-acceptance.md`](docs/ab-upgrade-acceptance.md)
-- **SELinux**（permissive；不改 U-Boot）：[`docs/selinux.md`](docs/selinux.md)
+- **SELinux**（permissive；不依赖改 U-Boot）：[`docs/selinux.md`](docs/selinux.md)
+- **U-Boot / MiniLoader 自建**（rkbin + rockchip-linux/u-boot）：[`docs/uboot-rkbin.md`](docs/uboot-rkbin.md)
 - `make clean-overlay` restores patched SDK files (`check-sdk.sh`, `rk3566_rk3568.config`, post-hook, fs-overlay).

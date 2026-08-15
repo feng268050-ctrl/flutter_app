@@ -53,7 +53,7 @@
 ### 1.3 非目标
 
 - 不在 QEMU 访客内仿真 RK356x SoC / Mali / MIPI / AIC 模组。  
-- 不强制第一天自编译量产 U-Boot（默认继续已验证的瑞芯微/板级 `uboot.img`；源码用 `rockchip-linux/u-boot` 备查）。  
+- 新板 / 新 SoC：按 [`docs/uboot-rkbin.md`](uboot-rkbin.md) 自建 U-Boot + MiniLoader 落入 `prebuilt/bootloader/<uboot_id>/`；已在产 SKU 继续刷该 SKU **已验收**包。  
 - 不把 `/opt/hmi` 迁入 OEM（App 仍走 rootfs A/B + `push-app`）。  
 - 不在本计划实现 `app/os_settings`（见 [`os-settings-app-plan.md`](os-settings-app-plan.md)；`APP=os_settings` → `/opt/os_settings`）。  
 - 不一次合入完整 18 G 供应商树进 git。  
@@ -285,7 +285,7 @@ oem          = 模组 bringup、屏参、HAL profile、v1 product.ini
 | 一族多板 | 同一 kernel config；每板一份 DTS/DTSI；**同一 FIT 多 FDT + named conf**（平台 **W5** / `multi-board-fit-dt`）；现 `overlay/kernel/rockchip/ynh960-*.dtsi` → 迁入自有 SDK `device`/`kernel` 树 |
 | 换屏 | 优先 screen pack + 用户态 ParamUpdate/替代方案；若必须改 panel-timing DT，则 **新 FIT**（属 OS 版本），不是只刷 OEM |
 | 裁剪 | 保持现有 `ynh960-kernel-trim` 思路；按 SoC 族维护一份 trim，避免 EVB 驱动膨胀 |
-| U-Boot | 量产继续预编译瑞芯微/板级 `uboot.img`；源码树 `rockchip-linux/u-boot` 进自有 SDK 备查；**非** Innohi 源码依赖 |
+| U-Boot | **可自建**（`rockchip-linux/u-boot` + `rkbin`/`boot_merger` → `prebuilt/bootloader/<uboot_id>/`）；量产刷该 SKU 已验收对；**非** Innohi 源码依赖 |
 | 模拟器 | 不使用板级 FIT；见 §6 |
 
 ### 4.3 Rootfs 优化方向
@@ -367,10 +367,10 @@ linux-sdk/                    # 保留此名（进仓后的自有 platform 树�
 
 ### 5.5 U-Boot 策略（写入 SDK 规范）
 
-- **默认**：刷写已验证的板级/供应商预编译 `uboot.img`（与现网一致）。  
-- **源码**：`rockchip-linux/u-boot`（如 `next-dev`）进自有 SDK，供查阅与未来自建。  
-- **多供应商**：预编译二进制 **分目录存放**，由环境变量选中（§5.6）；**不要**互相覆盖同一个 `output/firmware/uboot.img` 后靠记忆区分。  
-- **禁止**：未经验收用自建 U-Boot 替换量产；改 GPT/`boot` 名等须单独项目。  
+- **可自建：** 有匹配板级 DT 后，从 [rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) 编 `uboot.img`；用 [rockchip-linux/rkbin](https://github.com/rockchip-linux/rkbin) 的 **`boot_merger`** + 对应 `RKBOOT/*MINIALL*.ini` 打出 MiniLoader / `*_spl_loader_*.bin`。步骤见 [`docs/uboot-rkbin.md`](uboot-rkbin.md)。旧「禁止自编」是踩坑后的因果倒置。  
+- **交付：** 验收通过的一对二进制落入 `prebuilt/bootloader/<uboot_id>/`（分目录；`FACTORY_SKU` 选择）。  
+- **量产约束：** 禁止把**未在该 SKU 验收**的自建包刷进现场机；改 GPT/`boot` 分区名等须单独项目。  
+- **多供应商 / 多板：** 只加目录 + SKU 表一行，不互相覆盖同一路径后靠记忆区分。  
 
 ### 5.6 工厂变体：U-Boot · OEM · `factory.img`（环境变量选择）
 

@@ -48,6 +48,18 @@
             };
         };
 
+        fdt-ek3562 {
+            data = /incbin/("@KERNEL_DTB_ek3562@");
+            type = "flat_dt";
+            arch = "arm64";
+            compression = "none";
+            load = <0xffffff00>;
+
+            hash {
+                algo = "sha256";
+            };
+        };
+
     };
 
     configurations {
@@ -57,6 +69,21 @@
             description = "board_id=ynh960";
             rollback-index = <0x00>;
             fdt = "fdt-ynh960";
+            kernel = "kernel";
+            multi = "resource";
+
+            signature {
+                algo = "sha256,rsa2048";
+                padding = "pss";
+                key-name-hint = "dev";
+                sign-images = "fdt", "kernel", "multi";
+            };
+        };
+
+        ek3562 {
+            description = "board_id=ek3562";
+            rollback-index = <0x00>;
+            fdt = "fdt-ek3562";
             kernel = "kernel";
             multi = "resource";
 

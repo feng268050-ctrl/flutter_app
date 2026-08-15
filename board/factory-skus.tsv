@@ -6,7 +6,7 @@ ynh960-p800 rockchip-ynh960 ynh960_panel-800x1280
 # Build MiniLoader + uboot.img via rockchip-linux/rkbin (boot_merger) +
 # rockchip-linux/u-boot — see docs/uboot-rkbin.md and overlay/kernel/rockchip/ek3562.md.
 # Install into prebuilt/bootloader/vendor-ek3562/{uboot.img,MiniLoaderAll.bin}.
-# DTS landed (overlay ek3562.dts); FIT conf + OEM fit_dt still gated — see ek3562.md.
+# DTS + FIT conf ek3562 landed; bootloader still vendor-ek3562 TBD — see ek3562.md.
 ek3562-dev vendor-ek3562 ek3562_panel-tbd
 # P3.2 QEMU guest: do not Rockchip-flash. Use OEM_ID=sim_virt make build-oem / make build-emulator
 # (see docs/p32-emulator.md). No uboot_id row — virt boots QEMU firmware, not board U-Boot.

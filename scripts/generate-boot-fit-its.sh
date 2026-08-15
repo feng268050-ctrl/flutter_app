@@ -2,6 +2,10 @@
 # Generate board/boot-multi.its from board/rk356x-fit-boards.txt.
 # Default board uses @KERNEL_DTB@ so Rockchip mk-fitimage.sh still works for N=1;
 # additional boards use @KERNEL_DTB_<board_id>@ substituted by pack-boot-fit-multi.sh.
+#
+# When inventory has N>1, ./build.sh kernel must NOT see the multi ITS: Rockchip
+# mk-fitimage.sh only rewrites @KERNEL_DTB@. build-kernel-ab.sh stages a
+# single-conf ITS for the Image phase, then restores this multi ITS before packing.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -1,6 +1,6 @@
 {
   "board_id": "ek3562",
-  "display_name": "ek3562 (RK3562)",
+  "display_name": "ek3562 (RK3562 EVB2 DDR4 V10)",
   "model_hint": "RK3562",
   "secrets_backend": "optee",
   "capabilities": [
@@ -39,5 +39,5 @@
     "apply_mouse_settings": "/usr/bin/apply-mouse-settings",
     "apply_physical_input_policy": "/usr/bin/apply-physical-input-policy"
   },
-  "notes": "USB OTG / GPIO / panel helpers pending vendor. GPU same Mali as RK3566. Wi-Fi = onboard RTL8821CU (SoC USB, rtw_8821cu)."
+  "notes": "FIT conf/board_id=ek3562. Panel SoT=ek3562-display.dtsi (7\" 800x1280). GPIO=gpio.ek3562.json. Wi-Fi=RTL8821CU (ek3562-wifibt.config + rtw88 firmware). USB OTG helper deferred until phy path confirmed. Bootloader=prebuilt/bootloader/vendor-ek3562 (OpenSpec)."
 }

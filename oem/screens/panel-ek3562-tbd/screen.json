@@ -1,11 +1,11 @@
 {
-  "display_name": "ek3562 panel (vendor TBD)",
-  "width": 0,
-  "height": 0,
+  "display_name": "ek3562 7\" 800x1280 MIPI (lab lcdtype=2)",
+  "width": 800,
+  "height": 1280,
   "default_orientation": "landscape_left",
-  "default_ui_scale": 1.0,
+  "default_ui_scale": 1.13,
   "splash": {
-    "notes": "Fill width/height/orientation when the vendor panel is known. No Innohi ParamUpdate / private1 LCD tables."
+    "notes": "Startup panel timing lives in FIT DTB (ek3562-display.dtsi). No Innohi ParamUpdate / private1 LCD tables. OEM lcd_param_files optional later if userspace needs them."
   },
-  "touch_notes": "Touch via board DT (pending vendor DTS); not configured from this pack"
+  "touch_notes": "Touch via board DT (EVB2 cam/touch as enabled); not configured from this pack"
 }

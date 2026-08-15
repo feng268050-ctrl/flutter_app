@@ -6,8 +6,5 @@
 # New SoC drivers: extend overlay/kernel/*.config, FORCE_KERNEL_IMAGE=1, then add DTBs.
 # First line (non-comment) is the default configuration when present; otherwise ynh960.
 # Do not list emulator/sim — P3.2 uses bare Image + QEMU virt DT.
-# ek3562: DTS is in overlay/kernel/rockchip/ (ek3562.dts). Add a line "ek3562"
-#   only after RK3562 is in the universal Image and you are ready to pack the
-#   FIT conf — see overlay/kernel/rockchip/ek3562.md checklist. OEM fit_dt stays
-#   pending until then.
 ynh960
+ek3562

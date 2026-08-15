@@ -10,10 +10,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="${SDK_DIR:-/work/sdk}"
 FIRMWARE="$SDK/output/firmware"
 INVENTORY="${FIT_BOARD_INVENTORY:-$ROOT/board/rk356x-fit-boards.txt}"
-CANONICAL_DTSI="$ROOT/overlay/kernel/rockchip/ynh960-linux-root.dtsi"
+OVERLAY_DTS="$ROOT/overlay/kernel/rockchip"
 DTSI_LOCK="$FIRMWARE/.kernel-dtsi.lock"
-ROOT_DTSI=""
 ROOT_DTSI_PATHS=()
+BOARDS=()
 
 die() {
 	echo "ERROR: $*" >&2
@@ -24,16 +24,43 @@ kernel_source_dir() {
 	echo "$SDK/kernel"
 }
 
-collect_root_dtsi_paths() {
-	local kdir p
-	kdir="$(kernel_source_dir)"
-	p="$kdir/arch/arm64/boot/dts/rockchip/ynh960-linux-root.dtsi"
-	[[ -f "$p" ]] || die "installed ynh960 root DTSI not found at $p (run make apply-overlay)"
-	ROOT_DTSI_PATHS=("$p")
-	ROOT_DTSI="$p"
+canonical_root_dtsi() {
+	local board="$1"
+	echo "$OVERLAY_DTS/${board}-linux-root.dtsi"
 }
 
-# Patch a specific ynh960-linux-root.dtsi copy (not the live kernel tree).
+installed_root_dtsi() {
+	local board="$1" kdir
+	kdir="$(kernel_source_dir)"
+	echo "$kdir/arch/arm64/boot/dts/rockchip/${board}-linux-root.dtsi"
+}
+
+read_inventory_boards() {
+	local line
+	BOARDS=()
+	while IFS= read -r line || [[ -n "$line" ]]; do
+		line="${line%%#*}"
+		line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+		[[ -z "$line" ]] && continue
+		BOARDS+=("$line")
+	done <"$INVENTORY"
+	[[ ${#BOARDS[@]} -gt 0 ]] || die "empty FIT board inventory: $INVENTORY"
+}
+
+collect_root_dtsi_paths() {
+	local b p canon
+	read_inventory_boards
+	ROOT_DTSI_PATHS=()
+	for b in "${BOARDS[@]}"; do
+		canon="$(canonical_root_dtsi "$b")"
+		[[ -f "$canon" ]] || die "inventory board '$b' missing A/B root DTSI: $canon"
+		p="$(installed_root_dtsi "$b")"
+		[[ -f "$p" ]] || die "installed root DTSI not found at $p (run make apply-overlay)"
+		ROOT_DTSI_PATHS+=("$p")
+	done
+}
+
+# Patch a specific *-linux-root.dtsi copy (not the live kernel tree).
 patch_root_dtsi_file() {
 	local file="$1" letter="$2" from to
 	case "$letter" in
@@ -60,7 +87,8 @@ slot_dtb_dir() {
 }
 
 slot_dtsi_path() {
-	echo "$(slot_staging_dir "$1")/ynh960-linux-root.dtsi"
+	local slot="$1" board="$2"
+	echo "$(slot_staging_dir "$slot")/${board}-linux-root.dtsi"
 }
 
 slot_fit_path() {
@@ -80,38 +108,44 @@ expect_partlabel() {
 }
 
 restore_canonical_root_dtsi() {
-	collect_root_dtsi_paths
-	cp -f "$CANONICAL_DTSI" "$ROOT_DTSI"
+	local b
+	read_inventory_boards
+	for b in "${BOARDS[@]}"; do
+		local canon dest
+		canon="$(canonical_root_dtsi "$b")"
+		dest="$(installed_root_dtsi "$b")"
+		[[ -f "$canon" ]] || continue
+		[[ -d "$(dirname "$dest")" ]] || continue
+		cp -f "$canon" "$dest"
+	done
 }
 
 prepare_slot_dtsi() {
-	local slot="$1" dest
-	dest="$(slot_dtsi_path "$slot")"
-	mkdir -p "$(slot_staging_dir "$slot")"
-	cp -f "$CANONICAL_DTSI" "$dest"
-	patch_root_dtsi_file "$dest" "$slot"
-	local expect
+	local slot="$1" b dest expect
 	expect="$(expect_partlabel "$slot")"
-	grep -E "bootargs[[:space:]]*=[[:space:]]*\".*root=PARTLABEL=${expect}" "$dest" >/dev/null \
-		|| die "$dest does not select ${expect} (bootargs)"
+	mkdir -p "$(slot_staging_dir "$slot")"
+	read_inventory_boards
+	for b in "${BOARDS[@]}"; do
+		dest="$(slot_dtsi_path "$slot" "$b")"
+		cp -f "$(canonical_root_dtsi "$b")" "$dest"
+		patch_root_dtsi_file "$dest" "$slot"
+		grep -E "bootargs[[:space:]]*=[[:space:]]*\".*root=PARTLABEL=${expect}" "$dest" >/dev/null \
+			|| die "$dest does not select ${expect} (bootargs)"
+	done
+}
+
+install_slot_root_dtsi() {
+	local slot="$1" b
+	read_inventory_boards
+	for b in "${BOARDS[@]}"; do
+		cp -f "$(slot_dtsi_path "$slot" "$b")" "$(installed_root_dtsi "$b")"
+	done
 }
 
 resolve_dtb_dirs() {
 	KDIR="$(kernel_source_dir)"
 	DTB_DIR="$KDIR/arch/arm64/boot/dts/rockchip"
 	[[ -d "$DTB_DIR" ]] || die "kernel DTB dir missing: $DTB_DIR"
-}
-
-read_inventory_boards() {
-	local line
-	BOARDS=()
-	while IFS= read -r line || [[ -n "$line" ]]; do
-		line="${line%%#*}"
-		line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-		[[ -z "$line" ]] && continue
-		BOARDS+=("$line")
-	done <"$INVENTORY"
-	[[ ${#BOARDS[@]} -gt 0 ]] || die "empty FIT board inventory: $INVENTORY"
 }
 
 run_kernel_olddefconfig() {
@@ -250,19 +284,48 @@ ensure_kernel_config_fresh() {
 	fi
 }
 
-ensure_boot_fit_its() {
-	[[ -r "$CANONICAL_DTSI" ]] || die "missing canonical DTSI: $CANONICAL_DTSI"
-	grep -E 'bootargs[[:space:]]*=[[:space:]]*".*root=PARTLABEL=rootfs_a' "$CANONICAL_DTSI" >/dev/null \
-		|| die "$CANONICAL_DTSI does not select rootfs_a (bootargs)"
-	bash "$ROOT/scripts/generate-boot-fit-its.sh" \
-		"$INVENTORY" "$ROOT/board/boot-multi.its"
+install_boot_fit_its() {
+	local its="${1:?usage: install_boot_fit_its <its-file>}"
+	local dest_dir
+	[[ -r "$its" ]] || die "missing ITS: $its"
 	for dest_dir in \
 		"$SDK/device/rockchip/.chips/rk3566_rk3568" \
-		"$SDK/device/rockchip/rk3566_rk3568"; do
+		"$SDK/device/rockchip/rk3566_rk3568" \
+		"$SDK/device/rockchip/.chip"; do
 		if [[ -d "$dest_dir" ]]; then
-			cp -f "$ROOT/board/boot-multi.its" "$dest_dir/boot-multi.its"
+			cp -f "$its" "$dest_dir/boot-multi.its"
 		fi
 	done
+}
+
+ensure_boot_fit_its() {
+	local b canon
+	read_inventory_boards
+	for b in "${BOARDS[@]}"; do
+		canon="$(canonical_root_dtsi "$b")"
+		[[ -r "$canon" ]] || die "missing canonical DTSI for board '$b': $canon"
+		grep -E 'bootargs[[:space:]]*=[[:space:]]*".*root=PARTLABEL=rootfs_a' "$canon" >/dev/null \
+			|| die "$canon does not select rootfs_a (bootargs)"
+	done
+	bash "$ROOT/scripts/generate-boot-fit-its.sh" \
+		"$INVENTORY" "$ROOT/board/boot-multi.its"
+	install_boot_fit_its "$ROOT/board/boot-multi.its"
+}
+
+# Rockchip mk-fitimage.sh only substitutes @KERNEL_DTB@ / @KERNEL_IMG@ / @RESOURCE_IMG@.
+# Multi-board placeholders (@KERNEL_DTB_<id>@) are for pack-boot-fit-multi.sh only.
+# Stage a single-conf ITS so ./build.sh kernel can finish Image + resource.
+stage_rockchip_image_build_its() {
+	local default tmp_inv tmp_its
+	read_inventory_boards
+	default="${FIT_DEFAULT_BOARD:-${BOARDS[0]}}"
+	mkdir -p "$ROOT/output"
+	tmp_inv="$ROOT/output/.boot-image-build-boards.txt"
+	tmp_its="$ROOT/output/.boot-image-build.its"
+	printf '%s\n' "$default" >"$tmp_inv"
+	bash "$ROOT/scripts/generate-boot-fit-its.sh" "$tmp_inv" "$tmp_its"
+	install_boot_fit_its "$tmp_its"
+	echo "=== Image-phase ITS: single conf ($default) for Rockchip mk-fitimage ==="
 }
 
 build_kernel_image() {
@@ -274,6 +337,7 @@ build_kernel_image() {
 	fi
 	echo "=== A/B kernel FIT: build shared Image + resource ==="
 	ensure_kernel_config_fresh
+	stage_rockchip_image_build_its
 	# Rockchip ./build.sh kernel can exit 0 even when 10-kernel.sh fails, then we
 	# would pack the previous Image. Capture the log and refuse that path.
 	mkdir -p "$ROOT/output/logs"
@@ -282,11 +346,15 @@ build_kernel_image() {
 		cd "$SDK"
 		./build.sh kernel
 	) 2>&1 | tee "$klog"; then
+		ensure_boot_fit_its
 		die "./build.sh kernel failed — try: bash scripts/docker-run.sh bash -lc 'make -C /work/sdk/kernel mrproper && ./build.sh kernel'"
 	fi
 	if grep -q 'ERROR: Running .*/10-kernel.sh' "$klog"; then
+		ensure_boot_fit_its
 		die "./build.sh kernel reported 10-kernel.sh failure (Image not rebuilt); see $klog"
 	fi
+	# Restore multi-conf ITS for pack-boot-fit-multi (A/B slots).
+	ensure_boot_fit_its
 	run_kernel_olddefconfig
 	image="$(kernel_source_dir)/arch/arm64/boot/Image"
 	[[ -r "$image" ]] || die "kernel Image missing after ./build.sh kernel"
@@ -319,7 +387,7 @@ build_kernel_slot() {
 	(
 		flock -x 9
 		collect_root_dtsi_paths
-		cp -f "$(slot_dtsi_path "$slot")" "$ROOT_DTSI"
+		install_slot_root_dtsi "$slot"
 		force_rebuild_inventory_dtbs "$expect"
 		# Stage under the same lock — live DTB_DIR must not be overwritten by the
 		# sibling slot before we copy into .kernel-slot-*/dtbs/.
@@ -389,8 +457,12 @@ verify_ab_fits() {
 }
 
 main() {
-	local only="${1:-}"
-	[[ -r "$CANONICAL_DTSI" ]] || die "missing $CANONICAL_DTSI"
+	local only="${1:-}" b
+	read_inventory_boards
+	for b in "${BOARDS[@]}"; do
+		[[ -r "$(canonical_root_dtsi "$b")" ]] \
+			|| die "missing $(canonical_root_dtsi "$b")"
+	done
 	trap restore_canonical_root_dtsi EXIT
 
 	python3 "$ROOT/scripts/patch-resource-img-partlabel.py" --self-test \

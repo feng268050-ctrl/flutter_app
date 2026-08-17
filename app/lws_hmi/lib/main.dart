@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterpi_gstreamer_video_player/flutterpi_gstreamer_video_player.dart';
 import 'package:lws_hmi/app/app.dart';
-import 'package:lws_hmi/features/ai/application/ai_daemon_supervisor.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/statistics/application/legacy_static_data_migrator.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
@@ -16,13 +16,12 @@ const _kRunBoardProfile = '/run/hmi/board_profile.json';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Overlap wallpaper decode with board profile / Linux bring-up so Home's
-  // first paint can hit the image cache (avoids cards-before-backdrop flash).
-  final backdropPrecache = HomeAssets.precacheBackdrop();
+  // Warm Home backdrop in parallel with board profile; do not await before
+  // runApp (boot KPI — first frame may briefly miss cache, then fill in).
+  unawaited(HomeAssets.precacheBackdrop());
   if (Platform.isLinux) {
-    await _migrateLegacyStatistics();
-  }
-  if (Platform.isLinux) {
+    // Boot KPI: do not await SQLite / AI before first frame (Plan A C-2).
+    unawaited(_migrateLegacyStatistics());
     final isWayland =
         (Platform.environment['WAYLAND_DISPLAY'] ?? '').trim().isNotEmpty;
     if (isWayland) {
@@ -32,11 +31,9 @@ Future<void> main() async {
       // eLinux GStreamer texture plugin.
       FlutterpiVideoPlayer.registerWith();
     }
-    // P3.3+: App-owned AI daemon (non-fatal if binary not shipped yet).
-    await AiDaemonSupervisor.instance.ensureStarted();
+    // AI daemon starts on demand (LiveWeld / AI Vision ensureStarted).
   }
   final profile = await _loadBoardProfile();
-  await backdropPrecache;
   runApp(LwsHmiApp(boardProfile: profile));
 }
 
@@ -50,13 +47,13 @@ Future<void> _migrateLegacyStatistics() async {
 }
 
 Future<BoardProfile> _loadBoardProfile() async {
-  // Host/desktop UI work without an OEM partition.
+  // Host/desktop UI work without an OEM partition (in-code stub, not an asset).
   if (!Platform.isLinux) {
-    return BoardProfile.loadAsset(HmiHalAssets.boardProfile);
+    return HmiHalAssets.hostDevBoardProfile();
   }
 
   final file = File(_kRunBoardProfile);
-  if (!await file.exists()) {
+  if (!file.existsSync()) {
     throw StateError(
       'Board profile missing: $_kRunBoardProfile. '
       'oem-compose must write it before HMI starts — '
@@ -64,7 +61,7 @@ Future<BoardProfile> _loadBoardProfile() async {
     );
   }
 
-  final oem = await BoardProfile.loadFile(_kRunBoardProfile);
+  final oem = BoardProfile.fromJsonString(file.readAsStringSync());
   return oem.withProductConfigs(
     gpio: HmiHalAssets.gpioForBoard(oem.info.boardId),
     modbus: HmiHalAssets.modbus,

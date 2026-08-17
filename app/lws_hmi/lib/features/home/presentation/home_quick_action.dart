@@ -86,6 +86,7 @@ class HomeQuickAction extends StatefulWidget {
     this.blurIntensity = CyberBlurIntensity.extreme,
     this.blurTint = CyberBlurTint.warm,
     this.clickSoundEnabled = true,
+    this.deferFrost = false,
   });
 
   final double cardWidth;
@@ -106,6 +107,9 @@ class HomeQuickAction extends StatefulWidget {
   final CyberBlurIntensity blurIntensity;
   final CyberBlurTint blurTint;
   final bool clickSoundEnabled;
+
+  /// When true, paints border-only glass until [deferFrost] clears (boot KPI).
+  final bool deferFrost;
 
   @override
   State<HomeQuickAction> createState() => _HomeQuickActionState();
@@ -211,6 +215,9 @@ class _HomeQuickActionState extends State<HomeQuickAction>
           final scale =
               scaleOnPress ? lerpDouble(1.0, kHomeQaPressScale, t)! : 1.0;
           final labelColor = Color.lerp(_kLabelIdle, _kLabelPressed, t)!;
+          final frostIntensity = widget.deferFrost
+              ? CyberBlurIntensity.transparent
+              : widget.blurIntensity;
 
           Widget card = SizedBox(
             width: widget.cardWidth,
@@ -225,7 +232,7 @@ class _HomeQuickActionState extends State<HomeQuickAction>
                     width: widget.cardWidth,
                     height: widget.cardHeight,
                     sampleMode: widget.sampleMode,
-                    intensity: widget.blurIntensity,
+                    intensity: frostIntensity,
                     blurTint: widget.blurTint,
                     borderRadius: radius,
                     // Home QA only: 30% white (buttons use buttonRim 70%).

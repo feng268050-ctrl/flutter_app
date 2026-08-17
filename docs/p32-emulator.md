@@ -1,8 +1,8 @@
 # P3.2 emulator — same kernel + same rootfs + OEM switch (QEMU)
 
-Goal: prove **one OS** (`Image` from `make build-kernel` + `rootfs.img` from `make build-rootfs`) works for multiple board×screen SKUs by swapping **OEM** only. Guest OEM = `sim_virt`. Device OEM = `ynh960_…`. Flutter still starts via `oem-compose` → `hmi.service` → `hmi-launch.sh`.
+Goal: prove **one OS** (`Image` from `make build-kernel` + `rootfs.img` from `make build-rootfs`) works for multiple board×screen SKUs by swapping **OEM** only. Guest OEM = `sim-virt`. Device OEM = `ynh960_…`. Flutter still starts via `oem-compose` → `hmi.service` → `hmi-launch.sh`.
 
-**UI scale:** `display.conf` `ui_scale=1.0` is physical 1:1 (no App hard-coded rematch). The **sim_virt** OEM screen pack (`oem/screens/virt/screen.json`) carries **`default_ui_scale=1.28`** (~128%) for the 1536×960 virtio display — seeded into `display.conf` on first boot when the key is absent. Override in OS Settings → Display if needed (or write `ui_scale=1.28` under `/var/lib/hal/display.conf`). Physical **ynh960** panels use a separate OEM default (`1.13` / ~113%).
+**UI scale:** `display.conf` `ui_scale=1.0` is physical 1:1 (no App hard-coded rematch). The **sim-virt** OEM screen pack (`oem/screens/virt/screen.json`) carries **`default_ui_scale=1.28`** (~128%) for the 1536×960 virtio display — seeded into `display.conf` on first boot when the key is absent. Override in OS Settings → Display if needed (or write `ui_scale=1.28` under `/var/lib/hal/display.conf`). Physical **ynh960** panels use a separate OEM default (`1.13` / ~113%).
 
 **Host:** Apple Silicon **QEMU** (`make emulator` / qemu-virgl). OpenSpec capability: **`p32-qemu-guest`**.
 
@@ -16,11 +16,11 @@ OpenSpec: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`. Plan cont
 make build-app          # if App changed
 make build-rootfs       # same rootfs.img as the board (includes emulator .link names)
 make build-kernel       # same Image (+ FIT); publishes emulator Image
-make build-emulator     # assemble Image + rootfs + sim_virt oem
+make build-emulator     # assemble Image + rootfs + sim-virt oem
 make emulator           # qemu-system-aarch64 → boot to HMI (ready NIC/USB map)
 ```
 
-`make build-emulator` builds `OEM_ID=sim_virt` oem if needed.
+`make build-emulator` builds `OEM_ID=sim-virt` oem if needed.
 
 **Host GPU (required on macOS):** stock `brew install qemu` has OpenGL disabled. Install VirGL QEMU once:
 
@@ -40,7 +40,7 @@ Do **not** hand-assemble a half-empty VM. The launcher always sets:
 | Guest | Host wiring (default) |
 |-------|------------------------|
 | `/dev/vda` rootfs.img | same as device |
-| `/dev/vdb` → `/oem` | `sim_virt` oem.img |
+| `/dev/vdb` → `/oem` | `sim-virt` oem.img |
 | `eth0` MAC `52:54:00:12:e0:00` | **IP Camera dedicated link** — bridge host USB-LAN / Ethernet (`EMULATOR_ETH0_IFACE`, auto) |
 | `wlan0` MAC `52:54:00:12:a0:00` | Wi‑Fi role — virtio L3 via **Android-like SLIRP** (`10.0.2.16` / gw `10.0.2.2` / DNS `10.0.2.3`); **not** real 802.11 (see Future) |
 | `eth1` MAC `52:54:00:12:d0:00` | debug SSH only (not in `net_roles`) |
@@ -90,7 +90,9 @@ Build the bridge: `make build-libexec-binaries TOOL=emulator-tablet-to-touch` (t
 
 No dongle plugged: launcher **warns** (Modbus/BT will fail) but still boots — other subsystems continue (plan §6.6). Do **not** rely on ad-hoc `EMULATOR_QEMU_EXTRA=-device usb-host…` for the default path.
 
-**Modbus / USB-RS485:** product `modbus.json` uses `/dev/ttyS5` (ynh960 UART). sim OEM helper `modbus_rtu_device=/dev/ttyUSB0` remaps for the QEMU guest. Host dongle must be passed through (`EMULATOR_USB=auto` or `EMULATOR_USB=1a86:7523`); close any macOS app holding `/dev/cu.usbserial-*` before `make emulator`. Guest check: `ls /dev/ttyUSB*`.
+**Modbus / USB-RS485:** product `modbus.json` `device_by_board.sim` (and default
+sim OEM helper `modbus_rtu_device`) both map to `/dev/ttyUSB0` for the QEMU guest.
+Host dongle must be passed through (`EMULATOR_USB=auto` or `EMULATOR_USB=1a86:7523`); close any macOS app holding `/dev/cu.usbserial-*` before `make emulator`. Guest check: `ls /dev/ttyUSB*`.
 
 Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 
@@ -100,7 +102,7 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 |------|--------|
 | `output/firmware/emulator/Image` | Same build as FIT (`make build-kernel`); includes `emulator-virtio.config` (virtio for QEMU — not a ynh960 board feature) |
 | `output/firmware/emulator/rootfs.img` | Grown **copy** of device `rootfs.img` to **1536M** (fixed; not an env override) — device OTA stays 600M; emulator needs headroom for `debug-app` (no userdata partition) |
-| `output/firmware/emulator/oem.img` | `oem/out/sim_virt/oem.img` |
+| `output/firmware/emulator/oem.img` | `oem/out/sim-virt/oem.img` |
 | `output/firmware/emulator/provision.img` | Per-developer virtio disk (4 MiB ext4) — identity + tunables; **not** in OEM. **`make build-emulator` keeps an existing file; `FORCE=1` recreates it** |
 | `output/firmware/boot.img` | Device FIT (unchanged) |
 
@@ -123,7 +125,7 @@ Same OS image as device; sim/virt is another motherboard (`lws.emulator=1` / `bo
 
 - `usb-otg-role-boot.service` — skipped (`ConditionKernelCommandLine=!lws.emulator=1`; sim has no OTG)  
 - `ab-boot-confirm.service` — skipped (no GPT A/B on virtio rootfs)  
-- `mainserver.service` / `param-update.service` — skipped (ynh960 MIPI/ParamUpdate)  
+- `mainserver.service` / Innohi `ParamUpdate` — retired; `storage-init.service` skipped on emulator (`ConditionKernelCommandLine=!lws.emulator=1`)  
 - `async-commit` / `pwrkey-poweroff` / `cpu-performance` — skipped via drop-ins (`!lws.emulator=1`)  
 - `serial-stty.service` — skipped (`ConditionPathExists=/dev/ttyFIQ0`; Rockchip FIQ console)  
 - `tee-supplicant.service` — skipped (`ConditionPathExists=/dev/tee0`); must **not** use `RequiresMountsFor=/userdata` (that waits for the mount *before* Conditions, stalling boards without userdata)  

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Host serial console: MODE=TTL (default, pyserial miniterm) or MODE=RS485|RS232
 # (curses hex console with fixed TX input bar).
-# TTL: USB-TTL → board UART2 / ttyFIQ0 @ 1500000 8N1 (quit: Ctrl+]).
+# TTL baud (when BAUD unset): cu.usbmodem* / wch* / SLAB* → 1500000 (ynh960 FIQ);
+#   cu.usbserial* → 115200 (ek3562 USB-C Debug CH340). BAUD= always wins.
 # RS485/RS232: USB adapter @ 115200 default; RX hex / TX bar (quit: Esc or :q).
 set -euo pipefail
 
@@ -10,15 +11,15 @@ PORT="${PORT:-}"
 MODE_RAW="${MODE:-TTL}"
 MODE="$(printf '%s' "$MODE_RAW" | tr '[:lower:]' '[:upper:]')"
 LOG_PATH="${LOG_FILE:-}"
+# Preserve whether the operator set BAUD before we pick a port-aware default.
+USER_BAUD="${BAUD:-}"
 
 case "$MODE" in
   TTL)
-    DEFAULT_BAUD=1500000
     BACKEND=miniterm
     QUIT_HINT='Ctrl+]'
     ;;
   RS485|RS232)
-    DEFAULT_BAUD=115200
     BACKEND=serial-hex-console
     QUIT_HINT='Esc or :q'
     ;;
@@ -28,7 +29,19 @@ case "$MODE" in
     ;;
 esac
 
-BAUD="${BAUD:-$DEFAULT_BAUD}"
+# TTL: onboard CH9102 often enumerates as cu.usbmodem* @ 1.5M (ynh960 Debug).
+# Classic CH340 USB-C Debug (ek3562) is cu.usbserial* @ 115200. External WCH/SLAB
+# TTL dongles to ynh960 UART2 stay 1.5M unless BAUD= overrides.
+ttl_default_baud() {
+  case "$1" in
+    /dev/cu.usbserial*|/dev/ttyUSB*)
+      echo 115200
+      ;;
+    *)
+      echo 1500000
+      ;;
+  esac
+}
 
 is_usb_uart() {
   case "$1" in
@@ -98,12 +111,14 @@ usage() {
 Usage: [MODE=TTL|RS485|RS232] [PORT=…] [BAUD=…] make serial-console
 
   MODE (default TTL, case-insensitive):
-    TTL    pyserial miniterm → USB-TTL → board ttyFIQ0 (default baud 1500000)
+    TTL    pyserial miniterm → debug UART (baud by port unless BAUD= set)
     RS485  curses hex console → USB-RS485 (default baud 115200; RX hex + TX bar)
     RS232  curses hex console → USB-RS232 (default baud 115200; RX hex + TX bar)
 
   PORT=…                    host serial device (auto-pick /dev/cu.usb* if unset)
   BAUD=…                    override baud (all modes)
+                            TTL defaults: cu.usbserial* → 115200 (ek3562 Debug);
+                              cu.usbmodem* / wch* / SLAB* → 1500000 (ynh960 FIQ)
   DATABITS=…                framing (RS485/RS232): 5|6|7|8 (default 8)
   PARITY=…                  framing: none|even|odd|mark|space (default none)
   STOPBITS=…                framing: 1|2 (default 1)
@@ -136,6 +151,14 @@ if [[ -z "$PORT" ]]; then
 fi
 
 [[ -e "$PORT" ]] || { echo "ERROR: $PORT not found" >&2; list_ports; exit 1; }
+
+if [[ -n "$USER_BAUD" ]]; then
+  BAUD="$USER_BAUD"
+elif [[ "$MODE" == TTL ]]; then
+  BAUD="$(ttl_default_baud "$PORT")"
+else
+  BAUD=115200
+fi
 
 if lsof "$PORT" >/dev/null 2>&1; then
   echo "ERROR: $PORT is busy (another serial-console / serial-sniff?)" >&2

@@ -4,7 +4,7 @@
 
 **能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**产品子进程**（MediaMTX、AI daemon）经 **`cyber_pm`** 由 App 监护，**不**默认进通用 rootfs；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。MediaMTX App 化见 [`app-owned-mediamtx-cyber-pm`](../openspec/changes/archive/2026-07-30-app-owned-mediamtx-cyber-pm/)。AI daemon App 化见 [`app-owned-ai-daemon`](../openspec/changes/archive/2026-08-01-app-owned-ai-daemon/)（已归档）。统一整机 OTA 见 [`unified-ota-cyber-ota`](../openspec/changes/archive/2026-08-06-unified-ota-cyber-ota/)（已归档）。
 
-**板级范围（当前）**：**ynh960 / ynh962 / ynh961** 同产品线三档（RK3566 → RK3568B2 → RK3568）；**P1～P4 以 ynh960 验收**。中长期目标是 **少量不同主板 + 不同屏幕** 共用 OS 契约与 CyberUI，而非每产品从零开始。Rockchip SDK `**rk3566_rk3568`** profile 见 **§3.0**。
+**板级范围（当前）**：ynh960 / ynh961 / ynh962 同系列；**一张通用 OS**（共享 **kernel Image** + 多 DTB FIT + 共享 rootfs 用户态），产品用 **`APP=`**，硬件/屏用 **OEM**。新板 = DT + OEM，不为每板 fork Image；扩 SoC（如 RK3562）= 驱动并进 **通用 Image** Kconfig + 新 DTB 进 FIT 清单 — 见 [`docs/make-commands.md`](make-commands.md) **构建模型**。P1～P4 以 ynh960 验收。Rockchip SDK 目录名 `rk3566_rk3568` 仅为**当前 lunch 平台 profile**，不是 build-kernel/rootfs 的选板参数。
 
 ---
 
@@ -19,7 +19,7 @@
 | **Linux P2.5 — 双分区刷机** | A/B 双分区；经 Wi‑Fi / USB 的 `make upgrade` 落盘；为 **P4.8 统一整机 OTA**（验签 + 同 apply）打底（原 P2.4） | ✅ |
 | **Linux P3.0 — UI 框架 + IME** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（`packages/` path 包；初期 Frosted Glass，API 面向可换设计）；骨架已落地，持续优化中 | 🔄 |
 | **Linux P3.1 — HAL 硬件抽象层** | **Dart HAL 子包** + **systemd-networkd 网络栈切换**（wpa D-Bus + networkd L3；无 Rust/`hald`）。设计：[`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md) | ✅ |
-| **Linux P3.2 — Linux 模拟器** | 同 `Image` + 同 rootfs 内容 + OEM `sim_virt`；QEMU + VirGL 自动 `hmi.service`；细则 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §6 / W4；操作 [`p32-emulator.md`](p32-emulator.md)；OpenSpec `archive/2026-07-28-platform-p32-sim-virt` | ✅ |
+| **Linux P3.2 — Linux 模拟器** | 同 `Image` + 同 rootfs 内容 + OEM `sim-virt`；QEMU + VirGL 自动 `hmi.service`；细则 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §6 / W4；操作 [`p32-emulator.md`](p32-emulator.md)；OpenSpec `archive/2026-07-28-platform-p32-sim-virt` | ✅ |
 | **Linux P3.3 — AI 库迁移** | `native/lws_ai` + `lws_ai_daemon` + RKNN；App 经 **`cyber_pm`** 监护；OpenSpec [`archive/2026-08-01-app-owned-ai-daemon`](../openspec/changes/archive/2026-08-01-app-owned-ai-daemon/) | ✅ |
 | **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务、**P4.8 统一整机 OTA** 等（原 P5 业务；子阶段见 **§1.2**）；IPC MediaMTX 已 App 化 | ✅ |
 | **Linux P5.0 — Android 兼容** | Flutter App 打 **APK**；Modbus / GPIO / Wi‑Fi / BT 等在 **App 侧**接 Android / `YNHAPI`（**不**往 `cyber_hal` 加 Android 后端） | 🔲 |
@@ -73,7 +73,7 @@ P3.1  Dart HAL 子包 + 网络栈切换 ✅
 
 P3.2  Linux 模拟器 ✅（W4 / archive/2026-07-28-platform-p32-sim-virt）
     ├─ QEMU + VirGL + Weston + eLinux + Linux HAL；三网卡 + ethssh；无 OTG
-    ├─ sim_virt OEM；USB BT/串口；GPIO LED 悬浮层（参考系统状态浮层）
+    ├─ sim-virt OEM；USB BT/串口；GPIO LED 悬浮层（参考系统状态浮层）
     ├─ 平台化：OEM · 通用 boot/rootfs · 自有 linux-sdk
     │   （见 docs/platform-os-oem-sdk-plan.md；gpio/modbus 仍属产品 App）
     │   操作见 docs/p32-emulator.md（原 UTM 方案已改为 QEMU）

@@ -147,7 +147,7 @@ HAL mid-session writes SHALL use `/var/lib/{wpa_supplicant,network,bluetooth,hal
 - **THEN** existing restore hooks SHALL still bring the stack back when `wifi-wanted` (or equivalent) is set
 
 ### Requirement: Config-driven GPIO and Modbus
-`hal/gpio` and `hal/modbus` SHALL be constructed from a versioned config file (or parsed config object). Product indicator LEDs SHALL be expressed as a Status LED bank (named channels) in gpio config, with optional migration from named lines. Line hardware addressing SHALL support dual Linux backends (gpiod character device and `gpio_innohi` sysfs) as specified by `hal-gpio-gpiod-backend`. Modbus register maps SHALL be expressed as named attributes in modbus config (including bitfield alarms as human-readable attribute ids). Product Apps MUST NOT hard-code ynh960 pin numbers or Modbus addresses/bitmasks as the long-term pattern after cutover. GPIO and Modbus SHALL remain separate top-level modules (not under `hal/io`). **Product** `gpio.json` / `modbus.json` catalogs SHALL be owned by the product App (or pack) and referenced from `BoardProfile.configs`; they MUST NOT be shipped under `packages/cyber_hal/boards/<board_id>/` as the sole product map (the same motherboard may serve multiple products).
+`hal/gpio` and `hal/modbus` SHALL be constructed from a versioned config file (or parsed config object). Product indicator LEDs SHALL be expressed as a Status LED bank (named channels) in gpio config, with optional migration from named lines. Line hardware addressing SHALL support dual Linux backends (gpiod character device and optional sysfs value nodes) as specified by `hal-gpio-gpiod-backend`. Shipping Linux product catalogs SHALL prefer gpiod. Modbus register maps SHALL be expressed as named attributes in modbus config (including bitfield alarms as human-readable attribute ids). Product Apps MUST NOT hard-code ynh960 pin numbers or Modbus addresses/bitmasks as the long-term pattern after cutover. GPIO and Modbus SHALL remain separate top-level modules (not under `hal/io`). **Product** `gpio.<board_id>.json` / `modbus.json` catalogs SHALL be owned by the product App (or pack) and referenced from `BoardProfile.configs`; they MUST NOT be shipped under `packages/cyber_hal/boards/<board_id>/` as the sole product map (the same motherboard may serve multiple products).
 
 #### Scenario: Demo LEDs via gpio config
 - **WHEN** the Demo toggles panel LEDs after gpio cutover
@@ -294,7 +294,7 @@ Linux backends outside `hal/network` ethernet/wifi apply SHALL meet the same reu
 - **`hal/bluetooth`:** device/adapter APIs SHALL use BlueZ D-Bus as the portable core. Stack bring-up, A2DP sink orchestration, pairing agent ensure, and HID heal SHALL go through an injected board port (`BtStack` or equivalent). HAL MUST NOT leave heal or A2DP helper paths as non-overridable private constants.
 - **Kind C helpers** (`hal/datetime` sync, **`hal/network` SSH debug**, backlight/volume/mouse apply, volume A2DP): every default argv/path MUST be overridable. HAL default names SHOULD avoid iface prefixes (e.g. prefer `sync-time` over `wlan0-time-sync.sh`).
 - **`hal/usb_otg`:** OTG mode apply SHALL use injectable helpers and/or sysfs role paths; boards without materials fail closed. Attach/detach watching MUST NOT be required.
-- **`hal/gpio` / `hal/modbus` / `hal/sys_info`:** remain config/`/proc`-driven; Demo/App SHALL resolve gpio/modbus assets and storage mounts from the board profile when present. Product catalogs are App assets (e.g. `assets/hal/gpio.json`), not board-named files inside `cyber_hal`.
+- **`hal/gpio` / `hal/modbus` / `hal/sys_info`:** remain config/`/proc`-driven; Demo/App SHALL resolve gpio/modbus assets and storage mounts from the board profile when present. Product catalogs are App assets (e.g. `assets/hal/gpio.ynh960.json`), not board-named files inside `cyber_hal`.
 
 #### Scenario: Other product without bt-* tree
 
@@ -385,7 +385,6 @@ Dart HAL Stub backends SHALL be selected only when the environment variable `HAL
 - **THEN** the selected backend MAY be the software fallback
 - **AND** the concrete TEE client type is not required in product App imports for Wi‑Fi-only UI
 
-
 ### Requirement: Platform version and SELinux probes for OS Settings
 
 The HAL SHALL expose read-only platform inventory fields usable by the OS Settings Operating System page, including at least: `/etc/os-release` name/version summary; Linux kernel release (existing); SELinux mode as `Disabled` \| `Permissive` \| `Enforcing` (or unavailable); BusyBox version; Glibc version; WPA Supplicant version; BlueZ version; OpenSSL version; OpenSSH version; GStreamer version; Flutter engine/SDK pin string consistent with the image; Buildroot version stamp when baked. Each probe MUST soft-fail independently (null/unavailable) without failing the whole `SysInfo` / platform-versions snapshot. Apps MUST NOT be required to shell out from the UI isolate for these strings when HAL provides them.
@@ -408,3 +407,13 @@ Callers SHALL be able to read the active Secrets / KEK backend identifier as `so
 
 - **WHEN** the active Secrets backend is software
 - **THEN** a status query reports `software` (or equivalent identifier) without sealing data
+
+### Requirement: Physical input policy HAL module
+
+`hal/input` SHALL export `PhysicalInputPolicy` reading and writing `/var/lib/hal/input.conf` keys `physical_keyboard_enabled` and `physical_mouse_enabled`. Missing keys SHALL default to enabled. `LinuxKeyboard.isPresent` and `LinuxMouseSettingsController.isPresent` SHALL consult policy before HID probes.
+
+#### Scenario: Default enabled without conf
+
+- **WHEN** `input.conf` is absent and pack seed did not run
+- **THEN** policy reports keyboard and mouse enabled
+

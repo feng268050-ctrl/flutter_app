@@ -43,6 +43,13 @@ link_unit() {
 	ln -sf "$path" "$WANTS/$unit"
 }
 
+# Pull onto sysinit so the unit is not gated on multi-user → After=basic.
+link_unit_sysinit() {
+	local unit="$1"
+	local path="/etc/systemd/system/$unit"
+	ln -sf "$path" "$SYSINIT_WANTS/$unit"
+}
+
 disable_boot_unit() {
 	local unit="$1"
 	local wants_dir link
@@ -59,20 +66,16 @@ disable_boot_unit() {
 }
 
 # KPI path: display init early; HMI after local-fs.
-if [ -f "$TARGET_DIR/etc/systemd/system/param-update.service" ]; then
-	ln -sf "/etc/systemd/system/param-update.service" \
-		"$SYSINIT_WANTS/param-update.service"
-	echo "post-systemd: enabled param-update.service (sysinit.target)"
-fi
-
-if [ -f "$TARGET_DIR/etc/systemd/system/mainserver.service" ]; then
-	link_unit mainserver.service
-	echo "post-systemd: enabled mainserver.service"
+if [ -f "$TARGET_DIR/etc/systemd/system/storage-init.service" ]; then
+	ln -sf "/etc/systemd/system/storage-init.service" \
+		"$SYSINIT_WANTS/storage-init.service"
+	echo "post-systemd: enabled storage-init.service (sysinit.target)"
 fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/cpu-performance.service" ]; then
 	link_unit cpu-performance.service
-	echo "post-systemd: enabled cpu-performance.service"
+	link_unit_sysinit cpu-performance.service
+	echo "post-systemd: enabled cpu-performance.service (multi-user+sysinit)"
 fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/serial-stty.service" ]; then
@@ -87,12 +90,14 @@ fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/oem-compose.service" ]; then
 	link_unit oem-compose.service
-	echo "post-systemd: enabled oem-compose.service"
+	link_unit_sysinit oem-compose.service
+	echo "post-systemd: enabled oem-compose.service (multi-user+sysinit)"
 fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/hmi.service" ]; then
 	link_unit hmi.service
-	echo "post-systemd: enabled hmi.service"
+	link_unit_sysinit hmi.service
+	echo "post-systemd: enabled hmi.service (multi-user+sysinit)"
 fi
 
 if [ -f "$TARGET_DIR/etc/systemd/system/ab-boot-confirm.service" ]; then
@@ -126,7 +131,7 @@ purge_retired_rootfs_artifacts() {
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
-	purge_script="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
+	purge_script="$sdk_dir/buildroot/board/rockchip/common/lws-hmi/purge-retired-rootfs-artifacts.sh"
 	if [ -f "$purge_script" ]; then
 		sh "$purge_script" "$TARGET_DIR"
 		echo "post-systemd: purged retired rootfs artifacts"
@@ -183,7 +188,7 @@ install_lws_hmi_helper_scripts() {
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
-	overlay_scripts="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi"
+	overlay_scripts="$sdk_dir/buildroot/board/rockchip/common/rootfs-overlay/usr/libexec/hmi"
 	if [ ! -d "$overlay_scripts" ]; then
 		echo "post-systemd: skip helper scripts (missing $overlay_scripts — run make apply-overlay)"
 		return 0
@@ -201,8 +206,8 @@ sdk_dir="${SDK_DIR:-${RK_SDK_DIR:-}}"
 if [ -z "$sdk_dir" ]; then
 	sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 fi
-if [ -f "$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh" ]; then
-	sh "$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh" \
+if [ -f "$sdk_dir/buildroot/board/rockchip/common/lws-hmi/install-systemctl-wrapper.sh" ]; then
+	sh "$sdk_dir/buildroot/board/rockchip/common/lws-hmi/install-systemctl-wrapper.sh" \
 		"$TARGET_DIR" post-systemd
 fi
 
@@ -213,7 +218,7 @@ sync_flutter_engine_prebuilt() {
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
-	script="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/sync-flutter-engine.sh"
+	script="$sdk_dir/buildroot/board/rockchip/common/lws-hmi/sync-flutter-engine.sh"
 	if [ -f "$script" ]; then
 		sh "$script" "$TARGET_DIR"
 	else
@@ -229,7 +234,7 @@ sync_flutter_elinux_prebuilt() {
 	if [ -z "$sdk_dir" ]; then
 		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 	fi
-	script="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/sync-flutter-embedded-linux.sh"
+	script="$sdk_dir/buildroot/board/rockchip/common/lws-hmi/sync-flutter-embedded-linux.sh"
 	if [ -f "$script" ]; then
 		sh "$script" "$TARGET_DIR"
 	else

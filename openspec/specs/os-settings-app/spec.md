@@ -6,12 +6,12 @@ Independent Cyber OS Settings Flutter app (`app/os_settings` → `/opt/os_settin
 ## Requirements
 ### Requirement: OS Settings app installs as non-HMI Flutter bundle
 
-The repository SHALL include Flutter project `app/os_settings` (Flutter API pin **3.41.9**) with path dependencies on `cyber_hal`, `cyber_ui`, and `cyber_ime`. Building with `APP=os_settings make build-app` SHALL install a release AOT tree under overlay/device `/opt/os_settings` containing `lib/libapp.so` and `data/flutter_assets`, and MUST NOT embed `libflutter_engine.so`, `icudtl.dat`, or Flutter JIT blobs under that prefix. OS Settings SHALL load OEM `board_profile` via HAL and MUST NOT load product `gpio.json` / `modbus.json` assets.
+The repository SHALL include Flutter project `app/os_settings` (Flutter API pin **3.41.9**) with path dependencies on `cyber_hal`, `cyber_ui`, and `cyber_ime`. Building with `APP=os_settings make build-app` SHALL install a release AOT tree under `app/os_settings/build/bundle/release/` (device `/opt/os_settings`) containing `lib/libapp.so` and `data/flutter_assets`, and MUST NOT embed `libflutter_engine.so`, `icudtl.dat`, or Flutter JIT blobs under that prefix. OS Settings SHALL load OEM `board_profile` via HAL and MUST NOT load product `gpio.json` / `modbus.json` assets.
 
 #### Scenario: Analyze and build os_settings
 
 - **WHEN** the developer runs Flutter analyze on `app/os_settings` against the pinned SDK and `APP=os_settings make build-app`
-- **THEN** analyze passes and overlay `/opt/os_settings` has release AOT layout without engine/ICU/JIT orphans
+- **THEN** analyze passes and `app/os_settings/build/bundle/release/` has release AOT layout without engine/ICU/JIT orphans
 
 #### Scenario: No product register maps
 

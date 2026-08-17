@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Package the selected APP overlay install tree as v{semver}.tar.gz for
-# upgrade-app / publish-app. Tree matches make build-app → /opt/hmi layout.
+# Package app/<APP>/build/bundle/release as v{semver}.tar.gz for upgrade-app / publish-app.
+# Tar layout matches device /opt/hmi (or /opt/<APP>) after extract.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,7 +14,7 @@ usage() {
 	cat <<EOF
 Usage: make pack-app | bash scripts/pack-app.sh
 
-Packages OVERLAY_APP (\$OVERLAY_APP) into:
+Packages APP_BUNDLE_RELEASE (\$APP_BUNDLE_RELEASE) into:
   output/app/<APP>/v{semver}.tar.gz
 
 Prereq: APP=\$APP make build-app
@@ -24,9 +24,9 @@ EOF
 
 [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && usage && exit 0
 
-[[ -d "$OVERLAY_APP" ]] || die "missing overlay app tree: $OVERLAY_APP (run: make build-app)"
-[[ -f "$OVERLAY_APP/lib/libapp.so" ]] || die "missing $OVERLAY_APP/lib/libapp.so (run: make build-app)"
-[[ -d "$OVERLAY_APP/data/flutter_assets" ]] || die "missing $OVERLAY_APP/data/flutter_assets (run: make build-app)"
+[[ -d "$APP_BUNDLE_RELEASE" ]] || die "missing app bundle: $APP_BUNDLE_RELEASE (run: make build-app)"
+[[ -f "$APP_BUNDLE_RELEASE/lib/libapp.so" ]] || die "missing $APP_BUNDLE_RELEASE/lib/libapp.so (run: make build-app)"
+[[ -d "$APP_BUNDLE_RELEASE/data/flutter_assets" ]] || die "missing $APP_BUNDLE_RELEASE/data/flutter_assets (run: make build-app)"
 
 PUBSPEC="${APP_DIR}/pubspec.yaml"
 [[ -f "$PUBSPEC" ]] || die "missing $PUBSPEC"
@@ -49,6 +49,6 @@ tar \
 	--exclude='._*' \
 	--exclude='.DS_Store' \
 	--exclude='.gitkeep' \
-	-C "$OVERLAY_APP" -czf "$OUT" .
+	-C "$APP_BUNDLE_RELEASE" -czf "$OUT" .
 echo "OK: packaged $OUT"
 printf '%s\n' "$OUT"

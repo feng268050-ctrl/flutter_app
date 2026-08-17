@@ -3,6 +3,11 @@
   "transport": {
     "type": "rtu",
     "device": "/dev/ttyS5",
+    "device_by_board": {
+      "ynh960": "/dev/ttyS5",
+      "ek3562": "/dev/ttyS4",
+      "sim": "/dev/ttyUSB0"
+    },
     "baud": 115200,
     "data_bits": 8,
     "parity": "none",

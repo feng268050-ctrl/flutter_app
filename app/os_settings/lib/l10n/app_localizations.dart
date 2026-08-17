@@ -447,6 +447,18 @@ abstract class AppLocalizations {
   /// **'Physical Keyboard'**
   String get keyboardPhysicalSection;
 
+  /// No description provided for @keyboardTestSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Input'**
+  String get keyboardTestSection;
+
+  /// No description provided for @keyboardTestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to type with on-screen or physical keyboard'**
+  String get keyboardTestHint;
+
   /// No description provided for @keyboardLayoutHelp.
   ///
   /// In en, this message translates to:
@@ -476,6 +488,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not Detected'**
   String get keyboardNotDetected;
+
+  /// No description provided for @physicalKeyboardEnableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Physical Keyboard'**
+  String get physicalKeyboardEnableLabel;
+
+  /// No description provided for @physicalMouseEnableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Physical Mouse'**
+  String get physicalMouseEnableLabel;
+
+  /// No description provided for @physicalKeyboardPolicyOffHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Physical keyboard policy is off. libinput ignores USB and Bluetooth keyboards. Turning this on or off restarts Settings to apply the policy.'**
+  String get physicalKeyboardPolicyOffHelp;
+
+  /// No description provided for @physicalMousePolicyOffHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Physical mouse policy is off. libinput ignores USB and Bluetooth mice and hides the pointer cursor. Turning this on or off restarts Settings to apply the policy.'**
+  String get physicalMousePolicyOffHelp;
 
   /// No description provided for @cameraStatus.
   ///

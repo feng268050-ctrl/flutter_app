@@ -1,5 +1,5 @@
-// ynh960: MIPI panel — rk3566-evb2 disables dsi0/route_dsi0; re-enable here
-// (included last from customer_board_ynh960.dtsi).
+// ynh960: MIPI panel — rk3566-evb2 disables dsi0/route_dsi0; re-enable here.
+// Included from overlay/kernel/rockchip/customer_board_ynh960.dtsi (git SoT).
 #include "ynh960-panel-init.dtsi"
 
 &dsi0 {

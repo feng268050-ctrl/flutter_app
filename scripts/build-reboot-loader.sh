@@ -9,7 +9,7 @@ source "$ROOT/scripts/prebuilt-common.sh"
 SRC="$ROOT/native/reboot_loader/reboot-loader.c"
 OUT_DIR="$ROOT/prebuilt/reboot_loader/aarch64"
 OUT_BIN="$OUT_DIR/reboot-loader"
-OVERLAY_BIN="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/board/reboot-loader"
+OVERLAY_BIN="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/board/reboot-loader"
 STAMP_VER="1"
 FORCE="${FORCE:-0}"
 

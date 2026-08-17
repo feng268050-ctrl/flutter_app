@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Assemble P3.2 emulator bundle from *device* OS artifacts:
-#   Image (make build-kernel) + rootfs.img (make build-rootfs) + sim_virt oem.img
+#   Image (make build-kernel) + rootfs.img (make build-rootfs) + sim-virt oem.img
 # Does NOT build a separate virt userspace rootfs.
 #
 # Emulator rootfs is a fixed-size grown *copy* of the device 600M image (1536M)
@@ -23,9 +23,9 @@ warn() { echo "build-emulator: WARNING: $*" >&2; }
 mkdir -p "$OUT"
 
 # OEM
-log "ensuring sim_virt oem.img"
-OEM_ID=sim_virt bash "$ROOT/scripts/build-oem.sh"
-OEM_IMG="$ROOT/oem/out/sim_virt/oem.img"
+log "ensuring sim-virt oem.img"
+OEM_ID=sim-virt bash "$ROOT/scripts/build-oem.sh"
+OEM_IMG="$ROOT/oem/out/sim-virt/oem.img"
 [[ -r "$OEM_IMG" ]] || die "missing $OEM_IMG"
 
 # Kernel Image (same as FIT)
@@ -109,7 +109,7 @@ fi
 
 {
 	echo "sku=emulator-sim-virt"
-	echo "oem_id=sim_virt"
+	echo "oem_id=sim-virt"
 	echo "board_id=sim"
 	echo "screen_id=virt"
 	echo "image=$OUT/Image"

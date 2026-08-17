@@ -29,5 +29,5 @@ The published/upgraded app `tar.gz` SHALL contain the same installable payload t
 
 #### Scenario: Package includes libapp and assets
 
-- **WHEN** `make build-app` has produced a complete HMI overlay tree and the operator packages for publish or `upgrade-app`
+- **WHEN** `make build-app` has produced a complete release bundle at `app/<APP>/build/bundle/release/` and the operator packages for publish or `upgrade-app`
 - **THEN** the `tar.gz` includes the app binary and flutter_assets required for `hmi.service` to start

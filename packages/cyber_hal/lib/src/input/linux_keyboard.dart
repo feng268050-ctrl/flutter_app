@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cyber_hal/input/keyboard.dart';
+import 'package:cyber_hal/src/input/physical_input_policy.dart';
 import 'package:cyber_hal/src/linux/board_helper.dart';
 import 'package:flutter/foundation.dart';
 
@@ -16,12 +17,14 @@ class LinuxKeyboard implements Keyboard {
     this.restartHmi = defaultFlutterSeatRestartRunner,
     this.syncEtcDefault = true,
     this.applyRestart = true,
-  });
+    PhysicalInputPolicy? inputPolicy,
+  }) : inputPolicy = inputPolicy ?? PhysicalInputPolicy();
 
   final String preferencePath;
   final String etcDefaultKeyboardPath;
   final UsbHidKeyboardProbe probe;
   final HmiRestartRunner restartHmi;
+  final PhysicalInputPolicy inputPolicy;
 
   /// Also write Debian-style `/etc/default/keyboard` when possible.
   final bool syncEtcDefault;
@@ -56,7 +59,12 @@ class LinuxKeyboard implements Keyboard {
   static const ru = KeyboardLayout(id: 'ru', displayName: 'Russian');
 
   @override
-  Future<bool> isPresent() => probe.isPresent();
+  Future<bool> isPresent() async {
+    if (!await inputPolicy.isPhysicalKeyboardEnabled()) {
+      return false;
+    }
+    return probe.isPresent();
+  }
 
   @override
   Future<List<KeyboardLayout>> listLayouts() async =>

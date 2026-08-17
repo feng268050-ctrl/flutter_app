@@ -65,8 +65,7 @@ What it does (Innohi AIC8800D80 SDIO + UART combo — **illustrative**, not port
 3. Exit early if a wireless netdev already exists
 4. Detect SDIO vendor `c8a1` (AIC); **rebind** the SDIO MMC host once so
    `mmc-pwrseq` resets a combo that can stay enumerated but ignore CMD52/53
-5. Prefer `rk_wifi_init` (with timeout), else `insmod`
-   `aic8800_bsp` → `aic8800_fdrv` → optional `aic8800_btlpm`; on failure rescan once more
+5. `insmod` `aic8800_bsp` → `aic8800_fdrv` → optional `aic8800_btlpm`; on failure rescan once more
 6. Wait for wireless iface; `hciattach` on `/dev/ttyS1` (or `wifibt-util`) for `hci0`
 7. Non-AIC fallback: Rockchip `wifibt-init`
 

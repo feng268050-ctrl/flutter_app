@@ -1,11 +1,11 @@
 # buildroot-lws-hmi-image Specification
 
 ## Purpose
-TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
+Generic embedded OS rootfs image for the lws-hmi Buildroot profile: shared userspace stack; **product** differentiation via `APP=` (`/opt/hmi` bundle); **hardware** via OEM partition and multi-DTB boot FIT — not per-motherboard rootfs forks at build time.
 ## Requirements
-### Requirement: lws_hmi Buildroot defconfig is the default rootfs profile for ynh960
+### Requirement: lws_hmi Buildroot defconfig is the platform rootfs profile (lunch once)
 
-The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the SDK Buildroot configs tree, composed from `base/base.config`, `lws_hmi_{base,systemd,network,flutter,bt,npu,font,build,toolchain_external}.config`, `rk3566_rk3568_aarch64.config`, `gpu/gpu.config`, `wifibt/wireless.config`, `wifibt/bt.config`, and `powermanager.config`. P1 SHALL `#include` `lws_hmi_npu.config` to gate RKNPU runtime overlay staging (`make fetch-rknn-rt`). Product MediaMTX SHALL NOT be gated by an included `lws_hmi_mediamtx` rootfs fragment (App ships the binary under `/opt/hmi`). Other deferred fragments (`lws_hmi_gst_*`, `lws_hmi_platform`) remain as documented by their owning phases. The defconfig SHALL `#include` `chips/lws_hmi_selinux.config` so the product rootfs builds with SELinux userspace and a permissive refpolicy (see `buildroot-selinux`). The ynh960 board configuration SHALL set `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"` (resolving to `rockchip_rk3566_rk3568_lws_hmi`) and `RK_ROOTFS_SYSTEM_BUILDROOT=y`.
+The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the SDK Buildroot configs tree (current Rockchip **platform** tree name), composed from `base/base.config`, `lws_hmi_{base,systemd,network,flutter,bt,npu,font,build,toolchain_external}.config`, `rk3566_rk3568_aarch64.config`, `gpu/gpu.config`, `wifibt/wireless.config`, `wifibt/bt.config`, and `powermanager.config`. P1 SHALL `#include` `lws_hmi_npu.config` to gate RKNPU runtime overlay staging (`make fetch-rknn-rt`). Product MediaMTX SHALL NOT be gated by an included `lws_hmi_mediamtx` rootfs fragment (App ships the binary under `/opt/hmi`). Other deferred fragments (`lws_hmi_gst_*`, `lws_hmi_platform`) remain as documented by their owning phases. The defconfig SHALL `#include` `chips/lws_hmi_selinux.config` so the product rootfs builds with SELinux userspace and a permissive refpolicy (see `buildroot-selinux`). **`make lunch`** with the reference defconfig SHALL set `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"` (output folder `rockchip_rk3566_rk3568_lws_hmi`) and `RK_ROOTFS_SYSTEM_BUILDROOT=y`. **`make build-rootfs` SHALL take `APP=` for product rootfs artifacts, not a motherboard/chip selector.**
 
 #### Scenario: ynh960 lunch selects lws_hmi defconfig
 
@@ -108,14 +108,14 @@ Buildroot overlay packages for flutter-embedded-linux and flutter-engine SHALL c
 - **WHEN** developer inspects version pins
 - **THEN** `overlay/buildroot/flutter-engine.version`, `overlay/buildroot/flutter-sdk.version`, and `overlay/buildroot/flutter-embedded-linux.version` document the active P5.1 pins (Flutter **3.41.9** / eLinux **42d3d75a56**)
 
-### Requirement: Rootfs overlay and LCD display params are applied
+### Requirement: Rootfs overlay is applied
 
-Buildroot SHALL mount `rootfs-overlay` via `BR2_ROOTFS_OVERLAY` and install ynh960 LCD/MIPI parameter files under `/system/etc/` per existing lws-hmi display hooks.
+Buildroot SHALL mount `rootfs-overlay` via `BR2_ROOTFS_OVERLAY`. ynh960 panel timing SHALL come from kernel device tree. The image MUST NOT install Innohi ParamUpdate LCD tables under `/system/etc/`.
 
-#### Scenario: LCD params on target
+#### Scenario: LCD params not on target rootfs
 
-- **WHEN** P1 device boots
-- **THEN** `/system/etc/960_lcd_param_rk356x.txt` and `/system/etc/lcd_mipi_param.txt` exist
+- **WHEN** a current rootfs is produced
+- **THEN** `/system/etc/960_lcd_param_rk356x.txt` and `/system/etc/lcd_mipi_param.txt` are absent
 
 ### Requirement: P1 rootfs size target
 
@@ -410,7 +410,7 @@ The lws-hmi Buildroot configuration SHALL include the kernel and userspace piece
 
 ### Requirement: Factory artifact named factory.img includes oem
 
-`make build-img` SHALL produce `output/firmware/<APP>/<factory_sku>/factory.img` for the resolved `APP` (default `lws_hmi`) and `FACTORY_SKU`, packaging loader, uboot from `prebuilt/bootloader/<uboot_id>/`, misc, dual FIT, rootfs from `output/firmware/<APP>/rootfs.img`, and **oem** when `oem.img` is present for the resolved `OEM_ID`. A sibling `manifest.txt` SHALL record `app`, `uboot_id`, `oem_id`, and git/build identity. During migration, `output/firmware/update.img` SHALL remain usable as a symlink or copy of the selected/default APP + sku's `factory.img` so existing flash defaults keep working.
+`make build-img` SHALL produce `output/firmware/<APP>/<factory_sku>/factory.img` for the resolved `APP` (default `lws_hmi`) and `FACTORY_SKU`, packaging **early loader** and uboot from `prebuilt/bootloader/<uboot_id>/`, misc, dual FIT, rootfs from `output/firmware/<APP>/rootfs.img`, and **oem** when `oem.img` is present for the resolved `OEM_ID`. For RK3566/ynh960-class packages the early loader file SHALL be the rkbin OUTPUT basename **`rk356x_spl_loader_v*.bin`** when present (scripts resolve the glob or README-pinned name; exactly one match required). Implementations MAY accept a transitional `MiniLoaderAll.bin` only as a documented fallback or symlink to that `rk356x_spl_loader_v*.bin`. Invented names such as `loader.bin` or `bootloader.bin` MUST NOT be required as the authoritative input. A sibling `manifest.txt` SHALL record `app`, `uboot_id`, `oem_id`, and git/build identity. During migration, `output/firmware/update.img` SHALL remain usable as a symlink or copy of the selected/default APP + sku's `factory.img` so existing flash defaults keep working.
 
 #### Scenario: build-img writes per-APP per-sku factory.img
 
@@ -421,6 +421,11 @@ The lws-hmi Buildroot configuration SHALL include the kernel and userspace piece
 
 - **WHEN** the operator sets `FACTORY_SKU=ynh960-p800` and `APP=lws_hmi` (or defaults) for `make flash`
 - **THEN** the flash path SHALL target that APP+sku's `factory.img` (or the compatible `update.img` symlink to it)
+
+#### Scenario: Packaging prefers rk356x_spl_loader
+
+- **WHEN** `prebuilt/bootloader/<uboot_id>/rk356x_spl_loader_v*.bin` exists for the resolved SKU (exactly one match or README pin)
+- **THEN** `make build-img` SHALL use that file as the early loader input (MUST NOT require `MiniLoaderAll.bin` as the only accepted authoritative name)
 
 ### Requirement: Host SDK workflow includes trim before overlay
 

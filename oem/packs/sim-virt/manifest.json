@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "pack_id": "sim-virt",
+  "board_id": "sim",
+  "screen_id": "virt",
+  "board_path": "boards/sim",
+  "screen_path": "screens/virt",
+  "compat": {
+    "os_min": "1.0.0",
+    "soc_family": "virt"
+  },
+  "notes": "P3.2 emulator only — board_id is OEM identity, not a product FIT conf (guest uses bare Image + QEMU virt DT)"
+}

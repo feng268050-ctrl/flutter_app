@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "pack_id": "ynh960-panel",
+  "board_id": "ynh960",
+  "screen_id": "ynh960-tbd",
+  "board_path": "boards/ynh960",
+  "screen_path": "screens/ynh960-tbd",
+  "compat": {
+    "os_min": "1.0.0",
+    "soc_family": "rk356x"
+  },
+  "notes": "board_id equals boot FIT conf name (board/rk356x-fit-boards.txt); startup DT is not in OEM"
+}

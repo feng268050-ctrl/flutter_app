@@ -44,6 +44,7 @@
     "alsa_volume_controls": "DAC Playback Volume,Speaker Playback Volume,Headphone Playback Volume,Playback Volume,Master Playback Volume,Master,PCM,Speaker,Playback",
     "alsa_playback_path_control": "Playback Path",
     "alsa_playback_path_value": "RING_SPK_HP",
-    "apply_mouse_settings": "/usr/bin/apply-mouse-settings"
+    "apply_mouse_settings": "/usr/bin/apply-mouse-settings",
+    "apply_physical_input_policy": "/usr/bin/apply-physical-input-policy"
   }
 }

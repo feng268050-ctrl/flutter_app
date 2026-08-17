@@ -1,0 +1,27 @@
+[Unit]
+Description=OP-TEE Client Supplicant
+Documentation=https://github.com/OP-TEE/optee_client
+DefaultDependencies=yes
+# Multi-board: only motherboards with OP-TEE (ynh960+); sim/virt has no /dev/tee0.
+ConditionPathExists=/dev/tee0
+# Interim REE FS KEK under /userdata/tee (survives A/B). Do NOT use
+# RequiresMountsFor=/userdata — systemd waits for that mount *before*
+# Condition* is evaluated, stalling boards without a userdata partition.
+ConditionPathIsDirectory=/userdata
+After=local-fs.target
+# Outside HMI cgroup; parallel with HMI (Secrets consumers connect lazily).
+# Do not Before=hmi — blocks first-frame KPI for no gain.
+
+[Service]
+Type=simple
+ExecStartPre=/bin/mkdir -p /userdata/tee
+# Wrapper: -r <eMMC CID> for when BL32 exposes RPMB; -f /userdata/tee for
+# interim REE FS KEK (not on A/B rootfs /var/lib/tee).
+ExecStart=/usr/libexec/board/tee-supplicant-start.sh
+Restart=on-failure
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

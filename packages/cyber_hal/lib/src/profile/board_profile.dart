@@ -35,6 +35,7 @@ abstract final class BoardHelperKeys {
   static const changeBacklight = 'change_backlight';
   static const changeVolume = 'change_volume';
   static const applyMouseSettings = 'apply_mouse_settings';
+  static const applyPhysicalInputPolicy = 'apply_physical_input_policy';
   /// Comma-separated preferred `/sys/class/backlight` basenames.
   static const backlightPreferredNames = 'backlight_preferred_names';
   /// Comma-separated preferred ALSA simple mixer volume controls.
@@ -47,8 +48,8 @@ abstract final class BoardHelperKeys {
   static const alsaOutputDevice = 'alsa_output_device';
   /// Optional IPC / camera host for boot self-check ICMP (e.g. `192.168.1.100`).
   static const cameraIp = 'camera_ip';
-  /// Override [ModbusTransport.device] from product `modbus.json` (e.g. sim
-  /// USB-RS485 → `/dev/ttyUSB0` while ynh960 keeps `/dev/ttyS5`).
+  /// Optional override of product `modbus.json` RTU path (sim USB-serial
+  /// package-test fallback). Shipping boards use `transport.device_by_board`.
   static const modbusRtuDevice = 'modbus_rtu_device';
 }
 
@@ -143,8 +144,7 @@ final class BoardProfile {
     return 'packages/cyber_hal/$path';
   }
 
-  /// Load a profile JSON asset (e.g. app `assets/hal/board_profile.json` or
-  /// package `packages/cyber_hal/boards/sim.json`).
+  /// Load a profile JSON asset (e.g. package `packages/cyber_hal/boards/sim.json`).
   static Future<BoardProfile> loadAsset(
     String assetPath, {
     AssetBundle? bundle,

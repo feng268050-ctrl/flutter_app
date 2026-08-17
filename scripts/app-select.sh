@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resolve Make/env APP → Flutter project dir + overlay/device install prefix.
+# Resolve Make/env APP → Flutter project dir + device install prefix.
 # Source from host scripts (requires ROOT). Does not build anything.
 #
 # Convention:
@@ -40,15 +40,15 @@ app_select_push_unit() {
 
 # Usage: app_select_resolve   # reads APP from env; defaults to lws_hmi
 # Exports:
-#   APP, APP_DIR, APP_OPT_NAME, OVERLAY_APP, DEVICE_APP, APP_IS_HMI
+#   APP, APP_DIR, APP_OPT_NAME, DEVICE_APP, APP_IS_HMI
+#   APP_BUNDLE_RELEASE (app/<APP>/build/bundle/release — make build-app output)
 #   APP_PUSH_UNIT (systemd unit for push-app restart; empty if none)
 #   APP_FIRMWARE_DIR (output/firmware/<APP>), APP_ROOTFS_IMG
 #   APP_PACKAGE_DIR (output/app/<APP> — pack-app / publish-app tar.gz)
-#   OVERLAY_OPT_ROOT (…/rootfs-overlay/opt)
 #   APP_IS_PRODUCT_HMI — alias of APP_IS_HMI (compat)
 app_select_resolve() {
 	local root="${ROOT:-}"
-	local app opt_name overlay_opt
+	local app opt_name
 
 	[[ -n "$root" ]] || {
 		echo "ERROR: app_select_resolve: ROOT is unset" >&2
@@ -75,13 +75,11 @@ app_select_resolve() {
 	fi
 
 	opt_name="$(app_select_opt_name "$app")"
-	overlay_opt="$root/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt"
 
 	APP="$app"
 	APP_DIR="$root/app/$app"
 	APP_OPT_NAME="$opt_name"
-	OVERLAY_OPT_ROOT="$overlay_opt"
-	OVERLAY_APP="$overlay_opt/$opt_name"
+	APP_BUNDLE_RELEASE="$root/app/$app/build/bundle/release"
 	DEVICE_APP="/opt/$opt_name"
 	APP_FIRMWARE_DIR="$root/output/firmware/$app"
 	APP_ROOTFS_IMG="$APP_FIRMWARE_DIR/rootfs.img"
@@ -94,7 +92,7 @@ app_select_resolve() {
 	APP_IS_PRODUCT_HMI="$APP_IS_HMI"
 	APP_PUSH_UNIT="$(app_select_push_unit "$app")"
 
-	export APP APP_DIR APP_OPT_NAME OVERLAY_OPT_ROOT OVERLAY_APP DEVICE_APP \
+	export APP APP_DIR APP_OPT_NAME APP_BUNDLE_RELEASE DEVICE_APP \
 		APP_FIRMWARE_DIR APP_ROOTFS_IMG APP_PACKAGE_DIR APP_IS_HMI APP_IS_PRODUCT_HMI \
 		APP_PUSH_UNIT
 }
@@ -105,18 +103,16 @@ app_select_os_settings_exists() {
 	[[ -n "$root" && -f "$root/app/os_settings/pubspec.yaml" ]]
 }
 
-# Overlay path for a given APP id (does not mutate global APP_*).
-app_select_overlay_for() {
+# Release bundle tree from make build-app (app/<APP>/build/bundle/release).
+app_select_bundle_for() {
 	local root="${ROOT:-}"
 	local app="$1"
-	local opt_name
 	[[ -n "$root" && -n "$app" ]] || return 1
-	opt_name="$(app_select_opt_name "$app")"
-	printf '%s\n' "$root/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/$opt_name"
+	printf '%s\n' "$root/app/$app/build/bundle/release"
 }
 
-# True when overlay tree has a release libapp.so.
-app_select_overlay_has_release() {
+# True when release bundle has lib/libapp.so.
+app_select_bundle_has_release() {
 	local dest="$1"
 	[[ -f "$dest/lib/libapp.so" ]]
 }

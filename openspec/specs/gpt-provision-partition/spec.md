@@ -120,7 +120,7 @@ User factory-reset and full userdata wipe (flash hygiene or `/usr/bin/factory-re
 
 ### Requirement: Emulator virtio provision disk
 
-The P3.2 QEMU guest (`sim_virt`) SHALL use a host-side **`provision.img`** virtio disk (not baked into shared `rootfs.img` or OEM). `make build-emulator` SHALL stage or create `output/firmware/emulator/provision.img`. `make emulator` SHALL attach it so the guest mounts it as `provision`. Per-unit emulator identity when Vendor Storage is absent SHALL be stored in `provision/identity.env` on that disk. OEM packs MUST NOT ship per-unit `identity.env`.
+The P3.2 QEMU guest (`sim-virt`) SHALL use a host-side **`provision.img`** virtio disk (not baked into shared `rootfs.img` or OEM). `make build-emulator` SHALL stage or create `output/firmware/emulator/provision.img`. `make emulator` SHALL attach it so the guest mounts it as `provision`. Per-unit emulator identity when Vendor Storage is absent SHALL be stored in `provision/identity.env` on that disk. OEM packs MUST NOT ship per-unit `identity.env`.
 
 #### Scenario: Emulator provision is per host instance
 

@@ -11,35 +11,51 @@ void main() {
       ? 'assets/hal'
       : 'app/lws_hmi/assets/hal';
 
-  group('app gpio.json golden', () {
+  group('app gpio.ynh960.json golden', () {
     late GpioConfig config;
 
     setUp(() {
-      final json = File('$halRoot/gpio.json').readAsStringSync();
+      final json = File('$halRoot/gpio.ynh960.json').readAsStringSync();
       config = GpioConfig.fromJsonString(json);
     });
 
     test('matches former GpioLedConfig pin map', () {
       expect(config.version, 2);
-      expect(config.backend, 'sysfs_innohi');
+      expect(config.backend, 'gpiod');
       expect(config.defaults.blinkOnMs, 1000);
       expect(config.defaults.blinkOffMs, 1000);
       expect(config.defaults.activeLow, isFalse);
 
       final expected = {
-        'led_red': (label: 'GPIO_5', linux: 105),
-        'led_yellow': (label: 'GPIO_4', linux: 106),
-        'led_green': (label: 'GPIO_7', linux: 149),
+        'led_red': (label: 'GPIO_5', linux: 105, chip: 'gpiochip3', offset: 9),
+        'led_yellow': (
+          label: 'GPIO_4',
+          linux: 106,
+          chip: 'gpiochip3',
+          offset: 10,
+        ),
+        'led_green': (
+          label: 'GPIO_7',
+          linux: 149,
+          chip: 'gpiochip4',
+          offset: 21,
+        ),
       };
       for (final entry in expected.entries) {
         final line = config.lineById(entry.key)!;
         expect(line.label, entry.value.label);
         expect(line.fallbackLinuxGpio, entry.value.linux);
-        expect(line.path, contains(entry.value.label));
+        expect(line.binding.scheme, GpioBindingScheme.gpiod);
+        expect(line.binding.chip, entry.value.chip);
+        expect(line.binding.offset, entry.value.offset);
       }
 
       final bank = config.deviceById('chassis_rgb')!.statusLed!;
       expect(bank.channelById('red')!.binding.offset, 9);
+      expect(
+        config.deviceById('panel_buzzer')!.buzzer!.line.scheme,
+        GpioBindingScheme.gpiod,
+      );
       expect(config.deviceById('panel_buzzer')!.buzzer!.line.label, 'BELL');
     });
 
@@ -51,6 +67,40 @@ void main() {
         () => hal.openLine('led_blue'),
         throwsA(isA<HalNotFoundException>()),
       );
+    });
+  });
+
+  group('app gpio.ek3562.json golden', () {
+    late GpioConfig config;
+
+    setUp(() {
+      final json = File('$halRoot/gpio.ek3562.json').readAsStringSync();
+      config = GpioConfig.fromJsonString(json);
+    });
+
+    test('OUT* PCA9535 + IN* SoC map', () {
+      expect(config.backend, 'gpiod');
+      expect(config.capabilities.buzzer, isFalse);
+      expect(config.capabilities.button, isTrue);
+      final bank = config.deviceById('chassis_rgb')!.statusLed!;
+      expect(bank.channelById('red')!.binding.label, 'OUT0');
+      expect(bank.channelById('red')!.binding.chip, 'gpiochip6');
+      expect(bank.channelById('red')!.binding.offset, 0);
+      expect(bank.channelById('yellow')!.binding.label, 'OUT1');
+      expect(bank.channelById('yellow')!.binding.offset, 1);
+      expect(bank.channelById('green')!.binding.label, 'OUT2');
+      expect(bank.channelById('green')!.binding.offset, 2);
+      final out3 = config.deviceById('aux_out3')!.statusLed!;
+      expect(out3.channelById('out3')!.binding.label, 'OUT3');
+      expect(out3.channelById('out3')!.binding.chip, 'gpiochip6');
+      expect(out3.channelById('out3')!.binding.offset, 3);
+      expect(config.deviceById('IN0')!.button!.line.chip, 'gpiochip3');
+      expect(config.deviceById('IN0')!.button!.line.offset, 17);
+      expect(config.deviceById('IN1')!.button!.line.offset, 14);
+      expect(config.deviceById('IN2')!.button!.line.chip, 'gpiochip1');
+      expect(config.deviceById('IN2')!.button!.line.offset, 18);
+      expect(config.deviceById('IN3')!.button!.line.offset, 19);
+      expect(config.deviceById('panel_buzzer'), isNull);
     });
   });
 

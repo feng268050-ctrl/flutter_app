@@ -1,6 +1,12 @@
 # sku uboot_id oem_id
 # FACTORY_SKU → UBOOT_ID (prebuilt/bootloader/<id>/) + OEM_ID (oem/packs|out/<id>/)
-# oem_id = <board>_<panel-…>  (underscore between board and panel; hyphens stay inside panel/resolution)
-ynh960-p800 rockchip-ynh960 ynh960_panel-800x1280
-# P3.2 QEMU guest: do not Rockchip-flash. Use OEM_ID=sim_virt make build-oem / make build-emulator
+# oem_id = pack_id under oem/packs/<id>/ (e.g. ynh960-panel, ek3562-panel; hyphens OK)
+ynh960-p800 rockchip-ynh960 ynh960-panel
+# ek3562 RK3562 EVB2 DDR4 V10 (panel TBD).
+# Build MiniLoader + uboot.img via rockchip-linux/rkbin (boot_merger) +
+# rockchip-linux/u-boot — see docs/uboot-rkbin.md and overlay/kernel/rockchip/ek3562.md.
+# Install into prebuilt/bootloader/vendor-ek3562/{uboot.img,MiniLoaderAll.bin}.
+# DTS + FIT conf ek3562 landed; bootloader still vendor-ek3562 TBD — see ek3562.md.
+ek3562-dev vendor-ek3562 ek3562-panel
+# P3.2 QEMU guest: do not Rockchip-flash. Use OEM_ID=sim-virt make build-oem / make build-emulator
 # (see docs/p32-emulator.md). No uboot_id row — virt boots QEMU firmware, not board U-Boot.

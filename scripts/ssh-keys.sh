@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KEY_DIR="${LWS_SSH_KEY_DIR:-$ROOT/keys/ssh}"
 PRIV="$KEY_DIR/id_ed25519"
 PUB="$KEY_DIR/id_ed25519.pub"
-AUTH_OVERLAY="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/root/.ssh/authorized_keys"
+AUTH_OVERLAY="$ROOT/overlay/board/rockchip/common/rootfs-overlay/root/.ssh/authorized_keys"
 
 die() {
 	echo "ERROR: $*" >&2

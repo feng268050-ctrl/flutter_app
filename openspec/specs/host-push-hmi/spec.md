@@ -7,7 +7,7 @@ Host-side **debug** USB-SSH / registered SSH workflow for Flutter app iteration:
 ## Requirements
 ### Requirement: make push-app deploys Flutter app over USB SSH
 
-The repository SHALL provide **`make push-app`** that streams the selected app’s overlay install tree to the board over SSH (USB-SSH or registered `MODE=SSH`), stages under `/var/lib/hmi/push-app-staging/`, applies via **`/usr/libexec/hmi/push-app-apply-and-restart.sh`** (refreshed from the host overlay each push), installs to `/opt/hmi` (or `/opt/<APP>` for non-HMI), and for `*_hmi` apps restarts `hmi.service`. This path is **unsigned debug hot-swap** and MUST NOT be a Make alias of `make upgrade-app`. Updating `/opt/hmi` without rebuilding rootfs SHALL still not require `make build-rootfs`, `make build-img`, board reboot, or `make flash`.
+The repository SHALL provide **`make push-app`** that streams the selected app’s release bundle tree (`app/<APP>/build/bundle/release/`) to the board over SSH (USB-SSH or registered `MODE=SSH`), stages under `/var/lib/hmi/push-app-staging/`, applies via **`/usr/libexec/hmi/push-app-apply-and-restart.sh`** (refreshed from the host platform rootfs overlay each push), installs to `/opt/hmi` (or `/opt/<APP>` for non-HMI), and for `*_hmi` apps restarts `hmi.service`. This path is **unsigned debug hot-swap** and MUST NOT be a Make alias of `make upgrade-app`. Updating `/opt/hmi` without rebuilding rootfs SHALL still not require `make build-rootfs`, `make build-img`, device reboot, or `make flash`.
 
 #### Scenario: Supported iteration without rootfs rebuild
 
@@ -18,7 +18,7 @@ The repository SHALL provide **`make push-app`** that streams the selected app�
 #### Scenario: push-app is unsigned SSH stream (not upgrade-app)
 
 - **WHEN** the operator runs `make push-app` after `make build-app`
-- **THEN** the transfer streams overlay artifacts over SSH into push-app staging and applies on-board
+- **THEN** the transfer streams bundle artifacts over SSH into push-app staging and applies on-board
 - **AND** MUST NOT require Ed25519 signing, host HTTP serve, or `/run/hmi/upgrade-app.cmd`
 
 ### Requirement: make devices lists RockUSB and USB-SSH targets

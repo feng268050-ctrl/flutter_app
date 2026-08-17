@@ -9,7 +9,7 @@ source "$ROOT/scripts/prebuilt-common.sh"
 SRC="$ROOT/native/emulator_tablet_to_touch/emulator-tablet-to-touch.c"
 OUT_DIR="$ROOT/prebuilt/emulator_tablet_to_touch/aarch64"
 OUT_BIN="$OUT_DIR/emulator-tablet-to-touch"
-OVERLAY_BIN="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/display/emulator-tablet-to-touch"
+OVERLAY_BIN="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/libexec/display/emulator-tablet-to-touch"
 STAMP_VER="5"
 FORCE="${FORCE:-0}"
 

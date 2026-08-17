@@ -31,13 +31,13 @@
 |----|------|
 | HAL | P3.1 ✅：`BoardProfile` + `BoardBindings`；合同见 `hal-portability.md` |
 | 板级 JSON | **W1 ✅**：OEM `board_profile`；`gpio.json` / `modbus.json` 仍在 App assets |
-| 屏参 | **W2 ✅**：screen pack `lcd/` → private1（OEM 权威）；无 `/system/etc` 回退 |
-| 板脚本 | **W2 ✅**：modem / OTG / display-init 在 `oem/boards/ynh960/helpers/`；rootfs 为 thin stub |
+| 屏参 | **DT-only ✅**：面板时序在 kernel DT；OEM `screen.json` 仅旋转/逻辑分辨率/ui_scale；ParamUpdate `lcd/` 已删 |
+| 板脚本 | **W2 ✅**：modem / OTG / storage-init 在 `oem/boards/ynh960/helpers/`；rootfs 为 thin stub |
 | GPT `oem` | ✅ ~128 MiB `/oem`；`build-oem` + `upgrade`（含 `OEM_ONLY=1`）已通；ynh960 pack 有内容 |
 | `properties.ini` | ✅ 运行时 `/var/lib/hal/properties.ini`（无 OEM 种子）；`set-prop`/`del-prop`；identity → Vendor Storage |
 | `linux-sdk/` | ✅ W3：白名单/trim/squash/薄 overlay 已归档；**暂不进仓**；DT git 真相源仍为 `overlay/kernel/`（见 `docs/linux-sdk-vendor-import.md`） |
 | 定制方式 | 平台 kernel/device squash 进本地树；**DT/fragment 同事同步走 overlay**；第三方 BR 包仍 overlay；产品/OEM 仍 `apply-overlay` |
-| P3.2 | ✅ W4：QEMU + 同 Image/rootfs + `sim_virt`；三网卡 + USB 串口；GPIO LED 浮层；**无 OTG**；USB Wi‑Fi/BT 真机同款 ⏸（archived: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`） |
+| P3.2 | ✅ W4：QEMU + 同 Image/rootfs + `sim-virt`；三网卡 + USB 串口；GPIO LED 浮层；**无 OTG**；USB Wi‑Fi/BT 真机同款 ⏸（archived: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`） |
 | 多 DT FIT | ✅ **W5**：同 SoC 族 `boot.img` 多 FDT / named conf；选 DT 在 U-Boot；**先于** `kernel-61-lts-rebase`（`openspec/changes/multi-board-fit-dt`） |
 
 ### 1.2 结论（本计划采纳）
@@ -53,7 +53,7 @@
 ### 1.3 非目标
 
 - 不在 QEMU 访客内仿真 RK356x SoC / Mali / MIPI / AIC 模组。  
-- 不强制第一天自编译量产 U-Boot（默认继续已验证的瑞芯微/板级 `uboot.img`；源码用 `rockchip-linux/u-boot` 备查）。  
+- 新板 / 新 SoC：按 [`docs/uboot-rkbin.md`](uboot-rkbin.md) 自建 U-Boot + MiniLoader 落入 `prebuilt/bootloader/<uboot_id>/`；已在产 SKU 继续刷该 SKU **已验收**包。  
 - 不把 `/opt/hmi` 迁入 OEM（App 仍走 rootfs A/B + `push-app`）。  
 - 不在本计划实现 `app/os_settings`（见 [`os-settings-app-plan.md`](os-settings-app-plan.md)；`APP=os_settings` → `/opt/os_settings`）。  
 - 不一次合入完整 18 G 供应商树进 git。  
@@ -67,7 +67,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │  app/lws_hmi  (+ 未来 app/<product>)                            │
 │  UI · CyberUI · CyberIME                                        │
-│  assets/hal/gpio.json · modbus.json   ← 产品专属，不进 OEM      │
+│  assets/hal/gpio.<board>.json · modbus.json   ← 产品专属，不进 OEM      │
 │  加载：OEM board_profile + App gpio/modbus                      │
 ├─────────────────────────────────────────────────────────────────┤
 │  packages/cyber_hal · cyber_ui · cyber_ime                      │
@@ -89,8 +89,10 @@
 
 | 轴 | 变化物 | 不变物 |
 |----|--------|--------|
-| **硬件 SKU** | OEM：`board_id` × `screen_id` | 同一 OS 版本（boot+rootfs）尽量共用 |
+| **硬件 SKU** | OEM：`board_id` × `screen_id`；**启动 DTB**（`overlay/kernel/` + FIT inventory）；可选 **`uboot_id`** | 同一 OS 版本：**通用 kernel Image** + 共享 rootfs 用户态配方 |
 | **产品 App** | `app/<name>` + gpio/modbus | 同一 HAL 合同 + 同一 OEM profile |
+
+**Kernel 标准化（ARM）：** 产品线维护 **一份通用 `Image`**（含在产及新 SoC 所需驱动）；**不为每块新板单独编 Image**。新板 → 板厂 **DTS** 进 `overlay/kernel/` + **`board/rk356x-fit-boards.txt`** + OEM；新 SoC → **`overlay/kernel/**/*.config`** 扩驱动后 **`FORCE_KERNEL_IMAGE=1 make build-kernel`** 刷新通用 Image。**不新建 `linux-sdk`。** 细则：[`docs/make-commands.md`](make-commands.md) → **构建模型**。
 
 ### 2.2 分区职责（强化）
 
@@ -110,7 +112,7 @@
 
 1. **编译期/工厂选定组合**，不做任意主板运行时自动探测（与既有 `board-screen-pack` 规格一致）。  
 2. **OEM 无 A/B**：坏包或刷错 SKU → 装配器失败进入安全策略（见 §3.6），不静默加载错板 profile。  
-3. **Profile 在 OEM；产品目录在 App**：`BoardProfile.configs.gpio/modbus` 继续指向 App assets（如 `assets/hal/gpio.json`），或由 App 在构造 HAL 时显式注入路径——**权威源永不在 `/oem`**。  
+3. **Profile 在 OEM；产品目录在 App**：`BoardProfile.configs.gpio/modbus` 继续指向 App assets（如 `assets/hal/gpio.ynh960.json`），或由 App 在构造 HAL 时显式注入路径——**权威源永不在 `/oem`**。  
 4. **Helpers 脚本可住在 OEM**，由 profile 用绝对路径引用（如 `/oem/boards/ynh960/helpers/wifibt-bringup.sh`）；rootfs 只保留**可移植默认**（`hal-portability.md`）。
 
 ### 3.2 仓库布局（源码）
@@ -119,9 +121,11 @@
 oem/                              # 新建：OEM 包源（打进 oem.img）
   manifest.schema.json            # 可选：JSON Schema
   packs/
-    ynh960_panel-800x1280/        # board_panel（避免 + / 分辨率 - 歧义）
+    ynh960-panel/                 # board×screen pack_id
       manifest.json
-    sim_virt/                     # P3.2
+    ek3562-panel/
+      manifest.json
+    sim-virt/                     # P3.2
       manifest.json
   boards/
     ynh960/
@@ -134,9 +138,8 @@ oem/                              # 新建：OEM 包源（打进 oem.img）
       helpers/                    # 可空
       product.ini                 # 可选；模拟器可用占位
   screens/
-    panel-ynh960-800x1280/
-      screen.json                 # 旋转默认、分辨率契约、splash
-      lcd/                        # 替代/迁移 private1 参数表
+    ynh960-tbd/
+      screen.json                 # 旋转默认、分辨率契约、splash、ui_scale
     virt/
       screen.json                 # QEMU virtio 虚拟显示
 ```
@@ -144,7 +147,7 @@ oem/                              # 新建：OEM 包源（打进 oem.img）
 真机当前组合可由构建选择：
 
 ```bash
-OEM_PACK=ynh960_panel-800x1280 make build-oem
+OEM_PACK=ynh960-panel make build-oem
 ```
 
 ### 3.3 `manifest.json`（组合声明）
@@ -152,11 +155,11 @@ OEM_PACK=ynh960_panel-800x1280 make build-oem
 ```json
 {
   "schema_version": 1,
-  "pack_id": "ynh960_panel-800x1280",
+  "pack_id": "ynh960-panel",
   "board_id": "ynh960",
-  "screen_id": "panel-ynh960-800x1280",
+  "screen_id": "ynh960-tbd",
   "board_path": "boards/ynh960",
-  "screen_path": "screens/panel-ynh960-800x1280",
+  "screen_path": "screens/ynh960-tbd",
   "compat": {
     "os_min": "1.0.0",
     "soc_family": "rk356x"
@@ -187,7 +190,7 @@ App 启动伪代码：
 profile = BoardProfile.loadFile("/oem/boards/<id>/board_profile.json")
      或  经装配器导出的 /run/hmi/board_profile.json
 profile = profile.withProductConfigs(
-  gpio: "assets/hal/gpio.json",
+  gpio: "assets/hal/gpio.ynh960.json",
   modbus: "assets/hal/modbus.json",
 )
 AppServices(boardProfile: profile) …
@@ -222,17 +225,19 @@ LWS HMI App product_property_defaults
 | `display_name` | 人读 |
 | `width` / `height` | 逻辑像素契约（UI/文档） |
 | `default_orientation` | `landscape_left` 等 → `hmi-launch` / Weston |
-| `lcd_param_files` | 相对 screen 目录的参数表（迁移期） |
+| `default_ui_scale` | 出厂 UI 缩放（可选） |
 | `splash` | 尺寸/路径约定（与 `board/logo` 策略对齐） |
 | `touch_notes` | 文档性；驱动仍在 DT/kernel |
 
-**Headless / sim**：可无 LCD 文件；`capabilities` 可不含 backlight。
+面板时序 / MIPI init 在 **kernel DT**（`board/*.txt` 仅作生成 DTSI 的源）；**不**再经 OEM `lcd/` / ParamUpdate / private1。
+
+**Headless / sim**：可无 backlight 等 capability。
 
 ### 3.7 装配器（rootfs 内）
 
 早启（在 HMI 前）服务，例如 `oem-compose.service`：
 
-1. 确保 `PARTLABEL=oem` → `/oem`（已有 display-init 可拆出通用 mount）。  
+1. 确保 `PARTLABEL=oem` → `/oem`（`storage-init.service` 通用 mount）。  
 2. 读 `/oem/manifest.json`；校验 `board_path` / `screen_path` 存在。  
 3. 导出环境或生成：  
    - `/run/hmi/oem.env`（`BOARD_ID` `SCREEN_ID` `OEM_BOARD_ROOT` …）  
@@ -258,8 +263,8 @@ LWS HMI App product_property_defaults
 |------|------|------|
 | O1 | 定义 manifest / screen.json schema；`oem/boards/ynh960` 从 App `board_profile.json` **剥掉** gpio/modbus 指针后迁入；**迁入 `product.ini` 种子** | ✅ W1 |
 | O2 | App 改为「OEM profile + 本地 gpio/modbus」；单测用 fixture | ✅ W1 |
-| O3 | 板脚本：modem / OTG / display-init 迁到 `oem/boards/.../helpers`，profile helpers 改路径 | ✅ W2 |
-| O4 | 屏参：仅 OEM screen pack `lcd/` 种子 private1（无 `/system/etc` 回退） | ✅ W2 |
+| O3 | 板脚本：modem / OTG / storage-init 迁到 `oem/boards/.../helpers`，profile helpers 改路径 | ✅ W2 |
+| O4 | 屏参：去掉 `/system/etc` 回退；后迁 DT-only，删除 OEM `lcd/` ParamUpdate 表 | ✅ W2 → DT |
 | O5 | `make build-oem`（ext4）+ flash/upgrade 路径打通；清空 oem-fallback | ✅ W1+W2 |
 
 ---
@@ -283,7 +288,7 @@ oem          = 模组 bringup、屏参、HAL profile、v1 product.ini
 | 一族多板 | 同一 kernel config；每板一份 DTS/DTSI；**同一 FIT 多 FDT + named conf**（平台 **W5** / `multi-board-fit-dt`）；现 `overlay/kernel/rockchip/ynh960-*.dtsi` → 迁入自有 SDK `device`/`kernel` 树 |
 | 换屏 | 优先 screen pack + 用户态 ParamUpdate/替代方案；若必须改 panel-timing DT，则 **新 FIT**（属 OS 版本），不是只刷 OEM |
 | 裁剪 | 保持现有 `ynh960-kernel-trim` 思路；按 SoC 族维护一份 trim，避免 EVB 驱动膨胀 |
-| U-Boot | 量产继续预编译瑞芯微/板级 `uboot.img`；源码树 `rockchip-linux/u-boot` 进自有 SDK 备查；**非** Innohi 源码依赖 |
+| U-Boot | **可自建**（`rockchip-linux/u-boot` + `rkbin`/`boot_merger` → `prebuilt/bootloader/<uboot_id>/`）；量产刷该 SKU 已验收对；**非** Innohi 源码依赖 |
 | 模拟器 | 不使用板级 FIT；见 §6 |
 
 ### 4.3 Rootfs 优化方向
@@ -365,10 +370,10 @@ linux-sdk/                    # 保留此名（进仓后的自有 platform 树�
 
 ### 5.5 U-Boot 策略（写入 SDK 规范）
 
-- **默认**：刷写已验证的板级/供应商预编译 `uboot.img`（与现网一致）。  
-- **源码**：`rockchip-linux/u-boot`（如 `next-dev`）进自有 SDK，供查阅与未来自建。  
-- **多供应商**：预编译二进制 **分目录存放**，由环境变量选中（§5.6）；**不要**互相覆盖同一个 `output/firmware/uboot.img` 后靠记忆区分。  
-- **禁止**：未经验收用自建 U-Boot 替换量产；改 GPT/`boot` 名等须单独项目。  
+- **可自建：** 有匹配板级 DT 后，从 [rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) 编 `uboot.img`；用 [rockchip-linux/rkbin](https://github.com/rockchip-linux/rkbin) 的 **`boot_merger`** + 对应 `RKBOOT/*MINIALL*.ini` 打出 MiniLoader / `*_spl_loader_*.bin`。步骤见 [`docs/uboot-rkbin.md`](uboot-rkbin.md)。旧「禁止自编」是踩坑后的因果倒置。  
+- **交付：** 验收通过的一对二进制落入 `prebuilt/bootloader/<uboot_id>/`（分目录；`FACTORY_SKU` 选择）。  
+- **量产约束：** 禁止把**未在该 SKU 验收**的自建包刷进现场机；改 GPT/`boot` 分区名等须单独项目。  
+- **多供应商 / 多板：** 只加目录 + SKU 表一行，不互相覆盖同一路径后靠记忆区分。  
 
 ### 5.6 工厂变体：U-Boot · OEM · `factory.img`（环境变量选择）
 
@@ -395,7 +400,7 @@ output/firmware/<factory_sku>/
 ```
 
 `<uboot_id>` 例：`rockchip-ynh960`、`vendorB-rk3568-evb`。  
-`<oem_id>` 例：`ynh960_panel-800x1280`、`sim_virt`（与 §3 pack_id 对齐；**board 与 panel 用 `_` 连接**，panel/分辨率内仍可用 `-`）。  
+`<oem_id>` 例：`ynh960-panel`、`ek3562-panel`、`sim-virt`（与 §3 `pack_id` 对齐；推荐 kebab-case）。  
 `<factory_sku>` 例：`ynh960-p800`——工厂扫码/料号用的短名，可映射到一对 `(uboot_id, oem_id)`。
 
 #### 5.6.2 环境变量（同一解析器）
@@ -413,9 +418,9 @@ SKU 表（仓库内，例 `board/factory-skus.tsv` 或 `board/skus/*.env`）：
 
 ```text
 # sku              uboot_id              oem_id
-ynh960-p800        rockchip-ynh960       ynh960_panel-800x1280
-ynh960-p1024       rockchip-ynh960       ynh960_panel-1024x600
-vendorB-panelA     vendorB-rk3568        boardB+panelA
+ynh960-p800        rockchip-ynh960       ynh960-panel
+ek3562-dev         vendor-ek3562         ek3562-panel
+vendorB-panelA     vendorB-rk3568        vendorb-panel
 ```
 
 解析伪代码（`build-oem` / `build-img` / `flash` **共用**）：
@@ -437,7 +442,7 @@ factory   = $out_dir/factory.img
 
 ```text
 FACTORY_SKU=ynh960-p800 make build-oem
-  → 按 OEM_ID 组装 oem/packs/… → 写 oem/out/ynh960_panel-800x1280/oem.img
+  → 按 OEM_ID 组装 oem/packs/… → 写 oem/out/ynh960-panel/oem.img
 
 FACTORY_SKU=ynh960-p800 make build-img
   → 读 uboot_dir 的 uboot.img (+ loader)
@@ -478,7 +483,7 @@ FACTORY_SKU=ynh960-p800 make flash
 |----|------|
 | **Apple Silicon 上 aarch64 QEMU**（macOS qemu-virgl）通用 Linux 访客 | Rockchip SoC / Mali / MIPI / AIC 仿真 |
 | 与量产同构的 **Weston + flutter-embedded-linux + Linux `cyber_hal`** | 以 Stub HAL / 关 capability 为主的「演示机」 |
-| OEM pack：`board_id=sim` + `screen_id=virt`（`sim_virt`） | 仅 UI 可点、不能带真下位机 |
+| OEM pack：`board_id=sim` + `screen_id=virt`（`sim-virt`） | 仅 UI 可点、不能带真下位机 |
 | 网桥 + **USB 透传**（BT / 串口 / Wi‑Fi / GPIO 等） | **x86_64 host** 验收路径 |
 
 Apple Silicon 上 **QEMU `virt` + HVF**（`make emulator`）；与板级 `uboot.img` 无关。P3.2 **只做 aarch64**。早期 UTM / 手装 Debian 探路 **不算**验收。
@@ -488,7 +493,7 @@ Apple Silicon 上 **QEMU `virt` + HVF**（`make emulator`）；与板级 `uboot.
 ### 6.2 架构对照
 
 ```text
-真机 ynh960                         P3.2 QEMU（sim_virt）
+真机 ynh960                         P3.2 QEMU（sim-virt）
 ─────────────────────               ────────────────────────────
 Rockchip uboot.img                  EDK2 / virt 启动
 kernel FIT + RK DT                  virt 内核 + virtio（+ USB）
@@ -542,7 +547,7 @@ gpio/modbus = App assets            同；Modbus←USB-serial 透传
 ### 6.4 virt screen pack
 
 - `screen.json`：逻辑分辨率（如 1536×960）、默认 landscape；**无** lcd_param / ParamUpdate。  
-- Weston：virtio-gpu / 帧缓冲；`desktop-shell`；启动链 **跳过** ynh960 display-init。
+- Weston：virtio-gpu / 帧缓冲；`desktop-shell`；启动链 **跳过** 设备 `storage-init`（用 `emulator-storage-init`）。
 
 ### 6.5 镜像与开发路径
 
@@ -550,7 +555,7 @@ gpio/modbus = App assets            同；Modbus←USB-serial 透传
 
 - **Kernel**：`make build-kernel` 产出的**同一份** `Image`（板级仍打 FIT；模拟器用裸 `Image` + QEMU `virt`）。  
 - **Rootfs**：`make build-rootfs` 产出的**同一份** `rootfs.img`（含 `/opt/hmi`、同一套 systemd / Weston / eLinux / `hmi.service`）。  
-- **OEM**：访客 `sim_virt`；真机 `ynh960_…`。  
+- **OEM**：访客 `sim-virt`；真机 `ynh960_…`。  
 - 启动：`make build-emulator` 组装 → `make emulator`（`qemu-system-aarch64`）→ compose → **自动** `hmi.service`。  
 - 手册：[`p32-emulator.md`](p32-emulator.md)。
 
@@ -569,7 +574,7 @@ gpio/modbus = App assets            同；Modbus←USB-serial 透传
 
 ### 6.7 验收（P3.2）
 
-1. 文档化：QEMU **三网卡**（eth0 摄像头桥 / wlan0 L3 / ethssh）、USB 串口透传、OEM、`OEM_ID=sim_virt make build-oem`；同事首次步骤见 README。  
+1. 文档化：QEMU **三网卡**（eth0 摄像头桥 / wlan0 L3 / ethssh）、USB 串口透传、OEM、`OEM_ID=sim-virt make build-oem`；同事首次步骤见 README。  
 2. 同一 App：真机 / sim OEM；访客 **Linux HAL**；**无** usbOtg。  
 3. 装配器两套 manifest 成功；错包失败可见。  
 4. 有线（摄像头专线）+ 无线角色可由 App 管理；宿主经 **ethssh** SSH 进访客（`MODE=EMU`）。  
@@ -602,7 +607,7 @@ W1  OEM 垂直切片（真机 ynh960）                          ✅
 W2  Rootfs/脚本瘦身                                      ✅
     ├─ helpers → OEM；rootfs thin stubs
     ├─ hmi-launch 读 display.conf → /run/hmi/screen.env（缺则失败）
-    ├─ private1 仅由 screen pack lcd/ 种子；去掉 oem-fallback
+    ├─ private1 不再承载 ParamUpdate 屏参（面板时序已迁 DT；OEM `lcd/` 已删）；去掉 oem-fallback
     ├─ product.ini：OEM 强制 brand/model/sn；set-prop 拒 identity
     └─ archive: 2026-07-27-platform-rootfs-script-thinning
 
@@ -614,7 +619,7 @@ W3  自有 linux-sdk                                       ✅ 工具已归档�
     └─ change: openspec/changes/platform-linux-sdk-own-tree
 
 W4  P3.2 虚拟机（同 kernel+rootfs + OEM 切换）           ✅
-    ├─ 契约：同一 Image + 同一 rootfs 内容；OEM sim_virt；Linux HAL；无 OTG
+    ├─ 契约：同一 Image + 同一 rootfs 内容；OEM sim-virt；Linux HAL；无 OTG
     ├─ QEMU + VirGL 启动自动 hmi.service（与真机同一启动链）
     ├─ 三网卡 + ethssh；USB 串口透传；GPIO LED 悬浮层；debug-app EMU
     ├─ ⏸ USB Wi‑Fi / USB BT 真机同款
@@ -660,7 +665,7 @@ W4 → W5 ✅ 多 DT FIT（已解除对 kernel-61-lts-rebase 的阻塞）
 |------|------|
 | OEM 单槽刷坏 | compose 失败可见；工厂校验 manifest；关键升级默认不写 OEM |
 | 错 uboot / 错 oem 打进整包 | §5.6：分目录 + SKU 表 + 缺文件失败；`factory` 旁写 `manifest.txt` |
-| 早启亮屏仍依赖 private1/Innohi | W2：private1 由 OEM `lcd/` 种子；换屏 DT 变更仍走 boot 升级 |
+| 早启亮屏仍依赖 private1/Innohi | ParamUpdate 已退役；面板时序在 kernel DT；换屏改 DT → boot 升级 |
 | SDK 进仓历史膨胀 | 白名单 + LFS/prebuilt；禁 commit `output/`/`dl/` |
 | 模拟器与真机差过大 | 契约对齐（单元名、路径、Weston）；不追求 GPU 奇偶 |
 | App 合并 profile 出错 | 单测：OEM fixture + App gpio/modbus；错 board_id 拒绝启动 |
@@ -672,7 +677,7 @@ W4 → W5 ✅ 多 DT FIT（已解除对 kernel-61-lts-rebase 的阻塞）
 ## 10. 成功标准（平台化第一里程碑）
 
 1. **真机**：`oem.img`（ynh960+屏）+ 通用 rootfs 启动；HMI 使用 OEM profile + **App 内** gpio/modbus。 ✅（W1+W2）  
-2. **模拟器**：`sim_virt` + Linux HAL；三网卡（摄像头桥 + wlan0 L3 + ethssh）；无 OTG；Modbus USB 透传；GPIO LED 悬浮层。 ✅ W4 主路径（见 [`docs/p32-emulator.md`](p32-emulator.md)；USB Wi‑Fi/BT ⏸）  
+2. **模拟器**：`sim-virt` + Linux HAL；三网卡（摄像头桥 + wlan0 L3 + ethssh）；无 OTG；Modbus USB 透传；GPIO LED 悬浮层。 ✅ W4 主路径（见 [`docs/p32-emulator.md`](p32-emulator.md)；USB Wi‑Fi/BT ⏸）  
 3. **构建**：裁剪 linux-sdk 可出与现网等价的 ynh960 镜像（或明确差距清单）。 🟡 W3 工具就绪；本机 trim 后验证  
 4. **工厂变体**：`FACTORY_SKU=… make build-oem` / `build-img` / `flash` 解析同一套路径；产出 `output/firmware/<sku>/factory.img`；uboot 来自 `prebuilt/bootloader/<uboot_id>/`。 ✅（W1）  
 5. **文档**：`make help` / README / AGENTS 重建表含 `build-oem`、`factory.img`、模拟器同事首次步骤；**无** OS Settings App 强依赖。 ✅  

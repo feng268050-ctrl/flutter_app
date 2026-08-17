@@ -17,6 +17,8 @@
 set -eu
 
 . /usr/libexec/board/paths.sh 2>/dev/null || true
+# shellcheck source=/dev/null
+. /usr/libexec/usb/usb-otg-paths.sh 2>/dev/null || true
 
 PHY_OTG_MODE="${PHY_OTG_MODE:-/sys/devices/platform/fe8a0000.usb2-phy/otg_mode}"
 CONF="${VAR_HAL:-/var/lib/hal}/usb-otg.conf"
@@ -92,13 +94,17 @@ otg_set_mode() {
 }
 
 otg_extcon_state() {
+	if [ "${USB_OTG_PATHS_LOADED:-}" = 1 ]; then
+		usb_otg_read_extcon_state
+		return $?
+	fi
 	local state dir dev
 	for state in /sys/class/extcon/extcon*/state; do
 		[ -r "$state" ] || continue
 		dir="$(dirname "$state")"
 		dev="$(readlink -f "$dir" 2>/dev/null || true)"
 		case "$dev" in
-		*fe8a0000* | *usb2phy0*)
+		*fe8a0000* | *usb2phy0* | *.usb2-phy | *.usb2-phy/*)
 			cat "$state"
 			return 0
 			;;

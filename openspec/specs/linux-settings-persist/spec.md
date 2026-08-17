@@ -58,7 +58,7 @@ For backlight brightness, media volume, display orientation, and mouse settings,
 
 ### Requirement: Boot restore oneshot
 
-The image SHALL provide `settings-restore.service` (oneshot) linked from `multi-user.target.wants`, ordered **`After=hmi.service`** (and after `param-update.service`). It MUST NOT be ordered `Before=hmi.service`. Restore of Wi‑Fi / Ethernet / Bluetooth MUST start only after the HMI process is up, run at lowered scheduling priority (`Nice` / idle I/O), and MUST NOT compete with first-frame UI for boot CPU/IO. The HMI Demo / platform controllers SHALL observe `*-wanted` markers and present the same **starting / connecting** UI as a manual enable while restore completes (poll live state; do not block first paint waiting for association). Individual restore steps MAY soft-fail without failing `hmi.service`.
+The image SHALL provide `settings-restore.service` (oneshot) linked from `multi-user.target.wants`, ordered **`After=hmi.service`** (and after `storage-init.service`). It MUST NOT be ordered `Before=hmi.service`. Restore of Wi‑Fi / Ethernet / Bluetooth MUST start only after the HMI process is up, run at lowered scheduling priority (`Nice` / idle I/O), and MUST NOT compete with first-frame UI for boot CPU/IO. The HMI Demo / platform controllers SHALL observe `*-wanted` markers and present the same **starting / connecting** UI as a manual enable while restore completes (poll live state; do not block first paint waiting for association). Individual restore steps MAY soft-fail without failing `hmi.service`.
 
 #### Scenario: Reboot restores Wi-Fi when wanted
 
@@ -133,7 +133,7 @@ The image / HAL SHALL persist the UI click sample as an **absolute filesystem pa
 
 ### Requirement: UI scale preference under HAL display prefs
 
-The image / HAL SHALL persist operator UI scale at `/var/lib/hal/display.conf` (key `ui_scale`, default `1.0`, supports non-integer values in the same range as HAL `LinuxUiScale`, e.g. `0.5`–`2.0`). **`ui_scale=1.0` SHALL mean physical 1:1** — Flutter MUST NOT apply an additional hard-coded design-density rematch when the value is `1.0`. Values other than `1.0` SHALL be applied as a pure multiplier via `matchEmbedderDensity`. **OS Settings** SHALL expose the UI scale control (factory / after-sales / field service). Product HMI SHALL read the same key at boot and after seat switch — **without** a UI scale slider in HMI Settings Display. This is independent of product text-size (`common-settings.json` `textSize`). When the `ui_scale` key is absent from `display.conf` at HMI launch, the platform SHALL seed it from the active OEM screen pack `default_ui_scale` (via `/run/hmi/screen.env`) before Apps warm-read the preference. Pack-specific defaults include ynh960 panel ~`1.13` and QEMU `sim_virt` ~`1.28` — MUST NOT document or assume a single scale for all form factors (prior QEMU docs that recommended ynh960's ~`1.13` on the virtio guest were incorrect). Once written, operator changes via OS Settings SHALL override the OEM default; factory reset clearing `display.conf` SHALL allow re-seeding on next boot. Apps MUST NOT hard-code panel rematch factors.
+The image / HAL SHALL persist operator UI scale at `/var/lib/hal/display.conf` (key `ui_scale`, default `1.0`, supports non-integer values in the same range as HAL `LinuxUiScale`, e.g. `0.5`–`2.0`). **`ui_scale=1.0` SHALL mean physical 1:1** — Flutter MUST NOT apply an additional hard-coded design-density rematch when the value is `1.0`. Values other than `1.0` SHALL be applied as a pure multiplier via `matchEmbedderDensity`. **OS Settings** SHALL expose the UI scale control (factory / after-sales / field service). Product HMI SHALL read the same key at boot and after seat switch — **without** a UI scale slider in HMI Settings Display. This is independent of product text-size (`common-settings.json` `textSize`). When the `ui_scale` key is absent from `display.conf` at HMI launch, the platform SHALL seed it from the active OEM screen pack `default_ui_scale` (via `/run/hmi/screen.env`) before Apps warm-read the preference. Pack-specific defaults include ynh960 panel ~`1.13` and QEMU `sim-virt` ~`1.28` — MUST NOT document or assume a single scale for all form factors (prior QEMU docs that recommended ynh960's ~`1.13` on the virtio guest were incorrect). Once written, operator changes via OS Settings SHALL override the OEM default; factory reset clearing `display.conf` SHALL allow re-seeding on next boot. Apps MUST NOT hard-code panel rematch factors.
 
 #### Scenario: UI scale 1.0 is identity
 
@@ -156,7 +156,7 @@ The image / HAL SHALL persist operator UI scale at `/var/lib/hal/display.conf` (
 #### Scenario: OEM default seeds absent key (virt emulator)
 
 - **WHEN** `/var/lib/hal/display.conf` has no `ui_scale` key
-- **AND** the active OEM screen pack is `sim_virt` with `default_ui_scale=1.28`
+- **AND** the active OEM screen pack is `sim-virt` with `default_ui_scale=1.28`
 - **AND** `hmi-launch` runs after successful `oem-compose`
 - **THEN** `display.conf` SHALL contain `ui_scale=1.28` before OS Settings or product HMI warm-read
 

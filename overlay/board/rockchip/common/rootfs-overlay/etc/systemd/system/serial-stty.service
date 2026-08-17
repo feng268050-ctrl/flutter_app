@@ -1,0 +1,14 @@
+[Unit]
+Description=Serial console geometry (ttyFIQ0)
+DefaultDependencies=yes
+# Multi-board: only motherboards with Rockchip FIQ console (ynh960+).
+ConditionPathExists=/dev/ttyFIQ0
+# Not Before=hmi — console geometry must not gate first-frame KPI.
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/board/serial-console-stty.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,49 +1,10 @@
 #!/bin/bash -e
 
-# Install Innohi ynh960 display helpers (MountAll, ParamUpdate, MainServer).
+# Innohi userspace leftovers (display binaries retired).
+# Kernel combo Wi‑Fi: overlay/kernel/drivers/net/wireless/aic8800/ (gpio_innohi tree removed).
 
 source "${RK_POST_HELPER:-$(dirname "$(realpath "$0")")/post-helper}"
 
 [ "$POST_OS" = buildroot ] || exit 0
 
-SDK_DIR="${SDK_DIR:-${RK_SDK_DIR:-}}"
-if [[ -z "$SDK_DIR" ]]; then
-	SDK_DIR="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
-fi
-
-INNOHI_BIN="$SDK_DIR/innohi/rootfs/usr/bin"
-if [[ ! -d "$INNOHI_BIN" ]]; then
-	echo "post-innohi: skip (missing $INNOHI_BIN — check linux-sdk/innohi from extract)"
-	exit 0
-fi
-
-for bin in MountAll ParamUpdate MainServer; do
-	if [[ ! -x "$INNOHI_BIN/$bin" ]]; then
-		echo "post-innohi: skip missing $INNOHI_BIN/$bin"
-		continue
-	fi
-	install -m 0755 "$INNOHI_BIN/$bin" "$TARGET_DIR/usr/bin/$bin"
-	echo "post-innohi: installed /usr/bin/$bin"
-done
-
-DOCKER_ROOT="${DOCKER_ROOT:-/work/lws-hmi}"
-DISPLAY_INIT="$DOCKER_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/display/ynh960-display-init.sh"
-if [[ -f "$DISPLAY_INIT" ]]; then
-	install -d "$TARGET_DIR/usr/libexec/hmi"
-	install -m 0755 "$DISPLAY_INIT" "$TARGET_DIR/usr/libexec/display/ynh960-display-init.sh"
-	echo "post-innohi: installed /usr/libexec/display/ynh960-display-init.sh"
-fi
-
-install -d "$TARGET_DIR/system/bin"
-for bin in MountAll ParamUpdate MainServer; do
-	[[ -x "$TARGET_DIR/usr/bin/$bin" ]] || continue
-	ln -sf "/usr/bin/$bin" "$TARGET_DIR/system/bin/$bin"
-	echo "post-innohi: /system/bin/$bin -> /usr/bin/$bin"
-done
-
-INNOHI_UDEV="$SDK_DIR/innohi/rootfs/usr/lib/udev/rules.d/61-partition-init.rules"
-if [[ -f "$INNOHI_UDEV" ]]; then
-	install -d "$TARGET_DIR/usr/lib/udev/rules.d"
-	install -m 0644 "$INNOHI_UDEV" "$TARGET_DIR/usr/lib/udev/rules.d/61-partition-init.rules"
-	echo "post-innohi: installed udev 61-partition-init.rules (by-name links)"
-fi
+echo "post-innohi: skip MountAll/ParamUpdate/MainServer (DTS-only display)"

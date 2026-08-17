@@ -1,0 +1,31 @@
+[Unit]
+Description=Flutter HMI
+DefaultDependencies=no
+# Boot KPI: do not inherit After=basic.target. Pulled from sysinit so we are
+# not gated on multi-user → basic (dbus/avahi/seatd/rngd).
+After=local-fs.target oem-compose.service cpu-performance.service systemd-journald.socket
+Wants=oem-compose.service cpu-performance.service
+Conflicts=shutdown.target os-settings.service
+# Early storage: storage-init.service (no Innohi MainServer/ParamUpdate).
+# Panel init is in kernel DTS (panel-init-sequence).
+# Do not wait for network or MediaMTX (KPI = first home frame).
+# Pull settings restore *after* we are up (unit has After=hmi.service).
+
+[Service]
+Type=simple
+Nice=-5
+# Runs as root so /dev/ttyS5 (Modbus), /dev/gpiochip* (gpiod), backlight sysfs,
+# and ALSA devices remain accessible for P2 / P2.1 demos.
+# Weston + flutter-wayland-client (eLinux).
+ExecStart=/usr/libexec/hmi/hmi-launch.sh
+# After the HMI process exits, force indicators/buzzer low (gpiod lines released).
+ExecStop=/usr/libexec/board/gpio-product-off.sh
+Restart=on-failure
+RestartSec=2
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+# sysinit: earliest appliance path; multi-user: Plan A verify-boot wants link.
+WantedBy=sysinit.target multi-user.target

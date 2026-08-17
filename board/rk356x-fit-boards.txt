@@ -1,6 +1,10 @@
 # SoC-family board inventory for multi-configuration boot FIT (platform W5).
 # One board_id per line. FIT configuration name == board_id == OEM manifest board_id.
 # DTB path after kernel build: arch/arm64/boot/dts/rockchip/<board_id>.dtb
+# All confs share the SAME kernel Image blob; DT describes each board's hardware.
+# New board: add DTS under overlay/kernel/ + a line here (plain make build-kernel).
+# New SoC drivers: extend overlay/kernel/*.config, FORCE_KERNEL_IMAGE=1, then add DTBs.
 # First line (non-comment) is the default configuration when present; otherwise ynh960.
 # Do not list emulator/sim — P3.2 uses bare Image + QEMU virt DT.
 ynh960
+ek3562

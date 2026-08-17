@@ -10,8 +10,8 @@ source "$ROOT/scripts/prebuilt-common.sh"
 VERSION_FILE="$ROOT/overlay/third-party/rknn-toolkit.version"
 PREBUILT_SO="$ROOT/prebuilt/rknn-rt/aarch64/librknnrt.so"
 PREBUILT_HEADER="$ROOT/prebuilt/rknn-rt/include/rknn_api.h"
-OVERLAY_LIB="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/lib/librknnrt.so"
-OVERLAY_BIN="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/bin/rknn_server"
+OVERLAY_LIB="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/lib/librknnrt.so"
+OVERLAY_BIN="$ROOT/overlay/board/rockchip/common/rootfs-overlay/usr/bin/rknn_server"
 FORCE="${FORCE:-0}"
 
 read_version() {

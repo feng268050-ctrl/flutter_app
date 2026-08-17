@@ -1,0 +1,112 @@
+{
+  "version": 2,
+  "backend": "gpiod",
+  "_comment": "ek3562 I/O. OUT*=PCA9535 i2c-1 0x20 (lab /dev/gpiochip6, base 495). IN*=SoC gpiochip1/3. Re-check chip index with gpiodetect/label if probe order changes. Polarity of IN* TBD (treat as active-high until product confirms).",
+  "defaults": {
+    "active_low": false,
+    "blink_on_ms": 1000,
+    "blink_off_ms": 1000,
+    "button_debounce_ms": 30,
+    "button_long_press_ms": 800,
+    "encoder_debounce_ms": 2
+  },
+  "devices": [
+    {
+      "type": "status_led",
+      "id": "chassis_rgb",
+      "channels": [
+        {
+          "id": "red",
+          "scheme": "gpiod",
+          "label": "OUT0",
+          "gpiod": { "chip": "gpiochip6", "offset": 0 },
+          "linux_gpio": 495,
+          "aliases": ["led_red", "OUT0"],
+          "roles": ["indicator"]
+        },
+        {
+          "id": "yellow",
+          "scheme": "gpiod",
+          "label": "OUT1",
+          "gpiod": { "chip": "gpiochip6", "offset": 1 },
+          "linux_gpio": 496,
+          "aliases": ["led_yellow", "OUT1"],
+          "roles": ["indicator", "alarm"]
+        },
+        {
+          "id": "green",
+          "scheme": "gpiod",
+          "label": "OUT2",
+          "gpiod": { "chip": "gpiochip6", "offset": 2 },
+          "linux_gpio": 497,
+          "aliases": ["led_green", "OUT2"],
+          "roles": ["indicator"]
+        }
+      ]
+    },
+    {
+      "type": "status_led",
+      "id": "aux_out3",
+      "channels": [
+        {
+          "id": "out3",
+          "scheme": "gpiod",
+          "label": "OUT3",
+          "gpiod": { "chip": "gpiochip6", "offset": 3 },
+          "linux_gpio": 498,
+          "aliases": ["OUT3"],
+          "roles": ["indicator"]
+        }
+      ]
+    },
+    {
+      "type": "button",
+      "id": "IN0",
+      "line": {
+        "scheme": "gpiod",
+        "label": "IN0",
+        "gpiod": { "chip": "gpiochip3", "offset": 17 },
+        "linux_gpio": 113
+      }
+    },
+    {
+      "type": "button",
+      "id": "IN1",
+      "line": {
+        "scheme": "gpiod",
+        "label": "IN1",
+        "gpiod": { "chip": "gpiochip3", "offset": 14 },
+        "linux_gpio": 110
+      }
+    },
+    {
+      "type": "button",
+      "id": "IN2",
+      "line": {
+        "scheme": "gpiod",
+        "label": "IN2",
+        "gpiod": { "chip": "gpiochip1", "offset": 18 },
+        "linux_gpio": 50
+      }
+    },
+    {
+      "type": "button",
+      "id": "IN3",
+      "line": {
+        "scheme": "gpiod",
+        "label": "IN3",
+        "gpiod": { "chip": "gpiochip1", "offset": 19 },
+        "linux_gpio": 51
+      }
+    }
+  ],
+  "capabilities": {
+    "set_level": true,
+    "blink": true,
+    "read_level": true,
+    "status_led": true,
+    "buzzer": false,
+    "button": true,
+    "rotary_encoder": false
+  }
+}

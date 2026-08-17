@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:cyber_hal/input/mouse.dart';
+import 'package:cyber_hal/src/input/physical_input_policy.dart';
 import 'package:cyber_hal/src/linux/board_helper.dart';
 import 'package:cyber_hal/src/linux/percent.dart';
 
@@ -12,16 +13,21 @@ class LinuxMouseSettingsController implements Mouse {
     this.applyMouseSettingsCommand = const <String>[],
     this.runHelperWithStdin = defaultBoardHelperRunnerWithStdin,
     this.probe = const UsbHidMouseProbe(),
-  });
+    PhysicalInputPolicy? inputPolicy,
+  }) : inputPolicy = inputPolicy ?? PhysicalInputPolicy();
 
   final String preferencePath;
   final List<String> applyMouseSettingsCommand;
   final Future<int> Function(String executable, List<String> arguments, String stdin)
       runHelperWithStdin;
   final UsbHidMouseProbe probe;
+  final PhysicalInputPolicy inputPolicy;
 
   @override
   Future<bool> isPresent() async {
+    if (!await inputPolicy.isPhysicalMouseEnabled()) {
+      return false;
+    }
     final line = await probe.statusLine();
     return line.startsWith('detected:');
   }
@@ -42,6 +48,10 @@ class LinuxMouseSettingsController implements Mouse {
 
   @override
   Future<void> setSettings(MouseSettings settings) async {
+    if (!await inputPolicy.isPhysicalMouseEnabled()) {
+      debugPrint('mouse: physical mouse disabled — skip setSettings');
+      return;
+    }
     final normalized = MouseSettings(
       naturalScroll: settings.naturalScroll,
       scrollSpeedPercent: clampPercent(settings.scrollSpeedPercent),

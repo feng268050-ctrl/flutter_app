@@ -1,0 +1,489 @@
+// ynh960 board DTSI — git source of truth (frozen product baseline).
+// Synced to linux-sdk by make apply-overlay. Do not edit only in linux-sdk/.
+// Captured from the owned linux-sdk tree (already customized); no upstream vendor
+// re-merge. Future vendor drops → copy needed pieces into overlay/ only.
+
+/ {
+	 backlight2: backlight2 {
+	  compatible = "pwm-backlight";
+	  pwms = <&pwm7 0 25000 0>;
+	  brightness-levels = <
+	     0 1 2 3 4 5 6 7
+	     8 9 10 11 12 13 14 15
+	    16 17 18 19 20 21 22 23
+	    24 25 26 27 28 29 30 31
+	    32 33 34 35 36 37 38 39
+	    40 41 42 43 44 45 46 47
+	    48 49 50 51 52 53 54 55
+	    56 57 58 59 60 61 62 63
+	    64 65 66 67 68 69 70 71
+	    72 73 74 75 76 77 78 79
+	    80 81 82 83 84 85 86 87
+	    88 89 90 91 92 93 94 95
+	    96 97 98 99 100 101 102 103
+	   104 105 106 107 108 109 110 111
+	   112 113 114 115 116 117 118 119
+	   120 121 122 123 124 125 126 127
+	   128 129 130 131 132 133 134 135
+	   136 137 138 139 140 141 142 143
+	   144 145 146 147 148 149 150 151
+	   152 153 154 155 156 157 158 159
+	   160 161 162 163 164 165 166 167
+	   168 169 170 171 172 173 174 175
+	   176 177 178 179 180 181 182 183
+	   184 185 186 187 188 189 190 191
+	   192 193 194 195 196 197 198 199
+	   200 201 202 203 204 205 206 207
+	   208 209 210 211 212 213 214 215
+	   216 217 218 219 220 221 222 223
+	   224 225 226 227 228 229 230 231
+	   232 233 234 235 236 237 238 239
+	   240 241 242 243 244 245 246 247
+	   248 249 250 251 252 253 254 255
+	  >;
+	  default-brightness-level = <128>;
+	 };
+ 
+	led_red_pwm: led-red-pwm {
+		status = "okay";
+		compatible = "pwm-backlight";
+		pwms = <&pwm14 0 50000 0>;
+		brightness-levels = <
+			  0  20  20  21  21  22  22  23
+			 23  24  24  25  25  26  26  27
+			 27  28  28  29  29  30  30  31
+			 31  32  32  33  33  34  34  35
+			 35  36  36  37  37  38  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255
+		>;
+		default-brightness-level = <0>;
+	};
+	
+	led_green_pwm: led-green-pwm {
+		status = "okay";
+		compatible = "pwm-backlight";
+		pwms = <&pwm15 0 50000 0>;
+		brightness-levels = <
+			  0  20  20  21  21  22  22  23
+			 23  24  24  25  25  26  26  27
+			 27  28  28  29  29  30  30  31
+			 31  32  32  33  33  34  34  35
+			 35  36  36  37  37  38  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255
+		>;
+		default-brightness-level = <0>;
+	};
+	
+	led_white_pwm: led-white-pwm {
+		status = "okay";
+		compatible = "pwm-backlight";
+		pwms = <&pwm0 0 50000 0>;
+		brightness-levels = <
+			  0  20  20  21  21  22  22  23
+			 23  24  24  25  25  26  26  27
+			 27  28  28  29  29  30  30  31
+			 31  32  32  33  33  34  34  35
+			 35  36  36  37  37  38  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255
+		>;
+		default-brightness-level = <0>;
+	};
+};
+
+&pinctrl {
+	/delete-node/ touch;
+        own_gpio{
+                own_gpio_pins: own-gpio-pins{
+                        rockchip,pins =
+					<4 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>, //USB_HOST_PWREN1_H
+					<4 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>, //USB_HOST_PWREN2_H
+					<4 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>, //USB_HOST_PWREN3_H					
+					<0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>, //GPIO-1
+					<0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>, //GPIO-2
+					<0 RK_PC7 RK_FUNC_GPIO &pcfg_pull_none>, //GPIO-3 UART0_CTS_GPIO0C7
+					<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>, //GPIO-4 COM4_TX_GPIO3_B2
+					<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>, //GPIO-5 COM4_RX_GPIO3_B1
+					<0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>, //GPIO-6
+					<4 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>, //GPIO-7 silk WG_D0
+					<4 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>, //GPIO-8 silk WG_D1
+					<3 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>, //Bell-CTL					
+					<3 RK_PD7 RK_FUNC_GPIO &pcfg_pull_none>, //Relay-CTL					
+					<0 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>,//LED_RED
+					<0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;//LED_BLUE
+                };
+        };
+};
+&chosen{
+	board="ynh960";
+	rk3566;
+};
+
+&own_boot_gpio{
+	pinctrl-names = "default";
+	pinctrl-0 = <&own_gpio_pins>;
+	LED_RED {
+		gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_HIGH>;
+		default-value = "1";
+	};	
+	LED_BLUE {
+		gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
+		default-value = "0";
+	};		
+};
+
+&own_gpio{
+	pinctrl-names = "default";
+	pinctrl-0 = <&own_gpio_pins>;
+	LED_RED {
+		gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "0";
+		label = "LIGHT_BOARD_RED";
+	};	
+	LED_BLUE {
+		gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "LIGHT_BOARD_BLUE";
+	};	
+	USB_HOST_PWREN1_H {
+		gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "USB_1";
+	};	
+	USB_HOST_PWREN2_H {
+		gpios = <&gpio4 RK_PA1 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "USB_2";
+	};
+	USB_HOST_PWREN3_H {
+		gpios = <&gpio4 RK_PA2 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "USB_3";
+	};	
+	GPIO_1 {
+		gpios = <&gpio0 RK_PB0 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "GPIO_1";
+	};		
+	GPIO_2 {
+		gpios = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "GPIO_2";
+	};	
+	GPIO_3 {
+		gpios = <&gpio0 RK_PC7 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "GPIO_3";
+	};		
+	GPIO_4 {
+		gpios = <&gpio3 RK_PB2 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "GPIO_4";
+	};	
+	GPIO_5 {
+		gpios = <&gpio3 RK_PB1 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "GPIO_5";
+	};	
+	GPIO_6 {
+		gpios = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "GPIO_6";
+	};
+	GPIO_7 {
+		gpios = <&gpio4 RK_PC5 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "GPIO_7";
+	};	
+	GPIO_8 {
+		gpios = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "1";
+		label = "GPIO_8";
+	};		
+	Bell_CTL {
+		gpios = <&gpio3 RK_PD3 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "0";
+		label = "BELL";
+	};			
+	Relay_CTL {
+		gpios = <&gpio3 RK_PD7 GPIO_ACTIVE_HIGH>;
+		default-mode = "out";
+		default-value = "0";
+		label = "RELAY";
+	};
+};
+
+&edp_panel {
+ compatible ="simple-panel";
+ backlight = <&backlight1>;
+};
+
+&i2c1 {
+	status = "okay";
+
+	focaltech: focaltech@38 {
+                status = "okay";
+                compatible = "focaltech,fts";
+                reg = <0x38>;
+                focaltech,irq-gpio = <&gpio0 RK_PB5 IRQ_TYPE_LEVEL_LOW>;
+                focaltech,reset-gpio = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+				focaltech,max-touch-number = <1>;			
+				focaltech,display-coords =  <0 0 720 1280>;               
+                /**focaltech,have-key = <1>;**/
+                /**focaltech,key-number = <1>;**/
+                /**focaltech,key-x-coords = <300>;**/
+                /**focaltech,key-y-coords = <1200>;**/
+        };
+	
+	sitronix@55 {
+            compatible = "sitronix,cf1216";
+            reg = <0x55>;
+            sitronix,reset-gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+            sitronix,interrupt-gpios = <&gpio0 RK_PB5 IRQ_TYPE_LEVEL_LOW>;
+	}; 	
+
+  	goodix_ts@5d {
+			compatible = "goodix,gt9xx";
+			reg = <0x5d>;
+			goodix,rst-gpio = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+			goodix,irq-gpio = <&gpio0 RK_PB5 IRQ_TYPE_LEVEL_LOW>;
+            swap-xy = <0>;
+            swap-x = <0>;
+            swap-y = <0>;
+			goodix,cfg-group = [01 20 03 00 05 05 39 00 01 C8 28 0F 50 32 03 05 00 00 00 00 00 00 00 18 1A 1E 14 8C 2B 0E 86 88 B5 06 00 00 00 00 02 1C 00 01 00 00 00 03 00 00 00 00 00 78 96 94 D5 02 07 00 00 04 B2 7A 00 9D 80 00 8C 86 00 7C 8C 00 6F 92 00 6F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1C 1A 18 16 14 12 10 0E 0C 0A 08 06 04 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 26 24 22 21 20 1F 1E 1D 1C 18 16 14 13 12 10 0F 0C 0A 08 06 04 02 00 FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 A2 01];
+		};
+};
+
+&lcd_param{	  
+	status = "okay";
+	lcd0_x = <0>;
+	lcd0_y = <0>;
+};
+
+&uart3 {
+ status = "okay";
+ pinctrl-0 = <&uart3m1_xfer>;
+};
+
+&backlight {
+	status = "okay";
+	lcd_pwm_pol = <0>;
+	lcd_backlight_min = <20>;
+	lcd_backlight_max = <255>;
+};
+
+&backlight1 {
+	status = "okay";
+	pwms = <&pwm6 0 25000 0>;
+	lcd_pwm_pol = <0>;
+	lcd_backlight_min = <20>;
+	lcd_backlight_max = <255>;
+};
+
+&backlight2 {
+	status = "okay";
+	lcd_pwm_pol = <0>;
+	lcd_backlight_min = <20>;
+	lcd_backlight_max = <255>;
+};
+
+ &lvds1 {
+	status = "disabled";
+};
+
+&csi2_dphy0 {
+	status = "disabled";
+	/delete-node/ ports;
+};
+
+&csi2_dphy1 {
+	status = "disabled";
+};
+
+&csi2_dphy2 {
+	status = "disabled";
+};
+
+&i2c2 {
+ /delete-node/ gc8034@37;
+};
+
+&i2c4 {
+	 status = "disabled";
+ /delete-node/ gc8034@37;
+ /delete-node/ os04a10@36;
+ /delete-node/ ov5695@36;
+
+};
+
+&usbhost_dwc3 {
+        phys = <&u2phy0_host>;
+        phy-names = "usb2-phy";
+        maximum-speed = "high-speed";
+         status = "okay";
+ };
+ 
+&combphy1_usq {
+        rockchip,dis-u3otg1-port; /* 配置 dwc3_1 控制器最高支持 high speed */
+         status = "okay";
+ };
+
+&dsi0_panel {
+       power-supply = <&vcc3v3_lcd0_n>;
+       reset-gpios = <&gpio3 26 1>;
+       pinctrl-names = "default";
+       pinctrl-0 = <&lcd0_rst_gpio>;
+};
+
+&vcc3v3_lcd0_n {
+ gpio = <&gpio3 25 0>;
+ enable-active-high;
+};
+
+&wireless_bluetooth {
+ compatible = "bluetooth-platdata";
+ clocks = <&rk809 1>;
+ clock-names = "ext_clock";
+
+ uart_rts_gpios = <&gpio2 13 1>;
+ pinctrl-names = "default", "rts_gpio";
+ pinctrl-0 = <&uart1m0_rtsn>;
+ pinctrl-1 = <&uart1_gpios>;
+ BT,reset_gpio = <&gpio2 15 0>;
+ BT,wake_gpio = <&gpio2 17 0>;
+ BT,wake_host_irq = <&gpio2 16 0>;
+ status = "okay";
+};
+
+#include "ynh960-display.dtsi" /* ynh960 overlay */
+
+#include "ynh960-panel-init.dtsi" /* ynh960 overlay */
+
+#include "ynh960-linux-root.dtsi" /* ynh960 overlay */
+
+#include "ynh960-usb-gadget.dtsi" /* ynh960 overlay */
+
+#include "ynh960-usb-host.dtsi" /* ynh960 overlay */
+
+#include "ynh960-evb-trim.dtsi" /* ynh960 overlay */
+
+#include "ynh960-touch.dtsi" /* ynh960 overlay */
+
+#include "ynh960-own-gpio.dtsi" /* ynh960 overlay */
+
+#include "ynh960-uart5-gmac.dtsi" /* ynh960 overlay */
+
+#include "ynh960-uart7-pwm.dtsi" /* ynh960 overlay */
+
+#include "ynh960-npu-vop.dtsi" /* ynh960 overlay */
+
+#include "ynh960-rtc.dtsi" /* ynh960 overlay */
+
+#include "ynh960-optee.dtsi" /* ynh960 overlay */
+
+#include "ynh960-display.dtsi"
+#include "ynh960-panel-init.dtsi"
+#include "ynh960-linux-root.dtsi"
+#include "ynh960-usb-gadget.dtsi"
+#include "ynh960-usb-host.dtsi"
+#include "ynh960-evb-trim.dtsi"
+#include "ynh960-touch.dtsi"
+#include "ynh960-own-gpio.dtsi"
+#include "ynh960-uart5-gmac.dtsi"
+#include "ynh960-uart7-pwm.dtsi"
+#include "ynh960-npu-vop.dtsi"
+#include "ynh960-rtc.dtsi"
+#include "ynh960-optee.dtsi"
+#include "ynh960-uart-dma.dtsi"
+#include "ynh960-mpp-dmc.dtsi"

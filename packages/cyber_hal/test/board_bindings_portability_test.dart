@@ -10,10 +10,9 @@ void main() {
       ? 'boards'
       : 'packages/cyber_hal/boards';
 
-  /// Product HAL pack lives in the HMI app (not cyber_hal).
-  final appHalRoot = Directory.current.path.endsWith('cyber_hal')
-      ? '../../app/lws_hmi/assets/hal'
-      : 'app/lws_hmi/assets/hal';
+  final oemYnh960 = Directory.current.path.endsWith('cyber_hal')
+      ? '../../oem/boards/ynh960/board_profile.json'
+      : 'oem/boards/ynh960/board_profile.json';
 
   test('portable-smoke: empty script helpers still construct HAL defaults', () {
     final json = File('$boardsRoot/portable-smoke.json').readAsStringSync();
@@ -60,16 +59,17 @@ void main() {
     expect(b.sysInfo().mountPoints, ['/']);
   });
 
-  test('app board_profile injects modem + debug helpers only', () {
-    final json = File('$appHalRoot/board_profile.json').readAsStringSync();
+  test('ynh960 OEM injects modem + script helpers only', () {
+    final json = File(oemYnh960).readAsStringSync();
     final profile = BoardProfile.fromJsonString(json);
     expect(profile.helper(BoardHelperKeys.wifiModem),
         '/oem/boards/ynh960/helpers/wifibt-bringup.sh');
     expect(profile.helper(BoardHelperKeys.btModem),
         '/oem/boards/ynh960/helpers/wifibt-bringup.sh');
     expect(profile.helper(BoardHelperKeys.wifiStackUp), isNull);
-    expect(profile.resolvedGpioAsset, 'assets/hal/gpio.json');
-    expect(profile.resolvedModbusAsset, 'assets/hal/modbus.json');
+    expect(profile.resolvedGpioAsset, isNull);
+    expect(profile.resolvedModbusAsset, isNull);
+    expect(profile.helper(BoardHelperKeys.modbusRtuDevice), isNull);
 
     final b = BoardBindings(profile);
     expect(b.dateTime().helperPath, '');

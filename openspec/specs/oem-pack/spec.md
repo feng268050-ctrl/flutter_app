@@ -9,12 +9,12 @@ The repository SHALL provide an `oem/` tree with `packs/<pack_id>/manifest.json`
 
 #### Scenario: ynh960 pack present
 
-- **WHEN** a developer inspects `oem/packs/ynh960_panel-800x1280/manifest.json`
-- **THEN** the manifest SHALL declare `board_id` `ynh960` and a screen id for the 800×1280 panel with paths under `boards/` and `screens/`
+- **WHEN** a developer inspects `oem/packs/ynh960-panel/manifest.json`
+- **THEN** the manifest SHALL declare `pack_id` `ynh960-panel`, `board_id` `ynh960`, `screen_id` `ynh960-tbd`, and paths under `boards/` and `screens/`
 
 ### Requirement: OEM manifest schema
 
-On-device `/oem/manifest.json` SHALL include at least: `schema_version`, `pack_id`, `board_id`, `screen_id`, `board_path`, `screen_path`. Optional `compat` MAY include `os_min` and `soc_family`.
+On-device `/oem/manifest.json` SHALL include at least: `schema_version`, `pack_id`, `board_id`, `screen_id`, `board_path`, `screen_path`. Optional `compat` MAY include `os_min` and `soc_family`. Packs MAY additionally ship `input_defaults.json` at `/oem/packs/<pack_id>/input_defaults.json` (resolved relative to OEM root via `pack_id` in manifest).
 
 #### Scenario: Compose reads pack identity
 
@@ -23,12 +23,24 @@ On-device `/oem/manifest.json` SHALL include at least: `schema_version`, `pack_i
 
 ### Requirement: OEM board profile excludes product gpio/modbus
 
-OEM `board_profile.json` SHALL declare board identity, capabilities, net roles, helpers, storage mounts, and route metrics as needed. It MUST NOT be the authoritative owner of `configs.gpio` / `configs.modbus` product catalogs (those remain App assets).
+OEM `board_profile.json` SHALL declare board identity, capabilities, net roles, helpers, storage mounts, and route metrics as needed. It MUST NOT be the authoritative owner of `configs.gpio` / `configs.modbus` product catalogs (those remain App assets). Shipping OEM boards (`ynh960`, `ek3562`, and successors on the product line) MUST NOT declare `helpers.modbus_rtu_device` for the product welder UART — the App `modbus.json` `device_by_board` (plus default `transport.device`) selects RTU `device` by `board_id`. The QEMU `sim` board MAY keep `modbus_rtu_device` as a guest USB-serial remap for package tests / non-App consumers; product `modbus.json` SHALL also map `sim` → `/dev/ttyUSB0` under `device_by_board`.
+
+The product HMI App (`lws_hmi`) MUST NOT ship `assets/hal/board_profile.json` as a Flutter asset or treat any App-bundled board profile as a Linux device fallback. Host/desktop MAY use an in-code stub profile (not a Flutter asset).
 
 #### Scenario: OEM profile has no product catalogs
 
 - **WHEN** inspecting `oem/boards/ynh960/board_profile.json`
 - **THEN** it SHALL NOT point gpio/modbus configs at OEM-owned pin/register maps as the product authority
+
+#### Scenario: Shipping OEM omits modbus_rtu_device
+
+- **WHEN** inspecting `oem/boards/ynh960/board_profile.json` and `oem/boards/ek3562/board_profile.json`
+- **THEN** helpers SHALL NOT include `modbus_rtu_device`
+
+#### Scenario: HMI App has no board_profile asset
+
+- **WHEN** inspecting `app/lws_hmi/pubspec.yaml` assets and `app/lws_hmi/assets/hal/`
+- **THEN** `board_profile.json` SHALL NOT be listed or present under the App HAL assets
 
 ### Requirement: Board helpers live under OEM
 
@@ -44,19 +56,15 @@ OEM board packs SHALL place board-specific bringup scripts under `boards/<board_
 - **WHEN** `wifi-stack-up` runs and `/run/hmi/board_profile.json` (or compose oem.env) provides a modem helper path
 - **THEN** it SHALL invoke that path instead of hardcoding only `/usr/libexec/bluetooth/wifibt-bringup.sh`
 
-### Requirement: Screen pack LCD seed files
+### Requirement: Panel timing is kernel DT only
 
-Screen packs that require Innohi ParamUpdate / private1 LCD tables SHALL ship those files under `screens/<screen_id>/lcd/` and reference them from `screen.json`. Early display-init SHALL seed private1 **only** from the active OEM screen `lcd/` directory (resolved via `/oem/manifest.json` without requiring `/run/hmi`). Missing OEM lcd files SHALL fail visibly; the init MUST NOT seed from `/system/etc` as a fallback.
+Panel timing and MIPI init SHALL come from kernel device tree (boot FIT). Screen packs MUST NOT ship Innohi ParamUpdate / private1 LCD tables under `screens/<screen_id>/lcd/`. Rootfs MUST NOT seed `/system/etc` LCD tables. Innohi ParamUpdate SHALL NOT run.
 
-#### Scenario: OEM lcd seeds private1
+#### Scenario: No OEM lcd ParamUpdate tables
 
-- **WHEN** `/oem/manifest.json` is valid and the resolved screen `lcd/` directory contains the required LCD param files
-- **THEN** display-init SHALL copy those OEM files into private1
-
-#### Scenario: Missing OEM lcd fails hard
-
-- **WHEN** OEM is missing `manifest.json` or screen `lcd/` lacks required param files
-- **THEN** display-init SHALL exit non-zero without copying `/system/etc` LCD tables into private1
+- **WHEN** inspecting an active screen pack under `oem/screens/`
+- **THEN** it SHALL NOT contain an `lcd/` directory of ParamUpdate tables
+- **AND** `/system/etc/960_lcd_param_rk356x.txt` and `/system/etc/lcd_mipi_param.txt` SHALL be absent from rootfs
 
 ### Requirement: HMI launch consumes screen.env defaults
 
@@ -86,7 +94,7 @@ Screen packs that require Innohi ParamUpdate / private1 LCD tables SHALL ship th
 #### Scenario: virt OEM ui_scale seeded on first boot
 
 - **WHEN** `display.conf` exists or is created without a `ui_scale` key
-- **AND** the active pack is `sim_virt` and `/run/hmi/screen.env` sets `SCREEN_DEFAULT_UI_SCALE=1.28`
+- **AND** the active pack is `sim-virt` and `/run/hmi/screen.env` sets `SCREEN_DEFAULT_UI_SCALE=1.28`
 - **THEN** `hmi-launch` SHALL upsert `ui_scale=1.28` into `/var/lib/hal/display.conf` before starting the embedder
 
 #### Scenario: Operator ui_scale wins over OEM
@@ -97,17 +105,17 @@ Screen packs that require Innohi ParamUpdate / private1 LCD tables SHALL ship th
 
 ### Requirement: Screen pack screen.json
 
-Each screen pack SHALL provide `screen.json` with at least logical `width` / `height` and `default_orientation`. When LCD param tables are required for the panel, `lcd_param_files` SHALL list paths relative to the screen pack (under `lcd/`), not repository `board/*.txt` paths alone. Compose SHALL continue to expose orientation (and related) values in `/run/hmi/screen.env`. Screen packs MAY declare optional `default_ui_scale` (positive number, typically `0.5`–`2.0`) as the factory default UI scale multiplier for that panel; when omitted, runtime behavior SHALL treat the OEM default as absent (Apps fall back to `1.0` until seeded or operator-set).
+Each screen pack SHALL provide `screen.json` with at least logical `width` / `height` and `default_orientation`. Compose SHALL expose orientation (and related) values in `/run/hmi/screen.env`. Screen packs MAY declare optional `default_ui_scale` (positive number, typically `0.5`–`2.0`) as the factory default UI scale multiplier for that panel; when omitted, runtime behavior SHALL treat the OEM default as absent (Apps fall back to `1.0` until seeded or operator-set). Screen packs MUST NOT declare `lcd_param_files` (ParamUpdate tables retired; panel timing is DT-only).
 
 #### Scenario: ynh960 panel screen.json
 
 - **WHEN** compose succeeds for the ynh960 panel pack
 - **THEN** `/run/hmi/screen.env` SHALL expose orientation (and related) values derived from that `screen.json`
 
-#### Scenario: lcd_param_files under screen pack
+#### Scenario: ynh960 screen.json has no lcd_param_files
 
-- **WHEN** inspecting `oem/screens/panel-ynh960-800x1280/screen.json`
-- **THEN** `lcd_param_files` entries SHALL refer to files under that screen pack's `lcd/` directory
+- **WHEN** inspecting `oem/screens/ynh960-tbd/screen.json`
+- **THEN** it SHALL NOT contain a `lcd_param_files` key
 
 #### Scenario: ynh960 default_ui_scale exported
 
@@ -118,7 +126,7 @@ Each screen pack SHALL provide `screen.json` with at least logical `width` / `he
 #### Scenario: virt default_ui_scale exported
 
 - **WHEN** the virt `screen.json` includes `"default_ui_scale": 1.28`
-- **AND** `oem-compose` succeeds for `sim_virt`
+- **AND** `oem-compose` succeeds for `sim-virt`
 - **THEN** `/run/hmi/screen.env` SHALL include `SCREEN_DEFAULT_UI_SCALE=1.28`
 
 ### Requirement: oem-compose early boot
@@ -147,7 +155,7 @@ The build system SHALL provide `make build-oem` that resolves `FACTORY_SKU` / `O
 #### Scenario: Default SKU build-oem
 
 - **WHEN** the operator runs `FACTORY_SKU=ynh960-p800 make build-oem` (or the default sku)
-- **THEN** `oem/out/ynh960_panel-800x1280/oem.img` (or matching oem_id path) exists and is an ext4 filesystem image
+- **THEN** `oem/out/ynh960-panel/oem.img` (or matching oem_id path) exists and is an ext4 filesystem image
 
 ### Requirement: FACTORY_SKU resolves uboot and oem paths
 
@@ -167,19 +175,19 @@ The build system SHALL provide `make build-oem` that resolves `FACTORY_SKU` / `O
 - **WHEN** `make build-oem` then `make build-img` succeed for default APP and `ynh960-p800`
 - **THEN** `output/firmware/lws_hmi/ynh960-p800/factory.img` exists and the package includes the oem partition payload
 
-### Requirement: sim_virt OEM pack
+### Requirement: sim-virt OEM pack
 
-The repository SHALL provide OEM pack `sim_virt` with `oem/packs/sim_virt/manifest.json` declaring `board_id` `sim`, `screen_id` `virt`, paths `boards/sim` and `screens/virt`, and `compat.soc_family` of `virt` (not `rk356x`). `OEM_ID=sim_virt make build-oem` SHALL produce `oem/out/sim_virt/oem.img`. The `boards/sim` tree MUST NOT ship `identity.env` or other per-unit identity seeds — emulator identity uses virtio `provision.img` per `gpt-provision-partition`.
+The repository SHALL provide OEM pack `sim-virt` with `oem/packs/sim-virt/manifest.json` declaring `board_id` `sim`, `screen_id` `virt`, paths `boards/sim` and `screens/virt`, and `compat.soc_family` of `virt` (not `rk356x`). `OEM_ID=sim-virt make build-oem` SHALL produce `oem/out/sim-virt/oem.img`. The `boards/sim` tree MUST NOT ship `identity.env` or other per-unit identity seeds — emulator identity uses virtio `provision.img` per `gpt-provision-partition`.
 
-#### Scenario: sim_virt pack present
+#### Scenario: sim-virt pack present
 
-- **WHEN** a developer inspects `oem/packs/sim_virt/manifest.json`
-- **THEN** the manifest SHALL declare `pack_id` `sim_virt`, `board_id` `sim`, `screen_id` `virt`, and `compat.soc_family` `virt`
+- **WHEN** a developer inspects `oem/packs/sim-virt/manifest.json`
+- **THEN** the manifest SHALL declare `pack_id` `sim-virt`, `board_id` `sim`, `screen_id` `virt`, and `compat.soc_family` `virt`
 
-#### Scenario: build-oem for sim_virt
+#### Scenario: build-oem for sim-virt
 
-- **WHEN** `OEM_ID=sim_virt make build-oem` succeeds
-- **THEN** `oem/out/sim_virt/oem.img` SHALL exist as an ext4 image containing the pack layout
+- **WHEN** `OEM_ID=sim-virt make build-oem` succeeds
+- **THEN** `oem/out/sim-virt/oem.img` SHALL exist as an ext4 image containing the pack layout
 
 #### Scenario: sim board pack has no identity.env
 
@@ -188,7 +196,7 @@ The repository SHALL provide OEM pack `sim_virt` with `oem/packs/sim_virt/manife
 
 ### Requirement: sim board profile without OTG
 
-OEM `oem/boards/sim/board_profile.json` SHALL declare capabilities for ethernet, wifi, bluetooth, gpio, modbus, sysInfo, datetime, sshDebug, and typical I/O (backlight/volume/keyboard/mouse as applicable). It MUST omit `usbOtg`. It MUST NOT reference ynh960 helper paths. Product gpio/modbus catalogs remain App-owned. For the QEMU guest, helpers MAY include `modbus_rtu_device` remapping Modbus RTU to the USB-serial node (e.g. `/dev/ttyUSB0`) while product `modbus.json` keeps the board UART path for ynh960.
+OEM `oem/boards/sim/board_profile.json` SHALL declare capabilities for ethernet, wifi, bluetooth, gpio, modbus, sysInfo, datetime, sshDebug, and typical I/O (backlight/volume/keyboard/mouse as applicable). It MUST omit `usbOtg`. It MUST NOT reference ynh960 helper paths. Product gpio/modbus catalogs remain App-owned. For the QEMU guest, helpers MAY include `modbus_rtu_device` remapping Modbus RTU to the USB-serial node (e.g. `/dev/ttyUSB0`) as a non-App / package-test fallback; product `modbus.json` `device_by_board.sim` SHALL also be `/dev/ttyUSB0`.
 
 #### Scenario: No usbOtg and no ynh960 helpers
 
@@ -206,7 +214,7 @@ OEM `oem/screens/virt/screen.json` SHALL declare logical width/height and `defau
 
 #### Scenario: virt screen.json compose
 
-- **WHEN** oem-compose succeeds for `sim_virt`
+- **WHEN** oem-compose succeeds for `sim-virt`
 - **THEN** `/run/hmi/screen.env` SHALL expose `SCREEN_DEFAULT_ORIENTATION` from virt `screen.json` without requiring lcd param files
 
 ### Requirement: OEM board_id aligns with FIT configuration
@@ -245,11 +253,11 @@ OEM board packs MUST NOT include `product.ini` or `properties.ini`. Board profil
 
 ### Requirement: ynh960 panel default UI scale
 
-The ynh960 800×1280 screen pack (`oem/screens/panel-ynh960-800x1280/screen.json`) SHALL declare `default_ui_scale` of approximately `1.13` so factory-flashed devices obtain panel-appropriate UI scale without manual OS Settings configuration.
+The ynh960 800×1280 screen pack (`oem/screens/ynh960-tbd/screen.json`) SHALL declare `default_ui_scale` of approximately `1.13` so factory-flashed devices obtain panel-appropriate UI scale without manual OS Settings configuration.
 
 #### Scenario: ynh960 pack declares default_ui_scale
 
-- **WHEN** inspecting `oem/screens/panel-ynh960-800x1280/screen.json`
+- **WHEN** inspecting `oem/screens/ynh960-tbd/screen.json`
 - **THEN** `default_ui_scale` SHALL be present and approximately `1.13`
 
 ### Requirement: virt screen default UI scale
@@ -260,4 +268,13 @@ The virt emulator screen pack (`oem/screens/virt/screen.json`) SHALL declare `de
 
 - **WHEN** inspecting `oem/screens/virt/screen.json`
 - **THEN** `default_ui_scale` SHALL be present and `1.28`
+
+### Requirement: Input defaults seed on compose
+
+When `/var/lib/hal/input.conf` is absent, `oem-compose` SHALL create it from the active pack's `input_defaults.json` when present, writing `physical_keyboard_enabled` and `physical_mouse_enabled` as `0` or `1`. When the pack file is absent, compose SHALL NOT create `input.conf`.
+
+#### Scenario: Pack defaults seeded once
+
+- **WHEN** compose runs on first boot for pack `ynh960-panel` with `input_defaults.json` present and no runtime conf
+- **THEN** `/var/lib/hal/input.conf` SHALL exist with keys from the pack file
 

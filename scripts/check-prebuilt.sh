@@ -4,11 +4,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/prebuilt-common.sh"
+# shellcheck source=platform-paths.sh
+source "$ROOT/scripts/platform-paths.sh"
+platform_paths_init "$ROOT" "${SDK_DIR:-$ROOT/linux-sdk}"
 
 bash "$ROOT/scripts/generate-lws-hmi-defconfig.sh" >/dev/null
 
-DEF="$ROOT/overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig"
-GEN="$ROOT/overlay/buildroot/.generated/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+DEF="$LWS_BR_DEFCONFIG"
+GEN="$LWS_BR_DEFCONFIG_GEN"
 [[ -f "$GEN" ]] && DEF="$GEN"
 
 def_includes() {
@@ -167,10 +170,10 @@ if has_include "lws_hmi_npu.config"; then
   require_prebuilt "rknn-rt" "$RKNN_RT_DIR" \
     "make fetch-rknn-rt / make build-runtime-deps" || missing=1
   require_file "librknnrt.so overlay" \
-    "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/lib/librknnrt.so" \
+    "$OVERLAY_FS/usr/lib/librknnrt.so" \
     "make fetch-rknn-rt" || missing=1
   require_file "rknn_server overlay" \
-    "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/bin/rknn_server" \
+    "$OVERLAY_FS/usr/bin/rknn_server" \
     "make fetch-rknn-rt" || missing=1
 fi
 
@@ -191,7 +194,7 @@ if has_include "lws_hmi_platform.config" || has_include "lws_hmi_platform_prebui
 fi
 
 if [[ "$missing" != "0" ]]; then
-  echo "check-prebuilt: failed (see active includes in overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig)" >&2
+  echo "check-prebuilt: failed (see active includes in $LWS_BR_DEFCONFIG)" >&2
   exit 1
 fi
 

@@ -1,0 +1,16 @@
+[Unit]
+Description=Drive product GPIO indicators low at halt
+DefaultDependencies=no
+# Start early so RemainAfterExit + ExecStop runs when shutdown begins.
+After=local-fs.target
+Before=shutdown.target halt.target poweroff.target reboot.target
+Conflicts=shutdown.target halt.target poweroff.target reboot.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/usr/libexec/board/gpio-product-off.sh
+
+[Install]
+WantedBy=multi-user.target sysinit.target

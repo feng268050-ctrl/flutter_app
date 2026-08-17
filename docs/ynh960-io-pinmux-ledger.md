@@ -2,7 +2,7 @@
 
 基准板：**ynh960（RK3566）**。同产品线 ynh961/962 拓扑相近；跨 SKU 改板时先对照本表与原理图，再改 DTS。
 
-契约真相源：**DTS 标签 + Linux 节点路径**（`/dev/ttyS5`、`/sys/class/gpio_innohi/GPIO_N`）。**不要**用 YNHAPI 0-based 下标当 Linux 主键（见 [`flutter-linux-hmi-plan.md` §11.0](flutter-linux-hmi-plan.md)）。
+契约真相源：**DTS 标签 + gpiod 寻址**（`/dev/ttyS5`、`gpiochipN`+offset；丝印 `GPIO_N` / WG_D* 仅作标识）。**不要**用 YNHAPI 0-based 下标当 Linux 主键（见 [`flutter-linux-hmi-plan.md` §11.0](flutter-linux-hmi-plan.md)）。旧 `/sys/class/gpio_innohi` 已随 cutover 去掉。
 
 EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-evb-dts-deferred.md)。
 
@@ -12,8 +12,8 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 | Linux | Mux / 引脚 | 产品用途 | 状态 |
 |-------|------------|----------|------|
-| **`/dev/ttyS5`**（`uart5m1`） | gpio3 **PC2/PC3** | **Modbus RTU**（App 写死此路径） | OK；曾被 EVB gmac PHY reset 占用 PC2 — 已修 |
-| `ttyS4` / uart4 | gpio3 PB1/PB2 | **disabled**；丝印 COM4 → 侧栏黄/红 LED | 故意留给 `own-gpio` |
+| **`/dev/ttyS5`**（`uart5m1`） | gpio3 **PC2/PC3** | **Modbus RTU**（App `modbus.json` → `device_by_board.ynh960` / 默认 `device`） | OK；曾被 EVB gmac PHY reset 占用 PC2 — 已修 |
+| `ttyS4` / uart4 | gpio3 PB1/PB2 | **disabled**；丝印 COM4 → 侧栏黄/红 LED | 故意留给产品 GPIO |
 | `ttyS1` / uart1 | BT HCI | 蓝牙 | OK |
 | `ttyS3` / uart3m1 | gpio3 PB7/PC0 | 板级调试 UART | 与 Modbus/LED 无重叠 |
 | `ttyS7` / uart7m1 | gpio3 PC4/PC5 | **disabled** | 让出给 LED `pwm14`/`pwm15` |
@@ -25,31 +25,42 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 ---
 
-## 2. 三色指示灯（`gpio_innohi`）
+## 2. 三色指示灯（gpiod）
 
-| 颜色 | DTS / sysfs 标签 | SoC pad | Linux GPIO#（兜底） | YNHAPI 入参（仅 Android 降级） |
-|------|------------------|---------|---------------------|--------------------------------|
-| 红 | **`GPIO_5`** | gpio3 RK_PB1 | 105 | `YNHAPI.GPIO_5` → **4** |
-| 黄 | **`GPIO_4`** | gpio3 RK_PB2 | 106 | `YNHAPI.GPIO_4` → **3** |
-| 绿 | **`GPIO_7`** | gpio4 RK_PC5 | 149 | `YNHAPI.GPIO_7` → **6** |
+| 颜色 | 丝印 / 逻辑标签 | SoC pad | gpiochip / offset | Linux GPIO#（兜底） | YNHAPI 入参（仅 Android 降级） |
+|------|-----------------|---------|-------------------|---------------------|--------------------------------|
+| 红 | **`GPIO_5`** | gpio3 RK_PB1 | `gpiochip3` / 9 | 105 | `YNHAPI.GPIO_5` → **4** |
+| 黄 | **`GPIO_4`** | gpio3 RK_PB2 | `gpiochip3` / 10 | 106 | `YNHAPI.GPIO_4` → **3** |
+| 绿 | **`GPIO_7`**（丝印 WG_D0） | gpio4 RK_PC5 | `gpiochip4` / 21 | 149 | `YNHAPI.GPIO_7` → **6** |
 
-- 路径：`/sys/class/gpio_innohi/GPIO_N/value`（写 `0`/`1`）；HAL 亦可经 `gpio.json` 使用 gpiod `gpiochip`+offset（红 `gpiochip3:9`、黄 `gpiochip3:10`、绿 `gpiochip4:21`）。
-- 蜂鸣器候选：`BELL`（DTS Bell-CTL，gpio3 RK_PD3 → `gpiochip3:27` / linux 123）。
-- App：`assets/hal/gpio.json`（Status LED `chassis_rgb` + 可选 `panel_buzzer`）；勿在 Dart 写死 SoC 号。
-- 开机默认：**关**（overlay 将 `GPIO_4/5/7` 的 `default-value` 设为 `"0"`）。
-
-经典 `/sys/class/gpio/export` 仅作工程兜底；`gpio_innohi` 已占用同脚时 export 失败是预期行为。
+- 运行时：App `assets/hal/gpio.ynh960.json` scheme **`gpiod`**（`flutter_gpiod` / `/dev/gpiochip*`）。`label` / 历史 `path` 字段仅文档。
+- 蜂鸣器：`BELL`（DTS Bell-CTL，gpio3 RK_PD3 → `gpiochip3:27` / linux 123）。
+- App：`chassis_rgb` Status LED + `panel_buzzer`；勿在 Dart 写死 SoC 号。
+- 开机默认：关（HMI `resetAllOff` Force Off；halt 见 `gpio-product-off.sh`）。
+- `gpio_innohi` / `/sys/class/gpio_innohi` 已移除；经典 `/sys/class/gpio/export` 仅作工程兜底。
 
 ---
 
-## 3. `own-gpio` ↔ gmac1 冲突
+## 2.1 丝印 WG_D0 / WG_D1 ≠ 韦根字符设备
 
-| 现象 | 原因 | 修复 |
+板子丝印仍标 **WG_D0 / WG_D1**（或 D0/D1）。Linux 产品用途是 **GPIO_7 / GPIO_8**（绿灯用 GPIO_7；GPIO_8 预留、无 HAL 设备）。
+
+| 丝印 | 逻辑标签 | SoC pad | gpiochip / offset | 产品用途 |
+|------|----------|---------|-------------------|----------|
+| WG_D0 / D0 | **`GPIO_7`** | gpio4 RK_PC5 | `gpiochip4` / 21 | 绿指示灯（gpiod） |
+| WG_D1 / D1 | **`GPIO_8`** | gpio4 RK_PC6 | `gpiochip4` / 22 | 预留 GPIO（unclaimed） |
+
+韦根 `/dev/wiegand_{input,output}` 驱动与 DTS 节点已去掉，勿再按门禁协议使用这两脚。`own-gpio` / `gpio_innohi` 已 disabled；两脚均可被 userspace gpiod 申请。
+
+---
+
+## 3. `own-gpio` 退役 ↔ gmac1 / VBUS
+
+| 现象 | 原因 | 现状 |
 |------|------|------|
-| 整组 `own-gpio` probe 失败 → 侧栏灯卡死（常全亮） | EVB gmac1 **RGMII** 占用 gpio4 A0/A1/A2、gpio3 D7；与 Innohi `USB_HOST_PWREN*` / `Relay-CTL` 同 pad | [`ynh960-own-gpio.dtsi`](../overlay/kernel/rockchip/ynh960-own-gpio.dtsi) 从 `own-gpio-pins` 删除冲突脚与对应节点 |
-| eth0 无 carrier / DMA reset 超时 | EVB **RGMII** + 错误 PHY reset/地址 | 同上 `uart5-gmac` overlay：**RMII** + `gpio4 PB3` + MDIO addr 1 |
-
-当前 `own-gpio` **保留**的标签含：GPIO-1…8、Bell-CTL、LED_RED/BLUE 等（见该 dtsi）。**已删除**：`USB_HOST_PWREN{1,2,3}_H`、`Relay_CTL`（与以太网 pad 冲突；量产若需要这些功能，须改原理图或改 gmac 引脚方案，勿简单地加回 EVB 冲突脚）。
+| 整组 `own-gpio` probe 失败 → 侧栏灯卡死（常全亮） | EVB gmac1 **RGMII** 占用 gpio4 A0/A1/A2、gpio3 D7 | `ynh960-own-gpio.dtsi`：**disabled** `own_gpio` / `own_boot_gpio`；产品脚交给 gpiod |
+| 1 mm host 无 VBUS | 曾依赖 `gpio_innohi` 默认拉高 PWREN | 同 overlay：`&gpio4` **gpio-hog** output-high（`USB_HOST_PWREN{1,2,3}`） |
+| eth0 无 carrier / DMA reset 超时 | EVB **RGMII** + 错误 PHY | `uart5-gmac` overlay：**RMII** + `gpio4 PB3` + MDIO addr 1 |
 
 用户态网口名：`10-gmac.link` → **`eth0`**。
 
@@ -152,18 +163,22 @@ cat /var/lib/hal/mouse.conf 2>/dev/null || true
 # Modbus
 ls -l /dev/ttyS5
 
-# 三色灯节点
-ls /sys/class/gpio_innohi/GPIO_{4,5,7}/value
+# 三色灯 / 蜂鸣器（gpiod；无 gpio_innohi）
+test ! -d /sys/class/gpio_innohi && echo "gpio_innohi absent (OK)"
+gpioinfo gpiochip3 gpiochip4 2>/dev/null | head
+# 绿：gpiochip4 offset 21 — 应可 request（非 kernel hog）
+gpioset -m time -s 200ms gpiochip4 21=1
+gpioset gpiochip4 21=0
 
 # eth0 + PHY
 ip link show eth0
-dmesg | grep -E 'stmmac|own-gpio|uart5|pwm14|goodix|focal'
+dmesg | grep -E 'stmmac|uart5|pwm14|goodix|focal|gpio-hog|USB_HOST_PWREN'
 
 # 触控（应有 Goodix；不应反复 Unregister focal）
 dmesg | grep -iE 'goodix|focal|sitronix'
 ```
 
-期望：`own-gpio` 无 “pin already requested by …ethernet”；无 “UART5 vs gmac reset”；`pwm14`/`pwm15` 可 claim；触控为 Goodix。
+期望：无 `gpio_innohi`；PWREN hog 存在；HAL 脚非 kernel-used；无 “UART5 vs gmac reset”；触控为 Goodix。
 
 ---
 
@@ -171,6 +186,8 @@ dmesg | grep -iE 'goodix|focal|sitronix'
 
 | Date | Change |
 |------|--------|
+| 2026-08-15 | gpiod cutover：禁用 `own-gpio` / 删除 `gpio_innohi`；PWREN → gpio-hog；§2/§2.1/§6 改 gpiod |
+| 2026-08-14 | 去掉韦根字符设备；丝印 WG_D0/D1 = GPIO_7/8（§2.1）。MCU / 未启用 innohi 子树从 Image 试验性去掉 |
 | 2026-07-16 | P2.1 USB 鼠标：光标可移动区按 display_size clamp（`0008`；landscape 下对齐面板分辨率） |
 | 2026-07-15 | P2.1 USB 鼠标：可见指针（cursor stride pad）+ `mouse.conf` / Demo 设置；台账 §4.1.2 |
 | 2026-07-15 | P2.1：Micro-USB OTG ID dual-role（`dr_mode=otg`；plug-ssh 门控 `USB-HOST=0`） |

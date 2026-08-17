@@ -106,27 +106,25 @@ final class ModbusConfig {
   factory ModbusConfig.fromJsonString(String source) =>
       ModbusConfig.fromJson(jsonDecode(source) as Map<String, dynamic>);
 
-  /// Board helper override for the RTU serial path (sim USB-serial, etc.).
+  /// Resolve RTU path for [boardId] from `device_by_board`, else `transport.device`.
+  String deviceForBoard(String boardId) => transport.deviceForBoard(boardId);
+
+  /// Board helper / resolved-path override for the RTU serial node.
   ModbusConfig withTransportDevice(String device) {
     if (device.isEmpty || device == transport.device) return this;
     return ModbusConfig(
       version: version,
-      transport: ModbusTransport(
-        type: transport.type,
-        device: device,
-        baud: transport.baud,
-        dataBits: transport.dataBits,
-        parity: transport.parity,
-        stopBits: transport.stopBits,
-        unitId: transport.unitId,
-        timeoutMs: transport.timeoutMs,
-        commandIntervalMs: transport.commandIntervalMs,
-      ),
+      transport: transport.copyWith(device: device),
       attributes: attributes,
       capabilities: capabilities,
       poll: poll,
       groups: groups,
     );
+  }
+
+  /// Apply product `device_by_board` for [boardId] (no-op when already default).
+  ModbusConfig withDeviceForBoard(String boardId) {
+    return withTransportDevice(deviceForBoard(boardId));
   }
 }
 
@@ -141,6 +139,7 @@ final class ModbusTransport {
     this.unitId = 1,
     this.timeoutMs = 500,
     this.commandIntervalMs = 50,
+    this.deviceByBoard = const {},
   });
 
   final String type;
@@ -153,11 +152,60 @@ final class ModbusTransport {
   final int timeoutMs;
   final int commandIntervalMs;
 
+  /// Optional `board_id` → RTU device map from product `modbus.json`.
+  final Map<String, String> deviceByBoard;
+
+  /// Prefer [deviceByBoard] entry for [boardId]; else [device].
+  String deviceForBoard(String boardId) {
+    final mapped = deviceByBoard[boardId];
+    if (mapped != null && mapped.isNotEmpty) {
+      return mapped;
+    }
+    return device;
+  }
+
+  ModbusTransport copyWith({
+    String? type,
+    String? device,
+    int? baud,
+    int? dataBits,
+    String? parity,
+    int? stopBits,
+    int? unitId,
+    int? timeoutMs,
+    int? commandIntervalMs,
+    Map<String, String>? deviceByBoard,
+  }) {
+    return ModbusTransport(
+      type: type ?? this.type,
+      device: device ?? this.device,
+      baud: baud ?? this.baud,
+      dataBits: dataBits ?? this.dataBits,
+      parity: parity ?? this.parity,
+      stopBits: stopBits ?? this.stopBits,
+      unitId: unitId ?? this.unitId,
+      timeoutMs: timeoutMs ?? this.timeoutMs,
+      commandIntervalMs: commandIntervalMs ?? this.commandIntervalMs,
+      deviceByBoard: deviceByBoard ?? this.deviceByBoard,
+    );
+  }
+
   factory ModbusTransport.fromJson(Map<String, dynamic> json) {
     final device = json['device'] as String?;
     final baud = json['baud'] as int?;
     if (device == null || baud == null) {
       throw const HalIoException('modbus transport missing device/baud');
+    }
+    final byBoardRaw = json['device_by_board'];
+    final deviceByBoard = <String, String>{};
+    if (byBoardRaw is Map) {
+      for (final entry in byBoardRaw.entries) {
+        final key = entry.key;
+        final value = entry.value;
+        if (key is! String || key.isEmpty) continue;
+        if (value is! String || value.isEmpty) continue;
+        deviceByBoard[key] = value;
+      }
     }
     return ModbusTransport(
       type: json['type'] as String? ?? 'rtu',
@@ -169,6 +217,7 @@ final class ModbusTransport {
       unitId: json['unit_id'] as int? ?? 1,
       timeoutMs: json['timeout_ms'] as int? ?? 500,
       commandIntervalMs: json['command_interval_ms'] as int? ?? 50,
+      deviceByBoard: deviceByBoard,
     );
   }
 }

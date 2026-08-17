@@ -1,0 +1,20 @@
+[Unit]
+Description=Compose OEM board/screen pack into /run/hmi
+DefaultDependencies=no
+After=storage-init.service local-fs.target
+Before=hmi.service
+# Device: storage-init mounts /oem. Emulator: that unit is conditioned out;
+# After= is still satisfied, and oem-compose mounts /dev/vdb itself.
+Wants=storage-init.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/oem/oem-compose.sh
+# Do not use journal alone — early boot can stall if journald is not ready yet.
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+# Run during sysinit right after storage-init (not after basic via multi-user).
+WantedBy=sysinit.target multi-user.target

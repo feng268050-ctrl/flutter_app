@@ -55,11 +55,29 @@ else
 	pass "no rockchip configfs gadget"
 fi
 
-for unit in hmi.service oem-compose.service mainserver.service cpu-performance.service pwrkey-poweroff.service ; do
+for unit in hmi.service oem-compose.service cpu-performance.service pwrkey-poweroff.service ; do
 	if [ -e "$WANTS/$unit" ]; then
 		pass "$unit enabled"
 	else
 		fail "$unit missing from multi-user.target.wants"
+	fi
+done
+
+echo ""
+echo "--- Innohi MainServer (retired) ---"
+if [ -e "$WANTS/mainserver.service" ] || [ -f /etc/systemd/system/mainserver.service ]; then
+	fail "mainserver.service still present"
+else
+	pass "mainserver.service absent"
+fi
+
+echo ""
+echo "--- sysinit early HMI path (boot KPI) ---"
+for unit in hmi.service oem-compose.service cpu-performance.service; do
+	if [ -e /etc/systemd/system/sysinit.target.wants/$unit ]; then
+		pass "$unit in sysinit.target.wants"
+	else
+		fail "$unit missing from sysinit.target.wants (first-frame KPI)"
 	fi
 done
 

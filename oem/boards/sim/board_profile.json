@@ -40,6 +40,7 @@
     "backlight_preferred_names": "backlight,acpi_video0",
     "alsa_volume_controls": "Master,PCM,Speaker,Playback",
     "apply_mouse_settings": "/usr/bin/apply-mouse-settings",
+    "apply_physical_input_policy": "/usr/bin/apply-physical-input-policy",
     "modbus_rtu_device": "/dev/ttyUSB0"
   }
 }

@@ -6,6 +6,73 @@
 
 ---
 
+## 构建模型（必读）
+
+**通用嵌入式 OS** — 一条产品线共用 **kernel + 用户态栈**；**不**在 `make build-kernel` / `make build-rootfs` 时按主板或 SKU「选芯片」。
+
+| 维度 | 变量 / 机制 | 说明 |
+|------|-------------|------|
+| **通用 OS** | （默认一条） | `make build-kernel` → 共享 **Image** + 多 DTB **FIT**（`board/rk356x-fit-boards.txt`）。**无 `APP=`。** |
+| **产品** | **`APP=`** | `make build-app` → `app/<APP>/build/bundle/release/`；`make build-rootfs` → `output/firmware/<APP>/rootfs.img`（仅 `/opt/hmi` 等 App 树不同）。 |
+| **出厂硬件变体** | **`FACTORY_SKU=`** → U-Boot + **OEM** | `make build-oem` / `make build-img`；屏参、radio、board helpers 在 **OEM 分区**，不是 fork rootfs。 |
+| **SDK 平台 profile** | **`make lunch` 一次** | `CHIP` + `DEFCONFIG` 仅初始化 Rockchip SDK（当前线 `CHIP=rk3566_rk3568`、`DEFCONFIG=ynh960_defconfig`）。`scripts/platform-paths.sh` 解析 SDK `buildroot/board/rockchip/common/`（通用 OS）与 `$CHIP/`（SoC 薄层 + lunch），**不是**日常构建参数。 |
+| **连哪块板调试** | **`SN=` / `IP=`** | `make push-app` / `make upgrade` / `make shell` 选设备；**不是**构建维度。 |
+
+Docker：仓库 → `/work/lws-hmi`，SDK → `/work/sdk`（与是否在容器内无关，路径含义相同）。
+
+### Overlay：common vs SoC
+
+通用 OS 用户态在 **`overlay/board/rockchip/common/`**（`rootfs-overlay/` + post-build 钩子 + GStreamer/platform prebuilt）。**`$CHIP` 目录**（当前 `rk3566_rk3568/`）仅承载 SoC 薄层占位以及 SDK **lunch** 布局（Innohi MainServer 已移除）。`make apply-overlay` 同步到 SDK `buildroot/board/rockchip/common/` 与 `$CHIP/`；Buildroot 多层 overlay 后者覆盖前者：`common/base` → **`common/rootfs-overlay`** → **`$CHIP/rootfs-overlay`**（不要覆盖 SDK 已有的 `common/base`）。产品 App `opt/` 暂存在 **SDK common** overlay。新 SoC 有真实差异再加薄层目录，**不**为 RK3562 复制整棵 overlay / kernel。
+
+### Kernel：通用 Image + Device Tree（ARM 标准模型）
+
+Linux on ARM64 的常规做法是：**一份 `Image`（内核二进制）+ 每块板/每个硬件组合一份 DTB**。Device Tree 描述 pinmux、时钟、外设与 compat 字符串，决定 **如何** probe/映射硬件；**不是**为每块新板单独编一份 Image。
+
+本仓库 **W5 多 conf FIT**（`board/rk356x-fit-boards.txt` + `board/boot-multi.its`）与此一致：
+
+| 组件 | 复用范围 | 由谁维护 |
+|------|----------|----------|
+| **`Image`** | **产品线通用** — 一次 `./build.sh kernel` 产出，FIT 内各 conf **共用同一 blob** | `overlay/kernel/**/*.config`（SoC/驱动 Kconfig）、补丁；扩 SoC（如 RK3562）时 **并入同一次构建**，打出 **新通用 Image** |
+| **DTB** | **每 `board_id` 一份** — 描述具体主板接线 | `overlay/kernel/`（git 真相源）；板厂交付 DTS 并进 overlay |
+| **`resource.img`** | A/B 槽各一份（PARTLABEL + logo） | `make build-kernel` / `scripts/patch-resource-img-partlabel.py` |
+| **U-Boot + SPL loader** | 按出厂 SKU，非 FIT 内 | **可自建**：[rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) + [rkbin](https://github.com/rockchip-linux/rkbin) `boot_merger` → 权威名 `rk*_spl_loader_*.bin` + `uboot.img` 落入 `prebuilt/bootloader/<uboot_id>/`（见 [`docs/uboot-rkbin.md`](uboot-rkbin.md)）；可选 `MiniLoaderAll.bin` symlink；`board/factory-skus.tsv` |
+
+**日常规则：**
+
+- **新板 / 新屏 / 换 MIPI** → 增 **DTB** + **OEM pack** +（若需要）**`uboot_id`**；`make build-kernel` **仅重编 DTB + FIT**（plain，无 `FORCE_KERNEL_IMAGE`），**复用已有 Image**。
+- **新 SoC 驱动 / 新 Kconfig / 内核补丁** → `overlay/kernel/**/*.config` 等 → **`FORCE_KERNEL_IMAGE=1 make build-kernel`**，打出 **覆盖在产 + 新 SoC 的通用 Image**；再为各板挂 DTB。**不是**「每 SoC 一条独立 Image 构建目标」。
+- **禁止**为每块主板 fork 独立 Image；**禁止**把启动 DTB 放进 `oem/`（OEM 在 Linux 启动后才挂载）。
+
+实现细节：`scripts/build-kernel-ab.sh`（Image 共享、按槽 DTB/FIT）、[`docs/linux-sdk-vendor-import.md`](linux-sdk-vendor-import.md) §Multi-configuration boot FIT。
+
+### 新板 / 新 SoC 接入（标准化清单）
+
+**不新建 `linux-sdk`** — 仍是 trim 后的同一份 Rockchip 平台树；板厂/硬件交付物并进 **本仓库 overlay / prebuilt / OEM**。
+
+| 板厂 / 硬件交付 | 进仓库 | 构建 |
+|-----------------|--------|------|
+| 设备树（`.dts`/`.dtsi`） | `overlay/kernel/` | `apply-overlay` → `build-kernel`（通常仅 DTB；新驱动则 `FORCE_KERNEL_IMAGE=1`） |
+| 屏显 / LCD 参数 | `board/*.txt` → DT（`gen-ynh960-panel-init-dtsi`）；OEM `screen.json` 仅用户态契约 | 改时序：`apply-overlay` + `build-kernel`；改旋转/UI scale：`build-oem` |
+| U-Boot + MiniLoader | `prebuilt/bootloader/<uboot_id>/` | `build-img` / `flash` |
+| 板级 profile / helpers | `oem/boards/<board_id>/` | `build-oem` |
+| 新 `board_id` | `board/rk356x-fit-boards.txt` + OEM `manifest.json` | `build-kernel`（FIT inventory） |
+| 出厂组合 | `board/factory-skus.tsv` 一行 | `FACTORY_SKU=… make build-img` |
+
+**产品仍用 `APP=lws_hmi`（或未来 `APP=`）** — 换 SoC/主板 **不** fork App；用户态 rootfs 复用 **同一套 overlay/Buildroot 配方**（必要时按平台重编 `rootfs.img`，不是按主板 fork）。
+
+**当前在产 + 接入中：**
+
+| SKU | board_id | U-Boot 目录 | OEM pack | 状态 |
+|-----|----------|-------------|----------|------|
+| `ynh960-p800`（默认） | `ynh960` | `prebuilt/bootloader/rockchip-ynh960/` | `ynh960-panel` | 在产 |
+| `ek3562-dev` | `ek3562` | `prebuilt/bootloader/vendor-ek3562/` | `ek3562-panel` | DTS + FIT conf `ek3562` 已落；U-Boot/loader **自建**（[`uboot-rkbin.md`](uboot-rkbin.md) / [`ek3562.md`](../overlay/kernel/rockchip/ek3562.md)） |
+
+运行时识别：`oem-compose` 写 `/run/hmi/board_id` 与 `/run/hmi/boards.d/<board_id>`。板端 `read-board-id`。Innohi **MainServer / ParamUpdate 已实验性移除**（面板时序靠 kernel DT）。
+
+**示例（ek3562，与 ynh960 在产并存）：** 板级 DTS 已落 `overlay/kernel/rockchip/`（见 [`ek3562.md`](../overlay/kernel/rockchip/ek3562.md)）→ 按 [`uboot-rkbin.md`](uboot-rkbin.md) 用 **rkbin `boot_merger` + rockchip-linux/u-boot** 自建 loader/`uboot.img` 放入 `prebuilt/bootloader/vendor-ek3562/` → 主线 `rtw_8821cu`（`ek3562-wifibt.config` + `lws_hmi_wifi_rtw88.config`）→ Image 含 RK3562 后 `FORCE_KERNEL_IMAGE=1 make build-kernel`（若仅 DTB 则 plain）+ `bash scripts/br-make-packages.sh wifi linux-firmware` → **再**把 `ek3562` 写入 `board/rk356x-fit-boards.txt` 并将 OEM `fit_dt` 改为 `ek3562` → `FACTORY_SKU=ek3562-dev make build-oem` / `build-img`。**ynh960 继续用同一 FIT 里的 `ynh960` conf**，不是各 SoC 各维护一套 SDK。
+
+---
+
 ## 怎么传参数
 
 | 方式 | 示例 |
@@ -35,8 +102,8 @@
 | `FORCE` | `0` | 强制覆盖/重建（各目标语义见下文） |
 | `FACTORY_SKU` | `ynh960-p800` | 出厂变体主键；查 `board/factory-skus.tsv` 得到下面两个 ID；也是 `factory.img` 子目录名 |
 | `UBOOT_ID` | 由表推出（默认 `rockchip-ynh960`） | bootloader 包：`prebuilt/bootloader/<id>/`；日常勿设，用 `FACTORY_SKU`；模拟器不用 |
-| `OEM_ID` | 由表推出（默认 `ynh960_panel-800x1280`） | OEM 包：`oem/packs/<id>/` → `oem/out/<id>/oem.img`；日常勿设；模拟器用 `sim_virt` |
-| `BOARD` / `CHIP` / `DEFCONFIG` | `ynh960` / `rk3566_rk3568` / `ynh960_defconfig` | lunch 用（一般勿改） |
+| `OEM_ID` | 由表推出（默认 `ynh960-panel`） | OEM 包：`oem/packs/<id>/` → `oem/out/<id>/oem.img`；日常勿设；模拟器用 `sim-virt` |
+| `BOARD` / `CHIP` / `DEFCONFIG` | `ynh960` / `rk3566_rk3568` / `ynh960_defconfig` | **仅 `make lunch`**（Rockchip SDK 平台 profile；**不是** `build-kernel` / `build-rootfs` 的产品选择）。rootfs 产品区分用 **`APP=`**；硬件/屏参用 **OEM**。 |
 
 `FACTORY_SKU` → `UBOOT_ID` + `OEM_ID`（已设的 ID 覆盖表值）。`APP` 选软件/rootfs；SKU 族选 U-Boot+OEM；kernel FIT 各 SKU 共用。
 
@@ -74,14 +141,14 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 ### `make apply-overlay`
 
-- **怎么用：** `make apply-overlay`；改 DTS/kernel 后常用 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`
-- **何时用：** 改了 `overlay/**`、`board/**`（非纯 app 热更）后、**在** `build-kernel` / `build-rootfs` **之前**显式执行。`build-rootfs` / `docker-run` **不会**自动 apply（与 `build-kernel` 对称）。
-- **做什么：** 把 board/buildroot/kernel overlay 打进 `linux-sdk/`（macOS volume 模式下在容器内执行）。
+- **怎么用：** `make apply-overlay`。owned 树上改 **kernel patches** 或 `overlay/device/**/patch-mk-*.sh` 时：`FORCE_PLATFORM_OVERLAY=1 make apply-overlay`
+- **何时用：** 改了 `overlay/**`、`board/**`（非纯 app 热更）后、**在**对应 `build-kernel` / `build-rootfs` **之前**显式执行（谁吃 overlay 谁先 apply）。`build-*` / `docker-run` **不会**自动 apply。
+- **做什么：** 把 board/buildroot/kernel overlay 打进 `linux-sdk/`（macOS volume 模式下在容器内执行）：通用 OS → SDK `buildroot/board/rockchip/common/rootfs-overlay/`，SoC 薄层 → `$CHIP/rootfs-overlay/`；钩子装到 `common/lws-hmi/`（不覆盖厂商 `common/post-build.sh`）。**删除** repo/SDK 里误放在 `rootfs-overlay/opt/` 的 App bundle（正确来源是 `app/<APP>/build/bundle/release`，由 `build-rootfs` 再拷入 SDK **common** overlay）。DTS / `*.config` / firmware / logo / rootfs 每次都会 sync。owned 树默认**跳过** `overlay/kernel/patches/` 与 SDK `mk-kernel`/`mk-rootfs` 等脚本补丁。
 - **参数：**
 
 | 变量 / 标志 | 说明 |
 |-------------|------|
-| `FORCE_PLATFORM_OVERLAY=1` | 在已 owned 的 SDK 树上强制重打 kernel/device 补丁 |
+| `FORCE_PLATFORM_OVERLAY=1` | owned 树（`.lws-owned-tree`）上强制重打 **kernel patches** + SDK `mk-*` / `post-wifibt` 脚本补丁。DTS/`*.config`/rootfs **不需要** |
 | `BUILD_BIND_MOUNT=1` | macOS：在宿主机跑 overlay（非 volume） |
 | `SKIP_OVERLAY=0` | 可选：让随后的 `docker-run` 在命令前再 apply 一次（默认跳过） |
 | `--restore`（经 `clean-overlay`） | 还原被 patch 的 SDK 文件 |
@@ -150,22 +217,22 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make lunch`
 
 - **怎么用：** `make lunch`
-- **何时用：** 首次选板型/Buildroot 配置，或 `.config` 丢失后。
-- **做什么：** `./build.sh $(CHIP):$(DEFCONFIG)` + 同步 lunch 配置。
-- **参数：** `CHIP`、`DEFCONFIG`（默认 ynh960）。
+- **何时用：** **首次**配置 SDK（新 clone / 清 volume / 丢 `output/.config`）——**不是**每次 build-kernel/rootfs 的前置步骤。
+- **做什么：** `./build.sh $(CHIP):$(DEFCONFIG)` + 同步 lunch 配置（当前线默认 Rockchip **平台 profile**，非产品/主板选择）。
+- **参数：** `CHIP`、`DEFCONFIG`（Makefile 默认；一般勿改，上新 SoC 平台时由维护者更新 overlay + lunch 默认值）。
 
 ### `make show-config`
 
 - **怎么用：** `make show-config`
-- **何时用：** 确认 `RK_*` 芯片/DTS/rootfs/defconfig 行。
+- **何时用：** 诊断 SDK `output/.config` 里 `RK_*` 行（DTS 名、Buildroot profile 等）。
 - **前提：** 已 `lunch`。
 
 ### `make build-boot-logo`
 
 - **怎么用：** `make build-boot-logo`
 - **何时用：** 改了 `board/logo/`。
-- **做什么：** 生成 kernel FIT splash `logo.bmp`，并刷新 overlay Weston `boot-splash.png`（横屏直立，对齐 `rotate-270`）。
-- **后续：** 通常 `make build-kernel`（+ 若 splash 进 rootfs 则 `build-rootfs`）再 `upgrade`。
+- **做什么：** 从 `splash_icon.png` 生成 **icon 尺寸** kernel `logo.bmp`（横屏预旋转，bootloader 居中）和 Weston `boot-splash.png`（直立，`pad` + 黑底居中）。**不**按面板分辨率铺画布。
+- **后续：** `make apply-overlay`，再 **`FORCE_KERNEL_IMAGE=1 make build-kernel`**，然后 `make build-rootfs`、`make upgrade`。
 
 ### `make build-ai` / `make rebuild-ai`
 
@@ -184,7 +251,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 - **怎么用：** `make build-app` 或 `APP=os_settings make build-app`
 - **何时用：** 改了 Flutter App / `cyber_*` 包 / 随 App 打包的 `bin/` 后；日常热更首选（再 `push-app`）。
-- **做什么：** 先按需跑 `prepare-hmi-ship-assets`（同 `prepare-app-assets`），再 release AOT → overlay（`*_hmi`→`/opt/hmi`），并 `apply-overlay`。
+- **做什么：** 先按需跑 `prepare-hmi-ship-assets`，再 release AOT → **`app/<APP>/build/bundle/release/`**。**不**写入 SDK、**不**打 rootfs。`build-rootfs` 再从 bundle 拷入 `/opt/*`。
 - **参数：**
 
 | 变量 | 说明 |
@@ -228,10 +295,11 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 
 - **怎么用：** `make build-kernel`（默认并行 A+B）；单槽 `make build-kernel-a` / `make build-kernel-b`
 - **何时用：** 改 kernel、DTS（`overlay/kernel/`）、boot logo、FIT 多 conf；仅重打 B 槽 FIT 时用 `build-kernel-b`。
+- **产品/主板：** **无 `APP=`、无 `FACTORY_SKU=`** — 产物为全线共享的 `output/firmware/boot.img` / `boot_b.img`。
 - **Image 何时重编：** SDK 里已有 `kernel/arch/arm64/boot/Image` 时默认**跳过** `./build.sh kernel`，只重编 DTB + 打 FIT（日志里有 `kernel Image present — skip`）。改 `*.config` 片段、驱动/补丁、`board/logo`、或首次构建 → `FORCE_KERNEL_IMAGE=1 make build-kernel`。仅改 DTS/dtsi、FIT 清单 →  plain `make build-kernel` 即可。详见 `AGENTS.md`「make build-kernel = Image + DTB/FIT」。
 - **产物：** `output/firmware/boot.img`（rootfs_a）、`boot_b.img`（rootfs_b）、裸 `Image`（模拟器用）。
 - **A/B `resource.img`：** 每槽 FIT 会 patch PARTLABEL 并**刷新 RSCE ENTR SHA-1**（`scripts/patch-resource-img-partlabel.py`）。漏刷 hash 会导致 **仅 B 槽**无 splash / 卡顿 / 关机冷启动 panic。打包后自动 `--verify`；说明与踩坑见 [`docs/ab-slot-misc.md`](ab-slot-misc.md)。
-- **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`；强制重编 Image：`FORCE_KERNEL_IMAGE=1 make build-kernel`。
+- **参数：** 经 Docker/`BUILD_JOBS`。**先** `make apply-overlay`（kernel 有 overlay，`build-kernel` 不自动 apply）。强制重编 Image：`FORCE_KERNEL_IMAGE=1 make build-kernel`。
 - **日志：** `output/logs/build-kernel-{ab|a|b}-*.log`
 - **后续：** 板端 `make upgrade`（不必 `build-img`）。
 
@@ -245,15 +313,16 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make build-rootfs`
 
 - **怎么用：** `make build-rootfs` 或 `APP=cnc_hmi make build-rootfs`
-- **何时用：** overlay/systemd/LCD、Bake App 进镜像、Buildroot 用户态变更后。改 overlay 后须先 `make apply-overlay`（本目标不再内嵌 apply）。
+- **何时用：** 通用 OS 用户态变更（overlay systemd/脚本、Buildroot 包选项）、或把 **产品 App bake 进镜像**。改 overlay 后须先 `make apply-overlay`（本目标不再内嵌 apply）。
+- **产品区分：** 仅 **`APP=`** 决定 `/opt/hmi` 内容与 `output/firmware/<APP>/rootfs.img`。**不**按 ynh960/961/962 或芯片型号 fork rootfs；硬件差异走 **OEM**。
 - **产物：** `output/firmware/<APP>/rootfs.img`（仅 `rootfs.ext2`；已关掉 cpio/squashfs/tar）。
-- **参数：** `APP`；若存在 `app/os_settings` 会自动确保 `/opt/os_settings`。缺 app 树时 `ensure-rootfs-apps` 会编 app 并**仅在此时** apply 一次。
+- **参数：** `APP`；若存在 `app/os_settings` 会自动确保并 bake `/opt/os_settings`。`ensure-rootfs-apps` 缺则 `build-app`，从 `app/*/build/bundle/release` 同步进 SDK 再打包。
 - **重要：** 改 `overlay/buildroot/chips/*.config` 等**已有包的编译选项**时，`build-rootfs` **不会**重编该包；需先 `bash scripts/br-make-packages.sh <label> <pkg>…`。关掉/打开 rootfs 镜像格式后需 `make apply-overlay` + `make lunch` 再 `build-rootfs`。
 - **后续：** `make upgrade`。
 
 ### `make build-oem`
 
-- **怎么用：** `make build-oem`；模拟器：`OEM_ID=sim_virt make build-oem`
+- **怎么用：** `make build-oem`；模拟器：`OEM_ID=sim-virt make build-oem`
 - **何时用：** 改了 `oem/**`、屏参包、board helpers。
 - **产物：** `oem/out/<OEM_ID>/oem.img`。
 - **参数：** `FACTORY_SKU`（推荐）或直接 `OEM_ID=`；`UBOOT_ID` 无关。
@@ -290,7 +359,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make devices`
 
 - **怎么用：** `make devices`
-- **何时用：** 选板前看 RockUSB / USB-SSH / SSH / EMU 表。
+- **何时用：** 选 **调试目标** 前看 RockUSB / USB-SSH / SSH / EMU 表（`SN=` / `IP=`，**不是**构建时选芯片）。
 - **参数：** 无；输出用于填 `SN=` / `IP=`。
 
 ### `make shell`
@@ -310,13 +379,13 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | `GREP` | journalctl `--grep` |
 | `PRIORITY` | `emerg`…`debug` 或 `0`–`7` |
 | `KERNEL_ONLY=1` | 仅内核日志 |
-| `SN` / `IP` | 选板 |
+| `SN` / `IP` | 选 **调试/升级目标设备**（非构建参数） |
 
 ### `make write-identity`
 
 - **怎么用：** `make write-identity BRAND=Innohi MODEL='L1 Pro' PRODUCT_SN=SN123`；覆盖已有 SN 加 `FORCE=1`
 - **何时用：** 产测/出厂写入 brand/model/产品 SN（Rockchip Vendor Storage；emulator / 无 VS 板写入 `provision/identity.env`）。
-- **注意：** 选板用 `SN=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。QEMU 需 `provision.img`（`make build-emulator`）。
+- **注意：** 选设备用 `SN=`/`IP=`；写入身份用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。QEMU 需 `provision.img`（`make build-emulator`）。
 
 ### `make reset-process-library`
 
@@ -381,7 +450,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make push-app`
 
 - **怎么用：** `make build-app` 后 `make push-app`（多板 `SN=` / `IP=`）
-- **何时用：** **Debug** 热更——无签名，SSH 流式推 overlay APP 到板端 `/opt/hmi`（或 `/opt/<APP>`）并重启对应 systemd unit（`*_hmi` → `hmi.service`；`os_settings` → `os-settings.service`）。**不是** `upgrade-app` 的别名。
+- **何时用：** **Debug** 热更——无签名，SSH 流式推 `app/<APP>/build/bundle/release` 到板端 `/opt/hmi`（或 `/opt/<APP>`）并重启对应 systemd unit（`*_hmi` → `hmi.service`；`os_settings` → `os-settings.service`）。**不是** `upgrade-app` 的别名。
 - **行为：** `*_hmi`：上传到 `/var/lib/hmi/push-app-staging/` → 刷新并执行 `/usr/libexec/hmi/push-app-apply-and-restart.sh` → 安装 + 重启 `hmi.service`。`os_settings`：直推 `/opt/os_settings` → `systemctl restart os-settings.service`。
 - **参数：** `APP`、设备选择。
 - **签名发布：** 用 `make upgrade-app` / `make publish-app`。
@@ -399,8 +468,8 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 | 变量 | 默认 | 说明 |
 |------|------|------|
 | `MODE` | `TTL` | `TTL`=miniterm；`RS485`/`RS232`=hex+TX |
-| `PORT` | 自动 | 如 `/dev/cu.wchusbserial…` |
-| `BAUD` | TTL `1500000`；其它 `115200` | |
+| `PORT` | 自动 | 优先 `/dev/cu.usbmodem…`，否则 `usbserial` / `wch…` |
+| `BAUD` | TTL 按口：`usbserial*`→`115200`（ek3562），其它→`1500000`（ynh960）；RS485/RS232→`115200` | 显式 `BAUD=` 覆盖 |
 | `LOG_FILE` | 空 | hex 模式会话日志文件 |
 | `SNIFF_SEC` | `8` | sniff 每档波特率监听秒数 |
 
@@ -498,7 +567,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 ### `make pack-app`
 
 - **怎么用：** `make pack-app`（通常先 `make build-app`）
-- **做什么（不编译）：** 把 overlay APP 安装树打成 `output/app/<APP>/v{semver}.tar.gz`。
+- **做什么（不编译）：** 把 `app/<APP>/build/bundle/release/` 打成 `output/app/<APP>/v{semver}.tar.gz`。
 - **谁会用：** `make upgrade-app` / `make publish-app` 默认会先跑它；也可单独打包后用 `APP_PACKAGE=` 喂给升级/发布。
 - **参数：** `APP`、`APP_PACKAGE=`（覆盖输出路径）
 
@@ -638,7 +707,7 @@ USB-SSH 认证：rootfs 预置团队 Ed25519 公钥；主机私钥默认 `keys/s
 - **怎么用：** `make build-emulator`；重置模拟器身份盘：`FORCE=1 make build-emulator`
 - **何时用：** 已有 `Image` + `rootfs.img` 后组装模拟器目录。
 - **参数：** `APP`（模拟器 rootfs 固定扩到 1536M，设备 OTA 仍为 ~600M）；`FORCE=1` 仅重建 `provision.img`（清空 identity/tunables，下次启动 autogen 新 SN）。
-- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim_virt` oem；**默认保留**已有 `provision.img`）。
+- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim-virt` oem；**默认保留**已有 `provision.img`）。
 
 ### `make emulator` / `make emulator-stop`
 
@@ -671,8 +740,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | `fix-buildroot-host-rpaths` | `make fix-buildroot-host-rpaths` | migrate 后修 host rpath | — |
 | `clean-buildroot-output` | `make clean-buildroot-output` | 删当前 BR output（保留 `dl/`）后全量重编 rootfs；**macOS** 走 Docker volume（勿只清 host `linux-sdk/`） | 大版本 BR 升级（见 `BUILDROOT_VERSION`）必做；之后 `lunch` + `build-rootfs` |
 | `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
-| `build-uboot` | **ynh960 勿用**（无 Innohi 指示） | 有砖机风险 | — |
-| `fetch-uboot` | 内部/少用 | 拉 uboot | — |
+| `build-uboot` | SDK `./build.sh uboot`（现 lunch / ynh960 向）；新板优先按 [`uboot-rkbin.md`](uboot-rkbin.md) 自建后拷入 `prebuilt/bootloader/<uboot_id>/`；ynh960 须验收 Linux-first bootcmd + TRUST v1.44/v2.15 | 有匹配 DT + rkbin 即可编；**勿**把未验收包刷进量产 SKU | `BUILD_UBOOT=1` 经 Docker |
+| `fetch-uboot` | `make fetch-uboot` | 拉取 [rockchip-linux/u-boot](https://github.com/rockchip-linux/u-boot) 进 `linux-sdk/u-boot/` | `FORCE=1` 重装；分支见 `overlay/third-party/uboot.version` |
 | `build-libexec-binaries` | 交叉编译 libexec C 二进制 → prebuilt + overlay | `TOOL=`、`rebuild-libexec-binaries` | macOS 自动进 Docker |
 | `test-debug-app` | `make test-debug-app` | debug-app 脚本自测 | — |
 
@@ -712,8 +781,9 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 | App 日更（Debug） | `make build-app` → `make push-app` |
 | App 签名升级 | `make build-app` → `make upgrade-app` |
 | Overlay / systemd | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
-| Kernel / DTS | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `make build-kernel` → `make upgrade` |
-| SELinux + auditd（permissive；见 [`docs/selinux.md`](selinux.md)） | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `bash scripts/br-make-packages.sh selinux libselinux libsepol refpolicy policycoreutils libsemanage audit systemd` → `make build-kernel` → `make build-rootfs` → `make upgrade`（**勿** `build-uboot`） |
+| Kernel / DTS | `make apply-overlay` → `make build-kernel` → `make upgrade` |
+| Kernel patches / `patch-mk-*.sh` | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `FORCE_KERNEL_IMAGE=1 make build-kernel` → `make upgrade` |
+| SELinux + auditd（permissive；见 [`docs/selinux.md`](selinux.md)） | `make apply-overlay` → `bash scripts/br-make-packages.sh selinux …` → `FORCE_KERNEL_IMAGE=1 make build-kernel` → `make build-rootfs` → `make upgrade`（**不要求**改 U-Boot） |
 | rng-tools + jitterentropy（`rngd.service`） | `make apply-overlay` → `bash scripts/br-make-packages.sh rng rng-tools jitterentropy-library` → `make build-rootfs` → `make upgrade` |
 | 仅 OEM | `make build-oem` → `OEM_ONLY=1 make upgrade` |
 | 出厂 USB | `make build-oem` → `make build-img` → `make reboot-loader` → `make flash` |
@@ -729,7 +799,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - [`AGENTS.md`](../AGENTS.md) — Agent 重建表（改完代码后该跑哪些 make）
 - [`docs/build-optimization.md`](build-optimization.md)
 - [`docs/p32-emulator.md`](p32-emulator.md)
-- [`docs/selinux.md`](selinux.md) — SELinux permissive enablement（不改 U-Boot）
+- [`docs/selinux.md`](selinux.md) — SELinux permissive enablement（不依赖改 U-Boot）
+- [`docs/uboot-rkbin.md`](uboot-rkbin.md) — 自建 U-Boot / SPL（rkbin `boot_merger` OUTPUT `rk*_spl_loader_*.bin` + rockchip-linux/u-boot）
 - [`docs/linux-sdk-vendor-import.md`](linux-sdk-vendor-import.md)
 - [`docs/cache-mirror.md`](cache-mirror.md)
 - [`.env.example`](../.env.example)

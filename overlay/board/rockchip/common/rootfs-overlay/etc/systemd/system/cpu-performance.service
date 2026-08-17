@@ -1,0 +1,14 @@
+[Unit]
+Description=CPU/DMC/GPU load profile restore
+DefaultDependencies=no
+After=local-fs.target
+Before=hmi.service
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/board/set-performance-mode.sh
+
+[Install]
+WantedBy=sysinit.target multi-user.target

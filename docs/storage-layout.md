@@ -17,7 +17,7 @@ Rockchip `parameter.txt` uses **512-byte sectors**.
 | | recovery, backup | keep single (current sizes) | Not A/B in P2.4 |
 | system | **rootfs_a**, **rootfs_b** | each **1 GiB** | Userspace; remote upgrade writes inactive letter |
 | | oem | ~128 MiB | Board×screen pack |
-| | private, private1 | unchanged | LCD/MIPI params / private data |
+| | private, private1 | unchanged | Legacy private data (ParamUpdate LCD tables retired) |
 | | **vendor0–vendor3** | each **64 KiB** (`0x80`) | Rockchip Vendor Storage (product **brand** / **model** / **sn** + sealed cloud Ed25519 blob ID 22); **geometry frozen ABI** |
 | | **provision** | **4 MiB** (`0x2000`) | Factory tunables (`properties.ini`); non-Rockchip identity/sealed blobs; **never in factory.img** |
 | | userdata | grow from `0x4C0200` | Operator prefs, models, OTA staging |
@@ -95,8 +95,8 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 |---------|------|-----------|
 | Buildroot rootfs, `/opt/hmi`, libs | `/` | active `rootfs_*` |
 | Kernel FIT | — | active `boot_*` |
-| LCD/MIPI params (runtime seed) | `/mnt/private1/` (seeded at boot from OEM only) | private1 |
-| LCD/MIPI param **authority** | `/oem/screens/<id>/lcd/` (required; no `/system/etc` seed fallback) | oem |
+| Panel timing / MIPI init | Kernel DTB in boot FIT (`overlay/kernel/`) | `boot_*` |
+| Screen UI contract (orientation, logical size, ui_scale) | `/oem/screens/<id>/screen.json` → `/run/hmi/screen.env` | oem |
 | OEM board×screen pack (SKU authority) | `/oem/` (`manifest.json`, `boards/`, `screens/`, helpers) | oem |
 | Compose export (runtime) | `/run/hmi/{oem.env,board_profile.json,screen.env}` | tmpfs |
 | **RKNN models** (`*.rknn`, `config.yaml`) | **`/userdata/models/`** | userdata |
@@ -108,7 +108,7 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | **Non-Rockchip identity** | **`/mnt/provision/identity.env`** | **provision** |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
-`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `/usr/libexec/display/ynh960-display-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/display-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, runs **`provision-mount.sh`** (mount `PARTLABEL=provision` → `/mnt/provision`, bind `properties.ini`), then **`bind-prefs.sh`** to symlink:
+`/userdata` is **not** in `/etc/fstab`. `storage-init.service` runs `/usr/libexec/board/storage-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/storage-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, runs **`provision-mount.sh`** (mount `PARTLABEL=provision` → `/mnt/provision`, bind `properties.ini`), then **`bind-prefs.sh`** to symlink:
 
 - `/var/lib/wpa_supplicant` → `/userdata/wpa_supplicant`
 - `/var/lib/network` → `/userdata/network`

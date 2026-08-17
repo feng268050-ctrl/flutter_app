@@ -198,7 +198,7 @@ flowchart TB
 ### 5.1 工程形态
 
 - 标准 Flutter 工程；`pubspec` path：`cyber_hal`、`cyber_ui`、`cyber_ime`。
-- 构建：`APP=os_settings make build-app`（复用 `scripts/build-app.sh` / `hmi-bundle-common.sh`）；安装到 overlay `…/opt/os_settings`。
+- 构建：`APP=os_settings make build-app` → **`app/os_settings/build/bundle/release/`**（设备 `/opt/os_settings`）。
 - 日迭代：`APP=os_settings make push-app`（重启 `os-settings.service`，不碰 `hmi.service`）；签名路径按需 `upgrade-app`。
 - `make build-rootfs`：**自动 ensure** `/opt/os_settings`（取代原 `factory_test` 自动附带约定）。
 

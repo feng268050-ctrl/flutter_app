@@ -1,0 +1,21 @@
+[Unit]
+Description=LWS HMI on-demand wpa_supplicant (wlan0)
+Documentation=file:///usr/libexec/wpa/wifi-stack-up.sh
+# Not linked from multi-user.target.wants — started only via wifi-stack-up.sh / Demo.
+After=local-fs.target storage-init.service dbus.service
+# Stock Buildroot unit is D-Bus-activated as `wpa_supplicant -u` (no iface). HMI
+# connecting to fi.w1.wpa_supplicant1 at boot would otherwise own the bus name and
+# make this second -u instance fail with "Failed to initialize wpa_supplicant".
+Conflicts=wpa_supplicant.service
+# wpa_supplicant log under /var/lib/wpa_supplicant → /userdata/wpa_supplicant.
+# This dependency also guarantees stop ordering before userdata is unmounted.
+RequiresMountsFor=/var/lib/wpa_supplicant
+
+[Service]
+# Dedicated unit so wpa_supplicant is NOT in hmi.service's cgroup (Demo Process.run
+# would otherwise lose Wi-Fi on systemctl stop hmi → LAN SSH drops during push-app).
+Type=simple
+ExecStart=/usr/libexec/wpa/run-wpa.sh
+Restart=no
+
+# No [Install] — must not auto-start at boot.

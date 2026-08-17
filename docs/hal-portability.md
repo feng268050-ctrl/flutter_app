@@ -92,7 +92,7 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | **Profile** | `helpers.alsa_volume_controls` — preferred mixer control names (board codec order) |
 | **Profile** | `helpers.alsa_playback_path_control` + `alsa_playback_path_value` — **optional** enum route (e.g. Rockchip `Playback Path` / `RING_SPK_HP`). Omit on boards that have no such control; HAL skips routing when unset |
 | **Helper** | `change_backlight` / `change_volume` — **optional**; default is sysfs / amixer + `/var/lib/hal/` prefs |
-| **Prefs** | `/var/lib/hal/display.conf` — `backlight`, `auto_sleep`, `orientation` (`landscape` \| `portrait`), `wallpaper` / `wallpaper_id` (active image under `/var/lib/hal/wallpaper.*`; presets in `/usr/share/hal/wallpapers/`), **`ui_scale`** (operator UI scale multiplier; **`1.0` = physical 1:1 / no rematch**; non-integer OK e.g. `0.85`–`2.0`; **OS Settings** writes; both seats apply via `matchEmbedderDensity`; OEM screen pack seeds `default_ui_scale` on first boot when the key is absent — e.g. ynh960 ~`1.13`, QEMU `sim_virt` ~`1.28`; factory reset clears operator `display.conf` and re-seeds on next `hmi-launch`); `/var/lib/hal/sound.conf` — `volume`, `button_feedback` (**absolute path** to click sample next to conf; product App `installAndSelect`s catalog bytes) |
+| **Prefs** | `/var/lib/hal/display.conf` — `backlight`, `auto_sleep`, `orientation` (`landscape` \| `portrait`), `wallpaper` / `wallpaper_id` (active image under `/var/lib/hal/wallpaper.*`; presets in `/usr/share/hal/wallpapers/`), **`ui_scale`** (operator UI scale multiplier; **`1.0` = physical 1:1 / no rematch**; non-integer OK e.g. `0.85`–`2.0`; **OS Settings** writes; both seats apply via `matchEmbedderDensity`; OEM screen pack seeds `default_ui_scale` on first boot when the key is absent — e.g. ynh960 ~`1.13`, QEMU `sim-virt` ~`1.28`; factory reset clears operator `display.conf` and re-seeds on next `hmi-launch`); `/var/lib/hal/sound.conf` — `volume`, `button_feedback` (**absolute path** to click sample next to conf; product App `installAndSelect`s catalog bytes) |
 | **Orientation** | Portable `Orientation` API; Linux calls `change-orientation` then `restart-flutter-seat.sh` (active HMI or OS Settings). Mapping stays in `hmi-launch.sh` (Weston transform). |
 | **Helper** | `bt_a2dp_volume` — optional A2DP soft-volume when BlueALSA sink is used |
 
@@ -129,7 +129,7 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 
 | Need | Detail |
 |------|--------|
-| **Asset** | Product `gpio.json` (named lines + sysfs chips); declare in `configs.gpio` (App asset, e.g. `assets/hal/gpio.json`) |
+| **Asset** | Product `gpio.<board_id>.json` (named lines + chips); declare in `configs.gpio` (App asset, e.g. `assets/hal/gpio.ynh960.json`) |
 | **OS** | Kernel GPIO / LED sysfs matching the JSON |
 
 ### `hal/modbus`
@@ -207,11 +207,14 @@ Test: `packages/cyber_hal/test/board_bindings_portability_test.dart`.
 
 ## Demo wiring
 
-On device, `main.dart` prefers `/run/hmi/board_profile.json` (from `oem-compose`)
-or `/oem/boards/<id>/board_profile.json`, then merges App gpio/modbus assets
-(`assets/hal/gpio.json`, `assets/hal/modbus.json`). On Linux device a missing
-OEM/compose profile **fails hard** (no App asset fallback). Host/desktop may
-still `loadAsset` `assets/hal/board_profile.json` for UI work without `/oem`.
+On device, `main.dart` loads only `/run/hmi/board_profile.json` (from
+`oem-compose`), then merges App gpio/modbus assets
+(`assets/hal/gpio.<board>.json`, `assets/hal/modbus.json`). A missing
+OEM/compose profile **fails hard** (no App asset board-profile fallback).
+Host/desktop uses an in-code stub (`HmiHalAssets.hostDevBoardProfile()`), not a
+Flutter `board_profile.json` asset. Modbus RTU nodes are selected from product
+`modbus.json` → `transport.device_by_board` by `board_id` (`ynh960` /
+`ek3562` / `sim`; others fall back to `transport.device`).
 
 OEM owns board×screen SKU only (no properties.ini seed); tunables via
 `/var/lib/hal/properties.ini` (bind to `/mnt/provision/properties.ini` on device)

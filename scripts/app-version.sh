@@ -11,7 +11,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/app-select.sh
 source "$ROOT/scripts/app-select.sh"
 
-OS_RELEASE_SOT="${OS_RELEASE_SOT:-$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/os-release}"
+OS_RELEASE_SOT="${OS_RELEASE_SOT:-$ROOT/overlay/board/rockchip/common/rootfs-overlay/etc/os-release}"
 
 die() {
 	echo "ERROR: $*" >&2

@@ -5,21 +5,16 @@ Board profiles declare capability flags, net role→iface maps, helpers, and poi
 ## Requirements
 ### Requirement: Board profile for Dart HAL
 
-Each supported product image/App SHALL provide product gpio/modbus config assets consumable by the Dart HAL package. Hardware board profile (capability flags, network role→iface map, helpers) SHALL be supplied at runtime from the OEM pack (filesystem / compose export) for shipping images. Optional fields MAY include a **fixed launch orientation hint** for image/board packaging (consumed by `hmi-launch` / eLinux HMI `-o`, not by a HAL orientation API), audio route hints, and radio bringup notes. Fine-grained pin and register maps SHALL live in App gpio/modbus configs (see `hal-gpio-config` / `hal-modbus-config`), not as opaque constants inside App Dart and not as OEM-owned product catalogs.
+Each supported product image/App SHALL provide product gpio/modbus config assets consumable by the Dart HAL package. Hardware board profile (capability flags, network role→iface map, helpers) SHALL be supplied at runtime from the OEM pack (filesystem / compose export) for shipping images. Optional fields MAY include a **fixed launch orientation hint** for image/board packaging (consumed by `hmi-launch` / eLinux HMI `-o`, not by a HAL orientation API), audio route hints, and radio bringup notes. Fine-grained pin and register maps SHALL live in App gpio/modbus configs (see `hal-gpio-config` / `hal-modbus-config`), not as opaque constants inside App Dart and not as OEM-owned product catalogs. Capability flags `keyboard` and `mouse` SHALL indicate HAL API availability; they MUST NOT imply physical keyboard or mouse are enabled — that policy lives in `/var/lib/hal/input.conf` (see `physical-input-policy`).
 
 #### Scenario: Product profile present
 
 - **WHEN** the product HMI App uses HAL on a device with a composed OEM profile
 - **THEN** the App SHALL load that OEM board profile and merge its App gpio/modbus assets so advertised capabilities match what the product ships
 
-#### Scenario: Host/test asset profile
-
-- **WHEN** OEM/compose profile files are absent (host test or migration fallback)
-- **THEN** the App MAY load a Flutter asset board profile (e.g. `assets/hal/board_profile.json`) for development only
-
 ### Requirement: Product gpio/modbus configs are App-owned
 
-Product `gpio.json` and `modbus.json` catalogs SHALL live in the **product App** (or product pack), not under `oem/boards/<board_id>/` and not under `packages/cyber_hal/boards/<board_id>/` as the product authority. The same motherboard MAY ship different pin/register maps across products. After merge, `BoardProfile` gpio/modbus paths SHALL point at Flutter asset URIs (typically `assets/hal/gpio.json` / `assets/hal/modbus.json`). Absolute `assets/…` and `packages/…` paths SHALL resolve as-is; relative paths MAY resolve under `packages/cyber_hal/` for package example profiles only (`sim`, `portable-smoke`).
+Product `gpio.<board_id>.json` and `modbus.json` catalogs SHALL live in the **product App** (or product pack), not under `oem/boards/<board_id>/` and not under `packages/cyber_hal/boards/<board_id>/` as the product authority. The same motherboard MAY ship different pin/register maps across products. After merge, `BoardProfile` gpio/modbus paths SHALL point at Flutter asset URIs (typically `assets/hal/gpio.ynh960.json` / `assets/hal/modbus.json`). Absolute `assets/…` and `packages/…` paths SHALL resolve as-is; relative paths MAY resolve under `packages/cyber_hal/` for package example profiles only (`sim`, `portable-smoke`).
 
 #### Scenario: LWS HMI pack
 
@@ -55,17 +50,22 @@ Profiles for products without display, audio, or network SHALL omit those capabi
 
 #### Scenario: App merges catalogs
 
-- **WHEN** an OEM profile has no gpio/modbus config paths and the App calls `withProductConfigs` with `assets/hal/gpio.json` and `assets/hal/modbus.json`
+- **WHEN** an OEM profile has no gpio/modbus config paths and the App calls `withProductConfigs` with `assets/hal/gpio.ynh960.json` and `assets/hal/modbus.json`
 - **THEN** `resolvedGpioAsset` / `resolvedModbusAsset` SHALL resolve to those App assets
 
 ### Requirement: Runtime profile prefers OEM compose export
 
-On Linux HMI startup, the product App SHALL load board profile from `/run/hmi/board_profile.json` when present, else from `/oem/boards/<board_id>/board_profile.json` when compose/OEM provides it, then merge App gpio/modbus assets. Only when OEM/compose profile is unavailable MAY the App fall back to the bundled `assets/hal/board_profile.json` during the documented migration window (with a log warning).
+On Linux HMI startup, the product App SHALL load board profile **only** from `/run/hmi/board_profile.json` (written by oem-compose), then merge App gpio/modbus assets via `withProductConfigs`. A missing or unreadable compose export SHALL fail hard. The App MUST NOT fall back to `/oem/boards/<board_id>/board_profile.json` or any App-bundled `board_profile.json` asset on device. Non-Linux host/desktop MAY construct an in-code stub profile (not shipped as a Flutter asset) for UI work without an OEM partition.
 
-#### Scenario: Compose export wins over App asset
+#### Scenario: Compose export is required on Linux
 
-- **WHEN** `/run/hmi/board_profile.json` exists and App assets also contain `board_profile.json`
-- **THEN** the running App SHALL use the compose-exported profile (plus App gpio/modbus merge), not the App-bundled board profile as the hardware authority
+- **WHEN** the HMI starts on Linux and `/run/hmi/board_profile.json` is missing
+- **THEN** startup SHALL throw / fail visibly with no App asset board-profile fallback
+
+#### Scenario: No App-bundled board profile asset
+
+- **WHEN** inspecting the shipping `lws_hmi` Flutter assets under `assets/hal/`
+- **THEN** `board_profile.json` SHALL NOT be present
 
 ### Requirement: sim board_id does not imply Stub backends
 

@@ -8,17 +8,22 @@ Host Make/scripts for interactive serial I/O: default TTL via pyserial miniterm;
 
 ### Requirement: Default TTL mode keeps existing miniterm backend
 
-The repository SHALL provide `make serial-console` that accepts **`MODE=TTL|RS485|RS232`**, defaulting to **`TTL`** when unset. For **`MODE=TTL`**, the host script MUST use the existing pyserial **miniterm** path (project venv / `ensure-serial-venv.sh`, `-f direct`, default baud **1500000**, quit **`Ctrl+]`**). TTL MUST NOT require host `tio` or the hex console. The operator MUST be able to override baud via **`BAUD`** in TTL mode. The script MUST print the resolved port, MODE, baud, and backend before connecting.
+The repository SHALL provide `make serial-console` that accepts **`MODE=TTL|RS485|RS232`**, defaulting to **`TTL`** when unset. For **`MODE=TTL`**, the host script MUST use the existing pyserial **miniterm** path (project venv / `ensure-serial-venv.sh`, `-f direct`, quit **`Ctrl+]`**). When **`BAUD`** is unset, TTL default baud MUST be **port-aware**: **`/dev/cu.usbserial*`** (and Linux **`/dev/ttyUSB*`**) → **115200** (ek3562 USB-C Debug CH340); other USB-UART callouts (including **`cu.usbmodem*`**, WCH, SLAB) → **1500000** (ynh960 FIQ / CH9102 Debug). TTL MUST NOT require host `tio` or the hex console. The operator MUST be able to override baud via **`BAUD`** in TTL mode. The script MUST print the resolved port, MODE, baud, and backend before connecting.
 
-#### Scenario: Default session is TTL miniterm
+#### Scenario: Default session is TTL miniterm (ynh960-style port)
 
-- **WHEN** the operator runs `make serial-console` with a detectable USB-TTL port and no `MODE` override
+- **WHEN** the operator runs `make serial-console` with a detectable `cu.usbmodem*` (or WCH/SLAB) port and no `MODE` / `BAUD` override
 - **THEN** the script launches pyserial miniterm at baud **1500000** and does not launch the hex console
+
+#### Scenario: Default TTL baud for cu.usbserial (ek3562 Debug)
+
+- **WHEN** the operator runs `PORT=/dev/cu.usbserial-110 make serial-console` (or any `cu.usbserial*`) with no `BAUD` override
+- **THEN** the script launches pyserial miniterm at baud **115200**
 
 #### Scenario: Explicit TTL mode
 
 - **WHEN** the operator runs `MODE=TTL make serial-console`
-- **THEN** the script uses the miniterm backend with TTL defaults (unless `BAUD` overrides baud)
+- **THEN** the script uses the miniterm backend with the port-aware TTL baud default (unless `BAUD` overrides baud)
 
 #### Scenario: TTL without extra host serial tools
 

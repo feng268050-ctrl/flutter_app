@@ -26,11 +26,11 @@ void main() {
   test('withProductConfigs merges App gpio/modbus assets', () async {
     final oem = await BoardProfile.loadFile(oemBoard);
     final merged = oem.withProductConfigs(
-      gpio: 'assets/hal/gpio.json',
+      gpio: 'assets/hal/gpio.ynh960.json',
       modbus: 'assets/hal/modbus.json',
     );
     expect(merged.info.boardId, 'ynh960');
-    expect(merged.resolvedGpioAsset, 'assets/hal/gpio.json');
+    expect(merged.resolvedGpioAsset, 'assets/hal/gpio.ynh960.json');
     expect(merged.resolvedModbusAsset, 'assets/hal/modbus.json');
     expect(merged.ifaceFor(NetRole.ethernetPrimary), 'eth0');
   });
@@ -58,6 +58,20 @@ void main() {
     expect(next.transport.device, '/dev/ttyUSB0');
     expect(next.transport.baud, 115200);
     expect(identical(cfg.withTransportDevice('/dev/ttyS5'), cfg), isTrue);
+  });
+
+  test('device_by_board resolves ynh960 / ek3562 / sim; unknown falls back', () {
+    final modbusPath = Directory.current.path.endsWith('cyber_hal')
+        ? '../../app/lws_hmi/assets/hal/modbus.json'
+        : 'app/lws_hmi/assets/hal/modbus.json';
+    final cfg = ModbusConfig.fromJsonString(File(modbusPath).readAsStringSync());
+    expect(cfg.transport.deviceByBoard.keys.toSet(),
+        {'ynh960', 'ek3562', 'sim'});
+    expect(cfg.deviceForBoard('ynh960'), '/dev/ttyS5');
+    expect(cfg.deviceForBoard('ek3562'), '/dev/ttyS4');
+    expect(cfg.deviceForBoard('sim'), '/dev/ttyUSB0');
+    expect(cfg.deviceForBoard('ynh961'), '/dev/ttyS5');
+    expect(cfg.withDeviceForBoard('ek3562').transport.device, '/dev/ttyS4');
   });
 
   test('loadFile missing path throws HalIoException', () async {

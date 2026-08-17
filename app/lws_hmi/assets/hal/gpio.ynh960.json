@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "backend": "gpiod",
+  "defaults": {
+    "active_low": false,
+    "blink_on_ms": 1000,
+    "blink_off_ms": 1000,
+    "button_debounce_ms": 30,
+    "button_long_press_ms": 800,
+    "encoder_debounce_ms": 2
+  },
+  "devices": [
+    {
+      "type": "status_led",
+      "id": "chassis_rgb",
+      "channels": [
+        {
+          "id": "red",
+          "scheme": "gpiod",
+          "label": "GPIO_5",
+          "path": "/sys/class/gpio_innohi/GPIO_5/value",
+          "gpiod": { "chip": "gpiochip3", "offset": 9 },
+          "linux_gpio": 105,
+          "aliases": ["led_red"],
+          "roles": ["indicator"]
+        },
+        {
+          "id": "yellow",
+          "scheme": "gpiod",
+          "label": "GPIO_4",
+          "path": "/sys/class/gpio_innohi/GPIO_4/value",
+          "gpiod": { "chip": "gpiochip3", "offset": 10 },
+          "linux_gpio": 106,
+          "aliases": ["led_yellow"],
+          "roles": ["indicator", "alarm"]
+        },
+        {
+          "id": "green",
+          "scheme": "gpiod",
+          "label": "GPIO_7",
+          "path": "/sys/class/gpio_innohi/GPIO_7/value",
+          "gpiod": { "chip": "gpiochip4", "offset": 21 },
+          "linux_gpio": 149,
+          "aliases": ["led_green"],
+          "roles": ["indicator"]
+        }
+      ]
+    },
+    {
+      "type": "buzzer",
+      "id": "panel_buzzer",
+      "line": {
+        "scheme": "gpiod",
+        "label": "BELL",
+        "path": "/sys/class/gpio_innohi/BELL/value",
+        "gpiod": { "chip": "gpiochip3", "offset": 27 },
+        "linux_gpio": 123
+      }
+    }
+  ],
+  "capabilities": {
+    "set_level": true,
+    "blink": true,
+    "read_level": true,
+    "status_led": true,
+    "buzzer": true,
+    "button": false,
+    "rotary_encoder": false
+  }
+}

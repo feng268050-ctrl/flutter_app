@@ -5,9 +5,9 @@ import 'package:cyber_hal/cyber_hal.dart' show BoardProfile;
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/hal/hal_assets.dart';
 
-/// Side-panel RGB indicators — product channel ids (bindings in gpio.json).
+/// Side-panel RGB indicators — product channel ids (bindings in gpio.*.json).
 ///
-/// Hardware maps live in [HmiHalAssets.gpio] / [HmiHalAssets.gpioSim], not here.
+/// Hardware maps live in [HmiHalAssets.gpioForBoard], not here.
 enum LedColor {
   red(channelId: 'red', lineId: 'led_red'),
   yellow(channelId: 'yellow', lineId: 'led_yellow'),
@@ -84,7 +84,7 @@ class GpioLedController extends ChangeNotifier {
     final profile = _profile;
     return _loading ??= (profile != null
             ? GpioHal.fromProfile(profile)
-            : GpioHal.fromAsset(asset: HmiHalAssets.gpio))
+            : GpioHal.fromAsset(asset: HmiHalAssets.gpioYnh960))
         .then((h) {
       _hal = h;
       return h;
@@ -186,13 +186,24 @@ class GpioLedController extends ChangeNotifier {
   @override
   void dispose() {
     final hal = _hal;
+    final bank = _bank;
+    final watching = _watching;
+    _watching = false;
     if (hal != null) {
-      if (_watching) {
+      if (watching) {
         hal.removeLevelListener(_levelListener);
       }
-      unawaited(hal.dispose());
+      unawaited(() async {
+        if (bank != null) {
+          try {
+            for (final color in LedColor.values) {
+              await bank.setMode(color.channelId, LedMode.off, force: true);
+            }
+          } catch (_) {}
+        }
+        await hal.dispose();
+      }());
     }
-    _watching = false;
     _bank = null;
     for (final c in LedColor.values) {
       _modes[c] = null;

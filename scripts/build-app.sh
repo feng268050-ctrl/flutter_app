@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Build Flutter app release AOT bundle → overlay install prefix (eLinux meta-flutter).
-# Convention: *_hmi → /opt/hmi (hmi.service); other apps (e.g. os_settings) → /opt/<APP>.
+# Build Flutter app release AOT bundle → app/<APP>/build/bundle/release (eLinux meta-flutter).
+# Convention: *_hmi → device /opt/hmi (hmi.service); other apps → /opt/<APP>.
+# build-rootfs copies bundle trees into rootfs; push-app reads the same bundle path.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,7 +18,6 @@ die() {
 }
 
 app_select_resolve
-DEST="$OVERLAY_APP"
 
 hmi_bundle_init_flutter build-app
 
@@ -32,5 +32,6 @@ cd "$APP_DIR"
 hmi_bundle_assemble release aot_elf_release copy_flutter_bundle
 hmi_bundle_install_release
 
-echo "Installed APP=$APP bundle to $DEST (libapp.so + assets; engine $ENGINE_VER on rootfs)"
-ls -la "$DEST" "$DEST/lib" "$DEST/data" 2>/dev/null || ls -la "$DEST"
+echo "Installed APP=$APP bundle to $APP_BUNDLE_RELEASE (libapp.so + assets; engine $ENGINE_VER on rootfs)"
+ls -la "$APP_BUNDLE_RELEASE" "$APP_BUNDLE_RELEASE/lib" "$APP_BUNDLE_RELEASE/data" 2>/dev/null \
+	|| ls -la "$APP_BUNDLE_RELEASE"
